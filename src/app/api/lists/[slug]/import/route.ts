@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getMovie, getTvShow } from "@/lib/tmdb";
+import { getMovie, getTvShow, searchMovie } from "@/lib/tmdb";
 import { MediaType } from "@/generated/prisma";
 
 type Params = { params: Promise<{ slug: string }> };
@@ -9,6 +9,7 @@ type Params = { params: Promise<{ slug: string }> };
 export interface ImportResult {
   slug: string;
   title: string;
+  year: number | null;
   status: "added" | "already_exists" | "failed";
   error?: string;
 }
@@ -74,54 +75,80 @@ async function fetchLetterboxdHtml(url: string): Promise<string> {
   return res.text();
 }
 
-function parseFilmSlugs(html: string): string[] {
+interface LetterboxdFilm {
+  slug: string;
+  title: string;
+  year: number | null;
+}
+
+function parseFilms(html: string): LetterboxdFilm[] {
   const seen = new Set<string>();
-  const slugs: string[] = [];
-  const regex = /data-film-slug="([^"]+)"/g;
-  let match;
-  while ((match = regex.exec(html)) !== null) {
-    const slug = match[1];
-    if (!seen.has(slug)) {
-      seen.add(slug);
-      slugs.push(slug);
-    }
+  const films: LetterboxdFilm[] = [];
+
+  // Match both attributes together from the same element. They appear as:
+  //   data-item-slug="the-dark-knight" ... data-item-name="The Dark Knight (2008)"
+  // Attributes may appear in either order so we check both orderings.
+  const jointRegex =
+    /data-item-slug="([^"]+)"[^>]*?data-item-name="([^"]+)"|data-item-name="([^"]+)"[^>]*?data-item-slug="([^"]+)"/g;
+
+  let m: RegExpExecArray | null;
+  while ((m = jointRegex.exec(html)) !== null) {
+    const slug = m[1] ?? m[4];
+    const rawName = m[2] ?? m[3];
+    if (!slug || !rawName || seen.has(slug)) continue;
+    seen.add(slug);
+
+    // "The Dark Knight (2008)" → title="The Dark Knight", year=2008
+    const yearMatch = rawName.match(/^(.*)\s+\((\d{4})\)$/);
+    const title = yearMatch ? yearMatch[1] : rawName;
+    const year = yearMatch ? parseInt(yearMatch[2], 10) : null;
+
+    films.push({ slug, title, year });
   }
-  return slugs;
+
+  return films;
 }
 
 function hasNextPage(html: string): boolean {
   return html.includes('class="next"');
 }
 
-async function resolveFilmToTmdb(
-  filmSlug: string
+async function scrapeLetterboxdList(rawUrl: string): Promise<LetterboxdFilm[]> {
+  const base = rawUrl.endsWith("/") ? rawUrl : `${rawUrl}/`;
+  const allFilms: LetterboxdFilm[] = [];
+
+  // Max 15 pages ≈ 420 items (Letterboxd shows 28 per page)
+  for (let page = 1; page <= 15; page++) {
+    const pageUrl = page === 1 ? base : `${base}page/${page}/`;
+    const html = await fetchLetterboxdHtml(pageUrl);
+    const films = parseFilms(html);
+    allFilms.push(...films);
+    if (!hasNextPage(html) || films.length === 0) break;
+  }
+
+  return allFilms;
+}
+
+async function resolveToTmdb(
+  film: LetterboxdFilm
 ): Promise<{ tmdbId: number; type: "movie" | "tv" } | null> {
   try {
-    const html = await fetchLetterboxdHtml(`https://letterboxd.com/film/${filmSlug}/`);
-    const movieMatch = html.match(/themoviedb\.org\/movie\/(\d+)/);
-    if (movieMatch) return { tmdbId: parseInt(movieMatch[1], 10), type: "movie" };
-    const tvMatch = html.match(/themoviedb\.org\/tv\/(\d+)/);
-    if (tvMatch) return { tmdbId: parseInt(tvMatch[1], 10), type: "tv" };
+    // Search TMDB movies with title + year for high accuracy
+    const results = await searchMovie(film.title, film.year ?? undefined);
+    if (results.results.length > 0) {
+      return { tmdbId: results.results[0].id, type: "movie" };
+    }
+    // If no year match, try without year
+    if (film.year) {
+      const fallback = await searchMovie(film.title);
+      if (fallback.results.length > 0) {
+        return { tmdbId: fallback.results[0].id, type: "movie" };
+      }
+    }
     return null;
   } catch {
     return null;
   }
-}
-
-async function scrapeLetterboxdList(rawUrl: string): Promise<string[]> {
-  const base = rawUrl.endsWith("/") ? rawUrl : `${rawUrl}/`;
-  const allSlugs: string[] = [];
-
-  // Max 15 pages = 420 items (Letterboxd shows 28 per page)
-  for (let page = 1; page <= 15; page++) {
-    const pageUrl = page === 1 ? base : `${base}page/${page}/`;
-    const html = await fetchLetterboxdHtml(pageUrl);
-    const slugs = parseFilmSlugs(html);
-    allSlugs.push(...slugs);
-    if (!hasNextPage(html) || slugs.length === 0) break;
-  }
-
-  return allSlugs;
 }
 
 export async function POST(req: NextRequest, { params }: Params) {
@@ -151,9 +178,9 @@ export async function POST(req: NextRequest, { params }: Params) {
   const isMember = list.members.some((m) => m.userId === session.user.id);
   if (!isMember) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  let filmSlugs: string[];
+  let films: LetterboxdFilm[];
   try {
-    filmSlugs = await scrapeLetterboxdList(letterboxdUrl);
+    films = await scrapeLetterboxdList(letterboxdUrl);
   } catch {
     return NextResponse.json(
       {
@@ -164,7 +191,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     );
   }
 
-  if (filmSlugs.length === 0) {
+  if (films.length === 0) {
     return NextResponse.json(
       { error: "No films found in the Letterboxd list." },
       { status: 400 }
@@ -173,20 +200,21 @@ export async function POST(req: NextRequest, { params }: Params) {
 
   const results: ImportResult[] = [];
 
-  // Process 5 films concurrently to stay polite to Letterboxd
+  // Process 5 films concurrently (TMDB search is fast; no individual Letterboxd fetches needed)
   const BATCH_SIZE = 5;
-  for (let i = 0; i < filmSlugs.length; i += BATCH_SIZE) {
-    const batch = filmSlugs.slice(i, i + BATCH_SIZE);
+  for (let i = 0; i < films.length; i += BATCH_SIZE) {
+    const batch = films.slice(i, i + BATCH_SIZE);
     const batchResults = await Promise.all(
-      batch.map(async (filmSlug): Promise<ImportResult> => {
+      batch.map(async (film): Promise<ImportResult> => {
         try {
-          const tmdbData = await resolveFilmToTmdb(filmSlug);
+          const tmdbData = await resolveToTmdb(film);
           if (!tmdbData) {
             return {
-              slug: filmSlug,
-              title: filmSlug,
+              slug: film.slug,
+              title: film.title,
+              year: film.year,
               status: "failed",
-              error: "TMDB ID not found on Letterboxd film page",
+              error: "No TMDB match found",
             };
           }
 
@@ -207,14 +235,16 @@ export async function POST(req: NextRequest, { params }: Params) {
           });
 
           return {
-            slug: filmSlug,
+            slug: film.slug,
             title: mediaItem.title,
+            year: mediaItem.year,
             status: existing ? "already_exists" : "added",
           };
         } catch (err) {
           return {
-            slug: filmSlug,
-            title: filmSlug,
+            slug: film.slug,
+            title: film.title,
+            year: film.year,
             status: "failed",
             error: err instanceof Error ? err.message : "Unknown error",
           };
@@ -230,7 +260,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     added: results.filter((r) => r.status === "added").length,
     alreadyExisted: results.filter((r) => r.status === "already_exists").length,
     failed: results.filter((r) => r.status === "failed").length,
-    total: filmSlugs.length,
+    total: films.length,
     results,
   } satisfies ImportResponse);
 }

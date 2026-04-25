@@ -10,81 +10,197 @@ A self-hosted web app for tracking movies and TV shows with friends, Plex sync, 
 - **Plex sync** — link your Plex account and auto-import your watch history to mark movies as watched
 - **Radarr export** — every list exposes a live URL endpoint that Radarr can poll to auto-download movies
 
+---
+
 ## Quick Start
 
-### Development
+### Prerequisites
 
-1. Copy the env file and fill in your values:
-   ```bash
-   cp .env.example .env
-   ```
+- [Node.js](https://nodejs.org) v22+
+- [Yarn](https://yarnpkg.com) v1.22+
+- A PostgreSQL database (local, Docker, or hosted)
+- A free [TMDB API key](https://www.themoviedb.org/settings/api)
 
-2. Required env vars:
-   - `TMDB_API_KEY` — Get a free read access token at [themoviedb.org/settings/api](https://www.themoviedb.org/settings/api)
-   - `AUTH_SECRET` — Any random 32+ character string (e.g. `openssl rand -base64 32`)
-   - `DATABASE_URL` — PostgreSQL connection string
+### 1. Clone and install
 
-3. Start a local PostgreSQL database (or use Docker):
-   ```bash
-   docker run -d --name movienight-db -e POSTGRES_USER=movienight -e POSTGRES_PASSWORD=movienight -e POSTGRES_DB=movienightdb -p 5432:5432 postgres:16-alpine
-   ```
+```bash
+git clone https://github.com/jamiebclark/screened.git
+cd screened
+yarn install
+```
 
-4. Run migrations and start the app:
-   ```bash
-   yarn db:migrate
-   yarn dev
-   ```
+### 2. Configure environment
 
-### Docker Compose (Self-hosted)
+```bash
+cp .env.example .env
+```
 
-1. Copy and configure environment:
-   ```bash
-   cp .env.example .env
-   # Edit .env with your TMDB_API_KEY and AUTH_SECRET
-   ```
+Open `.env` and fill in the required values:
 
-2. Start everything:
-   ```bash
-   docker compose up -d
-   ```
+| Variable | Description |
+|---|---|
+| `DATABASE_URL` | PostgreSQL connection string |
+| `AUTH_SECRET` | Random 32+ character string — run `openssl rand -base64 32` |
+| `TMDB_API_KEY` | Read access token from [themoviedb.org/settings/api](https://www.themoviedb.org/settings/api) |
+| `NEXTAUTH_URL` | Base URL of your app (e.g. `http://localhost:3000`) |
+| `NEXT_PUBLIC_APP_URL` | Same as above — used client-side for Plex OAuth redirect |
 
-The app will be available at `http://localhost:3000`.
+### 3. Start a local database
+
+If you don't have PostgreSQL running locally, spin one up with Docker:
+
+```bash
+docker run -d \
+  --name screened-db \
+  -e POSTGRES_USER=movienight \
+  -e POSTGRES_PASSWORD=movienight \
+  -e POSTGRES_DB=movienightdb \
+  -p 5432:5432 \
+  postgres:16-alpine
+```
+
+### 4. Run migrations and start
+
+```bash
+yarn db:migrate   # runs Prisma migrations
+yarn dev          # starts Next.js on http://localhost:3000
+```
+
+---
+
+## Docker Compose (Self-hosted)
+
+The easiest way to run Screened on a home server or VPS.
+
+### 1. Configure environment
+
+```bash
+cp .env.example .env
+```
+
+At minimum set `TMDB_API_KEY`, `AUTH_SECRET`, and `NEXTAUTH_URL`/`NEXT_PUBLIC_APP_URL` to your server's public URL.
+
+### 2. Start everything
+
+```bash
+docker compose up -d
+```
+
+This starts both the app and a PostgreSQL database. The app will be available at `http://localhost:3000` (or your configured URL).
+
+### 3. Updating
+
+```bash
+docker compose pull
+docker compose up -d
+```
+
+---
 
 ## Plex Integration
 
-1. Go to **Settings → Plex Settings** in the app
-2. Click **Connect Plex** — a Plex auth window opens
-3. Sign in and authorize, then return to the settings page
-4. Click **Sync now** to import your watch history
+Screened can sync your Plex watch history to automatically mark movies as watched.
 
-Plex sync matches movies using TMDB IDs from Plex's metadata agents.
+### Setup
+
+1. Go to **Settings → Plex Settings** in the app
+2. Click **Connect Plex** — a Plex authorization window opens in your browser
+3. Sign in to Plex and authorize Screened
+4. Return to the settings page and click **Sync now**
+
+### How it works
+
+- Screened matches movies using TMDB IDs embedded in Plex's metadata
+- Only items with a recognized TMDB ID are synced — unmatched items are skipped
+- Sync is manual; click **Sync now** any time to pull in new watches
+- Your Plex token is stored encrypted in the database and never exposed to the client
+
+---
 
 ## Radarr Integration
 
-Each list has a live endpoint at:
+Every list in Screened exposes a live Radarr-compatible endpoint that Radarr can poll to automatically download movies added to that list.
+
+### Endpoint format
+
 ```
 http://your-server:3000/api/lists/{list-slug}/radarr
 ```
 
-For private lists, append `?token={radarrToken}` (visible on the list page when logged in).
+For **private lists**, append a token to authenticate:
 
-In Radarr, add it via **Lists → Add List → Custom Lists** using the URL above.
+```
+http://your-server:3000/api/lists/{list-slug}/radarr?token={radarrToken}
+```
+
+The `radarrToken` is shown on the list's page when you're logged in.
+
+### Adding to Radarr
+
+1. In Radarr, go to **Settings → Lists → Add List**
+2. Choose **Custom Lists**
+3. Paste the endpoint URL above
+4. Set your quality profile and root folder
+5. Save — Radarr will now poll the list and queue downloads automatically
+
+---
+
+## Collaborative Lists
+
+Lists are the core social feature of Screened. Any member of a list can add, remove, and rate movies.
+
+### Creating a list
+
+1. Go to **Lists → New List**
+2. Give it a name — a URL-friendly slug is generated automatically
+3. Choose public or private visibility
+
+### Inviting members
+
+1. Open a list and click **Invite member**
+2. Enter a member's email address — they must already have a Screened account
+3. They'll immediately have access to contribute to the list
+
+### Privacy
+
+- **Public lists** are accessible via the Radarr endpoint without a token
+- **Private lists** require a token for the Radarr endpoint, and are not discoverable by other users
+
+---
 
 ## Tech Stack
 
-- **Next.js 16** (App Router) + TypeScript
-- **Tailwind CSS v4** + Radix UI primitives
-- **PostgreSQL** + Prisma 7 ORM
-- **Auth.js v5** (credentials auth)
-- **TMDB API** for movie/TV metadata
-- **Docker Compose** for self-hosting
+| Layer | Technology |
+|---|---|
+| Framework | Next.js 16 (App Router) + TypeScript |
+| Styling | Tailwind CSS v4 + Radix UI |
+| Database | PostgreSQL + Prisma 7 |
+| Auth | Auth.js v5 (credentials + Plex OAuth) |
+| Metadata | TMDB API |
+| Deployment | Docker Compose |
 
-## Project Structure
+---
+
+## Development
+
+### Available scripts
+
+| Command | Description |
+|---|---|
+| `yarn dev` | Start development server |
+| `yarn build` | Build for production |
+| `yarn lint` | Run ESLint |
+| `yarn db:migrate` | Run Prisma migrations |
+| `yarn db:push` | Push schema changes without a migration |
+| `yarn db:studio` | Open Prisma Studio (database GUI) |
+| `yarn db:generate` | Regenerate Prisma client |
+
+### Project structure
 
 ```
 src/
 ├── app/
-│   ├── (auth)/          # Login, register pages
+│   ├── (auth)/          # Login and register pages
 │   ├── (app)/           # Main app pages (dashboard, search, lists, profile)
 │   └── api/             # API routes
 ├── components/
@@ -95,4 +211,14 @@ src/
     ├── tmdb.ts          # TMDB API client
     ├── plex.ts          # Plex API client
     └── prisma.ts        # Prisma client singleton
+```
+
+### Commits
+
+This project uses [Conventional Commits](https://www.conventionalcommits.org/). Releases and changelogs are automated via [semantic-release](https://semantic-release.gitbook.io/).
+
+```
+feat(lists): add CSV import for watchlists
+fix(plex): handle expired tokens gracefully
+docs: update Radarr setup instructions
 ```

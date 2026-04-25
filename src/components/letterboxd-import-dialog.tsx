@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition, FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { Download, Loader2, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +22,7 @@ interface LetterboxdImportDialogProps {
 type Phase = "input" | "importing" | "done";
 
 export function LetterboxdImportDialog({ slug }: LetterboxdImportDialogProps) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [phase, setPhase] = useState<Phase>("input");
   const [error, setError] = useState<string | null>(null);
@@ -64,6 +66,7 @@ export function LetterboxdImportDialog({ slug }: LetterboxdImportDialogProps) {
 
         setResult(data);
         setPhase("done");
+        router.refresh();
       } catch {
         setError("Something went wrong. Please try again.");
         setPhase("input");

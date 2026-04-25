@@ -1,0 +1,50 @@
+---
+description: Enforce conventional commits for all git commits in this project
+alwaysApply: true
+---
+
+# Conventional Commits
+
+All commits must follow the [Conventional Commits](https://www.conventionalcommits.org/) specification. This project uses semantic-release to automate versioning and changelogs based on commit messages.
+
+## Format
+
+```
+<type>(<scope>): <short summary>
+
+[optional body]
+
+[optional footer]
+```
+
+## Types
+
+| Type | When to use |
+|------|-------------|
+| `feat` | New feature (triggers minor release) |
+| `fix` | Bug fix (triggers patch release) |
+| `docs` | Documentation only |
+| `refactor` | Code change with no feature/fix |
+| `chore` | Tooling, deps, config changes |
+| `test` | Adding or updating tests |
+| `perf` | Performance improvement |
+| `ci` | CI/CD changes |
+
+Breaking changes: add `!` after the type (`feat!:`) or include `BREAKING CHANGE:` in the footer — triggers a major release.
+
+## Examples
+
+```
+feat(lists): add Radarr export endpoint
+fix(plex): handle missing server gracefully
+docs: expand README quick start section
+chore: install semantic-release
+feat!: require authentication for all list endpoints
+```
+
+## Rules
+
+- Summary is lowercase, no period at the end
+- Use imperative mood ("add" not "added" or "adds")
+- Scope is optional but encouraged (e.g. `auth`, `lists`, `plex`, `search`)
+- Keep the summary under 72 characters
