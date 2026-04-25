@@ -20,6 +20,7 @@ export interface PlexServer {
   name: string;
   machineIdentifier: string;
   accessToken: string;
+  uri: string;
   scheme: string;
   address: string;
   port: string;
@@ -97,18 +98,74 @@ export async function getPlexUser(token: string): Promise<PlexUser> {
 }
 
 export async function getPlexServers(token: string): Promise<PlexServer[]> {
-  const res = await fetch(`${PLEX_TV_BASE}/pms/resources?includeHttps=1&includeRelay=1`, {
-    headers: {
-      "X-Plex-Token": token,
-      "X-Plex-Client-Identifier": PLEX_CLIENT_IDENTIFIER,
-      Accept: "application/json",
-    },
-  });
+  const res = await fetch(
+    `${PLEX_TV_BASE}/api/v2/resources?includeHttps=1&includeRelay=1&includeIPv6=1`,
+    {
+      headers: {
+        "X-Plex-Token": token,
+        "X-Plex-Client-Identifier": PLEX_CLIENT_IDENTIFIER,
+        Accept: "application/json",
+      },
+    }
+  );
 
   if (!res.ok) throw new Error("Failed to get Plex servers");
 
-  const data = await res.json() as { MediaContainer: { Device: PlexServer[] } };
-  return data?.MediaContainer?.Device ?? [];
+  const resources = await res.json() as Array<{
+    name: string;
+    clientIdentifier: string;
+    accessToken: string;
+    provides: string;
+    connections: Array<{
+      protocol: string;
+      address: string;
+      port: number;
+      uri: string;
+      local: boolean;
+      relay: boolean;
+    }>;
+  }>;
+
+  return resources
+    .filter((r) => r.provides?.includes("server"))
+    .map((r) => {
+      // Prefer a direct local connection, then any non-relay, then fall back to relay
+      const conn =
+        r.connections.find((c) => c.local && !c.relay) ??
+        r.connections.find((c) => !c.relay) ??
+        r.connections[0];
+
+      return {
+        name: r.name,
+        machineIdentifier: r.clientIdentifier,
+        accessToken: r.accessToken,
+        // Use the uri field directly — it contains the plex.direct hostname that
+        // matches the SSL cert, rather than a raw IP that would fail verification
+        uri: conn?.uri ?? `${conn?.protocol ?? "https"}://${conn?.address}:${conn?.port ?? 32400}`,
+        scheme: conn?.protocol ?? "https",
+        address: conn?.address ?? "",
+        port: String(conn?.port ?? 32400),
+      };
+    });
+}
+
+async function plexServerFetch(url: string): Promise<Response> {
+  const res = await fetch(url, {
+    headers: {
+      Accept: "application/json",
+      "X-Plex-Client-Identifier": PLEX_CLIENT_IDENTIFIER,
+    },
+  });
+
+  if (!res.ok) throw new Error(`Plex server request failed: ${res.status} ${res.statusText}`);
+
+  const contentType = res.headers.get("content-type") ?? "";
+  if (!contentType.includes("json")) {
+    const body = await res.text();
+    throw new Error(`Plex returned non-JSON response (${contentType}): ${body.slice(0, 120)}`);
+  }
+
+  return res;
 }
 
 export async function getPlexWatchHistory(
@@ -118,16 +175,7 @@ export async function getPlexWatchHistory(
 ): Promise<PlexWatchedItem[]> {
   const typeCode = type === "movie" ? 1 : 2;
   const url = `${serverUrl}/library/all?type=${typeCode}&viewCount>=1&X-Plex-Token=${token}`;
-
-  const res = await fetch(url, {
-    headers: {
-      Accept: "application/json",
-      "X-Plex-Client-Identifier": PLEX_CLIENT_IDENTIFIER,
-    },
-  });
-
-  if (!res.ok) throw new Error("Failed to get Plex watch history");
-
+  const res = await plexServerFetch(url);
   const data = await res.json() as { MediaContainer?: { Metadata?: PlexWatchedItem[] } };
   return data?.MediaContainer?.Metadata ?? [];
 }
@@ -137,16 +185,7 @@ export async function getPlexWatchedEpisodes(
   token: string
 ): Promise<PlexWatchedEpisode[]> {
   const url = `${serverUrl}/library/all?type=4&viewCount>=1&X-Plex-Token=${token}`;
-
-  const res = await fetch(url, {
-    headers: {
-      Accept: "application/json",
-      "X-Plex-Client-Identifier": PLEX_CLIENT_IDENTIFIER,
-    },
-  });
-
-  if (!res.ok) throw new Error("Failed to get Plex watched episodes");
-
+  const res = await plexServerFetch(url);
   const data = await res.json() as { MediaContainer?: { Metadata?: PlexWatchedEpisode[] } };
   return data?.MediaContainer?.Metadata ?? [];
 }
@@ -157,18 +196,13 @@ export async function getPlexItemMetadata(
   ratingKey: string
 ): Promise<PlexWatchedItem | null> {
   const url = `${serverUrl}/library/metadata/${ratingKey}?X-Plex-Token=${token}`;
-
-  const res = await fetch(url, {
-    headers: {
-      Accept: "application/json",
-      "X-Plex-Client-Identifier": PLEX_CLIENT_IDENTIFIER,
-    },
-  });
-
-  if (!res.ok) return null;
-
-  const data = await res.json() as { MediaContainer?: { Metadata?: PlexWatchedItem[] } };
-  return data?.MediaContainer?.Metadata?.[0] ?? null;
+  try {
+    const res = await plexServerFetch(url);
+    const data = await res.json() as { MediaContainer?: { Metadata?: PlexWatchedItem[] } };
+    return data?.MediaContainer?.Metadata?.[0] ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export function extractTmdbIdFromGuid(guids: { id: string }[] | undefined): number | null {

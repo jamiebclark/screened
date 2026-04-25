@@ -35,7 +35,7 @@ export async function syncPlexUser(userId: string): Promise<PlexSyncResult> {
     throw new Error("No Plex server found");
   }
 
-  const serverUrl = `${server.scheme}://${server.address}:${server.port}`;
+  const serverUrl = server.uri;
   const serverToken = server.accessToken ?? connection.plexToken;
 
   // --- Movie sync ---
