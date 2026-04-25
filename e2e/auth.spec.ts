@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { TEST_USER, TEST_USER_2, register, login } from "./helpers";
+import { TEST_USER, login } from "./helpers";
 
 const UNIQUE_EMAIL = `e2e_${Date.now()}@test.local`;
 
