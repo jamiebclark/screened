@@ -1,0 +1,165 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum MediaType {
+  MOVIE
+  TV
+}
+
+enum WatchStatus {
+  WATCHLIST
+  WATCHING
+  WATCHED
+  DROPPED
+}
+
+enum ListRole {
+  OWNER
+  CONTRIBUTOR
+  VIEWER
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String
+  name          String
+  avatarUrl     String?
+  bio           String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  plexConnection  PlexConnection?
+  mediaStatuses   UserMediaStatus[]
+  episodeStatuses EpisodeStatus[]
+  ownedLists      List[]
+  listMemberships ListMember[]
+  listItems       ListItem[]
+  sessions        Session[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PlexConnection {
+  id           String    @id @default(cuid())
+  userId       String    @unique
+  plexToken    String
+  plexClientId String
+  plexUsername String?
+  plexServerId String?
+  lastSyncedAt DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model MediaItem {
+  id        String    @id @default(cuid())
+  tmdbId    Int
+  type      MediaType
+  title     String
+  poster    String?
+  backdrop  String?
+  year      Int?
+  overview  String?
+  genres    String[]
+  runtime   Int?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  userStatuses    UserMediaStatus[]
+  episodeStatuses EpisodeStatus[]
+  listItems       ListItem[]
+
+  @@unique([tmdbId, type])
+}
+
+model UserMediaStatus {
+  id          String      @id @default(cuid())
+  userId      String
+  mediaItemId String
+  status      WatchStatus
+  rating      Float?
+  review      String?
+  watchedAt   DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mediaItem MediaItem @relation(fields: [mediaItemId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, mediaItemId])
+}
+
+model EpisodeStatus {
+  id            String    @id @default(cuid())
+  userId        String
+  mediaItemId   String
+  seasonNumber  Int
+  episodeNumber Int
+  watchedAt     DateTime  @default(now())
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mediaItem MediaItem @relation(fields: [mediaItemId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, mediaItemId, seasonNumber, episodeNumber])
+}
+
+model List {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  slug        String   @unique
+  isPublic    Boolean  @default(true)
+  ownerId     String
+  radarrToken String?  @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  owner   User         @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  members ListMember[]
+  items   ListItem[]
+}
+
+model ListMember {
+  id        String   @id @default(cuid())
+  listId    String
+  userId    String
+  role      ListRole @default(CONTRIBUTOR)
+  createdAt DateTime @default(now())
+
+  list List @relation(fields: [listId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([listId, userId])
+}
+
+model ListItem {
+  id          String    @id @default(cuid())
+  listId      String
+  mediaItemId String
+  addedById   String
+  notes       String?
+  addedAt     DateTime  @default(now())
+
+  list      List      @relation(fields: [listId], references: [id], onDelete: Cascade)
+  mediaItem MediaItem @relation(fields: [mediaItemId], references: [id], onDelete: Cascade)
+  addedBy   User      @relation(fields: [addedById], references: [id], onDelete: Cascade)
+
+  @@unique([listId, mediaItemId])
+}
