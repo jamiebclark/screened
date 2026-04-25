@@ -91,12 +91,16 @@ test.describe("Episode Tracker", () => {
     const data = await res.json() as { success: boolean };
     expect(data.success).toBe(true);
 
-    // Visit page and verify all S1 episodes show as watched
+    // Visit page and verify episodes are shown as watched
     await page.goto(TV_URL);
     await expect(page.getByText("Pilot")).toBeVisible({ timeout: 10000 });
 
-    // Season "Watched" button appears (WatchStatusButton shows "Watching" so no ambiguity)
-    await expect(page.getByRole("button", { name: "Watched" }).first()).toBeVisible({ timeout: 8000 });
+    // When all episodes are watched the first 7 rows all show green circles
+    // Verify ep 1 AND ep 7 both have a green watched indicator
+    const rows = page.locator(".divide-y > div");
+    await expect(rows.first().locator(".bg-green-500")).toBeVisible({ timeout: 5000 });
+    // At least 7 green circles visible in the episode list (all S1 watched)
+    await expect(page.locator(".divide-y .bg-green-500")).toHaveCount(7, { timeout: 5000 });
   });
 
   test("unmark all episodes in season via API succeeds", async ({ page }) => {

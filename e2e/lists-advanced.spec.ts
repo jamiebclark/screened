@@ -15,7 +15,8 @@ test.describe("Lists - Advanced", () => {
     });
     const list = await res.json() as { slug: string };
 
-    // Now log in as user 2 and try to access it
+    // Clear session so middleware doesn't redirect away from /login
+    await page.context().clearCookies();
     await page.goto("/login");
     await page.getByLabel("Email").fill(TEST_USER_2.email);
     await page.getByLabel("Password").fill(TEST_USER_2.password);
@@ -120,7 +121,8 @@ test.describe("Lists - Advanced", () => {
     });
     const list = await res.json() as { slug: string };
 
-    // Log in as user 2
+    // Clear session so middleware doesn't redirect away from /login
+    await page.context().clearCookies();
     await page.goto("/login");
     await page.getByLabel("Email").fill(TEST_USER_2.email);
     await page.getByLabel("Password").fill(TEST_USER_2.password);
