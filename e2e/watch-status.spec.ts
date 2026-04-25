@@ -19,7 +19,7 @@ test.describe("Watch Status", () => {
     });
     await page.reload();
 
-    const btn = page.getByRole("button", { name: /add to list|watchlist|watching|watched|dropped/i }).first();
+    const btn = page.getByRole("button", { name: /track|watchlist|watching|watched|dropped/i }).first();
     await btn.click();
     await page.getByRole("menuitem", { name: "Watchlist" }).click();
     await expect(page.getByRole("button", { name: /watchlist/i })).toBeVisible({ timeout: 5000 });
@@ -71,8 +71,8 @@ test.describe("Watch Status", () => {
 
     await page.getByRole("button", { name: /watchlist/i }).click();
     await page.getByRole("menuitem", { name: "Remove" }).click();
-    // After removing status, the WatchStatusButton reverts to "Add to list" (the dropdown trigger)
-    await expect(page.getByRole("button", { name: "Add to list" }).first()).toBeVisible({ timeout: 5000 });
+    // After removing status, the WatchStatusButton reverts to "Track" (the dropdown trigger)
+    await expect(page.getByRole("button", { name: "Track" }).first()).toBeVisible({ timeout: 5000 });
   });
 
   test("rate a movie with stars", async ({ page }) => {
@@ -103,7 +103,7 @@ test.describe("Watch Status", () => {
     });
     await page.goto("/tv/1396");
 
-    const btn = page.getByRole("button", { name: /add to list|watchlist|watching|watched|dropped/i }).first();
+    const btn = page.getByRole("button", { name: /track|watchlist|watching|watched|dropped/i }).first();
     await btn.click();
     await page.getByRole("menuitem", { name: "Watching" }).click();
     await expect(page.getByRole("button", { name: /watching/i })).toBeVisible({ timeout: 5000 });
