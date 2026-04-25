@@ -150,12 +150,26 @@ export async function getPlexServers(token: string): Promise<PlexServer[]> {
 }
 
 async function plexServerFetch(url: string): Promise<Response> {
-  const res = await fetch(url, {
-    headers: {
-      Accept: "application/json",
-      "X-Plex-Client-Identifier": PLEX_CLIENT_IDENTIFIER,
-    },
-  });
+  // Disable TLS cert validation for direct Plex server connections.
+  // Plex issues certs for *.plex.direct DNS names, but local connections use raw IPs,
+  // causing ERR_TLS_CERT_ALTNAME_INVALID. This is safe since we're talking to our own server.
+  const origReject = process.env.NODE_TLS_REJECT_UNAUTHORIZED;
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      headers: {
+        Accept: "application/json",
+        "X-Plex-Client-Identifier": PLEX_CLIENT_IDENTIFIER,
+      },
+    });
+  } finally {
+    if (origReject === undefined) {
+      delete process.env.NODE_TLS_REJECT_UNAUTHORIZED;
+    } else {
+      process.env.NODE_TLS_REJECT_UNAUTHORIZED = origReject;
+    }
+  }
 
   if (!res.ok) throw new Error(`Plex server request failed: ${res.status} ${res.statusText}`);
 

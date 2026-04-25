@@ -3,10 +3,18 @@ import { TEST_USER, login } from "./helpers";
 
 const UNIQUE_EMAIL = `e2e_${Date.now()}@test.local`;
 
+// Ensure TEST_USER exists before auth tests so the duplicate-email test always works
+test.beforeAll(async ({ request }) => {
+  await request.post("/api/auth/register", {
+    data: TEST_USER,
+    headers: { "Content-Type": "application/json" },
+  });
+});
+
 test.describe("Authentication", () => {
   test("register new user and land on dashboard", async ({ page }) => {
     await page.goto("/register");
-    await expect(page.getByText("Create account")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Create account" })).toBeVisible();
 
     await page.getByLabel("Name").fill("New User");
     await page.getByLabel("Email").fill(UNIQUE_EMAIL);
@@ -21,7 +29,7 @@ test.describe("Authentication", () => {
     await page.goto("/login");
     await page.getByLabel("Email").fill(TEST_USER.email);
     await page.getByLabel("Password").fill(TEST_USER.password);
-    await page.getByRole("button", { name: "Sign in" }).click();
+    await page.getByRole("button", { name: "Sign in", exact: true }).click();
     await page.waitForURL("/", { timeout: 10000 });
     await expect(page).toHaveURL("/");
   });
@@ -30,7 +38,7 @@ test.describe("Authentication", () => {
     await page.goto("/login");
     await page.getByLabel("Email").fill(TEST_USER.email);
     await page.getByLabel("Password").fill("wrongpassword");
-    await page.getByRole("button", { name: "Sign in" }).click();
+    await page.getByRole("button", { name: "Sign in", exact: true }).click();
     await expect(page.getByText("Invalid email or password")).toBeVisible({ timeout: 5000 });
     await expect(page).toHaveURL(/\/login/);
   });
@@ -39,7 +47,7 @@ test.describe("Authentication", () => {
     await page.goto("/login");
     await page.getByLabel("Email").fill("nobody@nowhere.test");
     await page.getByLabel("Password").fill("somepassword123");
-    await page.getByRole("button", { name: "Sign in" }).click();
+    await page.getByRole("button", { name: "Sign in", exact: true }).click();
     await expect(page.getByText("Invalid email or password")).toBeVisible({ timeout: 5000 });
   });
 

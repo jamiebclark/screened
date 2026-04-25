@@ -140,8 +140,13 @@ export function InviteMemberForm({ slug }: InviteMemberFormProps) {
         }
 
         const member = (await res.json()) as { user: { name: string } };
+        // Reset form fields but keep the success message visible
+        setSelected(null);
+        setQuery("");
+        setResults([]);
+        setDropdownOpen(false);
+        setError(null);
         setSuccess(`${member.user.name} has been added to the list`);
-        resetForm();
       } catch {
         setError("Something went wrong");
       }
