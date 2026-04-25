@@ -12,32 +12,31 @@ export const TEST_USER_2 = {
   password: "testpassword123",
 };
 
-export async function register(page: Page, user = TEST_USER) {
-  await page.goto("/register");
-  await page.getByLabel("Name").fill(user.name);
-  await page.getByLabel("Email").fill(user.email);
-  await page.getByLabel("Password").fill(user.password);
-  await page.getByRole("button", { name: /sign up|register|create/i }).click();
-  await page.waitForURL("/");
+export async function ensureTestUsersExist(page: Page) {
+  // Register TEST_USER if not exists (ignore error if already registered)
+  await page.request.post("/api/auth/register", {
+    data: TEST_USER,
+    headers: { "Content-Type": "application/json" },
+  });
+  // Register TEST_USER_2 if not exists
+  await page.request.post("/api/auth/register", {
+    data: TEST_USER_2,
+    headers: { "Content-Type": "application/json" },
+  });
 }
 
 export async function login(page: Page, user = TEST_USER) {
   await page.goto("/login");
   await page.getByLabel("Email").fill(user.email);
   await page.getByLabel("Password").fill(user.password);
-  await page.getByRole("button", { name: /sign in|log in/i }).click();
-  await page.waitForURL("/");
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.waitForURL("/", { timeout: 10000 });
 }
 
 export async function ensureLoggedIn(page: Page, user = TEST_USER) {
-  await page.goto("/");
-  const url = page.url();
-  if (url.includes("/login") || url.includes("/register")) {
+  // Try to visit home; if redirected to login, log in
+  const response = await page.goto("/");
+  if (page.url().includes("/login") || page.url().includes("/register")) {
     await login(page, user);
   }
-}
-
-export async function logout(page: Page) {
-  // Try nav dropdown or direct navigation
-  await page.goto("/api/auth/signout");
 }
