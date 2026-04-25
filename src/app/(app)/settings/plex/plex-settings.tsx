@@ -21,7 +21,7 @@ export function PlexSettings({ connection: initialConnection }: PlexSettingsProp
 
   const [connection, setConnection] = useState(initialConnection);
   const [syncing, setSyncing] = useState(false);
-  const [syncResult, setSyncResult] = useState<{ synced: number; skipped: number } | null>(null);
+  const [syncResult, setSyncResult] = useState<{ synced: number; skipped: number; tvShows: number; episodes: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [verifying, setVerifying] = useState(!!pinId);
   const [isPending, startTransition] = useTransition();
@@ -88,9 +88,9 @@ export function PlexSettings({ connection: initialConnection }: PlexSettingsProp
     setError(null);
     try {
       const res = await fetch("/api/plex/sync", { method: "POST" });
-      const data = await res.json() as { synced?: number; skipped?: number; error?: string };
+      const data = await res.json() as { synced?: number; skipped?: number; tvShows?: number; episodes?: number; error?: string };
       if (res.ok) {
-        setSyncResult({ synced: data.synced ?? 0, skipped: data.skipped ?? 0 });
+        setSyncResult({ synced: data.synced ?? 0, skipped: data.skipped ?? 0, tvShows: data.tvShows ?? 0, episodes: data.episodes ?? 0 });
         router.refresh();
       } else {
         setError(data.error ?? "Sync failed");
@@ -122,8 +122,11 @@ export function PlexSettings({ connection: initialConnection }: PlexSettingsProp
       )}
 
       {syncResult && (
-        <div className="rounded-md bg-green-500/10 border border-green-500/30 px-3 py-2 text-sm text-green-400">
-          Sync complete: {syncResult.synced} movies marked as watched, {syncResult.skipped} skipped.
+        <div className="rounded-md bg-green-500/10 border border-green-500/30 px-3 py-2 text-sm text-green-400 space-y-0.5">
+          <p className="font-medium">Sync complete</p>
+          {syncResult.synced > 0 && <p>{syncResult.synced} movie{syncResult.synced !== 1 ? "s" : ""} marked as watched</p>}
+          {syncResult.episodes > 0 && <p>{syncResult.episodes} TV episode{syncResult.episodes !== 1 ? "s" : ""} across {syncResult.tvShows} show{syncResult.tvShows !== 1 ? "s" : ""} imported</p>}
+          {syncResult.synced === 0 && syncResult.episodes === 0 && <p>Nothing new to import</p>}
         </div>
       )}
 
@@ -173,9 +176,8 @@ export function PlexSettings({ connection: initialConnection }: PlexSettingsProp
                 </Button>
               </div>
 
-              <div className="text-xs text-muted-foreground space-y-1">
-                <p>Sync imports your Plex movie watch history and marks matching movies as &quot;Watched&quot;.</p>
-                <p>TV show episode sync is coming soon.</p>
+              <div className="text-xs text-muted-foreground">
+                <p>Sync imports your Plex movie and TV episode watch history. Movies are marked as &quot;Watched&quot;; TV shows are set to &quot;Watching&quot; with your episode progress tracked.</p>
               </div>
             </div>
           ) : (

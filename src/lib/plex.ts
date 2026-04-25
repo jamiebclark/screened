@@ -35,6 +35,16 @@ export interface PlexWatchedItem {
   Guid?: { id: string }[];
 }
 
+export interface PlexWatchedEpisode {
+  ratingKey: string;
+  parentIndex: number;
+  index: number;
+  grandparentRatingKey: string;
+  grandparentTitle: string;
+  lastViewedAt: number | null;
+  viewCount: number;
+}
+
 export async function createPlexPin(): Promise<PlexPin> {
   const res = await fetch(`${PLEX_TV_BASE}/api/v2/pins`, {
     method: "POST",
@@ -120,6 +130,45 @@ export async function getPlexWatchHistory(
 
   const data = await res.json() as { MediaContainer?: { Metadata?: PlexWatchedItem[] } };
   return data?.MediaContainer?.Metadata ?? [];
+}
+
+export async function getPlexWatchedEpisodes(
+  serverUrl: string,
+  token: string
+): Promise<PlexWatchedEpisode[]> {
+  const url = `${serverUrl}/library/all?type=4&viewCount>=1&X-Plex-Token=${token}`;
+
+  const res = await fetch(url, {
+    headers: {
+      Accept: "application/json",
+      "X-Plex-Client-Identifier": PLEX_CLIENT_IDENTIFIER,
+    },
+  });
+
+  if (!res.ok) throw new Error("Failed to get Plex watched episodes");
+
+  const data = await res.json() as { MediaContainer?: { Metadata?: PlexWatchedEpisode[] } };
+  return data?.MediaContainer?.Metadata ?? [];
+}
+
+export async function getPlexItemMetadata(
+  serverUrl: string,
+  token: string,
+  ratingKey: string
+): Promise<PlexWatchedItem | null> {
+  const url = `${serverUrl}/library/metadata/${ratingKey}?X-Plex-Token=${token}`;
+
+  const res = await fetch(url, {
+    headers: {
+      Accept: "application/json",
+      "X-Plex-Client-Identifier": PLEX_CLIENT_IDENTIFIER,
+    },
+  });
+
+  if (!res.ok) return null;
+
+  const data = await res.json() as { MediaContainer?: { Metadata?: PlexWatchedItem[] } };
+  return data?.MediaContainer?.Metadata?.[0] ?? null;
 }
 
 export function extractTmdbIdFromGuid(guids: { id: string }[] | undefined): number | null {

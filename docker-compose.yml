@@ -11,10 +11,24 @@ services:
       NEXTAUTH_URL: "${NEXTAUTH_URL:-http://localhost:3000}"
       TMDB_API_KEY: "${TMDB_API_KEY}"
       NEXT_PUBLIC_APP_URL: "${NEXT_PUBLIC_APP_URL:-http://localhost:3000}"
+      CRON_SECRET: "${CRON_SECRET}"
     depends_on:
       db:
         condition: service_healthy
     restart: unless-stopped
+
+  plex-cron:
+    image: alpine:3.19
+    volumes:
+      - ./scripts/plex-cron.sh:/plex-cron.sh:ro
+    environment:
+      CRON_SECRET: "${CRON_SECRET}"
+      APP_URL: "http://app:3000"
+      SYNC_INTERVAL_HOURS: "${SYNC_INTERVAL_HOURS:-6}"
+    depends_on:
+      - app
+    restart: unless-stopped
+    command: ["sh", "/plex-cron.sh"]
 
   db:
     image: postgres:16-alpine
