@@ -237,14 +237,17 @@ function ListItemCard({
   const href = `/${item.mediaItem.type === MediaType.MOVIE ? "movies" : "tv"}/${item.mediaItem.tmdbId}`;
 
   return (
-    <div className="rounded-lg border border-border bg-card overflow-hidden group">
+    <div className="relative rounded-lg border border-border bg-card overflow-hidden group">
+      {canDelete && (isOwner || item.addedBy.id === currentUserId) && (
+        <ListItemActions itemId={item.id} slug={slug} />
+      )}
       <Link href={href} className="flex gap-3 p-3 hover:bg-accent/30 transition-colors">
         <div className="w-12 shrink-0 aspect-[2/3] rounded overflow-hidden bg-muted">
           {posterUrl ? (
             <Image src={posterUrl} alt={item.mediaItem.title} width={48} height={72} className="object-cover w-full h-full" />
           ) : null}
         </div>
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 pr-6">
           <p className="text-sm font-medium line-clamp-1">{item.mediaItem.title}</p>
           {item.mediaItem.year && (
             <p className="text-xs text-muted-foreground">{item.mediaItem.year}</p>
@@ -260,12 +263,6 @@ function ListItemCard({
           </div>
         </div>
       </Link>
-
-      {canDelete && (isOwner || item.addedBy.id === currentUserId) && (
-        <div className="border-t border-border px-3 py-1.5">
-          <ListItemActions itemId={item.id} slug={slug} />
-        </div>
-      )}
     </div>
   );
 }

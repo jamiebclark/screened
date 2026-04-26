@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { MediaCard } from "@/components/media-card";
+import { ClearTrackingCornerButton } from "@/components/clear-tracking-corner-button";
 import { EditableListSearchAdd } from "@/components/editable-list-search-add";
 import { Clock } from "lucide-react";
 import { MediaType } from "@/generated/prisma";
@@ -40,18 +41,29 @@ export default async function WatchingPage() {
         </div>
       ) : (
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-3">
-          {items.map((item) => (
-            <MediaCard
-              key={item.id}
-              tmdbId={item.mediaItem.tmdbId}
-              type={item.mediaItem.type === MediaType.MOVIE ? "movie" : "tv"}
-              title={item.mediaItem.title}
-              poster={item.mediaItem.poster}
-              year={item.mediaItem.year}
-              status={item.status}
-              compact
-            />
-          ))}
+          {items.map((item) => {
+            const type = item.mediaItem.type === MediaType.MOVIE ? "movie" : "tv";
+            return (
+              <div key={item.id} className="relative">
+                <ClearTrackingCornerButton
+                  tmdbId={item.mediaItem.tmdbId}
+                  type={type}
+                  position="top-left"
+                  title="Remove from watching"
+                  ariaLabel="Remove from watching"
+                />
+                <MediaCard
+                  tmdbId={item.mediaItem.tmdbId}
+                  type={type}
+                  title={item.mediaItem.title}
+                  poster={item.mediaItem.poster}
+                  year={item.mediaItem.year}
+                  status={item.status}
+                  compact
+                />
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

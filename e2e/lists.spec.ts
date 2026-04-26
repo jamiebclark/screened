@@ -67,8 +67,8 @@ test.describe("Lists", () => {
     await page.goto(`/lists/${list.slug}`);
     await expect(page.getByText("Inception")).toBeVisible({ timeout: 10000 });
 
-    // Click remove button
-    await page.getByRole("button", { name: /remove/i }).first().click();
+    // Corner X (accessible name includes "Remove")
+    await page.getByRole("button", { name: /remove from list/i }).first().click();
     await expect(page.getByText("Inception")).not.toBeVisible({ timeout: 5000 });
   });
 
