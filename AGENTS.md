@@ -5,6 +5,7 @@
 - **User-facing / setup:** `README.md` and `.env.example` (keep aligned when adding features, env vars, or Docker/cron behavior).
 - **Changelog / releases:** `CHANGELOG.md` (semantic-release).
 - **This file:** Prisma, commits, and RSC — not a substitute for the README feature list.
+- **UI / UX patterns:** `docs/ui-ux-standards.md` (section titles, link rows, person+service cards)
 
 ## Database and Prisma
 
