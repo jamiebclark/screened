@@ -194,6 +194,35 @@ export async function getPlexWatchHistory(
   return data?.MediaContainer?.Metadata ?? [];
 }
 
+const PLEX_PAGE_SIZE = 200;
+
+/**
+ * All movies in the user’s library (watched or not) with a TMDB guid.
+ * Paginated for large libraries.
+ */
+export async function getPlexLibraryMovieTmdbIds(serverUrl: string, token: string): Promise<number[]> {
+  const tmdb = new Set<number>();
+  let start = 0;
+  for (;;) {
+    const url = `${serverUrl}/library/all?type=1&includeGuids=1&X-Plex-Token=${encodeURIComponent(
+      token
+    )}&X-Plex-Container-Start=${start}&X-Plex-Container-Size=${PLEX_PAGE_SIZE}`;
+    const res = await plexServerFetch(url);
+    const data = await res.json() as {
+      MediaContainer?: { Metadata?: PlexWatchedItem[]; totalSize?: number; size?: number };
+    };
+    const met = data?.MediaContainer?.Metadata ?? [];
+    const total = data?.MediaContainer?.totalSize ?? start + met.length;
+    for (const item of met) {
+      const id = extractTmdbIdFromGuid(item.Guid);
+      if (id != null) tmdb.add(id);
+    }
+    start += met.length;
+    if (met.length === 0 || start >= total) break;
+  }
+  return [...tmdb];
+}
+
 export async function getPlexWatchedEpisodes(
   serverUrl: string,
   token: string

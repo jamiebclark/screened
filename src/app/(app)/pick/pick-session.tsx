@@ -635,6 +635,7 @@ export function PickSession({ currentUser, roomId, initialRoomState }: PickSessi
   );
   const [startingRoom, setStartingRoom] = useState(false);
   const [tabId, setTabId] = useState("");
+  const [emptyScoreHint, setEmptyScoreHint] = useState<string | null>(null);
   const router = useRouter();
   useEffect(() => {
     setTabId(globalThis.crypto?.randomUUID() ?? `t-${Date.now()}`);
@@ -653,6 +654,8 @@ export function PickSession({ currentUser, roomId, initialRoomState }: PickSessi
     requirePeople,
     excludePeople,
     vetoIds,
+    candidateSource,
+    plexLibraryOnly,
     hideAllLogged,
     scoringInProgress,
     scoringError,
@@ -789,6 +792,7 @@ export function PickSession({ currentUser, roomId, initialRoomState }: PickSessi
       }
     };
 
+    setEmptyScoreHint(null);
     setRoomState((prev) => {
       const next: PickerRoomState = {
         ...prev,
@@ -800,12 +804,13 @@ export function PickSession({ currentUser, roomId, initialRoomState }: PickSessi
       return next;
     });
 
+    const participantIdList = participants.map((p) => p.id);
     try {
       const res = await fetch("/api/session/score", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          participantIds: participants.map((p) => p.id),
+          participantIds: participantIdList,
           attractors: attractors.map((a) => ({ mediaItemId: a.mediaItemId, weight: a.weight })),
           repellers: repellers.map((r) => ({ mediaItemId: r.mediaItemId, weight: r.weight })),
           hardFilters: {
@@ -817,11 +822,14 @@ export function PickSession({ currentUser, roomId, initialRoomState }: PickSessi
             excludePeople: excludePeople.length ? excludePeople : undefined,
             hideAllLogged,
           },
+          candidateSource,
+          plexLibraryOnly: candidateSource === "tmdb" && plexLibraryOnly,
         }),
       });
 
-      const data = await res.json() as { results?: ScoredMovie[]; error?: string };
+      const data = await res.json() as { results?: ScoredMovie[]; error?: string; message?: string };
       if (!res.ok) {
+        setEmptyScoreHint(null);
         setRoomState((prev) => {
           const next: PickerRoomState = {
             ...prev,
@@ -833,18 +841,25 @@ export function PickSession({ currentUser, roomId, initialRoomState }: PickSessi
           return next;
         });
       } else {
+        const list = data.results ?? [];
+        if (list.length === 0 && data.message) {
+          setEmptyScoreHint(data.message);
+        } else {
+          setEmptyScoreHint(null);
+        }
         setRoomState((prev) => {
           const next: PickerRoomState = {
             ...prev,
             scoringInProgress: false,
             scoringError: null,
-            scoringResults: data.results ?? [],
+            scoringResults: list,
           };
           patchIfRoom(next);
           return next;
         });
       }
     } catch {
+      setEmptyScoreHint(null);
       setRoomState((prev) => {
         const next: PickerRoomState = {
           ...prev,
@@ -982,6 +997,49 @@ export function PickSession({ currentUser, roomId, initialRoomState }: PickSessi
             </CardHeader>
             <CardContent>
               <div className="space-y-5">
+                <div className="space-y-3 rounded-lg border border-border/80 bg-muted/20 p-3">
+                  <p className="text-xs font-medium">Search from</p>
+                  <div className="flex flex-col gap-2.5 sm:flex-row sm:gap-8">
+                    <label className="flex items-center gap-2 text-sm cursor-pointer">
+                      <input
+                        type="radio"
+                        name="candidateSource"
+                        className="accent-primary"
+                        checked={candidateSource === "tmdb"}
+                        onChange={() => setRoomState((p) => ({ ...p, candidateSource: "tmdb" }))}
+                      />
+                      <span>TMDB (discover & re-rank)</span>
+                    </label>
+                    <label className="flex items-center gap-2 text-sm cursor-pointer">
+                      <input
+                        type="radio"
+                        name="candidateSource"
+                        className="accent-primary"
+                        checked={candidateSource === "library"}
+                        onChange={() =>
+                          setRoomState((p) => ({ ...p, candidateSource: "library", plexLibraryOnly: false }))
+                        }
+                      />
+                      <span>App library only</span>
+                    </label>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground leading-snug">
+                    TMDB path pulls recommendations and similar titles, then scores up to 30 with your like / not-like
+                    embeddings. App library only uses films already in the database with embeddings.
+                  </p>
+                  {candidateSource === "tmdb" && (
+                    <div className="flex items-center gap-2.5 pt-1">
+                      <Checkbox
+                        id="plex-library-only"
+                        checked={plexLibraryOnly}
+                        onCheckedChange={(v) => setRoomState((p) => ({ ...p, plexLibraryOnly: !!v }))}
+                      />
+                      <label htmlFor="plex-library-only" className="text-xs font-medium cursor-pointer select-none">
+                        Only titles in my Plex library (link Plex in settings)
+                      </label>
+                    </div>
+                  )}
+                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                   <div className="space-y-1.5">
                     <label className="text-xs font-medium text-muted-foreground">Release year from</label>
@@ -1067,7 +1125,9 @@ export function PickSession({ currentUser, roomId, initialRoomState }: PickSessi
               {scoringInProgress ? (
                 <>
                   <Loader2 className="h-5 w-5 animate-spin" />
-                  Searching your library...
+                  {candidateSource === "tmdb"
+                    ? "Scoring TMDB candidates..."
+                    : "Searching your library..."}
                 </>
               ) : (
                 <>
@@ -1090,8 +1150,11 @@ export function PickSession({ currentUser, roomId, initialRoomState }: PickSessi
             <Card>
               <CardContent className="py-10 text-center">
                 <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">Scoring the library&hellip; everyone in this
-                  room will see the list when it&apos;s ready.</p>
+                <p className="text-sm text-muted-foreground">
+                  {candidateSource === "tmdb"
+                    ? "Pulling and scoring similar titles from TMDB&hellip; everyone in this room will see the list when it&apos;s ready."
+                    : "Scoring the library&hellip; everyone in this room will see the list when it&apos;s ready."}
+                </p>
               </CardContent>
             </Card>
           )}
@@ -1113,7 +1176,11 @@ export function PickSession({ currentUser, roomId, initialRoomState }: PickSessi
                       : `${visibleScoringResults.length} match${visibleScoringResults.length === 1 ? "" : "es"}`}
                 </h2>
                 {visibleScoringResults !== null && visibleScoringResults.length > 0 && (
-                  <p className="text-xs text-muted-foreground">Ranked by similarity to your references</p>
+                  <p className="text-xs text-muted-foreground">
+                    {candidateSource === "tmdb"
+                      ? "TMDB candidates, ordered by embedding match"
+                      : "Ranked by similarity to your references"}
+                  </p>
                 )}
               </div>
 
@@ -1121,8 +1188,9 @@ export function PickSession({ currentUser, roomId, initialRoomState }: PickSessi
                 <Card>
                   <CardContent className="py-12 text-center">
                     <Film className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-                    <p className="text-muted-foreground text-sm">
-                      No unseen movies matched your criteria. Try adjusting your filters or adding more films to your library.
+                    <p className="text-muted-foreground text-sm max-w-md mx-auto">
+                      {emptyScoreHint ??
+                        "No results for this run. Try different references, switch search mode, or relax filters."}
                     </p>
                   </CardContent>
                 </Card>

@@ -1,0 +1,398 @@
+import { prisma } from "@/lib/prisma";
+import {
+  getMovie,
+  getMovieRecommendations,
+  getMovieSimilar,
+  getMovieCredits,
+  getMovieKeywords,
+} from "@/lib/tmdb";
+import { getPlexLibraryMovieTmdbIds, getPlexServers } from "@/lib/plex";
+import {
+  buildEmbeddingText,
+  cosineSimilarity,
+  generateEmbedding,
+  isEmbeddingEnabled,
+  weightedAverage,
+} from "@/lib/embeddings";
+import { MediaType, WatchStatus } from "@/generated/prisma";
+import type { HardFilterInput, ReferenceItem, ScoredRow } from "./score-types";
+
+const REPELLER_LAMBDA = 0.7;
+const MAX_TMDB_CANDIDATES = 200;
+const MAX_TO_EMBED = 48;
+const RESULTS = 30;
+
+type PlexConn = { plexToken: string; plexServerId: string | null };
+
+function yearFromTmdbDate(release: string | null | undefined): number | null {
+  if (!release) return null;
+  const y = new Date(release).getFullYear();
+  return Number.isFinite(y) ? y : null;
+}
+
+function yearInRange(
+  y: number | null,
+  minY: number | undefined,
+  maxY: number | undefined
+): boolean {
+  if (y == null) return true;
+  if (minY != null && y < minY) return false;
+  if (maxY != null && y > maxY) return false;
+  return true;
+}
+
+function matchesPerson(
+  cast: string[],
+  director: string | null,
+  name: string
+): boolean {
+  const all = [...cast, ...(director ? [director] : [])].map((s) => s.toLowerCase());
+  return all.some((s) => s.includes(name));
+}
+
+async function mapPool<T, R>(items: T[], poolSize: number, fn: (t: T) => Promise<R>): Promise<R[]> {
+  const out: R[] = [];
+  for (let i = 0; i < items.length; i += poolSize) {
+    const batch = items.slice(i, i + poolSize);
+    out.push(...(await Promise.all(batch.map(fn))));
+  }
+  return out;
+}
+
+/** Ensure all reference items have a stored embedding; build aggregate vectors. */
+async function getReferenceVectors(attractors: ReferenceItem[], repellers: ReferenceItem[]) {
+  const referenceIds = [
+    ...attractors.map((a) => a.mediaItemId),
+    ...repellers.map((r) => r.mediaItemId),
+  ];
+  if (!isEmbeddingEnabled()) {
+    return { ok: false as const, error: "no_embeddings" as const };
+  }
+
+  const rows = await prisma.mediaItem.findMany({
+    where: { id: { in: referenceIds } },
+    select: {
+      id: true,
+      tmdbId: true,
+      embedding: true,
+      title: true,
+      year: true,
+      overview: true,
+      genres: true,
+      runtime: true,
+      cast: true,
+      director: true,
+      keywords: true,
+    },
+  });
+  const byId = new Map(rows.map((r) => [r.id, r]));
+
+  for (const id of referenceIds) {
+    const row = byId.get(id);
+    if (!row) continue;
+    if (row.embedding.length > 0) continue;
+
+    const [movie, credits, kws] = await Promise.all([
+      getMovie(row.tmdbId),
+      getMovieCredits(row.tmdbId).catch(() => ({ cast: [] as string[], director: null })),
+      getMovieKeywords(row.tmdbId).catch(() => [] as string[]),
+    ]);
+    const title = movie.title;
+    const year = movie.release_date ? new Date(movie.release_date).getFullYear() : null;
+    const overview = movie.overview;
+    const genres = movie.genres.map((g) => g.name);
+    const cast = credits.cast;
+    const director = credits.director;
+    const keywords = kws;
+    const text = buildEmbeddingText({ title, year, overview, genres, cast, director, keywords });
+    const emb = await generateEmbedding(text);
+    if (!emb) {
+      return { ok: false as const, error: "embed_failed" as const };
+    }
+    const updated = await prisma.mediaItem.update({
+      where: { id: row.id },
+      data: {
+        title,
+        year,
+        overview,
+        genres,
+        runtime: movie.runtime,
+        cast,
+        director,
+        keywords,
+        embedding: emb,
+        poster: movie.poster_path,
+      },
+    });
+    byId.set(id, { ...row, ...updated, embedding: emb });
+  }
+
+  const attractorEntries = attractors
+    .map((a) => ({ vector: byId.get(a.mediaItemId)?.embedding ?? [], weight: a.weight }))
+    .filter((e) => e.vector.length > 0);
+  const repellerEntries = repellers
+    .map((r) => ({ vector: byId.get(r.mediaItemId)?.embedding ?? [], weight: r.weight }))
+    .filter((e) => e.vector.length > 0);
+
+  if (attractorEntries.length === 0) {
+    return { ok: false as const, error: "no_attractor_vectors" as const };
+  }
+
+  return {
+    ok: true as const,
+    attractorVec: weightedAverage(attractorEntries),
+    repellerVec: repellerEntries.length > 0 ? weightedAverage(repellerEntries) : null,
+  };
+}
+
+/** TMDB id → first-seen list row (for quick year prefilter). */
+async function collectTmdbCandidateMap(attractorTmdbIds: number[]): Promise<Map<number, { release_date?: string }>> {
+  const out = new Map<number, { release_date?: string }>();
+  for (const aid of attractorTmdbIds) {
+    const [r1, s1, r2, s2] = await Promise.all([
+      getMovieRecommendations(aid, 1),
+      getMovieSimilar(aid, 1),
+      getMovieRecommendations(aid, 2),
+      getMovieSimilar(aid, 2),
+    ]);
+    for (const p of [r1, s1, r2, s2]) {
+      for (const m of p.results) {
+        if (!m.id || out.has(m.id)) continue;
+        if ("name" in m && (m as { name?: string }).name && !("title" in m && (m as { title?: string }).title)) {
+          continue;
+        }
+        out.set(m.id, { release_date: m.release_date });
+      }
+    }
+    if (out.size >= MAX_TMDB_CANDIDATES) break;
+  }
+  return out;
+}
+
+export async function scoreFromTmdbDiscovery(
+  attractors: ReferenceItem[],
+  repellers: ReferenceItem[],
+  hard: HardFilterInput,
+  opts: { plexLibraryOnly: boolean; plex: PlexConn | null }
+): Promise<ScoredRow[] | { error: string }> {
+  if (!isEmbeddingEnabled()) {
+    return { error: "Add OPENAI_API_KEY to use discovery scoring." };
+  }
+
+  const refVecs = await getReferenceVectors(attractors, repellers);
+  if (!refVecs.ok) {
+    if (refVecs.error === "no_embeddings" || refVecs.error === "no_attractor_vectors") {
+      return { error: "Could not build embeddings for your reference films. Add OPENAI_API_KEY or wait for them to process." };
+    }
+    return { error: "Embedding failed for a reference title. Try again in a moment." };
+  }
+  const { attractorVec, repellerVec } = refVecs;
+
+  const referenceIds = [
+    ...attractors.map((a) => a.mediaItemId),
+    ...repellers.map((r) => r.mediaItemId),
+  ];
+  const refTmdb = await prisma.mediaItem.findMany({
+    where: { id: { in: referenceIds } },
+    select: { tmdbId: true },
+  });
+  const excludeTmdb = new Set(refTmdb.map((r) => r.tmdbId));
+
+  if (hard.vetoIds?.length) {
+    const vetoT = await prisma.mediaItem.findMany({
+      where: { id: { in: hard.vetoIds } },
+      select: { tmdbId: true },
+    });
+    for (const v of vetoT) excludeTmdb.add(v.tmdbId);
+  }
+
+  const statusWhere = hard.hideAllLogged ? {} : { status: WatchStatus.WATCHED };
+  const logged = await prisma.userMediaStatus.findMany({
+    where: { userId: { in: hard.participantIds }, ...statusWhere },
+    select: { mediaItem: { select: { tmdbId: true } } },
+  });
+  const watchedTmdb = new Set(
+    logged.map((l) => l.mediaItem.tmdbId)
+  );
+
+  const attractorTmdbIds = (
+    await prisma.mediaItem.findMany({
+      where: { id: { in: attractors.map((a) => a.mediaItemId) } },
+      select: { tmdbId: true },
+    })
+  ).map((r) => r.tmdbId);
+
+  const tmdbInfo = await collectTmdbCandidateMap(attractorTmdbIds);
+
+  let plexTmdb: Set<number> | null = null;
+  if (opts.plexLibraryOnly) {
+    if (!opts.plex) {
+      return { error: "Connect Plex in settings to limit suggestions to your library." };
+    }
+    const servers = await getPlexServers(opts.plex.plexToken);
+    const server = servers.find((s) => s.machineIdentifier === opts.plex!.plexServerId) ?? servers[0];
+    if (!server) {
+      return { error: "No Plex server found. Check your Plex connection." };
+    }
+    const token = server.accessToken ?? opts.plex.plexToken;
+    const ids = await getPlexLibraryMovieTmdbIds(server.uri, token);
+    plexTmdb = new Set(ids);
+  }
+
+  const minY = hard.minYear;
+  const maxY = hard.maxYear;
+
+  let candidateTmdb: number[] = [];
+  for (const [tmdb, meta] of tmdbInfo) {
+    if (excludeTmdb.has(tmdb)) continue;
+    if (watchedTmdb.has(tmdb)) continue;
+    const y = yearFromTmdbDate(meta.release_date);
+    if (!yearInRange(y, minY, maxY)) continue;
+    if (plexTmdb && !plexTmdb.has(tmdb)) continue;
+    candidateTmdb.push(tmdb);
+    if (candidateTmdb.length >= MAX_TO_EMBED * 2) break;
+  }
+
+  if (candidateTmdb.length === 0) {
+    return [];
+  }
+
+  const details = await mapPool(
+    candidateTmdb.slice(0, MAX_TO_EMBED + 8),
+    8,
+    async (tmdb) => {
+      const [movie, credits, kws] = await Promise.all([
+        getMovie(tmdb),
+        getMovieCredits(tmdb).catch(() => ({ cast: [] as string[], director: null })),
+        getMovieKeywords(tmdb).catch(() => [] as string[]),
+      ]);
+      return { tmdb, movie, credits, kws };
+    }
+  );
+
+  const require = (hard.requirePeople ?? []).map((p) => p.toLowerCase());
+  const exclude = (hard.excludePeople ?? []).map((p) => p.toLowerCase());
+
+  const filtered: typeof details = [];
+  for (const d of details) {
+    const { movie, credits } = d;
+    const y = yearFromTmdbDate(movie.release_date);
+    if (!yearInRange(y, minY, maxY)) continue;
+    if (hard.maxRuntime != null && (movie.runtime == null || movie.runtime > hard.maxRuntime)) {
+      continue;
+    }
+    if (require.length > 0 && !require.every((n) => matchesPerson(credits.cast, credits.director, n))) {
+      continue;
+    }
+    if (exclude.length > 0 && exclude.some((n) => matchesPerson(credits.cast, credits.director, n))) {
+      continue;
+    }
+    filtered.push(d);
+  }
+
+  if (filtered.length === 0) {
+    return [];
+  }
+
+  const toEmbed = filtered.slice(0, MAX_TO_EMBED);
+  type ScoredW = { row: ScoredRow; embedding: number[]; db: (typeof toEmbed)[0] };
+  const scored: ScoredW[] = [];
+
+  for (let i = 0; i < toEmbed.length; i += 5) {
+    const batch = toEmbed.slice(i, i + 5);
+    const vecResults = await Promise.all(
+      batch.map(async (d) => {
+        const { movie, credits, kws } = d;
+        const title = movie.title;
+        const year = yearFromTmdbDate(movie.release_date);
+        const text = buildEmbeddingText({
+          title,
+          year,
+          overview: movie.overview,
+          genres: movie.genres.map((g) => g.name),
+          cast: credits.cast,
+          director: credits.director,
+          keywords: kws,
+        });
+        const v = await generateEmbedding(text);
+        return { d, v };
+      })
+    );
+    for (const { d, v } of vecResults) {
+      if (!v || v.length === 0) continue;
+      const { movie, credits, tmdb } = d;
+      const attractorScore = cosineSimilarity(v, attractorVec);
+      const repellerScore = repellerVec ? cosineSimilarity(v, repellerVec) : 0;
+      const score = attractorScore - REPELLER_LAMBDA * repellerScore;
+      const y = yearFromTmdbDate(movie.release_date);
+      const genres = movie.genres.map((g) => g.name);
+      scored.push({
+        embedding: v,
+        db: d,
+        row: {
+          tmdbId: tmdb,
+          id: "",
+          title: movie.title,
+          poster: movie.poster_path,
+          year: y,
+          runtime: movie.runtime,
+          genres,
+          overview: movie.overview,
+          cast: credits.cast.slice(0, 3),
+          director: credits.director,
+          score: Math.round(score * 1000) / 1000,
+          attractorScore: Math.round(attractorScore * 1000) / 1000,
+          repellerScore: Math.round(repellerScore * 1000) / 1000,
+        },
+      });
+    }
+  }
+
+  const sorted = scored.sort((a, b) => b.row.score - a.row.score).slice(0, RESULTS);
+
+  const out: ScoredRow[] = [];
+  for (const s of sorted) {
+    const { row, embedding, db } = s;
+    const mediaRow = await prisma.mediaItem.upsert({
+      where: { tmdbId_type: { tmdbId: row.tmdbId, type: MediaType.MOVIE } },
+      create: {
+        tmdbId: row.tmdbId,
+        type: MediaType.MOVIE,
+        title: row.title,
+        poster: row.poster,
+        year: row.year,
+        overview: row.overview,
+        genres: row.genres,
+        runtime: row.runtime,
+        cast: db.credits.cast,
+        director: row.director,
+        keywords: db.kws,
+        embedding,
+      },
+      update: {
+        title: row.title,
+        poster: row.poster,
+        year: row.year,
+        overview: row.overview,
+        genres: row.genres,
+        runtime: row.runtime,
+        cast: db.credits.cast,
+        director: row.director,
+        keywords: db.kws,
+        embedding,
+      },
+    });
+    out.push({ ...row, id: mediaRow.id });
+  }
+
+  return out;
+}
+
+export async function loadPlexForUser(userId: string): Promise<PlexConn | null> {
+  const c = await prisma.plexConnection.findUnique({
+    where: { userId },
+    select: { plexToken: true, plexServerId: true },
+  });
+  if (!c) return null;
+  return { plexToken: c.plexToken, plexServerId: c.plexServerId };
+}

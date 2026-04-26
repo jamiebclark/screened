@@ -159,6 +159,30 @@ export async function getPopularMovies(page = 1): Promise<TmdbSearchResponse> {
   };
 }
 
+type TmdbMovieListPage = {
+  page: number;
+  results: TmdbSearchResult[];
+  total_pages: number;
+  total_results: number;
+};
+
+/** TMDB "Because you liked X" and similar-titles; returns movie-shaped results. */
+export async function getMovieRecommendations(tmdbId: number, page = 1): Promise<TmdbMovieListPage> {
+  const res = await tmdbFetch<TmdbMovieListPage>(`/movie/${tmdbId}/recommendations`, { page: String(page) });
+  return {
+    ...res,
+    results: res.results.map((r) => ({ ...r, media_type: "movie" as const })),
+  };
+}
+
+export async function getMovieSimilar(tmdbId: number, page = 1): Promise<TmdbMovieListPage> {
+  const res = await tmdbFetch<TmdbMovieListPage>(`/movie/${tmdbId}/similar`, { page: String(page) });
+  return {
+    ...res,
+    results: res.results.map((r) => ({ ...r, media_type: "movie" as const })),
+  };
+}
+
 interface TmdbCreditsResponse {
   cast: { id: number; name: string; order: number }[];
   crew: { id: number; name: string; job: string }[];
