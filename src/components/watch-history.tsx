@@ -5,7 +5,8 @@ import { WatchEntryDialog, type WatchEntry } from "@/components/watch-entry-dial
 import { MarkdownContent } from "@/components/markdown-content";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { CalendarCheck, Trash2, ChevronDown, ChevronUp } from "lucide-react";
+import { CalendarCheck, Trash2, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
+import { titlePageSection } from "@/lib/title-page-layout";
 
 interface WatchHistoryProps {
   tmdbId: number;
@@ -53,6 +54,18 @@ function EntryCard({
           {formatDate(entry.watchedAt)}
         </span>
         <div className="flex items-center gap-1">
+          {entry.letterboxdActivityUrl && (
+            <Button variant="ghost" size="icon" className="h-7 w-7" asChild>
+              <a
+                href={entry.letterboxdActivityUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Open on Letterboxd"
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+              </a>
+            </Button>
+          )}
           {entry.review && (
             <Button
               variant="ghost"
@@ -113,7 +126,7 @@ export function WatchHistory({ tmdbId, type, initialEntries, hasStatus }: WatchH
   };
 
   return (
-    <div className="mt-8 max-w-2xl">
+    <div className={titlePageSection}>
       <Separator className="mb-6" />
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-base font-semibold">

@@ -21,6 +21,7 @@ export interface WatchEntry {
   watchedAt: string;
   review: string | null;
   rating: number | null;
+  letterboxdActivityUrl?: string | null;
 }
 
 interface WatchEntryDialogProps {

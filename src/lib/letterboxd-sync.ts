@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { normalizeLetterboxdActivityUrl } from "@/lib/letterboxd-url";
 import { getMovie, searchMovie } from "@/lib/tmdb";
 import { MediaType, WatchEntrySource, WatchStatus } from "@/generated/prisma";
 
@@ -14,6 +15,8 @@ interface DiaryEntry {
   watchedDate: Date | null;
   rating: number | null;
   tmdbMovieId: number | null;
+  /** RSS item link (user film / diary page on Letterboxd). */
+  activityUrl: string | null;
 }
 
 async function fetchRss(username: string): Promise<string> {
@@ -57,7 +60,10 @@ function parseDiaryEntries(xml: string): DiaryEntry[] {
     const tmdbIdStr = extractTag(block, "tmdb:movieId");
     const tmdbMovieId = tmdbIdStr ? parseInt(tmdbIdStr, 10) : null;
 
-    entries.push({ filmTitle, filmYear, watchedDate, rating, tmdbMovieId });
+    const linkRaw = extractTag(block, "link");
+    const activityUrl = normalizeLetterboxdActivityUrl(linkRaw);
+
+    entries.push({ filmTitle, filmYear, watchedDate, rating, tmdbMovieId, activityUrl });
   }
 
   return entries;
@@ -142,15 +148,24 @@ export async function syncLetterboxdUser(userId: string): Promise<LetterboxdSync
           });
 
           if (duplicate) {
+            const data: {
+              rating?: number;
+              source?: WatchEntrySource;
+              letterboxdActivityUrl?: string;
+            } = {};
             if (entry.rating !== null && duplicate.rating === null) {
-              await prisma.watchEntry.update({
-                where: { id: duplicate.id },
-                data: { rating: entry.rating, source: WatchEntrySource.LETTERBOXD },
-              });
+              data.rating = entry.rating;
+              data.source = WatchEntrySource.LETTERBOXD;
             } else if (duplicate.source === WatchEntrySource.UNKNOWN) {
+              data.source = WatchEntrySource.LETTERBOXD;
+            }
+            if (entry.activityUrl) {
+              data.letterboxdActivityUrl = entry.activityUrl;
+            }
+            if (Object.keys(data).length > 0) {
               await prisma.watchEntry.update({
                 where: { id: duplicate.id },
-                data: { source: WatchEntrySource.LETTERBOXD },
+                data,
               });
             }
             alreadyWatched++;
@@ -165,6 +180,7 @@ export async function syncLetterboxdUser(userId: string): Promise<LetterboxdSync
               watchedAt,
               rating: entry.rating,
               source: WatchEntrySource.LETTERBOXD,
+              ...(entry.activityUrl ? { letterboxdActivityUrl: entry.activityUrl } : {}),
             },
           });
 

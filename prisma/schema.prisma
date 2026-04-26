@@ -180,6 +180,8 @@ model WatchEntry {
   watchedAt         DateTime           @default(now())
   review            String?
   rating            Float?
+  /// Letterboxd diary URL from RSS (item link) when synced from Letterboxd.
+  letterboxdActivityUrl String?
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
 
