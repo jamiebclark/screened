@@ -57,7 +57,7 @@ test.describe("Authentication", () => {
     await page.getByLabel("Email").fill(TEST_USER.email);
     await page.getByLabel("Password").fill("testpassword123");
     await page.getByRole("button", { name: "Create account" }).click();
-    await expect(page.getByText(/already|exists|taken/i)).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText("Email already in use")).toBeVisible({ timeout: 5000 });
   });
 
   test("unauthenticated user is redirected to login", async ({ page }) => {

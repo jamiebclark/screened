@@ -59,7 +59,12 @@ test.describe("Search", () => {
 
   test("navigate from home trending section to search", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("link", { name: "See all" }).first().click();
+    // Prefer the Trending movies "See all" — the first "See all" on the page may be Recently watched → /history.
+    await page
+      .locator("section")
+      .filter({ has: page.getByRole("heading", { name: "Trending movies" }) })
+      .getByRole("link", { name: "See all" })
+      .click();
     await expect(page).toHaveURL(/\/search/);
   });
 });
