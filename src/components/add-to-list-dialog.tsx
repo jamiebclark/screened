@@ -25,9 +25,11 @@ interface AddToListDialogProps {
   tmdbId: number;
   type: "movie" | "tv";
   title: string;
+  /** Called after a title is successfully added to a list (in addition to router.refresh). */
+  onAddedToList?: () => void;
 }
 
-export function AddToListDialog({ tmdbId, type, title }: AddToListDialogProps) {
+export function AddToListDialog({ tmdbId, type, title, onAddedToList }: AddToListDialogProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [lists, setLists] = useState<List[]>([]);
@@ -62,6 +64,7 @@ export function AddToListDialog({ tmdbId, type, title }: AddToListDialogProps) {
         });
         if (res.ok) {
           setAddedTo((prev) => new Set([...prev, listSlug]));
+          onAddedToList?.();
           router.refresh();
         }
       } catch {

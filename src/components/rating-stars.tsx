@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -14,8 +15,13 @@ interface RatingStarsProps {
 }
 
 export function RatingStars({ tmdbId, type, currentRating, onRatingChange, readonly = false, size = "md" }: RatingStarsProps) {
+  const router = useRouter();
   const [rating, setRating] = useState<number | null>(currentRating);
   const [hover, setHover] = useState<number | null>(null);
+
+  useEffect(() => {
+    setRating(currentRating);
+  }, [currentRating]);
 
   const sizes = {
     sm: "h-3.5 w-3.5",
@@ -36,6 +42,7 @@ export function RatingStars({ tmdbId, type, currentRating, onRatingChange, reado
       if (res.ok) {
         setRating(newRating);
         onRatingChange?.(newRating);
+        router.refresh();
       }
     } catch {
       // ignore

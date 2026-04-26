@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, Clock, Bookmark, X, ChevronDown, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -32,6 +32,10 @@ export function WatchStatusButton({ tmdbId, type, currentStatus, onStatusChange 
   const router = useRouter();
   const [status, setStatus] = useState<WatchStatus | null>(currentStatus);
   const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    setStatus(currentStatus);
+  }, [currentStatus]);
 
   const updateStatus = async (newStatus: WatchStatus | null) => {
     startTransition(async () => {
