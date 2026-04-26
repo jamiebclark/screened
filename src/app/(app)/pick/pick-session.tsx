@@ -32,6 +32,7 @@ import { RatingStars } from "@/components/rating-stars";
 import { usePickerRoomSync, ensureCurrentUserInRoom } from "./use-picker-room-sync";
 import { useRouter } from "next/navigation";
 import { withScoringDefaults, type PickerRoomState, type ReferenceMovieJson, type ScoredMovieJson } from "@/lib/picker-room-state";
+import { filterTmdbMovieGenres } from "@/lib/tmdb-movie-genres";
 import { describePickerStateChange } from "@/lib/picker-activity-line";
 import { Link2, Share2 } from "lucide-react";
 
@@ -53,6 +54,7 @@ export interface ReferenceMovie {
   weight: number;
   saved: boolean;
   hasEmbedding: boolean;
+  genres: string[];
 }
 
 interface SearchResult {
@@ -150,8 +152,13 @@ function MovieSearchInput({
         body: JSON.stringify({ tmdbId: result.tmdbId, type: result.type }),
       });
       const data = await res.json() as {
-        id: string; tmdbId: number; title: string; poster: string | null;
-        year: number | null; hasEmbedding: boolean;
+        id: string;
+        tmdbId: number;
+        title: string;
+        poster: string | null;
+        year: number | null;
+        hasEmbedding: boolean;
+        genres?: string[];
       };
       if (res.ok) {
         onAdd({
@@ -163,6 +170,7 @@ function MovieSearchInput({
           weight: 1.0,
           saved: false,
           hasEmbedding: data.hasEmbedding,
+          genres: data.genres ?? [],
         });
       }
     } catch {
@@ -1418,30 +1426,47 @@ export function PickSession({ currentUser, roomId, initialRoomState, hasPlexLink
                     </div>
                   </div>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-muted-foreground">Release year from</label>
-                    <Input
-                      type="number"
-                      placeholder="e.g. 1970"
-                      value={minYear}
-                      onChange={(e) => setRoomState((p) => ({ ...p, minYear: e.target.value }))}
-                      min={1900}
-                      max={2100}
-                    />
+                    <label
+                      className="text-xs font-medium text-muted-foreground"
+                      id="pick-year-range-label"
+                    >
+                      Release year
+                    </label>
+                    <div
+                      role="group"
+                      aria-labelledby="pick-year-range-label"
+                      className="flex h-9 w-fit max-w-full shrink-0 items-center gap-1.5 rounded-md border border-input bg-background px-2.5 text-sm shadow-sm transition-colors focus-within:ring-1 focus-within:ring-ring"
+                    >
+                      <Input
+                        type="text"
+                        inputMode="numeric"
+                        autoComplete="off"
+                        maxLength={4}
+                        placeholder="?"
+                        aria-label="From year (optional)"
+                        value={minYear}
+                        onChange={(e) => setRoomState((p) => ({ ...p, minYear: e.target.value }))}
+                        className="h-9 w-[3.5rem] shrink-0 border-0 bg-transparent px-1.5 text-center text-sm tabular-nums shadow-none focus-visible:ring-0"
+                      />
+                      <span className="shrink-0 select-none text-muted-foreground" aria-hidden>
+                        –
+                      </span>
+                      <Input
+                        type="text"
+                        inputMode="numeric"
+                        autoComplete="off"
+                        maxLength={4}
+                        placeholder="?"
+                        aria-label="To year (optional)"
+                        value={maxYear}
+                        onChange={(e) => setRoomState((p) => ({ ...p, maxYear: e.target.value }))}
+                        className="h-9 w-[3.5rem] shrink-0 border-0 bg-transparent px-1.5 text-center text-sm tabular-nums shadow-none focus-visible:ring-0"
+                      />
+                    </div>
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-muted-foreground">Release year to</label>
-                    <Input
-                      type="number"
-                      placeholder="e.g. 2015"
-                      value={maxYear}
-                      onChange={(e) => setRoomState((p) => ({ ...p, maxYear: e.target.value }))}
-                      min={1900}
-                      max={2100}
-                    />
-                  </div>
-                  <div className="space-y-1.5 sm:col-span-2 xl:col-span-1">
                     <label className="text-xs font-medium text-muted-foreground">Max runtime (minutes)</label>
                     <Input
                       type="number"
