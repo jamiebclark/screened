@@ -3,17 +3,33 @@ import { prisma } from "@/lib/prisma";
 import { MediaCard } from "@/components/media-card";
 import { ClearTrackingCornerButton } from "@/components/clear-tracking-corner-button";
 import { EditableListSearchAdd } from "@/components/editable-list-search-add";
+import { buildLastWatchedMsByMediaItemId, sortByLastWatchedDesc } from "@/lib/user-media-sort";
 import { Clock } from "lucide-react";
 import { MediaType } from "@/generated/prisma";
 
 export default async function WatchingPage() {
   const session = await auth();
+  const userId = session!.user.id;
 
-  const items = await prisma.userMediaStatus.findMany({
-    where: { userId: session!.user.id, status: "WATCHING" },
-    include: { mediaItem: true },
-    orderBy: { updatedAt: "desc" },
-  });
+  const [rows, watchAgg, episodeAgg] = await Promise.all([
+    prisma.userMediaStatus.findMany({
+      where: { userId, status: "WATCHING" },
+      include: { mediaItem: true },
+    }),
+    prisma.watchEntry.groupBy({
+      by: ["mediaItemId"],
+      where: { userId },
+      _max: { watchedAt: true },
+    }),
+    prisma.episodeStatus.groupBy({
+      by: ["mediaItemId"],
+      where: { userId },
+      _max: { watchedAt: true },
+    }),
+  ]);
+
+  const lastWatchedMs = buildLastWatchedMsByMediaItemId(watchAgg, episodeAgg);
+  const items = sortByLastWatchedDesc(rows, lastWatchedMs);
 
   const existingKeys = items.map(
     (i) => `${i.mediaItem.type === MediaType.MOVIE ? "movie" : "tv"}-${i.mediaItem.tmdbId}`

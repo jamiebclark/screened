@@ -8,18 +8,19 @@ import { tmdbImageUrl, formatRuntime } from "@/lib/utils";
 import { Eye, Clock, Bookmark, ListVideo, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MediaType } from "@/generated/prisma";
+import { MediaType, WatchStatus } from "@/generated/prisma";
 
 export default async function HomePage() {
   const session = await auth();
 
-  const [trending, recentActivity, stats] = await Promise.all([
+  const [trending, watchEntries, stats] = await Promise.all([
     getTrending("all", "week").catch(() => ({ results: [] })),
-    prisma.userMediaStatus.findMany({
+    prisma.watchEntry.findMany({
       where: { userId: session!.user.id },
+      orderBy: { watchedAt: "desc" },
       include: { mediaItem: true },
-      orderBy: { updatedAt: "desc" },
-      take: 10,
+      // Dedupe to one row per title (latest watch); 80 is a generous buffer.
+      take: 80,
     }),
     prisma.userMediaStatus.groupBy({
       by: ["status"],
@@ -27,6 +28,30 @@ export default async function HomePage() {
       _count: true,
     }),
   ]);
+
+  const seenMediaIds = new Set<string>();
+  const recentByLastWatch = [];
+  for (const entry of watchEntries) {
+    if (seenMediaIds.has(entry.mediaItemId)) continue;
+    seenMediaIds.add(entry.mediaItemId);
+    recentByLastWatch.push(entry);
+    if (recentByLastWatch.length >= 10) break;
+  }
+
+  const recentMediaIds = recentByLastWatch.map((e) => e.mediaItemId);
+  const statusRows =
+    recentMediaIds.length > 0
+      ? await prisma.userMediaStatus.findMany({
+          where: { userId: session!.user.id, mediaItemId: { in: recentMediaIds } },
+        })
+      : [];
+  const statusByMediaId = new Map(statusRows.map((s) => [s.mediaItemId, s]));
+
+  const recentActivity = recentByLastWatch.map((entry) => ({
+    key: entry.mediaItem.id,
+    mediaItem: entry.mediaItem,
+    status: statusByMediaId.get(entry.mediaItemId)?.status ?? WatchStatus.WATCHED,
+  }));
 
   const statMap = Object.fromEntries(stats.map((s) => [s.status, s._count]));
 
@@ -83,7 +108,7 @@ export default async function HomePage() {
           <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-10 gap-3">
             {recentActivity.map((activity) => (
               <MediaCard
-                key={activity.id}
+                key={activity.key}
                 tmdbId={activity.mediaItem.tmdbId}
                 type={activity.mediaItem.type === MediaType.MOVIE ? "movie" : "tv"}
                 title={activity.mediaItem.title}

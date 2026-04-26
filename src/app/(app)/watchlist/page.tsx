@@ -13,7 +13,7 @@ export default async function WatchlistPage() {
   const items = await prisma.userMediaStatus.findMany({
     where: { userId: session!.user.id, status: "WATCHLIST" },
     include: { mediaItem: true },
-    orderBy: { updatedAt: "desc" },
+    orderBy: { createdAt: "desc" },
   });
 
   const movies = items.filter((i) => i.mediaItem.type === MediaType.MOVIE);
