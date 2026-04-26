@@ -49,7 +49,7 @@ export function Nav({ user, initialUnreadNotifications }: NavProps) {
         <div className="flex items-center gap-6">
           <Link href="/" className="flex items-center gap-2 font-bold text-primary">
             <Film className="h-5 w-5" />
-            <span className="hidden sm:block">Screened</span>
+            <span className="hidden sm:block tracking-tight">Screened</span>
           </Link>
 
           <nav className="hidden md:flex items-center gap-1">

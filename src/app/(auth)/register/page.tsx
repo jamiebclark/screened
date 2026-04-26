@@ -55,7 +55,7 @@ export default function RegisterPage() {
         <div className="flex flex-col items-center gap-2 text-center">
           <div className="flex items-center gap-2 text-primary">
             <Film className="h-8 w-8" />
-            <span className="text-2xl font-bold">Screened</span>
+            <span className="text-2xl font-bold tracking-tight">Screened</span>
           </div>
           <p className="text-muted-foreground text-sm">Track movies together</p>
         </div>
