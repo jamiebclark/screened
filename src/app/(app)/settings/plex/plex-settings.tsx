@@ -12,9 +12,14 @@ interface PlexSettingsProps {
     lastSyncedAt: Date | null;
     plexServerId: string | null;
   } | null;
+  /** After Plex PIN auth, navigate here (default: settings plex). Use `/onboarding` on the first-login wizard. */
+  returnPathAfterPin?: string;
 }
 
-export function PlexSettings({ connection: initialConnection }: PlexSettingsProps) {
+export function PlexSettings({
+  connection: initialConnection,
+  returnPathAfterPin = "/settings/plex",
+}: PlexSettingsProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pinId = searchParams.get("pinId");
@@ -38,7 +43,7 @@ export function PlexSettings({ connection: initialConnection }: PlexSettingsProp
         });
         const data = await res.json() as { verified?: boolean; username?: string; error?: string };
         if (data.verified) {
-          router.replace("/settings/plex");
+          router.replace(returnPathAfterPin);
           router.refresh();
         } else {
           setError("Plex authentication was not completed. Please try again.");
@@ -51,7 +56,7 @@ export function PlexSettings({ connection: initialConnection }: PlexSettingsProp
     };
 
     verify();
-  }, [pinId, router]);
+  }, [pinId, returnPathAfterPin, router]);
 
   const connectPlex = async () => {
     setError(null);
@@ -59,7 +64,7 @@ export function PlexSettings({ connection: initialConnection }: PlexSettingsProp
       const res = await fetch("/api/plex/link", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "create-pin" }),
+        body: JSON.stringify({ action: "create-pin", returnPath: returnPathAfterPin }),
       });
       const data = await res.json() as { authUrl?: string; error?: string };
       if (data.authUrl) {

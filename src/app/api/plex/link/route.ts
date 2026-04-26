@@ -16,13 +16,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = await req.json() as { action?: string; pinId?: number; forwardUrl?: string };
+  const body = await req.json() as { action?: string; pinId?: number; returnPath?: string };
   const { action } = body;
 
   if (action === "create-pin") {
     const pin = await createPlexPin();
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-    const forwardUrl = `${appUrl}/settings/plex?pinId=${pin.id}`;
+    const allowedReturnPaths = ["/settings/plex", "/onboarding"] as const;
+    const raw =
+      typeof body.returnPath === "string" && (allowedReturnPaths as readonly string[]).includes(body.returnPath)
+        ? body.returnPath
+        : "/settings/plex";
+    const forwardUrl = `${appUrl}${raw}?pinId=${pin.id}`;
     const authUrl = getPlexAuthUrl(pin.code, forwardUrl);
     return NextResponse.json({ pinId: pin.id, authUrl });
   }

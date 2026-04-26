@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Nav } from "@/components/nav";
 import { prisma } from "@/lib/prisma";
@@ -10,9 +11,31 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     redirect("/login");
   }
 
-  const unreadNotifications = await prisma.notification.count({
-    where: { userId: session.user.id, readAt: null },
-  });
+  const [user, unreadNotifications] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { onboardingCompletedAt: true },
+    }),
+    prisma.notification.count({
+      where: { userId: session.user.id, readAt: null },
+    }),
+  ]);
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  const h = await headers();
+  const pathname = h.get("x-pathname") ?? "";
+  const isOnboarding =
+    pathname === "/onboarding" || (pathname.length > 0 && pathname.startsWith("/onboarding/"));
+
+  if (!user.onboardingCompletedAt && !isOnboarding) {
+    redirect("/onboarding");
+  }
+  if (user.onboardingCompletedAt && isOnboarding) {
+    redirect("/");
+  }
 
   return (
     <div className="flex h-dvh max-h-dvh min-h-0 flex-col overflow-hidden">
