@@ -1,3 +1,9 @@
+## [1.10.1](https://github.com/jamiebclark/screened/compare/v1.10.0...v1.10.1) (2026-04-26)
+
+### Bug Fixes
+
+* **status:** use last episode time for tv watch log on watched ([9438ced](https://github.com/jamiebclark/screened/commit/9438ced009f0b87b807f94764d44ce5fd36706dc))
+
 ## [1.10.0](https://github.com/jamiebclark/screened/compare/v1.9.0...v1.10.0) (2026-04-26)
 
 ### Features
