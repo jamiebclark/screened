@@ -43,6 +43,18 @@ jobs:
       - name: Apply migrations (same as production entrypoint)
         run: yarn prisma migrate deploy
 
+      # Prisma migrate diff needs SHADOW_DATABASE_URL to point at an existing DB on the server.
+      # The Postgres service only creates POSTGRES_DB (screened_ci); create the shadow DB explicitly.
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Create Prisma shadow database
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d postgres -tc "SELECT 1 FROM pg_database WHERE datname = 'prisma_shadow_ci'" | grep -q 1 || \
+          psql -h localhost -U postgres -d postgres -c "CREATE DATABASE prisma_shadow_ci;"
+
       - name: Assert migrations match schema.prisma
         run: yarn prisma migrate diff --from-migrations prisma/migrations --to-schema prisma/schema.prisma --exit-code
 
