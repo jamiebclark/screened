@@ -6,10 +6,13 @@ import { notFound } from "next/navigation";
 import { WatchStatusButton } from "@/components/watch-status-button";
 import { RatingStars } from "@/components/rating-stars";
 import { AddToListDialog } from "@/components/add-to-list-dialog";
+import { WatchLogDialog } from "@/components/watch-log-dialog";
+import { MarkdownContent } from "@/components/markdown-content";
 import { EpisodeTracker } from "@/components/episode-tracker";
 import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Star, Calendar, Tv } from "lucide-react";
+import { Star, Calendar, Tv, CalendarCheck } from "lucide-react";
 import { MediaType } from "@/generated/prisma";
 
 type Params = { params: Promise<{ tmdbId: string }> };
@@ -131,10 +134,33 @@ export default async function TvPage({ params }: Params) {
               {userStatus && (
                 <RatingStars tmdbId={tmdbId} type="tv" currentRating={userStatus?.rating ?? null} />
               )}
+              {userStatus && (
+                <WatchLogDialog
+                  tmdbId={tmdbId}
+                  type="tv"
+                  initialWatchedAt={userStatus.watchedAt}
+                  initialReview={userStatus.review}
+                />
+              )}
             </div>
+
+            {userStatus?.watchedAt && (
+              <p className="flex items-center gap-1.5 text-xs text-muted-foreground mb-3">
+                <CalendarCheck className="h-3.5 w-3.5" />
+                Watched {new Date(userStatus.watchedAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+              </p>
+            )}
 
             {show.overview && (
               <p className="text-muted-foreground leading-relaxed max-w-2xl">{show.overview}</p>
+            )}
+
+            {userStatus?.review && (
+              <div className="mt-6 max-w-2xl">
+                <Separator className="mb-4" />
+                <h3 className="text-sm font-semibold text-foreground mb-2">My review</h3>
+                <MarkdownContent content={userStatus.review} />
+              </div>
             )}
           </div>
         </div>

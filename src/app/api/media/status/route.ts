@@ -49,8 +49,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = await req.json() as { tmdbId?: number; type?: string; status?: string | null; rating?: number | null; review?: string };
-  const { tmdbId, type, status, rating, review } = body;
+  const body = await req.json() as { tmdbId?: number; type?: string; status?: string | null; rating?: number | null; review?: string | null; watchedAt?: string | null };
+  const { tmdbId, type, status, rating, review, watchedAt } = body;
 
   if (!tmdbId || !type || !["movie", "tv"].includes(type)) {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
@@ -75,8 +75,9 @@ export async function POST(req: NextRequest) {
   const data: Record<string, unknown> = {};
   if (status !== undefined) {
     data.status = status as WatchStatus;
-    if (status === "WATCHED") data.watchedAt = new Date();
+    if (status === "WATCHED" && watchedAt === undefined) data.watchedAt = new Date();
   }
+  if (watchedAt !== undefined) data.watchedAt = watchedAt ? new Date(watchedAt) : null;
   if (rating !== undefined) data.rating = rating;
   if (review !== undefined) data.review = review;
 

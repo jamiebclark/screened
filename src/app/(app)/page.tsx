@@ -18,7 +18,10 @@ export default async function HomePage() {
     prisma.userMediaStatus.findMany({
       where: { userId: session!.user.id },
       include: { mediaItem: true },
-      orderBy: { updatedAt: "desc" },
+      orderBy: [
+        { watchedAt: { sort: "desc", nulls: "last" } },
+        { updatedAt: "desc" },
+      ],
       take: 10,
     }),
     prisma.userMediaStatus.groupBy({
@@ -70,7 +73,12 @@ export default async function HomePage() {
       {/* Recent activity */}
       {recentActivity.length > 0 && (
         <section>
-          <h2 className="text-lg font-semibold mb-4">Recently tracked</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold">Recently watched</h2>
+            <Button variant="ghost" size="sm" asChild>
+              <Link href="/history">See all</Link>
+            </Button>
+          </div>
           <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-10 gap-3">
             {recentActivity.map((activity) => (
               <MediaCard

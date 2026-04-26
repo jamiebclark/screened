@@ -30,6 +30,7 @@
     "@radix-ui/react-separator": "^1.1.8",
     "@radix-ui/react-tabs": "^1.1.13",
     "@radix-ui/react-toast": "^1.2.15",
+    "@uiw/react-md-editor": "^4.1.0",
     "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -39,6 +40,8 @@
     "pg": "^8.20.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
     "slugify": "^1.6.9",
     "tailwind-merge": "^3.5.0",
     "tailwindcss-animate": "^1.0.7"
