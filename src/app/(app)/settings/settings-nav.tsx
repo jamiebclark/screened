@@ -11,6 +11,7 @@ const groups = [
       { href: "/settings/account", label: "Account" },
       { href: "/settings/preferences", label: "Saved preferences" },
       { href: "/settings/watch-history", label: "Watch history & imports" },
+      { href: "/settings/about", label: "About" },
     ],
   },
   {
