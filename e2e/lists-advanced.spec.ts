@@ -120,6 +120,29 @@ test.describe("Lists - Advanced", () => {
     expect(data.length).toBeGreaterThan(0);
   });
 
+  test("watchlist radarr endpoint returns movie JSON with token", async ({ page }) => {
+    const add = await page.request.post("/api/media/status", {
+      data: { tmdbId: 27205, type: "movie", status: "WATCHLIST" },
+      headers: { "Content-Type": "application/json" },
+    });
+    expect(add.ok()).toBeTruthy();
+
+    const urlRes = await page.request.get("/api/user/radarr/watchlist-url");
+    expect(urlRes.ok()).toBeTruthy();
+    const { url } = (await urlRes.json()) as { url: string };
+    const token = new URL(url).searchParams.get("token");
+    expect(token).toBeTruthy();
+
+    const bad = await page.request.get("/api/user/radarr/watchlist");
+    expect(bad.status()).toBe(401);
+
+    const radarr = await page.request.get(`/api/user/radarr/watchlist?token=${token}`);
+    expect(radarr.ok()).toBeTruthy();
+    const data = await radarr.json() as Array<{ tmdbId: number; title: string }>;
+    expect(Array.isArray(data)).toBeTruthy();
+    expect(data.some((row) => row.tmdbId === 27205)).toBeTruthy();
+  });
+
   test("non-owner cannot delete list", async ({ page, browser }) => {
     // Create list as user 1
     const res = await page.request.post("/api/lists", {
