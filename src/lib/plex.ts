@@ -1,4 +1,7 @@
 import { prisma } from "@/lib/prisma";
+import { extractTmdbIdFromGuid } from "@/lib/plex-metadata-utils";
+
+export { extractTmdbIdFromGuid, plexWebAppMovieUrl } from "@/lib/plex-metadata-utils";
 
 const PLEX_TV_BASE = "https://plex.tv";
 const PLEX_CLIENT_IDENTIFIER = "screened";
@@ -198,12 +201,34 @@ export async function getPlexWatchHistory(
 
 const PLEX_PAGE_SIZE = 200;
 
+/** How long a full Plex movie index stays hot per user/server (generation). */
+const PLEX_LIBRARY_INDEX_TTL_MS = 10 * 60 * 1000;
+
+const plexLibraryIndexCache = new Map<string, { map: Map<number, string>; expiresAt: number }>();
+const plexLibraryIndexInflight = new Map<string, Promise<Map<number, string>>>();
+const plexLibraryIndexGeneration = new Map<string, number>();
+
 /**
- * All movies in the user’s library (watched or not) with a TMDB guid.
- * Paginated for large libraries.
+ * Call when Plex is linked, unlinked, or tokens/server change so cached library indexes are abandoned.
  */
-export async function getPlexLibraryMovieTmdbIds(serverUrl: string, token: string): Promise<number[]> {
-  const tmdb = new Set<number>();
+export function bumpPlexLibraryIndexCacheGeneration(userId: string): void {
+  plexLibraryIndexGeneration.set(userId, (plexLibraryIndexGeneration.get(userId) ?? 0) + 1);
+}
+
+function plexLibraryIndexCacheKey(userId: string, machineIdentifier: string): string {
+  const gen = plexLibraryIndexGeneration.get(userId) ?? 0;
+  return `${userId}:${machineIdentifier}:g${gen}`;
+}
+
+/**
+ * All movies in the user’s library (watched or not) with a TMDB guid and Plex rating key.
+ * Paginated once; last write wins if the same TMDB id appears twice.
+ */
+export async function getPlexLibraryMovieTmdbToRatingKey(
+  serverUrl: string,
+  token: string
+): Promise<Map<number, string>> {
+  const byTmdb = new Map<number, string>();
   let start = 0;
   for (;;) {
     const url = `${serverUrl}/library/all?type=1&includeGuids=1&X-Plex-Token=${encodeURIComponent(
@@ -217,12 +242,47 @@ export async function getPlexLibraryMovieTmdbIds(serverUrl: string, token: strin
     const total = data?.MediaContainer?.totalSize ?? start + met.length;
     for (const item of met) {
       const id = extractTmdbIdFromGuid(item.Guid);
-      if (id != null) tmdb.add(id);
+      if (id != null && item.ratingKey) byTmdb.set(id, item.ratingKey);
     }
     start += met.length;
     if (met.length === 0 || start >= total) break;
   }
-  return [...tmdb];
+  return byTmdb;
+}
+
+async function getPlexLibraryMovieIndexCached(userId: string, ctx: PlexServerContext): Promise<Map<number, string>> {
+  const cacheKey = plexLibraryIndexCacheKey(userId, ctx.machineIdentifier);
+  const now = Date.now();
+  const hit = plexLibraryIndexCache.get(cacheKey);
+  if (hit && hit.expiresAt > now) {
+    return hit.map;
+  }
+
+  let pending = plexLibraryIndexInflight.get(cacheKey);
+  if (!pending) {
+    pending = getPlexLibraryMovieTmdbToRatingKey(ctx.serverUrl, ctx.token)
+      .then((map) => {
+        plexLibraryIndexCache.set(cacheKey, {
+          map,
+          expiresAt: Date.now() + PLEX_LIBRARY_INDEX_TTL_MS,
+        });
+        return map;
+      })
+      .finally(() => {
+        plexLibraryIndexInflight.delete(cacheKey);
+      });
+    plexLibraryIndexInflight.set(cacheKey, pending);
+  }
+  return pending;
+}
+
+/**
+ * All movies in the user’s library (watched or not) with a TMDB guid.
+ * Paginated for large libraries.
+ */
+export async function getPlexLibraryMovieTmdbIds(serverUrl: string, token: string): Promise<number[]> {
+  const map = await getPlexLibraryMovieTmdbToRatingKey(serverUrl, token);
+  return [...map.keys()];
 }
 
 export async function getPlexWatchedEpisodes(
@@ -250,16 +310,14 @@ export async function getPlexItemMetadata(
   }
 }
 
-export function extractTmdbIdFromGuid(guids: { id: string }[] | undefined): number | null {
-  if (!guids) return null;
-  const tmdbGuid = guids.find((g) => g.id.startsWith("tmdb://"));
-  if (!tmdbGuid) return null;
-  const id = parseInt(tmdbGuid.id.replace("tmdb://", ""), 10);
-  return isNaN(id) ? null : id;
-}
+export type PlexServerContext = {
+  serverUrl: string;
+  token: string;
+  machineIdentifier: string;
+};
 
-/** All movie TMDB ids in the user’s Plex movie libraries, or null if not linked. */
-export async function getPlexMovieTmdbIdSetForUser(userId: string): Promise<Set<number> | null> {
+/** Resolved server URL, token, and machine id for API calls and deep links, or null if Plex is not linked. */
+export async function getPlexServerContextForUser(userId: string): Promise<PlexServerContext | null> {
   const c = await prisma.plexConnection.findUnique({
     where: { userId },
     select: { plexToken: true, plexServerId: true },
@@ -268,9 +326,79 @@ export async function getPlexMovieTmdbIdSetForUser(userId: string): Promise<Set<
   const servers = await getPlexServers(c.plexToken);
   const server = servers.find((s) => s.machineIdentifier === c.plexServerId) ?? servers[0];
   if (!server) return null;
-  const token = server.accessToken ?? c.plexToken;
-  const ids = await getPlexLibraryMovieTmdbIds(server.uri, token);
-  return new Set(ids);
+  return {
+    serverUrl: server.uri,
+    token: server.accessToken ?? c.plexToken,
+    machineIdentifier: server.machineIdentifier,
+  };
+}
+
+/**
+ * Find a movie in the user’s Plex libraries by TMDB id (via Guid entries). Tries a direct guid filter
+ * first (works on many servers); falls back to paging through all movies when the filter misses
+ * (e.g. new Plex Movie agent with a non-TMDB primary guid).
+ */
+export async function findPlexMovieByTmdbId(
+  serverUrl: string,
+  token: string,
+  tmdbId: number
+): Promise<{ ratingKey: string } | null> {
+  const guidParam = encodeURIComponent(`tmdb://${tmdbId}`);
+  const tryUrl = `${serverUrl}/library/all?type=1&includeGuids=1&guid=${guidParam}&X-Plex-Token=${encodeURIComponent(
+    token
+  )}`;
+  try {
+    const res = await plexServerFetch(tryUrl);
+    const data = await res.json() as { MediaContainer?: { Metadata?: PlexWatchedItem[] } };
+    for (const item of data?.MediaContainer?.Metadata ?? []) {
+      if (item.ratingKey && extractTmdbIdFromGuid(item.Guid) === tmdbId) {
+        return { ratingKey: item.ratingKey };
+      }
+    }
+  } catch {
+    /* guid filter unsupported or error — use full scan */
+  }
+
+  let start = 0;
+  for (;;) {
+    const pageUrl = `${serverUrl}/library/all?type=1&includeGuids=1&X-Plex-Token=${encodeURIComponent(
+      token
+    )}&X-Plex-Container-Start=${start}&X-Plex-Container-Size=${PLEX_PAGE_SIZE}`;
+    const res = await plexServerFetch(pageUrl);
+    const data = await res.json() as {
+      MediaContainer?: { Metadata?: PlexWatchedItem[]; totalSize?: number; size?: number };
+    };
+    const items = data?.MediaContainer?.Metadata ?? [];
+    const total = data?.MediaContainer?.totalSize ?? start + items.length;
+    for (const item of items) {
+      if (item.ratingKey && extractTmdbIdFromGuid(item.Guid) === tmdbId) {
+        return { ratingKey: item.ratingKey };
+      }
+    }
+    start += items.length;
+    if (items.length === 0 || start >= total) break;
+  }
+  return null;
+}
+
+export async function findPlexMovieByTmdbIdForUser(
+  userId: string,
+  tmdbId: number
+): Promise<{ ratingKey: string; machineIdentifier: string } | null> {
+  const ctx = await getPlexServerContextForUser(userId);
+  if (!ctx) return null;
+  const map = await getPlexLibraryMovieIndexCached(userId, ctx);
+  const ratingKey = map.get(tmdbId);
+  if (!ratingKey) return null;
+  return { ratingKey, machineIdentifier: ctx.machineIdentifier };
+}
+
+/** All movie TMDB ids in the user’s Plex movie libraries, or null if not linked. */
+export async function getPlexMovieTmdbIdSetForUser(userId: string): Promise<Set<number> | null> {
+  const ctx = await getPlexServerContextForUser(userId);
+  if (!ctx) return null;
+  const map = await getPlexLibraryMovieIndexCached(userId, ctx);
+  return new Set(map.keys());
 }
 
 export type IntersectingPlexResult =

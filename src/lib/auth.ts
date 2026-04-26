@@ -1,7 +1,7 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
-import { getPlexUser, getPlexServers } from "@/lib/plex";
+import { bumpPlexLibraryIndexCacheGeneration, getPlexUser, getPlexServers } from "@/lib/plex";
 import bcrypt from "bcryptjs";
 import { randomBytes } from "crypto";
 import { generateToken } from "@/lib/utils";
@@ -86,6 +86,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             plexServerId: firstServer?.machineIdentifier ?? null,
           },
         });
+
+        bumpPlexLibraryIndexCacheGeneration(user.id);
 
         return { id: user.id, email: user.email, name: user.name, image: user.avatarUrl };
       },

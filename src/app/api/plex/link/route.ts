@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { createPlexPin, checkPlexPin, getPlexAuthUrl, getPlexUser, getPlexServers } from "@/lib/plex";
+import {
+  bumpPlexLibraryIndexCacheGeneration,
+  createPlexPin,
+  checkPlexPin,
+  getPlexAuthUrl,
+  getPlexUser,
+  getPlexServers,
+} from "@/lib/plex";
 
 export async function POST(req: NextRequest) {
   const session = await auth();
@@ -49,11 +56,14 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    bumpPlexLibraryIndexCacheGeneration(session.user.id);
+
     return NextResponse.json({ verified: true, username: plexUser.username });
   }
 
   if (action === "unlink") {
     await prisma.plexConnection.deleteMany({ where: { userId: session.user.id } });
+    bumpPlexLibraryIndexCacheGeneration(session.user.id);
     return NextResponse.json({ success: true });
   }
 
