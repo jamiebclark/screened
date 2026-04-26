@@ -14,6 +14,8 @@ Summary: **migrations only** for persisted environments. Do **not** use `prisma 
 
 **CI:** `.github/workflows/ci.yml` runs `prisma migrate deploy`, `prisma migrate diff` (migrations vs `schema.prisma`), `prisma generate`, and `yarn build` on every PR and push to `main`. Apply migrations on real hosts with `yarn db:migrate:deploy` (same as Docker `CMD`).
 
+**Before push:** run **`yarn ci:check`** locally (needs Postgres reachable via `DATABASE_URL` in `.env`; creates a shadow DB named `prisma_shadow_ci` on the same server if missing). This should match the GitHub Actions job.
+
 ## Commits
 
 **Source of truth:** `.cursor/rules/conventional-commits.mdc` (always applied in Cursor).
