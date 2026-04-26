@@ -16,6 +16,8 @@ interface MediaCardProps {
   status?: "WATCHLIST" | "WATCHING" | "WATCHED" | "DROPPED" | null;
   className?: string;
   compact?: boolean;
+  /** Appended as query string, e.g. `watchedDate=2026-04-26`. */
+  hrefSearch?: string | null;
 }
 
 const statusIcons = {
@@ -35,8 +37,10 @@ export function MediaCard({
   status,
   className,
   compact = false,
+  hrefSearch = null,
 }: MediaCardProps) {
-  const href = `/${type === "movie" ? "movies" : "tv"}/${tmdbId}`;
+  const base = `/${type === "movie" ? "movies" : "tv"}/${tmdbId}`;
+  const href = hrefSearch ? `${base}?${hrefSearch}` : base;
   const imageUrl = tmdbImageUrl(poster, "w342");
   const statusInfo = status ? statusIcons[status] : null;
 
