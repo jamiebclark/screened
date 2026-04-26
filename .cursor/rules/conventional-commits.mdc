@@ -1,29 +1,59 @@
 ---
-description: Conventional commits and small, logically grouped commits for this project
+description: Conventional commits and how to split and order commits in this project
 alwaysApply: true
 ---
 
 # Conventional Commits
 
-All commits must follow the [Conventional Commits](https://www.conventionalcommits.org/) specification. This project uses semantic-release to automate versioning and changelogs based on commit messages.
+All commits follow the [Conventional Commits](https://www.conventionalcommits.org/) specification. This project uses **semantic-release** to drive **versioning** and **changelogs** from commit history (types like `feat` and `fix` are especially important for releases).
 
-## Commit size and grouping
+## Commit strategy: default to many small commits
 
-**Prefer many small commits over one large commit.** Each commit should represent one logical change (or a tight, related set) so history, review, `git bisect`, and semantic-release stay meaningful.
+**Do not** treat “everything in my working tree” as one logical change unless the user **explicitly** asks for a single commit (e.g. “one commit for all of this” or “squash this”).
 
-| Do | Avoid |
-|----|--------|
-| One commit per feature slice, dependency layer, or bugfix | Squashing unrelated features, docs, CI, and refactors into a single commit |
-| Order commits so the tree stays buildable (e.g. schema + migrations before code that uses new columns) | Random ordering that leaves intermediate commits broken without explanation |
-| Separate concerns: `feat` vs `fix` vs `docs` vs `ci` vs `test` | Mixing release-affecting types in one commit when they could be split |
+| Prefer | Avoid |
+|--------|--------|
+| Several commits, each with one clear “why” | One commit that mixes unrelated features, refactors, docs, and CI |
+| Splits you could explain in one short subject line | A grab-bag commit whose message is vague (`fix stuff`, `updates`) or only describes the *tool* you used, not the *change* |
+| Splits a reviewer or `git bisect` can reason about | Hiding many independent edits behind `fix(lint): …` or `chore: …` when they span separate products/areas—see below |
 
-When the user asks to **commit** or **land changes**, **do not** default to committing the entire working tree in one shot unless they explicitly ask for that. Group staged files by purpose and create **multiple commits** with separate conventional messages.
+## What “one logical commit” means
 
-When **reworking history** (e.g. splitting or undoing commits), prefer **`git reset --soft`** or **`git reset`** (mixed) to move commits or unstage—**never `git reset --hard`** or destructive cleanups unless the user clearly requests it and the risk is understood.
+A single commit is justified when it is **one of**:
+
+1. **One user-facing behavior or bug** in a defined area (e.g. “picker respects Plex solo rule”).
+2. **One mechanical, repo-wide** change with no separate stories (e.g. rename a symbol everywhere, or bump one dependency and fix the fallout in lockfile only).
+3. **One layer of a stack** in order (e.g. schema + migration, then code that uses the new column—often two commits or one, but never “schema + random UI tweaks” in one go).
+
+A single commit is **not** justified when the only common thread is the *activity* (e.g. “I fixed ESLint in eight unrelated files” or “I touched whatever was on disk”). In those cases, **split by concern**, not by session:
+
+- **By scope / area:** `pick`, `lists`, `plex`, `search`, `discovery`, `components` (shared UI), etc.
+- **By change type** when it would confuse release notes: e.g. `fix(pick): …` separate from `refactor(components): …` even in the same PR.
+
+**Umbrella lint-only commits** (`fix(lint): …`, `chore: eslint`) are allowed only when the edits are **tightly related** (same rule, same pattern, one directory or one pass). If lint fixes **pick**, **lists**, and **Plex** in one sweep, use **separate commits per area** (or per file group) unless the user explicitly wants one.
+
+## Order of commits (keep the tree buildable)
+
+When you stack multiple commits:
+
+- Land **infrastructure first**: config, DB schema, migrations, generated code—before application code that depends on them.
+- Do not leave the branch in a long-lived broken state between commits on purpose. If a middle commit must be incomplete, that should be rare and called out in the message body or PR description.
+
+## When the user (or the agent) is asked to “commit”
+
+1. **Inspect** the diff: list distinct behaviors, files, and scopes.
+2. **Group** by logical change (see above), not by “all modified files.”
+3. For each group: **`git add` only those files** (or use `git add -p` when a file has mixed changes worth splitting).
+4. Write a **separate** conventional message per commit.
+5. If the user says to commit *everything* in one shot, confirm they want a **single** commit, then do it once—**do not** treat silence as “one lump commit” when they said “commit” in the plural or implied multiple changes.
+
+## Reworking history (split / reorder / undo)
+
+Prefer **`git reset --soft`** or a mixed **`git reset`** to adjust commits or unstage. **Do not** use **`git reset --hard`** or destructive cleanup unless the user clearly asks and understands the risk.
 
 ## Format
 
-```
+```text
 <type>(<scope>): <short summary>
 
 [optional body]
@@ -31,34 +61,40 @@ When **reworking history** (e.g. splitting or undoing commits), prefer **`git re
 [optional footer]
 ```
 
-## Types
+## Types (semantic-release)
 
 | Type | When to use |
 |------|-------------|
-| `feat` | New feature (triggers minor release) |
-| `fix` | Bug fix (triggers patch release) |
-| `docs` | Documentation only |
-| `refactor` | Code change with no feature/fix |
-| `chore` | Tooling, deps, config changes |
-| `test` | Adding or updating tests |
-| `perf` | Performance improvement |
-| `ci` | CI/CD changes |
+| `feat` | New feature (minor release) |
+| `fix` | Bug fix (patch release) |
+| `docs` | Documentation only (no `releaseRules` bump unless configured) |
+| `refactor` | Code change, no user-visible feature or fix |
+| `chore` | Tooling, deps, config |
+| `test` | Tests only |
+| `perf` | Performance |
+| `ci` | CI/CD workflow or bot config |
 
-Breaking changes: add `!` after the type (`feat!:`) or include `BREAKING CHANGE:` in the footer — triggers a major release.
+Breaking changes: `feat!:` / `fix!:` or `BREAKING CHANGE:` in the footer (major release).
 
-## Examples
+## Examples of commit series (good)
 
+```text
+fix(ui): use type alias for input/textarea forward props
+fix(pick): avoid sync setState in room sync effects
+fix(lists): use transition for invite search clearing
+fix(discovery): use const for candidate id list
 ```
-feat(lists): add Radarr export endpoint
-fix(plex): handle missing server gracefully
-docs: expand README quick start section
-chore: install semantic-release
-feat!: require authentication for all list endpoints
+
+## Examples to avoid (bad)
+
+```text
+fix(lint): satisfy react-hooks
 ```
 
-## Rules
+…when that single commit changes pick, lists, plex, notifications, and lib code with **no** shared story beyond “linter was run”—split instead, or ask the user.
 
-- Summary is lowercase, no period at the end
-- Use imperative mood ("add" not "added" or "adds")
-- Scope is optional but encouraged (e.g. `auth`, `lists`, `plex`, `search`)
-- Keep the summary under 72 characters
+## Message rules
+
+- Summary: **imperative**, **lowercase**, **no trailing period**, **under ~72 characters**
+- **Scope** optional but recommended (`auth`, `lists`, `plex`, `pick`, `search`, …)
+- **Body** (optional): what changed and why, in full sentences, if the subject is not enough
