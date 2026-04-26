@@ -1,3 +1,9 @@
+## [1.4.1](https://github.com/jamiebclark/screened/compare/v1.4.0...v1.4.1) (2026-04-26)
+
+### Bug Fixes
+
+* **db:** add migration for media metadata and picker models ([e314d09](https://github.com/jamiebclark/screened/commit/e314d09074eab51fff5239d1a9f8297a2f11a053))
+
 ## [1.4.0](https://github.com/jamiebclark/screened/compare/v1.3.0...v1.4.0) (2026-04-26)
 
 ### Features
