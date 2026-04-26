@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { getMovie, searchMovie } from "@/lib/tmdb";
-import { MediaType, WatchStatus } from "@/generated/prisma";
+import { MediaType, WatchEntrySource, WatchStatus } from "@/generated/prisma";
 
 export interface LetterboxdSyncResult {
   synced: number;
@@ -145,7 +145,12 @@ export async function syncLetterboxdUser(userId: string): Promise<LetterboxdSync
             if (entry.rating !== null && duplicate.rating === null) {
               await prisma.watchEntry.update({
                 where: { id: duplicate.id },
-                data: { rating: entry.rating },
+                data: { rating: entry.rating, source: WatchEntrySource.LETTERBOXD },
+              });
+            } else if (duplicate.source === WatchEntrySource.UNKNOWN) {
+              await prisma.watchEntry.update({
+                where: { id: duplicate.id },
+                data: { source: WatchEntrySource.LETTERBOXD },
               });
             }
             alreadyWatched++;
@@ -159,6 +164,7 @@ export async function syncLetterboxdUser(userId: string): Promise<LetterboxdSync
               userMediaStatusId: userMedia.id,
               watchedAt,
               rating: entry.rating,
+              source: WatchEntrySource.LETTERBOXD,
             },
           });
 

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { MediaType } from "@/generated/prisma";
+import { MediaType, WatchEntrySource } from "@/generated/prisma";
 
 type Params = { params: Promise<{ tmdbId: string }> };
 
@@ -67,6 +67,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       watchedAt: watchedAt ? new Date(watchedAt) : new Date(),
       review: review ?? null,
       rating: rating ?? null,
+      source: WatchEntrySource.MANUAL,
     },
   });
 

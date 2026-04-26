@@ -57,12 +57,20 @@ export default async function HistoryPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
-      <div className="flex items-center gap-3 mb-8">
-        <Eye className="h-6 w-6 text-primary" />
-        <div>
-          <h1 className="text-2xl font-bold">Watch History</h1>
-          <p className="text-sm text-muted-foreground">{watched.length} watch entr{watched.length !== 1 ? "ies" : "y"}</p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-8">
+        <div className="flex items-center gap-3">
+          <Eye className="h-6 w-6 text-primary" />
+          <div>
+            <h1 className="text-2xl font-bold">Watch History</h1>
+            <p className="text-sm text-muted-foreground">{watched.length} watch entr{watched.length !== 1 ? "ies" : "y"}</p>
+          </div>
         </div>
+        <Link
+          href="/settings/watch-history"
+          className="text-sm text-muted-foreground hover:text-foreground transition-colors shrink-0"
+        >
+          Manage imports & clear history
+        </Link>
       </div>
 
       {watched.length === 0 ? (

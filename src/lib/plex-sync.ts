@@ -7,7 +7,7 @@ import {
   extractTmdbIdFromGuid,
 } from "@/lib/plex";
 import { getMovie, getTvShow } from "@/lib/tmdb";
-import { MediaType, WatchStatus } from "@/generated/prisma";
+import { MediaType, WatchEntrySource, WatchStatus } from "@/generated/prisma";
 
 export interface PlexSyncResult {
   synced: number;
@@ -90,7 +90,18 @@ export async function syncPlexUser(userId: string): Promise<PlexSyncResult> {
     });
     if (!existingEntry) {
       await prisma.watchEntry.create({
-        data: { userId, mediaItemId: mediaItem.id, userMediaStatusId: upserted.id, watchedAt },
+        data: {
+          userId,
+          mediaItemId: mediaItem.id,
+          userMediaStatusId: upserted.id,
+          watchedAt,
+          source: WatchEntrySource.PLEX,
+        },
+      });
+    } else if (existingEntry.source === WatchEntrySource.UNKNOWN) {
+      await prisma.watchEntry.update({
+        where: { id: existingEntry.id },
+        data: { source: WatchEntrySource.PLEX },
       });
     }
 
