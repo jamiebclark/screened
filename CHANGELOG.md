@@ -1,3 +1,9 @@
+## [1.6.1](https://github.com/jamiebclark/screened/compare/v1.6.0...v1.6.1) (2026-04-26)
+
+### Bug Fixes
+
+* **ci:** generate Prisma barrel index after prisma generate ([ec76491](https://github.com/jamiebclark/screened/commit/ec7649176d02a857b86cb9514ec8ae03db160e42))
+
 ## [1.6.0](https://github.com/jamiebclark/screened/compare/v1.5.1...v1.6.0) (2026-04-26)
 
 ### Features
