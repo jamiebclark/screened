@@ -1,0 +1,37 @@
+---
+description: After client-side API mutations, refresh Server Component data when the same route still shows stale RSC output
+alwaysApply: true
+---
+
+# Next.js App Router — keep RSC in sync after client mutations
+
+This app uses **React Server Components** for pages that read the database, and **`"use client"`** components that mutate via `fetch` to **Route Handlers** (`/api/...`).
+
+## Problem
+
+Server-rendered UI does **not** re-run when a client component updates the DB. Local React state may update, but avatars, counts, lists, and other props from the server stay stale until navigation or a refresh.
+
+## Pattern
+
+After a **successful** mutating `fetch` (`POST`, `PATCH`, `DELETE`, `PUT`) that affects what a **Server Component on the same URL** displays, call:
+
+```ts
+import { useRouter } from "next/navigation";
+
+const router = useRouter();
+// … after res.ok
+router.refresh();
+```
+
+Examples in this repo: `letterboxd-import-dialog.tsx`, `list-item-actions.tsx`, `editable-list-search-add.tsx`, `watch-status-button.tsx`, `invite-member-form.tsx`, `add-to-list-dialog.tsx`.
+
+## When `router.refresh()` is not required
+
+- The visible UI is entirely driven by **client state** that you already update (`useState` / callbacks), and nothing else on the page still reads the old server value. Example: `watch-history.tsx` + `watch-entry-dialog.tsx` with `WatchHistory`’s internal state.
+- The next step is **`router.push` / `redirect`** to another route (fresh load for that URL).
+- You intentionally use **`revalidatePath` / `revalidateTag`** in the Route Handler and that covers what you need (less common here; we standardize on `router.refresh()` from the client for same-route fixes).
+
+## Agent checklist
+
+1. Added or changed a client `fetch` that writes data shown by a parent **Server Component** on the same page?
+2. If yes → add **`router.refresh()`** on success unless one of the exceptions above applies.
