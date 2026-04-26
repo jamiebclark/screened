@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getPlexUser, getPlexServers } from "@/lib/plex";
 import bcrypt from "bcryptjs";
 import { randomBytes } from "crypto";
+import { generateToken } from "@/lib/utils";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
@@ -64,6 +65,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               avatarUrl: plexUser.thumb ?? null,
               // Random password — Plex users never use password login
               passwordHash: randomBytes(32).toString("hex"),
+              watchlistRadarrToken: generateToken(24),
             },
           });
         }
