@@ -42,9 +42,7 @@ export type PickerRoomState = {
   excludePeople: string[];
   /** Media item ids hard-excluded from the ranked list and scoring pool */
   vetoIds: string[];
-  /** tmdb = recommendations/similar + embed (default). library = only DB rows that already have embeddings. */
-  candidateSource: "tmdb" | "library";
-  /** When candidateSource is tmdb, intersect with Plex library (current user must have Plex linked). */
+  /** Intersect with Plex library TMDB ids (current user must have Plex linked). */
   plexLibraryOnly: boolean;
   hideAllLogged: boolean;
   filtersOpen: boolean;
@@ -69,7 +67,6 @@ export function defaultPickerState(currentUser: {
     requirePeople: [],
     excludePeople: [],
     vetoIds: [],
-    candidateSource: "tmdb",
     plexLibraryOnly: false,
     hideAllLogged: false,
     filtersOpen: true,
@@ -103,9 +100,6 @@ export function isPickerState(x: unknown): x is PickerRoomState {
   if (o.vetoIds !== undefined) {
     if (!Array.isArray(o.vetoIds) || o.vetoIds.some((id) => typeof id !== "string")) return false;
   }
-  if (o.candidateSource !== undefined && o.candidateSource !== "tmdb" && o.candidateSource !== "library") {
-    return false;
-  }
   if (o.plexLibraryOnly !== undefined && typeof o.plexLibraryOnly !== "boolean") return false;
   if (o.scoringInProgress !== undefined && typeof o.scoringInProgress !== "boolean") return false;
   if (o.scoringError !== undefined && o.scoringError !== null && typeof o.scoringError !== "string") return false;
@@ -117,15 +111,16 @@ export function isPickerState(x: unknown): x is PickerRoomState {
 
 /** Ensures scoring fields exist (for legacy DB rows and partial parses). */
 export function withScoringDefaults(s: PickerRoomState): PickerRoomState {
+  const raw = s as PickerRoomState & { candidateSource?: "tmdb" | "library" };
+  const { candidateSource: _legacy, ...rest } = raw;
   return {
-    ...s,
-    maxYear: s.maxYear ?? "",
-    vetoIds: s.vetoIds ?? [],
-    candidateSource: s.candidateSource ?? "tmdb",
-    plexLibraryOnly: s.plexLibraryOnly ?? false,
-    filtersOpen: s.filtersOpen ?? true,
-    scoringInProgress: s.scoringInProgress ?? false,
-    scoringError: s.scoringError ?? null,
-    scoringResults: s.scoringResults !== undefined ? s.scoringResults : null,
+    ...rest,
+    maxYear: rest.maxYear ?? "",
+    vetoIds: rest.vetoIds ?? [],
+    plexLibraryOnly: rest.plexLibraryOnly ?? false,
+    filtersOpen: rest.filtersOpen ?? true,
+    scoringInProgress: rest.scoringInProgress ?? false,
+    scoringError: rest.scoringError ?? null,
+    scoringResults: rest.scoringResults !== undefined ? rest.scoringResults : null,
   };
 }

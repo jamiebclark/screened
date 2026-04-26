@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getIntersectingPlexMovieTmdbIds } from "@/lib/plex";
 import { scoreFromEmbeddedLibrary } from "@/lib/movie-library-score";
-import { loadPlexForUser, scoreFromTmdbDiscovery } from "@/lib/movie-discovery-score";
+import { scoreFromTmdbDiscovery } from "@/lib/movie-discovery-score";
 import type { HardFilterInput, ReferenceItem } from "@/lib/score-types";
 
 interface ScoreRequest {
@@ -10,9 +11,9 @@ interface ScoreRequest {
   attractors: ReferenceItem[];
   repellers: ReferenceItem[];
   hardFilters?: HardFilterInput;
-  /** Default "tmdb": TMDB recommendations/similar + embed rank. "library" = only pre-embedded rows in DB. */
+  /** Default "tmdb": TMDB recommendations/similar + embed rank. "library" = only pre-embedded DB rows (legacy). */
   candidateSource?: "tmdb" | "library";
-  /** Intersect with Plex library TMDB ids (uses caller's Plex). Only applies when candidateSource is tmdb. */
+  /** Intersect with participants’ linked Plex movie libraries (per-library intersection). */
   plexLibraryOnly?: boolean;
 }
 
@@ -73,17 +74,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ results, total: results.length });
   }
 
-  const plex = body.plexLibraryOnly ? await loadPlexForUser(session.user.id) : null;
-  if (body.plexLibraryOnly && !plex) {
-    return NextResponse.json(
-      { error: "Connect Plex in settings to limit suggestions to your library." },
-      { status: 422 }
-    );
+  let plexTmdbIds: Set<number> | null = null;
+  if (body.plexLibraryOnly) {
+    const plexR = await getIntersectingPlexMovieTmdbIds(participantIds);
+    if (plexR.kind === "none") {
+      return NextResponse.json(
+        {
+          error:
+            "At least one participant must link Plex in settings to limit suggestions by library.",
+        },
+        { status: 422 }
+      );
+    }
+    plexTmdbIds = plexR.ids;
   }
 
   const disc = await scoreFromTmdbDiscovery(attractors, repellers, hard, {
     plexLibraryOnly: !!body.plexLibraryOnly,
-    plex,
+    plexTmdbIds,
   });
   if (!Array.isArray(disc)) {
     return NextResponse.json({ error: disc.error }, { status: 422 });

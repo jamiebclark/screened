@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Search, X, Plus, Loader2, Sparkles, Film, Clock, Calendar, Star, BookmarkCheck, UserCheck, UserX, MessageSquare } from "lucide-react";
+import { Search, X, Plus, Loader2, Sparkles, Film, Clock, Calendar, Star, BookmarkCheck, UserCheck, UserX, MessageSquare, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -50,6 +50,8 @@ interface PickSessionProps {
   currentUser: User;
   roomId: string | null;
   initialRoomState: PickerRoomState;
+  /** Current user has linked Plex (Plex server filter is available). */
+  hasPlexLinked: boolean;
 }
 
 const WEIGHTS = [
@@ -564,9 +566,11 @@ function ParticipantSearch({
   );
 }
 
-// ─── PeopleTagInput ───────────────────────────────────────────────────────────
+// ─── PersonTagInput (TMDB people search) ────────────────────────────────────
 
-function PeopleTagInput({
+type PersonResult = { id: number; name: string; role: string | null; profile: string | null };
+
+function PersonTagInput({
   values,
   onChange,
   placeholder,
@@ -577,33 +581,149 @@ function PeopleTagInput({
   placeholder: string;
   colorClass: string;
 }) {
-  const [input, setInput] = useState("");
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<PersonResult[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  const add = () => {
-    const trimmed = input.trim();
-    if (trimmed && !values.some((v) => v.toLowerCase() === trimmed.toLowerCase())) {
-      onChange([...values, trimmed]);
+  useEffect(() => {
+    const onDoc = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, []);
+
+  const search = useCallback(async (q: string) => {
+    if (q.trim().length < 2) {
+      setResults([]);
+      setOpen(false);
+      return;
     }
-    setInput("");
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/search/person?q=${encodeURIComponent(q.trim())}`);
+      const data = (await res.json()) as { results?: PersonResult[] };
+      const list = (data.results ?? []).filter(
+        (p) => !values.some((v) => v.toLowerCase() === p.name.toLowerCase())
+      );
+      setResults(list);
+      setOpen(list.length > 0);
+    } catch {
+      setResults([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [values]);
+
+  const addName = (name: string) => {
+    const t = name.trim();
+    if (!t || values.some((v) => v.toLowerCase() === t.toLowerCase())) return;
+    onChange([...values, t]);
+  };
+
+  const addFromInput = () => {
+    if (open && results[0]) {
+      addName(results[0]!.name);
+    } else {
+      const t = query.trim();
+      if (t.length >= 2) addName(t);
+    }
+    setQuery("");
+    setResults([]);
+    setOpen(false);
+  };
+
+  const selectPerson = (p: PersonResult) => {
+    addName(p.name);
+    setQuery("");
+    setResults([]);
+    setOpen(false);
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setQuery(val);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => search(val), 350);
   };
 
   const remove = (name: string) => onChange(values.filter((v) => v !== name));
+  const canAdd = (open && results.length > 0) || query.trim().length >= 2;
 
   return (
     <div className="space-y-2">
-      <div className="flex gap-2">
-        <Input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder={placeholder}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") { e.preventDefault(); add(); }
-          }}
-          className="flex-1"
-        />
-        <Button type="button" variant="outline" size="sm" onClick={add} disabled={!input.trim()}>
-          <Plus className="h-4 w-4" />
-        </Button>
+      <div ref={containerRef} className="relative">
+        <div className="relative flex gap-2">
+          <div className="relative flex-1 min-w-0">
+            <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+            <Input
+              value={query}
+              onChange={handleChange}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  addFromInput();
+                }
+              }}
+              onFocus={() => results.length > 0 && setOpen(true)}
+              placeholder={placeholder}
+              className="pl-9 pr-9"
+            />
+            {loading && (
+              <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+            )}
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={addFromInput}
+            disabled={!canAdd}
+            className="shrink-0"
+            title="Add (first suggestion if open, or at least 2 characters)"
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+        </div>
+
+        {open && results.length > 0 && (
+          <div className="absolute z-50 mt-1 w-full rounded-md border border-border bg-popover shadow-lg max-h-56 overflow-y-auto">
+            {results.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  selectPerson(p);
+                }}
+                className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm transition-colors hover:bg-accent"
+              >
+                {p.profile ? (
+                  <Image
+                    src={p.profile}
+                    alt=""
+                    width={36}
+                    height={36}
+                    className="rounded-sm object-cover shrink-0 w-9 h-9"
+                  />
+                ) : (
+                  <div className="w-9 h-9 rounded-sm bg-muted flex items-center justify-center shrink-0">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                )}
+                <div className="min-w-0">
+                  <p className="font-medium truncate">{p.name}</p>
+                  {p.role && <p className="text-xs text-muted-foreground truncate">{p.role}</p>}
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
       {values.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
@@ -616,7 +736,7 @@ function PeopleTagInput({
               )}
             >
               {name}
-              <button onClick={() => remove(name)} className="hover:opacity-70 transition-opacity">
+              <button type="button" onClick={() => remove(name)} className="hover:opacity-70 transition-opacity">
                 <X className="h-3 w-3" />
               </button>
             </span>
@@ -629,9 +749,14 @@ function PeopleTagInput({
 
 // ─── Main PickSession Component ───────────────────────────────────────────────
 
-export function PickSession({ currentUser, roomId, initialRoomState }: PickSessionProps) {
+export function PickSession({ currentUser, roomId, initialRoomState, hasPlexLinked }: PickSessionProps) {
   const [roomState, setRoomState] = useState<PickerRoomState>(() =>
     ensureCurrentUserInRoom(withScoringDefaults(initialRoomState), currentUser)
+  );
+  /** True after we have ever had a scored list in this session (survives temporary null while re-running). */
+  const [hasCompletedListRun, setHasCompletedListRun] = useState(
+    () =>
+      ensureCurrentUserInRoom(withScoringDefaults(initialRoomState), currentUser).scoringResults !== null
   );
   const [startingRoom, setStartingRoom] = useState(false);
   const [tabId, setTabId] = useState("");
@@ -641,6 +766,17 @@ export function PickSession({ currentUser, roomId, initialRoomState }: PickSessi
     setTabId(globalThis.crypto?.randomUUID() ?? `t-${Date.now()}`);
   }, []);
   const resultsRef = useRef<HTMLDivElement>(null);
+  const roomStateRef = useRef(roomState);
+  roomStateRef.current = roomState;
+  const roomIdRef = useRef<string | null>(roomId);
+  roomIdRef.current = roomId;
+  const createRoomRequestRef = useRef<Promise<void> | null>(null);
+
+  useEffect(() => {
+    if (roomState.scoringResults !== null) {
+      setHasCompletedListRun(true);
+    }
+  }, [roomState.scoringResults]);
 
   usePickerRoomSync(roomId, tabId, currentUser, roomState, setRoomState);
 
@@ -654,13 +790,43 @@ export function PickSession({ currentUser, roomId, initialRoomState }: PickSessi
     requirePeople,
     excludePeople,
     vetoIds,
-    candidateSource,
     plexLibraryOnly,
     hideAllLogged,
     scoringInProgress,
     scoringError,
     scoringResults,
   } = roomState;
+
+  useEffect(() => {
+    if (participants.length === 1 && !hasPlexLinked) {
+      setRoomState((p) => (p.plexLibraryOnly ? { ...p, plexLibraryOnly: false } : p));
+    }
+  }, [hasPlexLinked, participants.length]);
+
+  const plexSolo = participants.length === 1;
+  const plexFilterDisabled = plexSolo && !hasPlexLinked;
+
+  const runCreateRoomIfNeeded = useCallback((): Promise<void> => {
+    if (roomIdRef.current) return Promise.resolve();
+    if (createRoomRequestRef.current) return createRoomRequestRef.current;
+    const run = (async () => {
+      if (roomIdRef.current) return;
+      const res = await fetch("/api/picker/rooms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ state: roomStateRef.current }),
+      });
+      if (!res.ok) return;
+      const data = (await res.json()) as { id: string };
+      if (roomIdRef.current) return;
+      router.replace(`/pick?room=${data.id}`);
+      router.refresh();
+    })().finally(() => {
+      createRoomRequestRef.current = null;
+    });
+    createRoomRequestRef.current = run;
+    return run;
+  }, [router]);
 
   const vetoIdSet = useMemo(() => new Set(vetoIds), [vetoIds]);
 
@@ -822,8 +988,7 @@ export function PickSession({ currentUser, roomId, initialRoomState }: PickSessi
             excludePeople: excludePeople.length ? excludePeople : undefined,
             hideAllLogged,
           },
-          candidateSource,
-          plexLibraryOnly: candidateSource === "tmdb" && plexLibraryOnly,
+          plexLibraryOnly,
         }),
       });
 
@@ -876,18 +1041,16 @@ export function PickSession({ currentUser, roomId, initialRoomState }: PickSessi
   const canScore = participants.length > 0 && attractors.length > 0;
   const currentUserId = currentUser.id;
 
+  useEffect(() => {
+    if (roomId) return;
+    if (attractors.length === 0) return;
+    void runCreateRoomIfNeeded();
+  }, [attractors.length, roomId, runCreateRoomIfNeeded]);
+
   const startSharedSession = async () => {
     setStartingRoom(true);
     try {
-      const res = await fetch("/api/picker/rooms", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ state: roomState }),
-      });
-      if (!res.ok) return;
-      const data = (await res.json()) as { id: string };
-      router.push(`/pick?room=${data.id}`);
-      router.refresh();
+      await runCreateRoomIfNeeded();
     } finally {
       setStartingRoom(false);
     }
@@ -905,8 +1068,8 @@ export function PickSession({ currentUser, roomId, initialRoomState }: PickSessi
         {roomId ? (
           <>
             <p className="text-xs text-muted-foreground max-w-xl">
-              Live sync: your criteria and the ranked list from the last time someone ran
-              &quot;Find Movies&quot; are shared on this link. If the live stream is unavailable,
+              Live sync: your criteria and the last ranked list from this link are shared with
+              everyone here. If the live stream is unavailable,
               updates fall back to polling about every 2.5s.
             </p>
             <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={copyShareLink}>
@@ -954,41 +1117,79 @@ export function PickSession({ currentUser, roomId, initialRoomState }: PickSessi
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_18.5rem] xl:grid-cols-[1fr_20rem] items-start">
         <div className="min-w-0 space-y-6">
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-2">
-                <div className="h-2 w-2 rounded-full bg-green-500" />
-                <CardTitle className="text-base">Like these</CardTitle>
-              </div>
-              <p className="text-xs text-muted-foreground">Films that capture the mood you&apos;re after tonight</p>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <MovieSearchInput
-                onAdd={(movie) =>
-                  setRoomState((prev) => ({ ...prev, attractors: [...prev.attractors, movie] }))
-                }
-                placeholder="Search for a film..."
-                existingIds={new Set([...attractorIds, ...repellerIds])}
-              />
-              <div className="space-y-2">
-                {attractors.map((m) => (
-                  <ReferenceMovieCard
-                    key={m.mediaItemId}
-                    movie={m}
-                    onRemove={() => remove("attractor", m.mediaItemId)}
-                    onWeightChange={(w) => updateWeight("attractor", m.mediaItemId, w)}
-                    onSaveToggle={() => toggleSave("attractor", m)}
-                  />
-                ))}
-                {attractors.length === 0 && (
-                  <div className="rounded-lg border border-dashed border-border p-4 text-center">
-                    <Plus className="h-5 w-5 text-muted-foreground mx-auto mb-1" />
-                    <p className="text-xs text-muted-foreground">Add at least one film to match against</p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:items-start">
+            <Card className="min-w-0">
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-green-500" />
+                  <CardTitle className="text-base">Like these</CardTitle>
+                </div>
+                <p className="text-xs text-muted-foreground">Films that capture the mood you&apos;re after tonight</p>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <MovieSearchInput
+                  onAdd={(movie) =>
+                    setRoomState((prev) => ({ ...prev, attractors: [...prev.attractors, movie] }))
+                  }
+                  placeholder="Search for a film..."
+                  existingIds={new Set([...attractorIds, ...repellerIds])}
+                />
+                <div className="space-y-2">
+                  {attractors.map((m) => (
+                    <ReferenceMovieCard
+                      key={m.mediaItemId}
+                      movie={m}
+                      onRemove={() => remove("attractor", m.mediaItemId)}
+                      onWeightChange={(w) => updateWeight("attractor", m.mediaItemId, w)}
+                      onSaveToggle={() => toggleSave("attractor", m)}
+                    />
+                  ))}
+                  {attractors.length === 0 && (
+                    <div className="rounded-lg border border-dashed border-border p-4 text-center">
+                      <Plus className="h-5 w-5 text-muted-foreground mx-auto mb-1" />
+                      <p className="text-xs text-muted-foreground">Add at least one film to match against</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="min-w-0">
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-red-500" />
+                  <CardTitle className="text-base">Not like these</CardTitle>
+                </div>
+                <p className="text-xs text-muted-foreground">Too intense, too slow, or not tonight</p>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <MovieSearchInput
+                  onAdd={(movie) =>
+                    setRoomState((prev) => ({ ...prev, repellers: [...prev.repellers, movie] }))
+                  }
+                  placeholder="Search for a film..."
+                  existingIds={new Set([...attractorIds, ...repellerIds])}
+                />
+                <div className="space-y-2">
+                  {repellers.map((m) => (
+                    <ReferenceMovieCard
+                      key={m.mediaItemId}
+                      movie={m}
+                      onRemove={() => remove("repeller", m.mediaItemId)}
+                      onWeightChange={(w) => updateWeight("repeller", m.mediaItemId, w)}
+                      onSaveToggle={() => toggleSave("repeller", m)}
+                    />
+                  ))}
+                  {repellers.length === 0 && (
+                    <div className="rounded-lg border border-dashed border-border p-3 text-center">
+                      <X className="h-4 w-4 text-muted-foreground mx-auto mb-1" />
+                      <p className="text-xs text-muted-foreground">Add vibes to steer away from, or use ✕ on a suggestion</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
           <Card>
             <CardHeader className="pb-2">
@@ -997,48 +1198,58 @@ export function PickSession({ currentUser, roomId, initialRoomState }: PickSessi
             </CardHeader>
             <CardContent>
               <div className="space-y-5">
-                <div className="space-y-3 rounded-lg border border-border/80 bg-muted/20 p-3">
-                  <p className="text-xs font-medium">Search from</p>
-                  <div className="flex flex-col gap-2.5 sm:flex-row sm:gap-8">
-                    <label className="flex items-center gap-2 text-sm cursor-pointer">
-                      <input
-                        type="radio"
-                        name="candidateSource"
-                        className="accent-primary"
-                        checked={candidateSource === "tmdb"}
-                        onChange={() => setRoomState((p) => ({ ...p, candidateSource: "tmdb" }))}
-                      />
-                      <span>TMDB (discover & re-rank)</span>
-                    </label>
-                    <label className="flex items-center gap-2 text-sm cursor-pointer">
-                      <input
-                        type="radio"
-                        name="candidateSource"
-                        className="accent-primary"
-                        checked={candidateSource === "library"}
-                        onChange={() =>
-                          setRoomState((p) => ({ ...p, candidateSource: "library", plexLibraryOnly: false }))
-                        }
-                      />
-                      <span>App library only</span>
+                <div className="space-y-2.5 rounded-lg border border-border/80 bg-muted/20 p-3">
+                  <p className="text-[11px] font-medium text-muted-foreground">Watchlist &amp; library</p>
+                  <div className="flex items-center gap-2.5">
+                    <Checkbox
+                      id="hide-logged"
+                      checked={hideAllLogged}
+                      onCheckedChange={(v) => setRoomState((p) => ({ ...p, hideAllLogged: !!v }))}
+                    />
+                    <label htmlFor="hide-logged" className="text-xs font-medium cursor-pointer select-none">
+                      Hide films participants have already logged (watchlist, watching, dropped)
                     </label>
                   </div>
-                  <p className="text-[11px] text-muted-foreground leading-snug">
-                    TMDB path pulls recommendations and similar titles, then scores up to 30 with your like / not-like
-                    embeddings. App library only uses films already in the database with embeddings.
-                  </p>
-                  {candidateSource === "tmdb" && (
-                    <div className="flex items-center gap-2.5 pt-1">
-                      <Checkbox
-                        id="plex-library-only"
-                        checked={plexLibraryOnly}
-                        onCheckedChange={(v) => setRoomState((p) => ({ ...p, plexLibraryOnly: !!v }))}
-                      />
-                      <label htmlFor="plex-library-only" className="text-xs font-medium cursor-pointer select-none">
-                        Only titles in my Plex library (link Plex in settings)
+                  <div className="flex items-start gap-2.5">
+                    <Checkbox
+                      id="plex-library-only"
+                      disabled={plexFilterDisabled}
+                      checked={!plexFilterDisabled && plexLibraryOnly}
+                      onCheckedChange={(v) => setRoomState((p) => ({ ...p, plexLibraryOnly: !!v }))}
+                      className="mt-0.5"
+                    />
+                    <div className="min-w-0 space-y-0.5">
+                      <label
+                        htmlFor="plex-library-only"
+                        className={cn(
+                          "text-xs font-medium select-none",
+                          !plexFilterDisabled && "cursor-pointer"
+                        )}
+                      >
+                        {plexSolo
+                          ? "Only suggest titles in my Plex library"
+                          : "Only suggest titles in all linked participants' Plex (intersection)"}
                       </label>
+                      {plexSolo && !hasPlexLinked && (
+                        <p className="text-[11px] text-muted-foreground leading-snug">
+                          <Link
+                            prefetch={false}
+                            href="/settings/plex"
+                            className="text-primary underline-offset-2 hover:underline"
+                          >
+                            Link Plex in settings
+                          </Link>{" "}
+                          to use this filter.
+                        </p>
+                      )}
+                      {!plexSolo && (
+                        <p className="text-[11px] text-muted-foreground leading-snug">
+                          Only people who have linked Plex are included. Those without a link do not
+                          restrict the set.
+                        </p>
+                      )}
                     </div>
-                  )}
+                  </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                   <div className="space-y-1.5">
@@ -1075,26 +1286,15 @@ export function PickSession({ currentUser, roomId, initialRoomState }: PickSessi
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2.5">
-                  <Checkbox
-                    id="hide-logged"
-                    checked={hideAllLogged}
-                    onCheckedChange={(v) => setRoomState((p) => ({ ...p, hideAllLogged: !!v }))}
-                  />
-                  <label htmlFor="hide-logged" className="text-xs font-medium cursor-pointer select-none">
-                    Hide films participants have already logged (watchlist, watching, dropped)
-                  </label>
-                </div>
-
                 <div className="space-y-1.5">
                   <div className="flex items-center gap-1.5 mb-1">
                     <UserCheck className="h-3.5 w-3.5 text-green-500" />
                     <label className="text-xs font-medium text-muted-foreground">Must include actor or director</label>
                   </div>
-                  <PeopleTagInput
+                  <PersonTagInput
                     values={requirePeople}
                     onChange={(values) => setRoomState((p) => ({ ...p, requirePeople: values }))}
-                    placeholder="e.g. George Clooney"
+                    placeholder="Search for an actor or director…"
                     colorClass="bg-green-500/15 text-green-700 dark:text-green-400"
                   />
                 </div>
@@ -1104,10 +1304,10 @@ export function PickSession({ currentUser, roomId, initialRoomState }: PickSessi
                     <UserX className="h-3.5 w-3.5 text-red-500" />
                     <label className="text-xs font-medium text-muted-foreground">Exclude actor or director</label>
                   </div>
-                  <PeopleTagInput
+                  <PersonTagInput
                     values={excludePeople}
                     onChange={(values) => setRoomState((p) => ({ ...p, excludePeople: values }))}
-                    placeholder="e.g. Brad Pitt"
+                    placeholder="Search for an actor or director…"
                     colorClass="bg-red-500/15 text-red-700 dark:text-red-400"
                   />
                 </div>
@@ -1125,14 +1325,12 @@ export function PickSession({ currentUser, roomId, initialRoomState }: PickSessi
               {scoringInProgress ? (
                 <>
                   <Loader2 className="h-5 w-5 animate-spin" />
-                  {candidateSource === "tmdb"
-                    ? "Scoring TMDB candidates..."
-                    : "Searching your library..."}
+                  {hasCompletedListRun ? "Refining matches..." : "Finding recommendations..."}
                 </>
               ) : (
                 <>
                   <Sparkles className="h-5 w-5" />
-                  Find Movies
+                  {hasCompletedListRun ? "Refine list" : "Find movies"}
                 </>
               )}
             </Button>
@@ -1151,9 +1349,9 @@ export function PickSession({ currentUser, roomId, initialRoomState }: PickSessi
               <CardContent className="py-10 text-center">
                 <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-2" />
                 <p className="text-sm text-muted-foreground">
-                  {candidateSource === "tmdb"
-                    ? "Pulling and scoring similar titles from TMDB&hellip; everyone in this room will see the list when it&apos;s ready."
-                    : "Scoring the library&hellip; everyone in this room will see the list when it&apos;s ready."}
+                  {hasCompletedListRun
+                    ? "Updating your matches&hellip; everyone in this room will see the list when it&apos;s ready."
+                    : "Pulling similar and recommended titles, then ranking with your picks&hellip; everyone in this room will see the list when it&apos;s ready."}
                 </p>
               </CardContent>
             </Card>
@@ -1177,9 +1375,7 @@ export function PickSession({ currentUser, roomId, initialRoomState }: PickSessi
                 </h2>
                 {visibleScoringResults !== null && visibleScoringResults.length > 0 && (
                   <p className="text-xs text-muted-foreground">
-                    {candidateSource === "tmdb"
-                      ? "TMDB candidates, ordered by embedding match"
-                      : "Ranked by similarity to your references"}
+                    Similar &amp; recommended titles, ranked by your likes and not-likes
                   </p>
                 )}
               </div>
@@ -1199,8 +1395,8 @@ export function PickSession({ currentUser, roomId, initialRoomState }: PickSessi
                   <CardContent className="py-10 text-center">
                     <X className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
                     <p className="text-muted-foreground text-sm max-w-sm mx-auto">
-                      Every suggestion from this run is marked not for tonight. Use Find Movies again, or
-                      remove titles from Not like these to bring them back into play.
+                      Every suggestion from this run is marked not for tonight. Run the search again with
+                      the button above, or remove titles from Not like these to bring them back into play.
                     </p>
                   </CardContent>
                 </Card>
@@ -1222,42 +1418,6 @@ export function PickSession({ currentUser, roomId, initialRoomState }: PickSessi
 
         <aside className="min-w-0 space-y-4 lg:sticky lg:top-4 lg:self-start">
           <Card>
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-2">
-                <div className="h-2 w-2 rounded-full bg-red-500" />
-                <CardTitle className="text-base">Not like these</CardTitle>
-              </div>
-              <p className="text-xs text-muted-foreground">Too intense, too slow, or not tonight</p>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <MovieSearchInput
-                onAdd={(movie) =>
-                  setRoomState((prev) => ({ ...prev, repellers: [...prev.repellers, movie] }))
-                }
-                placeholder="Search for a film..."
-                existingIds={new Set([...attractorIds, ...repellerIds])}
-              />
-              <div className="space-y-2">
-                {repellers.map((m) => (
-                  <ReferenceMovieCard
-                    key={m.mediaItemId}
-                    movie={m}
-                    onRemove={() => remove("repeller", m.mediaItemId)}
-                    onWeightChange={(w) => updateWeight("repeller", m.mediaItemId, w)}
-                    onSaveToggle={() => toggleSave("repeller", m)}
-                  />
-                ))}
-                {repellers.length === 0 && (
-                  <div className="rounded-lg border border-dashed border-border p-3 text-center">
-                    <X className="h-4 w-4 text-muted-foreground mx-auto mb-1" />
-                    <p className="text-xs text-muted-foreground">Add vibes to steer away from, or use ✕ on a suggestion</p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
             <CardHeader className="pb-2">
               <div className="flex items-center gap-2">
                 <MessageSquare className="h-4 w-4 text-muted-foreground" />
@@ -1267,8 +1427,8 @@ export function PickSession({ currentUser, roomId, initialRoomState }: PickSessi
             </CardHeader>
             <CardContent>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Suggestion threads and chat will show up here in a later update. For now, use the shared room and
-                the column beside the results.
+                Suggestion threads and chat will show up here in a later update. For now, use a shared room so
+                everyone edits the same list.
               </p>
             </CardContent>
           </Card>
