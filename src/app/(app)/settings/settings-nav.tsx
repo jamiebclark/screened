@@ -29,6 +29,7 @@ export function SettingsNav() {
     <nav className="flex flex-col gap-6" aria-label="Settings sections">
       <div>
         <Link
+          prefetch={false}
           href="/settings"
           className={cn(
             "block rounded-md px-3 py-2 text-sm font-medium transition-colors",
@@ -49,6 +50,7 @@ export function SettingsNav() {
             {group.items.map((item) => (
               <li key={item.href}>
                 <Link
+                  prefetch={false}
                   href={item.href}
                   className={cn(
                     "block rounded-md px-3 py-2 text-sm font-medium transition-colors",

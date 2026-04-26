@@ -22,7 +22,7 @@ export default function SettingsPage() {
           </p>
           <ul className="flex flex-col gap-3">
             <li>
-              <Link href="/settings/plex" className="block group">
+              <Link prefetch={false} href="/settings/plex" className="block group">
                 <Card className="transition-colors hover:bg-accent/50">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <div>
@@ -37,7 +37,7 @@ export default function SettingsPage() {
               </Link>
             </li>
             <li>
-              <Link href="/settings/letterboxd" className="block group">
+              <Link prefetch={false} href="/settings/letterboxd" className="block group">
                 <Card className="transition-colors hover:bg-accent/50">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <div>
@@ -60,7 +60,7 @@ export default function SettingsPage() {
           </h2>
           <ul className="flex flex-col gap-3">
             <li>
-              <Link href="/settings/account" className="block group">
+              <Link prefetch={false} href="/settings/account" className="block group">
                 <Card className="transition-colors hover:bg-accent/50">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <div>
@@ -78,7 +78,7 @@ export default function SettingsPage() {
               </Link>
             </li>
             <li>
-              <Link href="/settings/preferences" className="block group">
+              <Link prefetch={false} href="/settings/preferences" className="block group">
                 <Card className="transition-colors hover:bg-accent/50">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <div>
@@ -96,7 +96,7 @@ export default function SettingsPage() {
               </Link>
             </li>
             <li>
-              <Link href="/settings/watch-history" className="block group">
+              <Link prefetch={false} href="/settings/watch-history" className="block group">
                 <Card className="transition-colors hover:bg-accent/50">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <div>
