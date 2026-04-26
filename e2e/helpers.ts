@@ -52,12 +52,72 @@ export async function ensureLoggedIn(page: Page, user = TEST_USER) {
   }
 }
 
-/** Opens the user avatar menu (not Notifications, which is the other round header control). */
+/**
+ * Opens the user avatar menu (the second header action; the first is Notifications).
+ * Do not use the first round header button — that opens the notification dropdown.
+ */
 export async function openUserMenuFromHeader(page: Page) {
-  await page
-    .locator("header")
-    .getByRole("button")
-    .filter({ has: page.locator(".rounded-full") })
-    .first()
-    .click();
+  const headerRight = page.locator("header .max-w-7xl > div").last();
+  await headerRight.getByRole("button").last().click();
+}
+
+/** Current user’s profile user id (from the URL after opening Profile from the header menu). */
+export async function getProfileUserIdFromNav(page: Page): Promise<string> {
+  await page.goto("/");
+  await openUserMenuFromHeader(page);
+  await page.getByRole("menuitem", { name: /profile/i }).click();
+  await page.waitForURL(/\/profile\//, { timeout: 8000 });
+  const m = page.url().match(/\/profile\/([^/?#]+)/);
+  if (!m?.[1]) {
+    throw new Error(`Could not parse profile id from URL: ${page.url()}`);
+  }
+  return m[1];
+}
+
+type FriendsApiList = {
+  friends: { id: string }[];
+  outgoing: { id: string; toUser: { id: string } }[];
+  incoming: { id: string; fromUser: { id: string } }[];
+};
+
+/**
+ * Best-effort cleanup so two test users are not friends and have no pending friend requests
+ * in either direction. Improves isolation when the same DB is reused between runs.
+ */
+type TestCreds = { email: string; name: string; password: string };
+
+export async function clearFriendshipStateBetween(
+  page: Page,
+  id1: string,
+  id2: string,
+  user1: TestCreds = TEST_USER,
+  user2: TestCreds = TEST_USER_2,
+) {
+  const clearAs = async (user: TestCreds, selfId: string) => {
+    await logout(page);
+    await login(page, user);
+    const res = await page.request.get("/api/friends");
+    if (!res.ok) return;
+    const data = (await res.json()) as FriendsApiList;
+    const peerId = selfId === id1 ? id2 : id1;
+    for (const f of data.friends) {
+      if (f.id === peerId) {
+        await page.request.delete(`/api/friends/${encodeURIComponent(peerId)}`);
+      }
+    }
+    for (const o of data.outgoing) {
+      if (o.toUser.id === peerId) {
+        await page.request.delete(`/api/friends/requests/${encodeURIComponent(o.id)}`);
+      }
+    }
+    for (const i of data.incoming) {
+      if (i.fromUser.id === peerId) {
+        await page.request.delete(`/api/friends/requests/${encodeURIComponent(i.id)}`);
+      }
+    }
+  };
+
+  await clearAs(user1, id1);
+  await clearAs(user2, id2);
+  await logout(page);
 }
