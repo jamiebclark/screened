@@ -1,5 +1,11 @@
 # Agent instructions (Cursor / automation)
 
+## Documentation map
+
+- **User-facing / setup:** `README.md` and `.env.example` (keep aligned when adding features, env vars, or Docker/cron behavior).
+- **Changelog / releases:** `CHANGELOG.md` (semantic-release).
+- **This file:** Prisma, commits, and RSC — not a substitute for the README feature list.
+
 ## Database and Prisma
 
 **Source of truth:** `.cursor/rules/prisma-migrations.mdc` (always applied in Cursor).
@@ -10,7 +16,10 @@ Summary: **migrations only** for persisted environments. Do **not** use `prisma 
 
 ## Commits
 
-Follow **Conventional Commits** — see `.cursor/rules/conventional-commits.mdc`.
+**Source of truth:** `.cursor/rules/conventional-commits.mdc` (always applied in Cursor).
+
+- Use **Conventional Commits** (required for semantic-release).
+- Use **small, logically grouped commits**—one concern per commit when practical; do not lump unrelated features, docs, CI, and tests into a single commit unless the user explicitly asks. When undoing or splitting commits, avoid destructive git commands that drop work unless the user clearly requests them.
 
 ## Next.js App Router (RSC + client mutations)
 
