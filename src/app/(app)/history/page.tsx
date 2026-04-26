@@ -33,11 +33,8 @@ function formatTime(date: Date): string {
 export default async function HistoryPage() {
   const session = await auth();
 
-  const watched = await prisma.userMediaStatus.findMany({
-    where: {
-      userId: session!.user.id,
-      watchedAt: { not: null },
-    },
+  const watched = await prisma.watchEntry.findMany({
+    where: { userId: session!.user.id },
     include: { mediaItem: true },
     orderBy: { watchedAt: "desc" },
     take: 200,
@@ -47,7 +44,7 @@ export default async function HistoryPage() {
   const groups: { label: string; date: Date; items: typeof watched }[] = [];
 
   for (const entry of watched) {
-    const date = entry.watchedAt!;
+    const date = entry.watchedAt;
     const label = formatGroupDate(date);
     const last = groups[groups.length - 1];
 
@@ -64,7 +61,7 @@ export default async function HistoryPage() {
         <Eye className="h-6 w-6 text-primary" />
         <div>
           <h1 className="text-2xl font-bold">Watch History</h1>
-          <p className="text-sm text-muted-foreground">{watched.length} title{watched.length !== 1 ? "s" : ""} watched</p>
+          <p className="text-sm text-muted-foreground">{watched.length} watch entr{watched.length !== 1 ? "ies" : "y"}</p>
         </div>
       </div>
 
@@ -127,7 +124,7 @@ export default async function HistoryPage() {
                       </div>
 
                       <time className="text-xs text-muted-foreground shrink-0">
-                        {formatTime(entry.watchedAt!)}
+                        {formatTime(entry.watchedAt)}
                       </time>
                     </Link>
                   );
