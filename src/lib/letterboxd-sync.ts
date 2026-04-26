@@ -1,6 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { normalizeLetterboxdActivityUrl } from "@/lib/letterboxd-url";
 import { getMovie, searchMovie } from "@/lib/tmdb";
+import {
+  findMergeCandidateWatchEntry,
+  mergeLetterboxdDiaryIntoWatchEntry,
+} from "@/lib/watch-entry-merge";
 import { MediaType, WatchEntrySource, WatchStatus } from "@/generated/prisma";
 
 export interface LetterboxdSyncResult {
@@ -143,31 +147,17 @@ export async function syncLetterboxdUser(userId: string): Promise<LetterboxdSync
             },
           });
 
-          const duplicate = await prisma.watchEntry.findFirst({
-            where: { userId, mediaItemId: mediaItem.id, watchedAt },
-          });
+          const mergeTarget = await findMergeCandidateWatchEntry(
+            userId,
+            mediaItem.id,
+            watchedAt,
+          );
 
-          if (duplicate) {
-            const data: {
-              rating?: number;
-              source?: WatchEntrySource;
-              letterboxdActivityUrl?: string;
-            } = {};
-            if (entry.rating !== null && duplicate.rating === null) {
-              data.rating = entry.rating;
-              data.source = WatchEntrySource.LETTERBOXD;
-            } else if (duplicate.source === WatchEntrySource.UNKNOWN) {
-              data.source = WatchEntrySource.LETTERBOXD;
-            }
-            if (entry.activityUrl) {
-              data.letterboxdActivityUrl = entry.activityUrl;
-            }
-            if (Object.keys(data).length > 0) {
-              await prisma.watchEntry.update({
-                where: { id: duplicate.id },
-                data,
-              });
-            }
+          if (mergeTarget) {
+            await mergeLetterboxdDiaryIntoWatchEntry(mergeTarget, {
+              rating: entry.rating,
+              activityUrl: entry.activityUrl,
+            });
             alreadyWatched++;
             return;
           }

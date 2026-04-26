@@ -7,6 +7,10 @@ import {
   extractTmdbIdFromGuid,
 } from "@/lib/plex";
 import { getMovie, getTvShow } from "@/lib/tmdb";
+import {
+  findMergeCandidateWatchEntry,
+  mergePlexIntoWatchEntryIfUnknown,
+} from "@/lib/watch-entry-merge";
 import { MediaType, WatchEntrySource, WatchStatus } from "@/generated/prisma";
 
 export interface PlexSyncResult {
@@ -85,9 +89,11 @@ export async function syncPlexUser(userId: string): Promise<PlexSyncResult> {
       create: { userId, mediaItemId: mediaItem.id, status: WatchStatus.WATCHED },
     });
 
-    const existingEntry = await prisma.watchEntry.findFirst({
-      where: { userId, mediaItemId: mediaItem.id, watchedAt },
-    });
+    const existingEntry = await findMergeCandidateWatchEntry(
+      userId,
+      mediaItem.id,
+      watchedAt,
+    );
     if (!existingEntry) {
       await prisma.watchEntry.create({
         data: {
@@ -98,11 +104,8 @@ export async function syncPlexUser(userId: string): Promise<PlexSyncResult> {
           source: WatchEntrySource.PLEX,
         },
       });
-    } else if (existingEntry.source === WatchEntrySource.UNKNOWN) {
-      await prisma.watchEntry.update({
-        where: { id: existingEntry.id },
-        data: { source: WatchEntrySource.PLEX },
-      });
+    } else {
+      await mergePlexIntoWatchEntryIfUnknown(existingEntry);
     }
 
     synced++;
