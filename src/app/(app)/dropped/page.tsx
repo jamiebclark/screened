@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { MediaCard } from "@/components/media-card";
+import { EditableListSearchAdd } from "@/components/editable-list-search-add";
 import { TvMinimal } from "lucide-react";
 import { MediaType } from "@/generated/prisma";
 
@@ -13,6 +14,10 @@ export default async function DroppedPage() {
     orderBy: { updatedAt: "desc" },
   });
 
+  const existingKeys = items.map(
+    (i) => `${i.mediaItem.type === MediaType.MOVIE ? "movie" : "tv"}-${i.mediaItem.tmdbId}`
+  );
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 space-y-6">
       <div className="flex items-center gap-3">
@@ -24,6 +29,8 @@ export default async function DroppedPage() {
           <p className="text-sm text-muted-foreground">{items.length} title{items.length !== 1 ? "s" : ""} dropped</p>
         </div>
       </div>
+
+      <EditableListSearchAdd variant="dropped" existingKeys={existingKeys} />
 
       {items.length === 0 ? (
         <div className="text-center py-20 border border-dashed border-border rounded-xl">

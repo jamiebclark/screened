@@ -10,16 +10,19 @@ export async function GET(req: NextRequest) {
 
   const q = req.nextUrl.searchParams.get("q")?.trim();
   const type = req.nextUrl.searchParams.get("type") ?? "movie";
+  const movieOnly = type === "movie";
 
   if (!q) return NextResponse.json({ results: [] });
 
   try {
-    const response = type === "movie"
-      ? await searchMovie(q)
-      : await searchMulti(q);
+    const response = movieOnly ? await searchMovie(q) : await searchMulti(q);
 
     const results = response.results
-      .filter((r) => r.media_type === "movie" || type === "movie")
+      .filter((r) =>
+        movieOnly
+          ? r.media_type === "movie"
+          : r.media_type === "movie" || r.media_type === "tv"
+      )
       .slice(0, 8)
       .map((r) => ({
         tmdbId: r.id,
