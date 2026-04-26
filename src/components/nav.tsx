@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { Film, Search, ListVideo, User, LogOut, Settings, Menu, X, History } from "lucide-react";
+import { Film, Search, ListVideo, User, LogOut, Settings, Menu, X, History, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,6 +28,7 @@ interface NavProps {
 const navLinks = [
   { href: "/", label: "Home", icon: Film },
   { href: "/search", label: "Search", icon: Search },
+  { href: "/pick", label: "Picker", icon: Sparkles },
   { href: "/history", label: "History", icon: History },
   { href: "/lists", label: "Lists", icon: ListVideo },
 ];
@@ -88,6 +89,12 @@ export function Nav({ user }: NavProps) {
                 <Link href={`/profile/${user.id}`} className="cursor-pointer">
                   <User className="mr-2 h-4 w-4" />
                   Profile
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/settings/preferences" className="cursor-pointer">
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  Saved Preferences
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>

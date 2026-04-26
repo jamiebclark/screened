@@ -10,31 +10,78 @@ import { MediaType } from "@/generated/prisma";
 
 type Params = { params: Promise<{ userId: string }> };
 
+function buildLastWatchedMsByMediaItemId(
+  watchAgg: { mediaItemId: string; _max: { watchedAt: Date | null } }[],
+  episodeAgg: { mediaItemId: string; _max: { watchedAt: Date | null } }[],
+): Map<string, number> {
+  const map = new Map<string, number>();
+  const bump = (mediaItemId: string, d: Date | null | undefined) => {
+    const t = d?.getTime();
+    if (t == null || Number.isNaN(t)) return;
+    map.set(mediaItemId, Math.max(map.get(mediaItemId) ?? 0, t));
+  };
+  for (const row of watchAgg) bump(row.mediaItemId, row._max.watchedAt);
+  for (const row of episodeAgg) bump(row.mediaItemId, row._max.watchedAt);
+  return map;
+}
+
+function sortByLastWatchedDesc<
+  T extends { mediaItemId: string; updatedAt: Date },
+>(items: T[], lastWatchedMs: Map<string, number>): T[] {
+  return [...items].sort((a, b) => {
+    const tb =
+      lastWatchedMs.get(b.mediaItemId) ?? b.updatedAt.getTime();
+    const ta =
+      lastWatchedMs.get(a.mediaItemId) ?? a.updatedAt.getTime();
+    return tb - ta;
+  });
+}
+
 export default async function ProfilePage({ params }: Params) {
   const { userId } = await params;
   const session = await auth();
 
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      id: true,
-      name: true,
-      avatarUrl: true,
-      bio: true,
-      createdAt: true,
-      mediaStatuses: {
-        include: { mediaItem: true },
-        orderBy: { updatedAt: "desc" },
+  const [user, watchAgg, episodeAgg] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        avatarUrl: true,
+        bio: true,
+        createdAt: true,
+        mediaStatuses: {
+          include: { mediaItem: true },
+          orderBy: { updatedAt: "desc" },
+        },
       },
-    },
-  });
+    }),
+    prisma.watchEntry.groupBy({
+      by: ["mediaItemId"],
+      where: { userId },
+      _max: { watchedAt: true },
+    }),
+    prisma.episodeStatus.groupBy({
+      by: ["mediaItemId"],
+      where: { userId },
+      _max: { watchedAt: true },
+    }),
+  ]);
 
   if (!user) notFound();
 
   const isOwnProfile = session?.user?.id === userId;
 
-  const watched = user.mediaStatuses.filter((s) => s.status === "WATCHED");
-  const watching = user.mediaStatuses.filter((s) => s.status === "WATCHING");
+  const lastWatchedMs = buildLastWatchedMsByMediaItemId(watchAgg, episodeAgg);
+
+  const watched = sortByLastWatchedDesc(
+    user.mediaStatuses.filter((s) => s.status === "WATCHED"),
+    lastWatchedMs,
+  );
+  const watching = sortByLastWatchedDesc(
+    user.mediaStatuses.filter((s) => s.status === "WATCHING"),
+    lastWatchedMs,
+  );
   const watchlist = user.mediaStatuses.filter((s) => s.status === "WATCHLIST");
   const movies = user.mediaStatuses.filter((s) => s.mediaItem.type === MediaType.MOVIE);
   const tvShows = user.mediaStatuses.filter((s) => s.mediaItem.type === MediaType.TV);
