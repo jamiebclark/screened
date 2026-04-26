@@ -174,8 +174,51 @@ export async function GET(req: NextRequest) {
   }
 
   const { searchParams } = new URL(req.url);
-  const tmdbId = parseInt(searchParams.get("tmdbId") ?? "");
   const type = searchParams.get("type") as "movie" | "tv" | null;
+  const tmdbIdsParam = searchParams.get("tmdbIds");
+
+  if (tmdbIdsParam != null && tmdbIdsParam !== "") {
+    if (!type || !["movie", "tv"].includes(type)) {
+      return NextResponse.json({ error: "Missing or invalid type" }, { status: 400 });
+    }
+    const rawIds = tmdbIdsParam
+      .split(",")
+      .map((s) => parseInt(s.trim(), 10))
+      .filter((n) => Number.isFinite(n));
+    const ids = [...new Set(rawIds)];
+    if (ids.length === 0) {
+      return NextResponse.json({ statuses: {} as Record<string, { status: WatchStatus; rating: number | null }> });
+    }
+    if (ids.length > 80) {
+      return NextResponse.json({ error: "Too many tmdbIds" }, { status: 400 });
+    }
+    const mediaType = type === "movie" ? MediaType.MOVIE : MediaType.TV;
+    const items = await prisma.mediaItem.findMany({
+      where: { tmdbId: { in: ids }, type: mediaType },
+      select: { id: true, tmdbId: true },
+    });
+    if (items.length === 0) {
+      return NextResponse.json({ statuses: {} as Record<string, { status: WatchStatus; rating: number | null }> });
+    }
+    const statuses = await prisma.userMediaStatus.findMany({
+      where: {
+        userId: session.user.id,
+        mediaItemId: { in: items.map((i) => i.id) },
+      },
+      select: { mediaItemId: true, status: true, rating: true },
+    });
+    const mediaIdToTmdb = new Map(items.map((i) => [i.id, i.tmdbId]));
+    const byTmdb: Record<string, { status: WatchStatus; rating: number | null }> = {};
+    for (const row of statuses) {
+      const tmdb = mediaIdToTmdb.get(row.mediaItemId);
+      if (tmdb !== undefined) {
+        byTmdb[String(tmdb)] = { status: row.status, rating: row.rating };
+      }
+    }
+    return NextResponse.json({ statuses: byTmdb });
+  }
+
+  const tmdbId = parseInt(searchParams.get("tmdbId") ?? "");
 
   if (!tmdbId || !type) {
     return NextResponse.json({ error: "Missing params" }, { status: 400 });
