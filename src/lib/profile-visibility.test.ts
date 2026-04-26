@@ -2,10 +2,16 @@ import { describe, it, expect } from "vitest";
 import { canViewProfileContent, sortedFriendshipUserIds } from "./profile-visibility";
 
 describe("profile-visibility", () => {
-  it("orders friendship ids", () => {
-    const a = "a_user";
-    const b = "b_user";
-    expect(sortedFriendshipUserIds(b, a)).toEqual({ userLowId: a, userHighId: b });
+  it("orders friendship ids (lexicographic low / high)", () => {
+    const low = "a_user";
+    const high = "b_user";
+    expect(sortedFriendshipUserIds(low, high)).toEqual({ userLowId: low, userHighId: high });
+    expect(sortedFriendshipUserIds(high, low)).toEqual({ userLowId: low, userHighId: high });
+  });
+
+  it("treats equal ids as the same pair", () => {
+    const id = "same_id";
+    expect(sortedFriendshipUserIds(id, id)).toEqual({ userLowId: id, userHighId: id });
   });
 
   it("owner always can view", () => {
