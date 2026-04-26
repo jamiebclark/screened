@@ -1,3 +1,15 @@
+## [1.6.0](https://github.com/jamiebclark/screened/compare/v1.5.1...v1.6.0) (2026-04-26)
+
+### Features
+
+* **api:** batch fetch media statuses by tmdb ids ([0a29c3c](https://github.com/jamiebclark/screened/commit/0a29c3c1eb23d1dd11e0935b26b5faebce96e034))
+* **pick:** show watch status, lists, and ratings on result cards ([4207131](https://github.com/jamiebclark/screened/commit/4207131522c4737b4440773aa12ec3faa90369f7))
+* **ui:** use corner remove control on lists, watchlist, and watching ([0c2a49f](https://github.com/jamiebclark/screened/commit/0c2a49f28f57f9cfa3f8375c770c4be3cda6866a))
+
+### Bug Fixes
+
+* **ui:** sync watch status and ratings with server after mutations ([d25676c](https://github.com/jamiebclark/screened/commit/d25676c2789905b1bb780169b337541a14e96c2a))
+
 ## [1.5.1](https://github.com/jamiebclark/screened/compare/v1.5.0...v1.5.1) (2026-04-26)
 
 ### Bug Fixes
