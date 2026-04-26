@@ -68,7 +68,7 @@ export function WatchStatusButton({ tmdbId, type, currentStatus, onStatusChange 
           ) : (
             <>
               <Bookmark className="h-4 w-4" />
-              Add to list
+              Track
             </>
           )}
           <ChevronDown className="h-3 w-3 opacity-60" />

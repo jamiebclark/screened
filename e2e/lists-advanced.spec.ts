@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { ensureLoggedIn, ensureTestUsersExist, TEST_USER_2 } from "./helpers";
+import { ensureLoggedIn, ensureTestUsersExist, TEST_USER_2, login } from "./helpers";
 
 test.beforeEach(async ({ page }) => {
   await ensureTestUsersExist(page);
@@ -7,7 +7,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.describe("Lists - Advanced", () => {
-  test("private list is inaccessible to non-members without slug", async ({ page }) => {
+  test("private list is inaccessible to non-members without slug", async ({ page, browser }) => {
     // Create a private list as main user
     const res = await page.request.post("/api/lists", {
       data: { name: `Private ${Date.now()}`, isPublic: false },
@@ -15,16 +15,23 @@ test.describe("Lists - Advanced", () => {
     });
     const list = await res.json() as { slug: string };
 
-    // Clear session so middleware doesn't redirect away from /login
-    await page.context().clearCookies();
-    await page.goto("/login");
-    await page.getByLabel("Email").fill(TEST_USER_2.email);
-    await page.getByLabel("Password").fill(TEST_USER_2.password);
-    await page.getByRole("button", { name: "Sign in", exact: true }).click();
-    await page.waitForURL("/", { timeout: 10000 });
+    // Use a fresh browser context to log in as user 2
+    const ctx2 = await browser.newContext();
+    const page2 = await ctx2.newPage();
+    try {
+      await login(page2, TEST_USER_2);
+      // User 2 should not be able to access the private list via API (403)
+      const apiCheck = await page2.request.get(`/api/lists/${list.slug}`);
+      expect(apiCheck.status()).toBe(403);
 
-    await page.goto(`/lists/${list.slug}`);
-    await expect(page.getByText(/not found|404/i)).toBeVisible({ timeout: 5000 });
+      // UI: visiting the list page should show a not-found/error page
+      const response = await page2.goto(`/lists/${list.slug}`);
+      // The page should redirect or show 404 (Next.js renders 404 for notFound())
+      const pageText = await page2.locator("body").textContent() ?? "";
+      expect(/404|not found|Could not be found/i.test(pageText)).toBe(true);
+    } finally {
+      await ctx2.close();
+    }
   });
 
   test("delete a list", async ({ page }) => {
@@ -113,7 +120,7 @@ test.describe("Lists - Advanced", () => {
     expect(data.length).toBeGreaterThan(0);
   });
 
-  test("non-owner cannot delete list", async ({ page }) => {
+  test("non-owner cannot delete list", async ({ page, browser }) => {
     // Create list as user 1
     const res = await page.request.post("/api/lists", {
       data: { name: `No Delete ${Date.now()}`, isPublic: true },
@@ -121,17 +128,17 @@ test.describe("Lists - Advanced", () => {
     });
     const list = await res.json() as { slug: string };
 
-    // Clear session so middleware doesn't redirect away from /login
-    await page.context().clearCookies();
-    await page.goto("/login");
-    await page.getByLabel("Email").fill(TEST_USER_2.email);
-    await page.getByLabel("Password").fill(TEST_USER_2.password);
-    await page.getByRole("button", { name: "Sign in", exact: true }).click();
-    await page.waitForURL("/", { timeout: 10000 });
-
-    // Try to delete
-    const del = await page.request.delete(`/api/lists/${list.slug}`);
-    expect(del.status()).toBe(403);
+    // Use a fresh browser context to log in as user 2
+    const ctx2 = await browser.newContext();
+    const page2 = await ctx2.newPage();
+    try {
+      await login(page2, TEST_USER_2);
+      // User 2 should get 403 when trying to delete user 1's list
+      const del = await page2.request.delete(`/api/lists/${list.slug}`);
+      expect(del.status()).toBe(403);
+    } finally {
+      await ctx2.close();
+    }
   });
 
   test("add TV show to list", async ({ page }) => {

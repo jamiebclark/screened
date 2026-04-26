@@ -1,9 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getTvShow } from "@/lib/tmdb";
 import { MediaType } from "@/generated/prisma";
 
 type Params = { params: Promise<{ tmdbId: string }> };
+
+async function getOrCreateTvItem(tmdbId: number) {
+  const existing = await prisma.mediaItem.findUnique({
+    where: { tmdbId_type: { tmdbId, type: MediaType.TV } },
+  });
+  if (existing) return existing;
+
+  const show = await getTvShow(tmdbId);
+  return prisma.mediaItem.create({
+    data: {
+      tmdbId,
+      type: MediaType.TV,
+      title: show.name,
+      poster: show.poster_path,
+      backdrop: show.backdrop_path,
+      year: show.first_air_date ? new Date(show.first_air_date).getFullYear() : null,
+      overview: show.overview,
+      genres: show.genres.map((g) => g.name),
+      runtime: show.episode_run_time[0] ?? null,
+    },
+  });
+}
 
 export async function POST(req: NextRequest, { params }: Params) {
   const session = await auth();
@@ -15,9 +38,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   const tmdbId = parseInt(tmdbIdStr);
   const body = await req.json() as { seasonNumber?: number; episodeNumber?: number; episodes?: { seasonNumber: number; episodeNumber: number }[] };
 
-  const mediaItem = await prisma.mediaItem.findUnique({
-    where: { tmdbId_type: { tmdbId, type: MediaType.TV } },
-  });
+  const mediaItem = await getOrCreateTvItem(tmdbId).catch(() => null);
 
   if (!mediaItem) {
     return NextResponse.json({ error: "Media not found" }, { status: 404 });
@@ -54,8 +75,9 @@ export async function DELETE(req: NextRequest, { params }: Params) {
     where: { tmdbId_type: { tmdbId, type: MediaType.TV } },
   });
 
+  // Nothing to delete if media item doesn't exist yet
   if (!mediaItem) {
-    return NextResponse.json({ error: "Media not found" }, { status: 404 });
+    return NextResponse.json({ success: true });
   }
 
   const episodes = body.episodes ?? [
