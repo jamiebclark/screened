@@ -58,7 +58,7 @@ jobs:
       - name: Assert migrations match schema.prisma
         run: yarn prisma migrate diff --from-migrations prisma/migrations --to-schema prisma/schema.prisma --exit-code
 
-      - run: yarn prisma generate
+      - run: yarn db:generate
 
       - name: Build Next.js app
         run: yarn build

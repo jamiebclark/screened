@@ -9,9 +9,7 @@ FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN yarn prisma generate && \
-    printf "export * from './client';\nexport * from './enums';\nexport * from './models';\n" \
-    > src/generated/prisma/index.ts
+RUN yarn db:generate
 RUN yarn build
 
 FROM base AS runner

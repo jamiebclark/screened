@@ -97,7 +97,7 @@ run("yarn", [
   "prisma/schema.prisma",
   "--exit-code",
 ]);
-run("yarn", ["prisma", "generate"]);
+run("yarn", ["db:generate"]);
 run("yarn", ["build"], {
   AUTH_SECRET: process.env.AUTH_SECRET ?? "ci-build-placeholder-min-32-chars-long!!",
   NEXTAUTH_URL: process.env.NEXTAUTH_URL ?? "http://localhost:3000",
