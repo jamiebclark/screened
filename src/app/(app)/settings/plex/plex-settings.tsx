@@ -124,9 +124,12 @@ export function PlexSettings({ connection: initialConnection }: PlexSettingsProp
       {syncResult && (
         <div className="rounded-md bg-green-500/10 border border-green-500/30 px-3 py-2 text-sm text-green-400 space-y-0.5">
           <p className="font-medium">Sync complete</p>
-          {syncResult.synced > 0 && <p>{syncResult.synced} movie{syncResult.synced !== 1 ? "s" : ""} marked as watched</p>}
-          {syncResult.episodes > 0 && <p>{syncResult.episodes} TV episode{syncResult.episodes !== 1 ? "s" : ""} across {syncResult.tvShows} show{syncResult.tvShows !== 1 ? "s" : ""} imported</p>}
-          {syncResult.synced === 0 && syncResult.episodes === 0 && <p>Nothing new to import</p>}
+          <p>
+            {syncResult.synced} movie{syncResult.synced !== 1 ? "s" : ""} watched
+            {" · "}
+            {syncResult.episodes} TV episode{syncResult.episodes !== 1 ? "s" : ""} across {syncResult.tvShows} show{syncResult.tvShows !== 1 ? "s" : ""} imported
+            {syncResult.synced === 0 && syncResult.episodes === 0 ? " — nothing new" : ""}
+          </p>
         </div>
       )}
 
