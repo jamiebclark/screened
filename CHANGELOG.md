@@ -1,3 +1,15 @@
+## [1.7.0](https://github.com/jamiebclark/screened/compare/v1.6.1...v1.7.0) (2026-04-26)
+
+### Features
+
+* **pick:** live session activity feed with sourceUserId on room sync ([417a764](https://github.com/jamiebclark/screened/commit/417a76416a8bf39147b72b5efb47151b4d72baa4))
+* **profile:** privacy settings, friend requests, and notifications ([1c8d9da](https://github.com/jamiebclark/screened/commit/1c8d9da8ba20c3c0af7a700de4750443d5c9a742))
+* **settings:** add about page with version and latest changelog ([4af955f](https://github.com/jamiebclark/screened/commit/4af955f6e7f0377e8e99e962b159bd1ae7da98e9))
+
+### Bug Fixes
+
+* **app:** add favicon.ico derived from brand icon ([b6f23a4](https://github.com/jamiebclark/screened/commit/b6f23a46d8d97f9b0dfb3a63b04db4a8b3af7f2d))
+
 ## [1.6.1](https://github.com/jamiebclark/screened/compare/v1.6.0...v1.6.1) (2026-04-26)
 
 ### Bug Fixes
