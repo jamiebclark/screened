@@ -1,14 +1,38 @@
 ---
-description: Require SQL migrations for any Prisma schema or database shape change
-globs: prisma/**
-alwaysApply: false
+description: Authoritative Prisma + Postgres strategy — migrations only, no db push on shared DBs
+alwaysApply: true
 ---
 
-# Prisma schema and migrations
+# Database changes (Prisma) — single strategy
 
-- **Every change to `prisma/schema.prisma` (models, fields, relations, enums, indexes)** must be accompanied by a new migration in `prisma/migrations/`. Do not rely on `prisma db push` alone for work that is meant to be deployed; production and Docker use `prisma migrate deploy`.
-- **Never commit schema edits without a matching migration** unless the user explicitly says they are prototypes only.
-- **Preferred workflow:** after editing the schema, run `yarn prisma migrate dev --name <short_description>` (with `DATABASE_URL` pointed at a dev database) to generate the migration, then review the SQL. If a dev database is not available, use `prisma migrate diff` (from a DB or migrations history) to author the `migration.sql` and verify with `prisma migrate deploy` against a test database.
-- **Verify:** a database created only with `prisma migrate deploy` must match `schema.prisma` (e.g. `prisma migrate diff` shows no pending changes).
+This project uses **SQL migrations only** for any database that is (or will be) used with `prisma migrate deploy` (local dev Postgres, staging, production, Docker). **All agents must follow this; there is no alternate path.**
+
+## Do this
+
+| Situation | Command / action |
+|-----------|------------------|
+| You changed `prisma/schema.prisma` and want it in git + deployable | `yarn prisma migrate dev --name <short_snake_description>` against a **dev** database (or author `migration.sql` via `prisma migrate diff` if no DB). **Commit** the new folder under `prisma/migrations/`. |
+| CI / production / fresh container | `yarn prisma migrate deploy` only. |
+| Check drift | From an empty DB, `migrate deploy` then `prisma migrate diff` (or validate) so schema matches `schema.prisma`. |
+
+## Do not do this
+
+- **`prisma db push`** on **any** database that also uses **migrations** (including your own `movienightdb` if `_prisma_migrations` exists). `db push` skips migration history and causes duplicate objects, missing columns, and **P3009 / P3018** style failures.
+- **Commit `schema.prisma` changes without a new migration** unless the user explicitly said **prototype / throwaway only** (and then do not run `migrate deploy` on shared DBs until a real migration exists).
+- **`prisma migrate resolve`** (applied / rolled-back) **without understanding** the real DB state — that rewrites history and can lie about what ran. Use only when deliberately recovering from a documented failure.
+
+## Agent workflow (checklist)
+
+1. Edit `schema.prisma`.
+2. Run **`migrate dev`** (preferred) to generate SQL, **or** generate diff and a migration file if no local DB.
+3. Review generated `migration.sql`.
+4. Commit **both** `schema.prisma` and `prisma/migrations/<timestamp>_*`.
+5. Never suggest **`db push`** as the fix for schema drift on this project; suggest **`migrate deploy`** after migrations exist, or a **one-off recovery** plan if history and DB are broken.
+
+## Why
+
+Production and Docker expect **`prisma migrate deploy`**. One pipeline avoids “works on my machine” drift and the `WatchEntry.source`-style missing-column errors when code assumes migrated schema.
 
 ---
+
+For humans: if a migration fails mid-run, stop, fix or roll back explicitly (`migrate resolve` + documented SQL), then continue — do not mix `db push` into that database.
