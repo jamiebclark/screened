@@ -1,11 +1,9 @@
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import Image from "next/image";
-import { tmdbImageUrl } from "@/lib/utils";
-import { Eye, Film, Tv } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { MediaType } from "@/generated/prisma";
+import { prisma } from "@/lib/prisma";
+import { Eye } from "lucide-react";
+import { HistoryWatchEntryRow } from "@/components/history-watch-entry-row";
+import { historyDayPath, historyMonthPath, localCalendarParts } from "@/lib/history-calendar";
 
 function formatGroupDate(date: Date): string {
   const now = new Date();
@@ -40,7 +38,6 @@ export default async function HistoryPage() {
     take: 200,
   });
 
-  // Group entries by calendar day
   const groups: { label: string; date: Date; items: typeof watched }[] = [];
 
   for (const entry of watched) {
@@ -55,6 +52,9 @@ export default async function HistoryPage() {
     }
   }
 
+  const now = new Date();
+  const { year: cy, month: cm } = localCalendarParts(now);
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-8">
@@ -62,15 +62,25 @@ export default async function HistoryPage() {
           <Eye className="h-6 w-6 text-primary" />
           <div>
             <h1 className="text-2xl font-bold">Watch History</h1>
-            <p className="text-sm text-muted-foreground">{watched.length} watch entr{watched.length !== 1 ? "ies" : "y"}</p>
+            <p className="text-sm text-muted-foreground">
+              {watched.length} watch entr{watched.length !== 1 ? "ies" : "y"}
+            </p>
           </div>
         </div>
-        <Link
-          href="/settings/watch-history"
-          className="text-sm text-muted-foreground hover:text-foreground transition-colors shrink-0"
-        >
-          Manage imports & clear history
-        </Link>
+        <div className="flex flex-col items-end gap-2 shrink-0">
+          <Link
+            href={historyMonthPath(cy, cm)}
+            className="text-sm font-medium text-primary hover:underline"
+          >
+            Calendar · {new Date(cy, cm - 1, 1).toLocaleDateString("en-US", { month: "long", year: "numeric" })}
+          </Link>
+          <Link
+            href="/settings/watch-history"
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Manage imports & clear history
+          </Link>
+        </div>
       </div>
 
       {watched.length === 0 ? (
@@ -81,69 +91,33 @@ export default async function HistoryPage() {
         </div>
       ) : (
         <div className="space-y-8">
-          {groups.map((group) => (
-            <div key={group.label}>
-              <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 sticky top-16 bg-background/95 backdrop-blur py-1 -mx-4 px-4">
-                {group.label}
-              </h2>
-              <div className="space-y-2">
-                {group.items.map((entry) => {
-                  const href =
-                    entry.mediaItem.type === MediaType.MOVIE
-                      ? `/movies/${entry.mediaItem.tmdbId}`
-                      : `/tv/${entry.mediaItem.tmdbId}`;
-                  const poster = tmdbImageUrl(entry.mediaItem.poster, "w92");
-                  const isMovie = entry.mediaItem.type === MediaType.MOVIE;
-
-                  return (
-                    <Link
+          {groups.map((group) => {
+            const { year, month, day } = localCalendarParts(group.date);
+            const dayHref = historyDayPath(year, month, day);
+            return (
+              <div key={`${group.label}-${group.date.toISOString()}`}>
+                <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 sticky top-16 bg-background/95 backdrop-blur py-1 -mx-4 px-4">
+                  <Link href={dayHref} className="hover:text-foreground transition-colors">
+                    {group.label}
+                  </Link>
+                </h2>
+                <div className="space-y-2">
+                  {group.items.map((entry) => (
+                    <HistoryWatchEntryRow
                       key={entry.id}
-                      href={href}
-                      className="flex items-center gap-4 rounded-lg border border-border bg-card hover:bg-accent transition-colors p-3 group"
-                    >
-                      <div className="shrink-0 w-10 h-14 rounded overflow-hidden bg-muted">
-                        {poster ? (
-                          <Image
-                            src={poster}
-                            alt={entry.mediaItem.title}
-                            width={40}
-                            height={56}
-                            className="object-cover w-full h-full"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                            {isMovie ? <Film className="h-4 w-4" /> : <Tv className="h-4 w-4" />}
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate group-hover:text-primary transition-colors">
-                          {entry.mediaItem.title}
-                        </p>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <Badge variant="outline" className="text-xs px-1.5 py-0">
-                            {isMovie ? "Movie" : "TV"}
-                          </Badge>
-                          {entry.mediaItem.year && (
-                            <span className="text-xs text-muted-foreground">{entry.mediaItem.year}</span>
-                          )}
-                        </div>
-                      </div>
-
-                      <time className="text-xs text-muted-foreground shrink-0">
-                        {formatTime(entry.watchedAt)}
-                      </time>
-                    </Link>
-                  );
-                })}
+                      entry={entry}
+                      timeLabel={formatTime(entry.watchedAt)}
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
 
           {watched.length === 200 && (
             <p className="text-center text-sm text-muted-foreground py-4">
-              Showing your 200 most recent. Older history is still tracked.
+              Showing your 200 most recent. Older history is still tracked — open a month on the calendar to browse by
+              date.
             </p>
           )}
         </div>

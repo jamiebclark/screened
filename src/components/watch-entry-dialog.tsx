@@ -29,6 +29,8 @@ interface WatchEntryDialogProps {
   type: "movie" | "tv";
   entry?: WatchEntry;
   onSave: (entry: WatchEntry) => void;
+  /** YYYY-MM-DD for new viewings only; pre-fills date & time (noon local). */
+  defaultWatchedAtForNew?: string | null;
 }
 
 function toDatetimeLocal(value: string | Date | null | undefined): string {
@@ -39,16 +41,42 @@ function toDatetimeLocal(value: string | Date | null | undefined): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-export function WatchEntryDialog({ tmdbId, type, entry, onSave }: WatchEntryDialogProps) {
+function dateOnlyToDatetimeLocal(ymd: string): string {
+  const parts = /^(\d{4})-(\d{2})-(\d{2})$/.exec(ymd.trim());
+  if (!parts) return toDatetimeLocal(new Date());
+  const y = parseInt(parts[1], 10);
+  const m = parseInt(parts[2], 10);
+  const d = parseInt(parts[3], 10);
+  const probe = new Date(y, m - 1, d);
+  if (probe.getFullYear() !== y || probe.getMonth() !== m - 1 || probe.getDate() !== d) {
+    return toDatetimeLocal(new Date());
+  }
+  return toDatetimeLocal(new Date(y, m - 1, d, 12, 0, 0, 0));
+}
+
+export function WatchEntryDialog({
+  tmdbId,
+  type,
+  entry,
+  onSave,
+  defaultWatchedAtForNew = null,
+}: WatchEntryDialogProps) {
   const isEditing = !!entry;
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
-  const [dateValue, setDateValue] = useState(() => toDatetimeLocal(entry?.watchedAt) || toDatetimeLocal(new Date()));
+  const [dateValue, setDateValue] = useState(() => {
+    if (!entry && defaultWatchedAtForNew) return dateOnlyToDatetimeLocal(defaultWatchedAtForNew);
+    return toDatetimeLocal(entry?.watchedAt) || toDatetimeLocal(new Date());
+  });
   const [reviewValue, setReviewValue] = useState(entry?.review ?? "");
 
   const handleOpen = (val: boolean) => {
     if (val) {
-      setDateValue(toDatetimeLocal(entry?.watchedAt) || toDatetimeLocal(new Date()));
+      if (!entry && defaultWatchedAtForNew) {
+        setDateValue(dateOnlyToDatetimeLocal(defaultWatchedAtForNew));
+      } else {
+        setDateValue(toDatetimeLocal(entry?.watchedAt) || toDatetimeLocal(new Date()));
+      }
       setReviewValue(entry?.review ?? "");
     }
     setOpen(val);

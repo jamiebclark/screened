@@ -53,13 +53,16 @@ export function Nav({ user, initialUnreadNotifications }: NavProps) {
           </Link>
 
           <nav className="hidden md:flex items-center gap-1">
-            {navLinks.map(({ href, label, icon: Icon }) => (
+            {navLinks.map(({ href, label, icon: Icon }) => {
+              const active =
+                pathname === href || (href === "/history" && pathname.startsWith("/history"));
+              return (
               <Link
                 key={href}
                 href={href}
                 className={cn(
                   "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
-                  pathname === href
+                  active
                     ? "bg-accent text-foreground"
                     : "text-muted-foreground hover:bg-accent hover:text-foreground"
                 )}
@@ -67,7 +70,8 @@ export function Nav({ user, initialUnreadNotifications }: NavProps) {
                 <Icon className="h-4 w-4" />
                 {label}
               </Link>
-            ))}
+            );
+            })}
           </nav>
         </div>
 
@@ -124,14 +128,17 @@ export function Nav({ user, initialUnreadNotifications }: NavProps) {
 
       {mobileOpen && (
         <nav className="border-t border-border md:hidden">
-          {navLinks.map(({ href, label, icon: Icon }) => (
+          {navLinks.map(({ href, label, icon: Icon }) => {
+            const active =
+              pathname === href || (href === "/history" && pathname.startsWith("/history"));
+            return (
             <Link
               key={href}
               href={href}
               onClick={() => setMobileOpen(false)}
               className={cn(
                 "flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors",
-                pathname === href
+                active
                   ? "bg-accent text-foreground"
                   : "text-muted-foreground hover:bg-accent hover:text-foreground"
               )}
@@ -139,7 +146,8 @@ export function Nav({ user, initialUnreadNotifications }: NavProps) {
               <Icon className="h-4 w-4" />
               {label}
             </Link>
-          ))}
+            );
+          })}
         </nav>
       )}
     </header>
