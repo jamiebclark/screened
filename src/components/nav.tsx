@@ -6,6 +6,7 @@ import { signOut } from "next-auth/react";
 import { Film, Search, ListVideo, User, LogOut, Settings, Menu, X, History, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { NotificationMenu } from "@/components/notification-menu";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,6 +24,7 @@ interface NavProps {
     email?: string | null;
     image?: string | null;
   };
+  initialUnreadNotifications: number;
 }
 
 const navLinks = [
@@ -33,7 +35,7 @@ const navLinks = [
   { href: "/lists", label: "Lists", icon: ListVideo },
 ];
 
-export function Nav({ user }: NavProps) {
+export function Nav({ user, initialUnreadNotifications }: NavProps) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -70,6 +72,7 @@ export function Nav({ user }: NavProps) {
         </div>
 
         <div className="flex items-center gap-2">
+          <NotificationMenu initialUnreadCount={initialUnreadNotifications} />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="rounded-full">
@@ -92,21 +95,9 @@ export function Nav({ user }: NavProps) {
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link href="/settings/preferences" className="cursor-pointer">
-                  <Sparkles className="mr-2 h-4 w-4" />
-                  Saved Preferences
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/settings/plex" className="cursor-pointer">
+                <Link href="/settings" className="cursor-pointer">
                   <Settings className="mr-2 h-4 w-4" />
-                  Plex Settings
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/settings/letterboxd" className="cursor-pointer">
-                  <Film className="mr-2 h-4 w-4" />
-                  Letterboxd
+                  Settings
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />

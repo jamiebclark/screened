@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { Globe, Lock, Users, Film, Tv, ExternalLink } from "lucide-react";
@@ -9,8 +9,10 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { tmdbImageUrl } from "@/lib/utils";
 import { InviteMemberForm } from "./invite-member-form";
+import { PrivateListGate } from "./private-list-gate";
 import { ListItemActions } from "./list-item-actions";
 import { LetterboxdImportDialog } from "@/components/letterboxd-import-dialog";
+import { EditableListSearchAdd } from "@/components/editable-list-search-add";
 import { MediaType } from "@/generated/prisma";
 
 type Params = { params: Promise<{ slug: string }> };
@@ -43,7 +45,22 @@ export default async function ListPage({ params }: Params) {
   const isMember = userId ? list.members.some((m) => m.userId === userId) : false;
   const isOwner = userId === list.ownerId;
 
-  if (!list.isPublic && !isMember) notFound();
+  if (!list.isPublic && !isMember) {
+    if (!userId) {
+      redirect(`/login?callbackUrl=${encodeURIComponent(`/lists/${slug}`)}`);
+    }
+    const accessRow = await prisma.listAccessRequest.findUnique({
+      where: { listId_requesterId: { listId: list.id, requesterId: userId } },
+      select: { status: true },
+    });
+    return (
+      <PrivateListGate
+        slug={slug}
+        listName={list.name}
+        initialRequestStatus={accessRow?.status ?? null}
+      />
+    );
+  }
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
   const radarrUrl = list.isPublic
@@ -52,6 +69,10 @@ export default async function ListPage({ params }: Params) {
 
   const movies = list.items.filter((i) => i.mediaItem.type === MediaType.MOVIE);
   const tvShows = list.items.filter((i) => i.mediaItem.type === MediaType.TV);
+
+  const existingListKeys = list.items.map(
+    (i) => `${i.mediaItem.type === MediaType.MOVIE ? "movie" : "tv"}-${i.mediaItem.tmdbId}`
+  );
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
@@ -98,6 +119,10 @@ export default async function ListPage({ params }: Params) {
         )}
       </div>
 
+      {isMember && (
+        <EditableListSearchAdd variant="list" listSlug={slug} existingKeys={existingListKeys} />
+      )}
+
       {/* Radarr URL */}
       {(isMember || isOwner) && movies.length > 0 && (
         <div className="rounded-lg border border-border bg-card p-4 mb-8">
@@ -133,11 +158,6 @@ export default async function ListPage({ params }: Params) {
         <div className="text-center py-16 border border-dashed border-border rounded-xl">
           <Film className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
           <p className="text-muted-foreground">No items yet</p>
-          {isMember && (
-            <p className="text-sm text-muted-foreground mt-1">
-              Search for movies and TV shows to add them here
-            </p>
-          )}
         </div>
       ) : (
         <div className="space-y-8">
