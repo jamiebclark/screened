@@ -1,10 +1,23 @@
 "use client";
 
-import { useCallback, useEffect, useRef, type Dispatch, type SetStateAction } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, type Dispatch, type SetStateAction } from "react";
 import { useRouter } from "next/navigation";
 import { withScoringDefaults, type PickerRoomState } from "@/lib/picker-room-state";
 
 const POLL_MS = 2500;
+
+export type PickerRemoteAppliedMeta = {
+  sourceUserId: string;
+  sourceTabId: string;
+};
+
+export type UsePickerRoomSyncOptions = {
+  /**
+   * Called when another tab (or user)’s state was merged in. Omitted for initial `sync` and polling
+   * (no `sourceUserId`) so the UI does not show a false “everyone changed everything” line.
+   */
+  onRemoteApplied?: (previous: PickerRoomState, next: PickerRoomState, meta: PickerRemoteAppliedMeta) => void;
+};
 
 type UserLite = {
   id: string;
@@ -26,19 +39,31 @@ export function usePickerRoomSync(
   tabId: string,
   currentUser: UserLite,
   state: PickerRoomState,
-  setState: Dispatch<SetStateAction<PickerRoomState>>
+  setState: Dispatch<SetStateAction<PickerRoomState>>,
+  options?: UsePickerRoomSyncOptions
 ) {
   const router = useRouter();
+  const onRemoteAppliedRef = useRef(options?.onRemoteApplied);
+  useLayoutEffect(() => {
+    onRemoteAppliedRef.current = options?.onRemoteApplied;
+  }, [options?.onRemoteApplied]);
   const lastPushedJson = useRef<string | null>(null);
   const pushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const esRef = useRef<EventSource | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const applyRemote = useCallback(
-    (next: PickerRoomState, _version: number, sourceTabId: string) => {
+    (next: PickerRoomState, _version: number, sourceTabId: string, sourceUserId: string) => {
       if (sourceTabId && sourceTabId === tabId) return;
-      lastPushedJson.current = stableStringify(next);
-      setState(ensureCurrentUserInRoom(withScoringDefaults(next), currentUser));
+      setState((prev) => {
+        const incoming = withScoringDefaults(next);
+        const merged = ensureCurrentUserInRoom(incoming, currentUser);
+        lastPushedJson.current = stableStringify(merged);
+        if (sourceUserId && onRemoteAppliedRef.current) {
+          onRemoteAppliedRef.current(prev, merged, { sourceUserId, sourceTabId });
+        }
+        return merged;
+      });
     },
     // tabId must be current so we skip only our own tab's echo
     [tabId, currentUser, setState]
@@ -66,8 +91,9 @@ export function usePickerRoomSync(
           version: number;
           state: PickerRoomState;
           sourceTabId: string;
+          sourceUserId?: string;
         };
-        applyRemote(d.state, d.version, d.sourceTabId);
+        applyRemote(d.state, d.version, d.sourceTabId, d.sourceUserId ?? "");
       } catch {
         // ignore
       }
@@ -78,8 +104,9 @@ export function usePickerRoomSync(
           version: number;
           state: PickerRoomState;
           sourceTabId: string;
+          sourceUserId?: string;
         };
-        applyRemote(d.state, d.version, d.sourceTabId);
+        applyRemote(d.state, d.version, d.sourceTabId, d.sourceUserId ?? "");
       } catch {
         // ignore
       }
@@ -103,7 +130,7 @@ export function usePickerRoomSync(
             return r.ok ? r.json() : null;
           })
           .then((d: { version?: number; state?: PickerRoomState } | null) => {
-            if (d?.state) applyRemote(d.state, d.version ?? 0, "");
+            if (d?.state) applyRemote(d.state, d.version ?? 0, "", "");
           });
       };
       void poll();

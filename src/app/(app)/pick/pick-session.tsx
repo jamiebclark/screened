@@ -3,7 +3,22 @@
 import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo, useTransition } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Search, X, Plus, Loader2, Sparkles, Film, Clock, Calendar, Star, BookmarkCheck, UserCheck, UserX, MessageSquare, User } from "lucide-react";
+import {
+  Search,
+  X,
+  Plus,
+  Loader2,
+  Sparkles,
+  Film,
+  Clock,
+  Calendar,
+  Star,
+  BookmarkCheck,
+  UserCheck,
+  UserX,
+  Activity,
+  User,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +32,7 @@ import { RatingStars } from "@/components/rating-stars";
 import { usePickerRoomSync, ensureCurrentUserInRoom } from "./use-picker-room-sync";
 import { useRouter } from "next/navigation";
 import { withScoringDefaults, type PickerRoomState, type ReferenceMovieJson, type ScoredMovieJson } from "@/lib/picker-room-state";
+import { describePickerStateChange } from "@/lib/picker-activity-line";
 import { Link2, Share2 } from "lucide-react";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -837,6 +853,23 @@ export function PickSession({ currentUser, roomId, initialRoomState, hasPlexLink
   );
   const [startingRoom, setStartingRoom] = useState(false);
   const [tabId] = useState(() => globalThis.crypto?.randomUUID() ?? `t-${Date.now()}`);
+  const [activityLines, setActivityLines] = useState<Array<{ id: string; text: string; at: number }>>([]);
+  const appendActivity = useCallback((line: string) => {
+    setActivityLines((lines) =>
+      [
+        { id: globalThis.crypto?.randomUUID() ?? `a-${Date.now()}`, text: line, at: Date.now() },
+        ...lines,
+      ].slice(0, 30)
+    );
+  }, []);
+  const onRemotePickerActivity = useCallback(
+    (prev: PickerRoomState, next: PickerRoomState, { sourceUserId }: { sourceUserId: string; sourceTabId: string }) => {
+      if (!sourceUserId) return;
+      const line = describePickerStateChange(prev, next, { actorId: sourceUserId, youId: currentUser.id });
+      if (line) appendActivity(line);
+    },
+    [appendActivity, currentUser.id]
+  );
   const [emptyScoreHint, setEmptyScoreHint] = useState<string | null>(null);
   const router = useRouter();
   const resultsRef = useRef<HTMLDivElement>(null);
@@ -858,7 +891,9 @@ export function PickSession({ currentUser, roomId, initialRoomState, hasPlexLink
     }
   }, [roomState.scoringResults]);
 
-  usePickerRoomSync(roomId, tabId, currentUser, roomState, setRoomState);
+  usePickerRoomSync(roomId, tabId, currentUser, roomState, setRoomState, {
+    onRemoteApplied: onRemotePickerActivity,
+  });
 
   const {
     participants,
@@ -1091,6 +1126,8 @@ export function PickSession({ currentUser, roomId, initialRoomState, hasPlexLink
         scoringResults: null,
       };
       patchIfRoom(next);
+      const line = describePickerStateChange(prev, next, { actorId: currentUser.id, youId: currentUser.id });
+      if (line) queueMicrotask(() => appendActivity(line));
       return next;
     });
 
@@ -1127,6 +1164,8 @@ export function PickSession({ currentUser, roomId, initialRoomState, hasPlexLink
             scoringResults: null,
           };
           patchIfRoom(next);
+          const line = describePickerStateChange(prev, next, { actorId: currentUser.id, youId: currentUser.id });
+          if (line) queueMicrotask(() => appendActivity(line));
           return next;
         });
       } else {
@@ -1144,6 +1183,8 @@ export function PickSession({ currentUser, roomId, initialRoomState, hasPlexLink
             scoringResults: list,
           };
           patchIfRoom(next);
+          const line = describePickerStateChange(prev, next, { actorId: currentUser.id, youId: currentUser.id });
+          if (line) queueMicrotask(() => appendActivity(line));
           return next;
         });
       }
@@ -1157,6 +1198,8 @@ export function PickSession({ currentUser, roomId, initialRoomState, hasPlexLink
           scoringResults: null,
         };
         patchIfRoom(next);
+        const line = describePickerStateChange(prev, next, { actorId: currentUser.id, youId: currentUser.id });
+        if (line) queueMicrotask(() => appendActivity(line));
         return next;
       });
     }
@@ -1546,16 +1589,34 @@ export function PickSession({ currentUser, roomId, initialRoomState, hasPlexLink
           <Card>
             <CardHeader className="pb-2">
               <div className="flex items-center gap-2">
-                <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                <Activity className="h-4 w-4 text-muted-foreground" />
                 <CardTitle className="text-base">Session</CardTitle>
               </div>
-              <p className="text-xs text-muted-foreground">Everyone on this link shares the same picks and not-list, live</p>
-            </CardHeader>
-            <CardContent>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Suggestion threads and chat will show up here in a later update. For now, use a shared room so
-                everyone edits the same list.
+              <p className="text-xs text-muted-foreground">
+                Who ran a search, changed criteria, or edited the list—newest first. Others appear when the room is
+                shared; your own runs also show as &quot;You&quot; on this device.
               </p>
+            </CardHeader>
+            <CardContent
+              className="space-y-2"
+              role="region"
+              aria-label="Session activity"
+            >
+              {activityLines.length === 0 ? (
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {roomId
+                    ? "No events yet. When a participant edits or runs the picker, a line will show here."
+                    : "Start a shared room and open the same link to see what each person does in real time."}
+                </p>
+              ) : (
+                <ul className="max-h-64 list-none space-y-2 overflow-y-auto pl-0 pr-1 text-xs leading-snug">
+                  {activityLines.map((row) => (
+                    <li key={row.id} className="text-foreground/90">
+                      {row.text}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </CardContent>
           </Card>
         </aside>

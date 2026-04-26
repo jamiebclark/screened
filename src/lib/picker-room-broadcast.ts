@@ -4,6 +4,8 @@ export type RoomBroadcast = {
   version: number;
   state: PickerRoomState;
   sourceTabId: string;
+  /** User id of the client that sent the PATCH (for activity / attribution). */
+  sourceUserId: string;
 };
 
 const listeners = new Map<string, Set<(msg: RoomBroadcast) => void>>();

@@ -43,6 +43,7 @@ export async function GET(req: NextRequest, { params }: Params) {
         version: room.version,
         state: room.state,
         sourceTabId: "",
+        sourceUserId: "",
       });
 
       const onBroadcast = (msg: RoomBroadcast) => {

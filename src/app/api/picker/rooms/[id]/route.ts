@@ -56,7 +56,12 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     if (!isPickerState(st)) {
       return NextResponse.json({ error: "Invalid stored state" }, { status: 500 });
     }
-    broadcastPickerRoom(id, { version: room.version, state: st, sourceTabId });
+    broadcastPickerRoom(id, {
+      version: room.version,
+      state: st,
+      sourceTabId,
+      sourceUserId: session.user.id,
+    });
     return NextResponse.json({ version: room.version, state: st });
   } catch {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
