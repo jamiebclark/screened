@@ -54,6 +54,8 @@ model User {
   name          String
   avatarUrl     String?
   bio           String?
+  /// Secret query token for the per-user Radarr watchlist export (movies only). Unique when set.
+  watchlistRadarrToken String? @unique
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
