@@ -1,3 +1,9 @@
+## [1.5.1](https://github.com/jamiebclark/screened/compare/v1.5.0...v1.5.1) (2026-04-26)
+
+### Bug Fixes
+
+* **lint:** satisfy react-hooks set-state and ref rules ([e6597cf](https://github.com/jamiebclark/screened/commit/e6597cfb0227eee7e2e5127e11de4c5f2d51c088))
+
 ## [1.5.0](https://github.com/jamiebclark/screened/compare/v1.4.1...v1.5.0) (2026-04-26)
 
 ### Features
