@@ -29,12 +29,21 @@ test.describe("Ratings", () => {
     await page.goto(MOVIE_URL);
     const fourthStar = page.getByRole("button", { name: "Rate 4 stars" });
     await expect(fourthStar).toBeVisible({ timeout: 5000 });
-    await fourthStar.click();
+    await Promise.all([
+      page.waitForResponse(
+        (r) =>
+          r.url().includes("/api/media/status") &&
+          r.request().method() === "POST" &&
+          r.status() === 200
+      ),
+      fourthStar.click(),
+    ]);
 
-    // Reload and verify rating persists
+    // Reload and verify rating persists (stars 1–4 use filled styling)
     await page.reload();
-    // 4 stars should be filled (yellow)
-    await expect(page.locator("button[aria-label='Rate 4 stars'] svg.fill-yellow-400")).toBeVisible({ timeout: 5000 });
+    const fourAfter = page.getByRole("button", { name: "Rate 4 stars" });
+    await expect(fourAfter.locator("svg").first()).toBeVisible({ timeout: 5000 });
+    await expect(fourAfter.locator("svg").first()).toHaveClass(/fill-yellow-400/);
   });
 
   test("click same star twice unsets rating", async ({ page }) => {

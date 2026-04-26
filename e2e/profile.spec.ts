@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { ensureLoggedIn, ensureTestUsersExist } from "./helpers";
+import { ensureLoggedIn, ensureTestUsersExist, openUserMenuFromHeader } from "./helpers";
 
 test.beforeEach(async ({ page }) => {
   await ensureTestUsersExist(page);
@@ -9,8 +9,7 @@ test.beforeEach(async ({ page }) => {
 test.describe("Profile", () => {
   async function openNavProfile(page: import("@playwright/test").Page) {
     await page.goto("/");
-    // The avatar button is the only visible button in the header on desktop
-    await page.locator("header button:visible").first().click();
+    await openUserMenuFromHeader(page);
     await page.getByRole("menuitem", { name: /profile/i }).click();
     await page.waitForURL(/\/profile\//, { timeout: 8000 });
   }

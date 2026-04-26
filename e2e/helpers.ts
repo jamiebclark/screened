@@ -51,3 +51,13 @@ export async function ensureLoggedIn(page: Page, user = TEST_USER) {
     await login(page, user);
   }
 }
+
+/** Opens the user avatar menu (not Notifications, which is the other round header control). */
+export async function openUserMenuFromHeader(page: Page) {
+  await page
+    .locator("header")
+    .getByRole("button")
+    .filter({ has: page.locator(".rounded-full") })
+    .first()
+    .click();
+}

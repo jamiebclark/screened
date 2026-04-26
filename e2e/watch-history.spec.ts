@@ -27,8 +27,10 @@ test.beforeEach(async ({ page }) => {
 
 test.describe("Watch history", () => {
   test("log a viewing, then delete (movie)", async ({ page }) => {
+    // WATCHLIST gives a status (and Log a viewing) without auto-creating a watch entry;
+    // WATCHED auto-adds a watch entry in POST /api/media/status, so the page would not start empty.
     await page.request.post("/api/media/status", {
-      data: { tmdbId: MOVIE_TMDB, type: "movie", status: "WATCHED" },
+      data: { tmdbId: MOVIE_TMDB, type: "movie", status: "WATCHLIST" },
       headers: { "Content-Type": "application/json" },
     });
     await page.goto(MOVIE_URL);

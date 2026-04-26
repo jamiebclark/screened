@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { ensureLoggedIn, ensureTestUsersExist } from "./helpers";
+import { ensureLoggedIn, ensureTestUsersExist, openUserMenuFromHeader } from "./helpers";
 
 test.beforeEach(async ({ page }) => {
   await ensureTestUsersExist(page);
@@ -58,6 +58,19 @@ test.describe("Picker & settings (smoke)", () => {
     await page.goto("/settings/letterboxd");
     await expect(page.getByRole("heading", { level: 1, name: "Letterboxd" })).toBeVisible({ timeout: 8000 });
   });
+
+  test("settings overview loads", async ({ page }) => {
+    await page.goto("/settings");
+    await expect(page.getByRole("heading", { level: 1, name: "Settings" })).toBeVisible({ timeout: 8000 });
+    await expect(page.getByRole("heading", { name: "Integrations" })).toBeVisible();
+  });
+
+  test("account settings page loads", async ({ page }) => {
+    await page.goto("/settings/account");
+    await expect(page.getByRole("heading", { level: 1, name: "Account" })).toBeVisible({ timeout: 8000 });
+    await expect(page.getByRole("heading", { name: "Profile" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Password" })).toBeVisible();
+  });
 });
 
 test.describe("Nav", () => {
@@ -67,10 +80,13 @@ test.describe("Nav", () => {
     await expect(page).toHaveURL(/\/pick$/);
   });
 
-  test("saved preferences in user menu", async ({ page }) => {
+  test("settings in user menu reaches preferences", async ({ page }) => {
     await page.goto("/");
-    await page.locator("header button:visible").first().click();
-    await page.getByRole("menuitem", { name: "Saved Preferences" }).click();
+    await openUserMenuFromHeader(page);
+    await page.getByRole("menuitem", { name: "Settings" }).click();
+    await expect(page).toHaveURL(/\/settings$/);
+    // Overview and sidebar both link to preferences; target the second (card in main column).
+    await page.locator('a[href="/settings/preferences"]').nth(1).click();
     await expect(page).toHaveURL(/\/settings\/preferences$/);
   });
 });
