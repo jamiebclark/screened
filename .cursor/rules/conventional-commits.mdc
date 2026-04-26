@@ -1,11 +1,25 @@
 ---
-description: Enforce conventional commits for all git commits in this project
+description: Conventional commits and small, logically grouped commits for this project
 alwaysApply: true
 ---
 
 # Conventional Commits
 
 All commits must follow the [Conventional Commits](https://www.conventionalcommits.org/) specification. This project uses semantic-release to automate versioning and changelogs based on commit messages.
+
+## Commit size and grouping
+
+**Prefer many small commits over one large commit.** Each commit should represent one logical change (or a tight, related set) so history, review, `git bisect`, and semantic-release stay meaningful.
+
+| Do | Avoid |
+|----|--------|
+| One commit per feature slice, dependency layer, or bugfix | Squashing unrelated features, docs, CI, and refactors into a single commit |
+| Order commits so the tree stays buildable (e.g. schema + migrations before code that uses new columns) | Random ordering that leaves intermediate commits broken without explanation |
+| Separate concerns: `feat` vs `fix` vs `docs` vs `ci` vs `test` | Mixing release-affecting types in one commit when they could be split |
+
+When the user asks to **commit** or **land changes**, **do not** default to committing the entire working tree in one shot unless they explicitly ask for that. Group staged files by purpose and create **multiple commits** with separate conventional messages.
+
+When **reworking history** (e.g. splitting or undoing commits), prefer **`git reset --soft`** or **`git reset`** (mixed) to move commits or unstage—**never `git reset --hard`** or destructive cleanups unless the user clearly requests it and the risk is understood.
 
 ## Format
 
