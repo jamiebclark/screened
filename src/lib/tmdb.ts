@@ -166,6 +166,28 @@ type TmdbMovieListPage = {
   total_results: number;
 };
 
+export interface TmdbPersonSearchResult {
+  id: number;
+  name: string;
+  profile_path: string | null;
+  known_for_department?: string;
+}
+
+type TmdbPersonSearchResponse = {
+  results: TmdbPersonSearchResult[];
+  total_results: number;
+  total_pages: number;
+  page: number;
+};
+
+export async function searchPerson(query: string, page = 1): Promise<TmdbPersonSearchResponse> {
+  return tmdbFetch<TmdbPersonSearchResponse>("/search/person", {
+    query,
+    page: String(page),
+    include_adult: "false",
+  });
+}
+
 /** TMDB "Because you liked X" and similar-titles; returns movie-shaped results. */
 export async function getMovieRecommendations(tmdbId: number, page = 1): Promise<TmdbMovieListPage> {
   const res = await tmdbFetch<TmdbMovieListPage>(`/movie/${tmdbId}/recommendations`, { page: String(page) });
@@ -196,14 +218,25 @@ interface TmdbTvKeywordsResponse {
   results: { id: number; name: string }[];
 }
 
-export async function getMovieCredits(tmdbId: number): Promise<{ cast: string[]; director: string | null }> {
+const DIRECTOR_JOBS = new Set(["Director", "Co-Director"]);
+
+export type TmdbMovieCredits = {
+  cast: string[];
+  /** Primary (first) director for display / DB. */
+  director: string | null;
+  /** All unique director and co-director names from crew (for person matching). */
+  directors: string[];
+};
+
+export async function getMovieCredits(tmdbId: number): Promise<TmdbMovieCredits> {
   const data = await tmdbFetch<TmdbCreditsResponse>(`/movie/${tmdbId}/credits`);
   const cast = data.cast
     .sort((a, b) => a.order - b.order)
     .slice(0, 8)
     .map((c) => c.name);
-  const director = data.crew.find((c) => c.job === "Director")?.name ?? null;
-  return { cast, director };
+  const directorNames = data.crew.filter((c) => DIRECTOR_JOBS.has(c.job)).map((c) => c.name);
+  const directors = [...new Set(directorNames)];
+  return { cast, director: directors[0] ?? null, directors };
 }
 
 export async function getMovieKeywords(tmdbId: number): Promise<string[]> {

@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
       if (type === "movie") {
         const [movie, credits, kws] = await Promise.all([
           getMovie(tmdbId),
-          getMovieCredits(tmdbId).catch(() => ({ cast: [] as string[], director: null })),
+          getMovieCredits(tmdbId).catch(() => ({ cast: [] as string[], director: null, directors: [] as string[] })),
           getMovieKeywords(tmdbId).catch(() => [] as string[]),
         ]);
         title = movie.title;
@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
       if (!mediaItem.cast.length || !mediaItem.keywords.length) {
         if (type === "movie") {
           const [credits, kws] = await Promise.all([
-            getMovieCredits(tmdbId).catch(() => ({ cast: [] as string[], director: null })),
+            getMovieCredits(tmdbId).catch(() => ({ cast: [] as string[], director: null, directors: [] as string[] })),
             getMovieKeywords(tmdbId).catch(() => [] as string[]),
           ]);
           cast = credits.cast.length ? credits.cast : mediaItem.cast;

@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getMovie, getTvShow, getMovieCredits, getMovieKeywords, getTvCredits, getTvKeywords } from "@/lib/tmdb";
 import { buildEmbeddingText, generateEmbedding } from "@/lib/embeddings";
+import { ensureWatchlistRadarrToken } from "@/lib/ensure-watchlist-radarr-token";
 import { MediaType, WatchEntrySource, WatchStatus } from "@/generated/prisma";
 
 async function enrichAndEmbed(mediaItemId: string, tmdbId: number, type: "movie" | "tv") {
@@ -14,7 +15,7 @@ async function enrichAndEmbed(mediaItemId: string, tmdbId: number, type: "movie"
 
     if (type === "movie") {
       const [credits, kws] = await Promise.all([
-        getMovieCredits(tmdbId).catch(() => ({ cast: [] as string[], director: null })),
+        getMovieCredits(tmdbId).catch(() => ({ cast: [] as string[], director: null, directors: [] as string[] })),
         getMovieKeywords(tmdbId).catch(() => [] as string[]),
       ]);
       cast = credits.cast;
@@ -147,6 +148,10 @@ export async function POST(req: NextRequest) {
       ...data,
     },
   });
+
+  if (mediaItem.type === MediaType.MOVIE && result.status === WatchStatus.WATCHLIST) {
+    await ensureWatchlistRadarrToken(session.user.id);
+  }
 
   if (result.status === WatchStatus.WATCHED && previous?.status !== WatchStatus.WATCHED) {
     await prisma.watchEntry.create({

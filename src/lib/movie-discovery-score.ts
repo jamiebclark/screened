@@ -6,7 +6,6 @@ import {
   getMovieCredits,
   getMovieKeywords,
 } from "@/lib/tmdb";
-import { getPlexLibraryMovieTmdbIds, getPlexServers } from "@/lib/plex";
 import {
   buildEmbeddingText,
   cosineSimilarity,
@@ -21,8 +20,6 @@ const REPELLER_LAMBDA = 0.7;
 const MAX_TMDB_CANDIDATES = 200;
 const MAX_TO_EMBED = 48;
 const RESULTS = 30;
-
-type PlexConn = { plexToken: string; plexServerId: string | null };
 
 function yearFromTmdbDate(release: string | null | undefined): number | null {
   if (!release) return null;
@@ -44,9 +41,11 @@ function yearInRange(
 function matchesPerson(
   cast: string[],
   director: string | null,
-  name: string
+  name: string,
+  directors: string[] = []
 ): boolean {
-  const all = [...cast, ...(director ? [director] : [])].map((s) => s.toLowerCase());
+  const dList = directors.length > 0 ? directors : director ? [director] : [];
+  const all = [...cast, ...dList].map((s) => s.toLowerCase());
   return all.some((s) => s.includes(name));
 }
 
@@ -94,7 +93,11 @@ async function getReferenceVectors(attractors: ReferenceItem[], repellers: Refer
 
     const [movie, credits, kws] = await Promise.all([
       getMovie(row.tmdbId),
-      getMovieCredits(row.tmdbId).catch(() => ({ cast: [] as string[], director: null })),
+      getMovieCredits(row.tmdbId).catch(() => ({
+        cast: [] as string[],
+        director: null,
+        directors: [] as string[],
+      })),
       getMovieKeywords(row.tmdbId).catch(() => [] as string[]),
     ]);
     const title = movie.title;
@@ -146,16 +149,17 @@ async function getReferenceVectors(attractors: ReferenceItem[], repellers: Refer
 }
 
 /** TMDB id → first-seen list row (for quick year prefilter). */
-async function collectTmdbCandidateMap(attractorTmdbIds: number[]): Promise<Map<number, { release_date?: string }>> {
+async function collectTmdbCandidateMap(
+  attractorTmdbIds: number[],
+  wide: boolean
+): Promise<Map<number, { release_date?: string }>> {
   const out = new Map<number, { release_date?: string }>();
+  const listPages = wide ? ([1, 2, 3, 4] as const) : ([1, 2] as const);
   for (const aid of attractorTmdbIds) {
-    const [r1, s1, r2, s2] = await Promise.all([
-      getMovieRecommendations(aid, 1),
-      getMovieSimilar(aid, 1),
-      getMovieRecommendations(aid, 2),
-      getMovieSimilar(aid, 2),
-    ]);
-    for (const p of [r1, s1, r2, s2]) {
+    const listResults = await Promise.all(
+      listPages.flatMap((p) => [getMovieRecommendations(aid, p), getMovieSimilar(aid, p)])
+    );
+    for (const p of listResults) {
       for (const m of p.results) {
         if (!m.id || out.has(m.id)) continue;
         if ("name" in m && (m as { name?: string }).name && !("title" in m && (m as { title?: string }).title)) {
@@ -173,7 +177,7 @@ export async function scoreFromTmdbDiscovery(
   attractors: ReferenceItem[],
   repellers: ReferenceItem[],
   hard: HardFilterInput,
-  opts: { plexLibraryOnly: boolean; plex: PlexConn | null }
+  opts: { plexLibraryOnly: boolean; plexTmdbIds: Set<number> | null }
 ): Promise<ScoredRow[] | { error: string }> {
   if (!isEmbeddingEnabled()) {
     return { error: "Add OPENAI_API_KEY to use discovery scoring." };
@@ -222,25 +226,20 @@ export async function scoreFromTmdbDiscovery(
     })
   ).map((r) => r.tmdbId);
 
-  const tmdbInfo = await collectTmdbCandidateMap(attractorTmdbIds);
+  const hasPersonFilter =
+    (hard.requirePeople?.length ?? 0) > 0 || (hard.excludePeople?.length ?? 0) > 0;
+  const tmdbInfo = await collectTmdbCandidateMap(attractorTmdbIds, hasPersonFilter);
 
-  let plexTmdb: Set<number> | null = null;
-  if (opts.plexLibraryOnly) {
-    if (!opts.plex) {
-      return { error: "Connect Plex in settings to limit suggestions to your library." };
-    }
-    const servers = await getPlexServers(opts.plex.plexToken);
-    const server = servers.find((s) => s.machineIdentifier === opts.plex!.plexServerId) ?? servers[0];
-    if (!server) {
-      return { error: "No Plex server found. Check your Plex connection." };
-    }
-    const token = server.accessToken ?? opts.plex.plexToken;
-    const ids = await getPlexLibraryMovieTmdbIds(server.uri, token);
-    plexTmdb = new Set(ids);
+  const plexTmdb = opts.plexLibraryOnly ? opts.plexTmdbIds : null;
+  if (opts.plexLibraryOnly && !plexTmdb) {
+    return { error: "Connect Plex in settings to limit suggestions to your library." };
   }
 
   const minY = hard.minYear;
   const maxY = hard.maxYear;
+
+  /** Wider pool when filtering by people — similar-to lists often put same-director films later. */
+  const preDetailLimit = hasPersonFilter ? MAX_TMDB_CANDIDATES : MAX_TO_EMBED * 2;
 
   let candidateTmdb: number[] = [];
   for (const [tmdb, meta] of tmdbInfo) {
@@ -250,7 +249,7 @@ export async function scoreFromTmdbDiscovery(
     if (!yearInRange(y, minY, maxY)) continue;
     if (plexTmdb && !plexTmdb.has(tmdb)) continue;
     candidateTmdb.push(tmdb);
-    if (candidateTmdb.length >= MAX_TO_EMBED * 2) break;
+    if (candidateTmdb.length >= preDetailLimit) break;
   }
 
   if (candidateTmdb.length === 0) {
@@ -258,12 +257,16 @@ export async function scoreFromTmdbDiscovery(
   }
 
   const details = await mapPool(
-    candidateTmdb.slice(0, MAX_TO_EMBED + 8),
+    candidateTmdb,
     8,
     async (tmdb) => {
       const [movie, credits, kws] = await Promise.all([
         getMovie(tmdb),
-        getMovieCredits(tmdb).catch(() => ({ cast: [] as string[], director: null })),
+        getMovieCredits(tmdb).catch(() => ({
+          cast: [] as string[],
+          director: null,
+          directors: [] as string[],
+        })),
         getMovieKeywords(tmdb).catch(() => [] as string[]),
       ]);
       return { tmdb, movie, credits, kws };
@@ -281,11 +284,15 @@ export async function scoreFromTmdbDiscovery(
     if (hard.maxRuntime != null && (movie.runtime == null || movie.runtime > hard.maxRuntime)) {
       continue;
     }
-    if (require.length > 0 && !require.every((n) => matchesPerson(credits.cast, credits.director, n))) {
-      continue;
+    if (require.length > 0) {
+      if (!require.every((n) => matchesPerson(credits.cast, credits.director, n, credits.directors))) {
+        continue;
+      }
     }
-    if (exclude.length > 0 && exclude.some((n) => matchesPerson(credits.cast, credits.director, n))) {
-      continue;
+    if (exclude.length > 0) {
+      if (exclude.some((n) => matchesPerson(credits.cast, credits.director, n, credits.directors))) {
+        continue;
+      }
     }
     filtered.push(d);
   }
@@ -386,13 +393,4 @@ export async function scoreFromTmdbDiscovery(
   }
 
   return out;
-}
-
-export async function loadPlexForUser(userId: string): Promise<PlexConn | null> {
-  const c = await prisma.plexConnection.findUnique({
-    where: { userId },
-    select: { plexToken: true, plexServerId: true },
-  });
-  if (!c) return null;
-  return { plexToken: c.plexToken, plexServerId: c.plexServerId };
 }
