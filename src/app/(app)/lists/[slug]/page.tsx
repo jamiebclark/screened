@@ -4,8 +4,6 @@ import { notFound, redirect } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { Globe, Lock, Users, Film, Tv, ExternalLink } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { tmdbImageUrl } from "@/lib/utils";
 import { InviteMemberForm } from "./invite-member-form";
@@ -13,7 +11,7 @@ import { PrivateListGate } from "./private-list-gate";
 import { ListItemActions } from "./list-item-actions";
 import { LetterboxdImportDialog } from "@/components/letterboxd-import-dialog";
 import { EditableListSearchAdd } from "@/components/editable-list-search-add";
-import { MediaType } from "@/generated/prisma";
+import { MediaType, WatchStatus } from "@/generated/prisma";
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -67,8 +65,31 @@ export default async function ListPage({ params }: Params) {
     ? `${appUrl}/api/lists/${slug}/radarr`
     : `${appUrl}/api/lists/${slug}/radarr?token=${list.radarrToken}`;
 
-  const movies = list.items.filter((i) => i.mediaItem.type === MediaType.MOVIE);
-  const tvShows = list.items.filter((i) => i.mediaItem.type === MediaType.TV);
+  const mediaIds = list.items.map((i) => i.mediaItemId);
+  const watchedIdSet =
+    userId && mediaIds.length > 0
+      ? new Set(
+          (
+            await prisma.userMediaStatus.findMany({
+              where: {
+                userId,
+                status: WatchStatus.WATCHED,
+                mediaItemId: { in: mediaIds },
+              },
+              select: { mediaItemId: true },
+            })
+          ).map((r) => r.mediaItemId)
+        )
+      : new Set<string>();
+
+  const visibleItems = userId
+    ? list.items.filter((i) => !watchedIdSet.has(i.mediaItemId))
+    : list.items;
+  const hiddenWatchedCount = list.items.length - visibleItems.length;
+
+  const allMovies = list.items.filter((i) => i.mediaItem.type === MediaType.MOVIE);
+  const movies = visibleItems.filter((i) => i.mediaItem.type === MediaType.MOVIE);
+  const tvShows = visibleItems.filter((i) => i.mediaItem.type === MediaType.TV);
 
   const existingListKeys = list.items.map(
     (i) => `${i.mediaItem.type === MediaType.MOVIE ? "movie" : "tv"}-${i.mediaItem.tmdbId}`
@@ -108,6 +129,11 @@ export default async function ListPage({ params }: Params) {
             <span className="text-sm text-muted-foreground">
               {list.items.length} items
             </span>
+            {hiddenWatchedCount > 0 && (
+              <span className="text-sm text-muted-foreground">
+                · {hiddenWatchedCount} hidden (watched)
+              </span>
+            )}
           </div>
         </div>
 
@@ -124,7 +150,7 @@ export default async function ListPage({ params }: Params) {
       )}
 
       {/* Radarr URL */}
-      {(isMember || isOwner) && movies.length > 0 && (
+      {(isMember || isOwner) && allMovies.length > 0 && (
         <div className="rounded-lg border border-border bg-card p-4 mb-8">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
@@ -158,6 +184,13 @@ export default async function ListPage({ params }: Params) {
         <div className="text-center py-16 border border-dashed border-border rounded-xl">
           <Film className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
           <p className="text-muted-foreground">No items yet</p>
+        </div>
+      ) : visibleItems.length === 0 ? (
+        <div className="text-center py-16 border border-dashed border-border rounded-xl">
+          <Film className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+          <p className="text-muted-foreground">
+            Everything on this list is in your watched history, so there’s nothing left to show here.
+          </p>
         </div>
       ) : (
         <div className="space-y-8">
