@@ -1,3 +1,11 @@
+## [1.10.0](https://github.com/jamiebclark/screened/compare/v1.9.0...v1.10.0) (2026-04-26)
+
+### Features
+
+* **lists:** show watched list items in a separate section ([2895a31](https://github.com/jamiebclark/screened/commit/2895a3168872674f8348029a6d16297c1bb5dd82))
+* **watch:** log a viewing for friends with optional withUserIds ([3d340c0](https://github.com/jamiebclark/screened/commit/3d340c00c49b0ef1903f86207b8ef81d30c1edb3))
+* **watch:** merge same-day watch entries for letterboxd and plex sync ([6464a7e](https://github.com/jamiebclark/screened/commit/6464a7e7102f41b71f965979ea31e6a4ed8d2e5b))
+
 ## [1.9.0](https://github.com/jamiebclark/screened/compare/v1.8.0...v1.9.0) (2026-04-26)
 
 ### Features
