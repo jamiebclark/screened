@@ -15,7 +15,7 @@ export default async function PlexSettingsPage() {
   });
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8">
+    <div className="mx-auto max-w-2xl">
       <h1 className="text-2xl font-bold mb-2">Plex Settings</h1>
       <p className="text-muted-foreground mb-8">
         Connect your Plex account to automatically sync your watch history.
