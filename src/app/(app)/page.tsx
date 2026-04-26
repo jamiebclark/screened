@@ -18,10 +18,7 @@ export default async function HomePage() {
     prisma.userMediaStatus.findMany({
       where: { userId: session!.user.id },
       include: { mediaItem: true },
-      orderBy: [
-        { watchedAt: { sort: "desc", nulls: "last" } },
-        { updatedAt: "desc" },
-      ],
+      orderBy: { updatedAt: "desc" },
       take: 10,
     }),
     prisma.userMediaStatus.groupBy({
@@ -42,10 +39,10 @@ export default async function HomePage() {
     .slice(0, 10);
 
   const statusIcons = {
-    WATCHED: { icon: Eye, label: "Watched", color: "text-green-400" },
-    WATCHING: { icon: Clock, label: "Watching", color: "text-yellow-400" },
-    WATCHLIST: { icon: Bookmark, label: "Watchlist", color: "text-blue-400" },
-    DROPPED: { icon: Star, label: "Dropped", color: "text-muted-foreground" },
+    WATCHED: { icon: Eye, label: "Watched", color: "text-green-400", href: "/history" },
+    WATCHING: { icon: Clock, label: "Watching", color: "text-yellow-400", href: "/watching" },
+    WATCHLIST: { icon: Bookmark, label: "Watchlist", color: "text-blue-400", href: "/watchlist" },
+    DROPPED: { icon: Star, label: "Dropped", color: "text-muted-foreground", href: "/dropped" },
   };
 
   return (
@@ -54,9 +51,13 @@ export default async function HomePage() {
       <section>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {(["WATCHED", "WATCHING", "WATCHLIST", "DROPPED"] as const).map((status) => {
-            const { icon: Icon, label, color } = statusIcons[status];
+            const { icon: Icon, label, color, href } = statusIcons[status];
             return (
-              <div key={status} className="rounded-xl border border-border bg-card p-4 flex items-center gap-3">
+              <Link
+                key={status}
+                href={href}
+                className="rounded-xl border border-border bg-card p-4 flex items-center gap-3 transition-colors hover:bg-muted/50"
+              >
                 <div className={`rounded-full bg-muted p-2 ${color}`}>
                   <Icon className="h-5 w-5" />
                 </div>
@@ -64,7 +65,7 @@ export default async function HomePage() {
                   <p className="text-2xl font-bold">{statMap[status] ?? 0}</p>
                   <p className="text-xs text-muted-foreground">{label}</p>
                 </div>
-              </div>
+              </Link>
             );
           })}
         </div>
