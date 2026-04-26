@@ -77,19 +77,22 @@ export async function syncPlexUser(userId: string): Promise<PlexSyncResult> {
       }
     }
 
-    await prisma.userMediaStatus.upsert({
+    const watchedAt = item.lastViewedAt ? new Date(item.lastViewedAt * 1000) : new Date();
+
+    const upserted = await prisma.userMediaStatus.upsert({
       where: { userId_mediaItemId: { userId, mediaItemId: mediaItem.id } },
-      update: {
-        status: WatchStatus.WATCHED,
-        watchedAt: item.lastViewedAt ? new Date(item.lastViewedAt * 1000) : new Date(),
-      },
-      create: {
-        userId,
-        mediaItemId: mediaItem.id,
-        status: WatchStatus.WATCHED,
-        watchedAt: item.lastViewedAt ? new Date(item.lastViewedAt * 1000) : new Date(),
-      },
+      update: { status: WatchStatus.WATCHED },
+      create: { userId, mediaItemId: mediaItem.id, status: WatchStatus.WATCHED },
     });
+
+    const existingEntry = await prisma.watchEntry.findFirst({
+      where: { userId, mediaItemId: mediaItem.id, watchedAt },
+    });
+    if (!existingEntry) {
+      await prisma.watchEntry.create({
+        data: { userId, mediaItemId: mediaItem.id, userMediaStatusId: upserted.id, watchedAt },
+      });
+    }
 
     synced++;
   }
