@@ -1,3 +1,22 @@
+## [1.9.0](https://github.com/jamiebclark/screened/compare/v1.8.0...v1.9.0) (2026-04-26)
+
+### Features
+
+* **app:** add first-login onboarding and gate app area ([f6ba059](https://github.com/jamiebclark/screened/commit/f6ba059d5de5b31c1343db449f3ffd70270e5f9b))
+* **components:** allow optional search query on media card links ([a3698a4](https://github.com/jamiebclark/screened/commit/a3698a457594bc375f87372498f222a6d296f0ea))
+* **db:** add user onboarding completed at ([d0afef9](https://github.com/jamiebclark/screened/commit/d0afef9e4c09788991eeb35c9e0dbf9f5233e2f7))
+* **friendship:** add listFriendUserIds helper ([2d6e261](https://github.com/jamiebclark/screened/commit/2d6e26131ca5b965339bfda7f04121dee379cc0e))
+* **history:** add calendar pages and friend-aware watch queries ([f83ae4f](https://github.com/jamiebclark/screened/commit/f83ae4fe336c4991d3cb24fc34cbd46eadbf8027))
+* **lists:** hide already-watched titles for the signed-in viewer ([40ee634](https://github.com/jamiebclark/screened/commit/40ee634ba36953ce7cf236d39b1002e94e6f93c4))
+* **search:** preserve watched date from calendar in query and nav ([ee339ac](https://github.com/jamiebclark/screened/commit/ee339ac34d3c047d62b3012c553bfcebeb879248))
+* **titles:** catalog links by poster and shared watch history ([d3dd1ea](https://github.com/jamiebclark/screened/commit/d3dd1eaef5575c38dac81bfa932364b9db5652b7))
+* **ui:** add plus jakarta sans and base heading tracking ([0c7c25a](https://github.com/jamiebclark/screened/commit/0c7c25a751c18d4b18f7e518a665a4dcf6ddab16))
+
+### Bug Fixes
+
+* **auth:** pass request pathname on continued requests ([4abacae](https://github.com/jamiebclark/screened/commit/4abacaef98f00cc94e22cebc424aa8930c37c61f))
+* **tracking:** order home strip and lists by watch time and add time ([eb7a7c1](https://github.com/jamiebclark/screened/commit/eb7a7c1de93adca7f61191573c73b52e44f1897d))
+
 ## [1.8.0](https://github.com/jamiebclark/screened/compare/v1.7.0...v1.8.0) (2026-04-26)
 
 ### Features
