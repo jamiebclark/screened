@@ -1,3 +1,32 @@
+## [1.5.0](https://github.com/jamiebclark/screened/compare/v1.4.1...v1.5.0) (2026-04-26)
+
+### Features
+
+* **auth:** issue watchlist radarr token on sign-up and plex user link ([b815857](https://github.com/jamiebclark/screened/commit/b815857231fae84792a2f1590690fc00f83dd9c6))
+* **auth:** validate post-login callback URL ([e70f055](https://github.com/jamiebclark/screened/commit/e70f055d318e56d020072d09987986a130ebf64b))
+* **db:** add user watchlist radarr token ([a3d690e](https://github.com/jamiebclark/screened/commit/a3d690e5f66534856f323a69f88c1c7c6d2ef010))
+* **db:** watch entry source and list access notifications schema ([25888ac](https://github.com/jamiebclark/screened/commit/25888ac876c6771d6fdb6ad3b76d8566b8f6c6cb))
+* **lists:** private list access requests and notifications ([0a2566c](https://github.com/jamiebclark/screened/commit/0a2566cfc94761df4bb2c052ee059897eeb609c3))
+* **pick:** add year range, vetoes, and sidebar layout ([42932d4](https://github.com/jamiebclark/screened/commit/42932d44889ecf483c546c48cf0e77e99519874c))
+* **pick:** discovery and library scoring pipeline ([419b69e](https://github.com/jamiebclark/screened/commit/419b69eb9cdd8d300b3decd8d69f4b4efdd07f2e))
+* **pick:** person tags, plex library option, and scoring session ([88c69aa](https://github.com/jamiebclark/screened/commit/88c69aa2693fd8a3714cf6b4d330f252dfcfc249))
+* **plex:** add per-user library movie sets and intersection ([2636780](https://github.com/jamiebclark/screened/commit/2636780f589db61f46bdae399c1200504b299aa3))
+* **radarr:** add watchlist export helpers and user watchlist apis ([d8a78da](https://github.com/jamiebclark/screened/commit/d8a78da24ba6c862067fe1a40ab104634a4b7d3f))
+* **search:** add person search api ([384c78b](https://github.com/jamiebclark/screened/commit/384c78b41e73b698554dc127d57ace64b6d6ef24))
+* **settings:** account profile API and JWT session sync ([752fd50](https://github.com/jamiebclark/screened/commit/752fd5020b396043283619db62fad39e2a65d7ed))
+* **settings:** adjust settings home and nav ([41648b5](https://github.com/jamiebclark/screened/commit/41648b540934f91506216acf20e6ebd6f09752a1))
+* **settings:** hub layout and subpage navigation ([e88b0b5](https://github.com/jamiebclark/screened/commit/e88b0b5db856c25ffe22ab72d8a1b501002a7750))
+* **ui:** search-and-add on watch status pages ([e104b53](https://github.com/jamiebclark/screened/commit/e104b53195ee57c702625c56ffecb9aaacf103f6))
+* **watch-history:** entry source, import scopes, and reset settings ([ca45c7b](https://github.com/jamiebclark/screened/commit/ca45c7bc6c48e26abb72a0de40754b75aa314681))
+* **watchlist:** add radarr share to watchlist page ([0bb6ded](https://github.com/jamiebclark/screened/commit/0bb6dedc45eb5ab2e2b674d65b02bec60b456e98))
+
+### Bug Fixes
+
+* **discovery:** widen tmdb pool and match all movie directors ([cefe633](https://github.com/jamiebclark/screened/commit/cefe633cc862dd404e4039b06841566f24d09e64))
+* **prisma:** recreate dev client after generate adds new delegates ([16b5dc3](https://github.com/jamiebclark/screened/commit/16b5dc33b1a1ce0fb87dbed6740d9612272f99d8))
+* **ui:** refresh RSC after list invite and add to list ([355fc4d](https://github.com/jamiebclark/screened/commit/355fc4df18bfae41ab3b8a0070b637727d22aa07))
+* **watch:** refresh page and log viewing when marking watched ([7f85ed2](https://github.com/jamiebclark/screened/commit/7f85ed2d02691d83fef38dc773a5fb98d9eb5140))
+
 ## [1.4.1](https://github.com/jamiebclark/screened/compare/v1.4.0...v1.4.1) (2026-04-26)
 
 ### Bug Fixes
