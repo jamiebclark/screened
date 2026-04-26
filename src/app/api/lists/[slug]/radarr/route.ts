@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { MediaType } from "@/generated/prisma";
+import { mediaItemsToRadarrJson } from "@/lib/radarr-export";
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -35,11 +36,7 @@ export async function GET(req: NextRequest, { params }: Params) {
     }
   }
 
-  const radarrList = list.items.map((item) => ({
-    tmdbId: item.mediaItem.tmdbId,
-    title: item.mediaItem.title,
-    year: item.mediaItem.year,
-  }));
+  const radarrList = mediaItemsToRadarrJson(list.items.map((item) => item.mediaItem));
 
   return NextResponse.json(radarrList, {
     headers: {
