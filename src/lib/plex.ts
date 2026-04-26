@@ -188,7 +188,7 @@ export async function getPlexWatchHistory(
   type: "movie" | "show" = "movie"
 ): Promise<PlexWatchedItem[]> {
   const typeCode = type === "movie" ? 1 : 2;
-  const url = `${serverUrl}/library/all?type=${typeCode}&viewCount>=1&X-Plex-Token=${token}`;
+  const url = `${serverUrl}/library/all?type=${typeCode}&viewCount>=1&includeGuids=1&X-Plex-Token=${token}`;
   const res = await plexServerFetch(url);
   const data = await res.json() as { MediaContainer?: { Metadata?: PlexWatchedItem[] } };
   return data?.MediaContainer?.Metadata ?? [];
