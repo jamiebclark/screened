@@ -1,0 +1,14 @@
+---
+description: Require SQL migrations for any Prisma schema or database shape change
+globs: prisma/**
+alwaysApply: false
+---
+
+# Prisma schema and migrations
+
+- **Every change to `prisma/schema.prisma` (models, fields, relations, enums, indexes)** must be accompanied by a new migration in `prisma/migrations/`. Do not rely on `prisma db push` alone for work that is meant to be deployed; production and Docker use `prisma migrate deploy`.
+- **Never commit schema edits without a matching migration** unless the user explicitly says they are prototypes only.
+- **Preferred workflow:** after editing the schema, run `yarn prisma migrate dev --name <short_description>` (with `DATABASE_URL` pointed at a dev database) to generate the migration, then review the SQL. If a dev database is not available, use `prisma migrate diff` (from a DB or migrations history) to author the `migration.sql` and verify with `prisma migrate deploy` against a test database.
+- **Verify:** a database created only with `prisma migrate deploy` must match `schema.prisma` (e.g. `prisma migrate diff` shows no pending changes).
+
+---
