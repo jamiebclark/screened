@@ -82,14 +82,18 @@ export default async function ListPage({ params }: Params) {
         )
       : new Set<string>();
 
-  const visibleItems = userId
+  const unwatchedItems = userId
     ? list.items.filter((i) => !watchedIdSet.has(i.mediaItemId))
     : list.items;
-  const hiddenWatchedCount = list.items.length - visibleItems.length;
+  const watchedItems = userId
+    ? list.items.filter((i) => watchedIdSet.has(i.mediaItemId))
+    : [];
 
   const allMovies = list.items.filter((i) => i.mediaItem.type === MediaType.MOVIE);
-  const movies = visibleItems.filter((i) => i.mediaItem.type === MediaType.MOVIE);
-  const tvShows = visibleItems.filter((i) => i.mediaItem.type === MediaType.TV);
+  const movies = unwatchedItems.filter((i) => i.mediaItem.type === MediaType.MOVIE);
+  const tvShows = unwatchedItems.filter((i) => i.mediaItem.type === MediaType.TV);
+  const watchedMovies = watchedItems.filter((i) => i.mediaItem.type === MediaType.MOVIE);
+  const watchedTv = watchedItems.filter((i) => i.mediaItem.type === MediaType.TV);
 
   const existingListKeys = list.items.map(
     (i) => `${i.mediaItem.type === MediaType.MOVIE ? "movie" : "tv"}-${i.mediaItem.tmdbId}`
@@ -129,9 +133,9 @@ export default async function ListPage({ params }: Params) {
             <span className="text-sm text-muted-foreground">
               {list.items.length} items
             </span>
-            {hiddenWatchedCount > 0 && (
+            {userId && watchedItems.length > 0 && (
               <span className="text-sm text-muted-foreground">
-                · {hiddenWatchedCount} hidden (watched)
+                · {watchedItems.length} in your watched history
               </span>
             )}
           </div>
@@ -185,13 +189,6 @@ export default async function ListPage({ params }: Params) {
           <Film className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
           <p className="text-muted-foreground">No items yet</p>
         </div>
-      ) : visibleItems.length === 0 ? (
-        <div className="text-center py-16 border border-dashed border-border rounded-xl">
-          <Film className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-          <p className="text-muted-foreground">
-            Everything on this list is in your watched history, so there’s nothing left to show here.
-          </p>
-        </div>
       ) : (
         <div className="space-y-8">
           {movies.length > 0 && (
@@ -232,6 +229,56 @@ export default async function ListPage({ params }: Params) {
                     currentUserId={userId}
                   />
                 ))}
+              </div>
+            </section>
+          )}
+
+          {userId && (watchedMovies.length > 0 || watchedTv.length > 0) && (
+            <section>
+              <h2 className="text-sm font-semibold text-foreground border-b border-border pb-2 mb-4">
+                Watched ({watchedItems.length})
+              </h2>
+              <div className="space-y-8">
+                {watchedMovies.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4 flex items-center gap-1.5">
+                      <Film className="h-4 w-4" />
+                      Movies ({watchedMovies.length})
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                      {watchedMovies.map((item) => (
+                        <ListItemCard
+                          key={item.id}
+                          item={item}
+                          slug={slug}
+                          canDelete={isMember || isOwner}
+                          isOwner={isOwner}
+                          currentUserId={userId}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {watchedTv.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4 flex items-center gap-1.5">
+                      <Tv className="h-4 w-4" />
+                      TV Shows ({watchedTv.length})
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                      {watchedTv.map((item) => (
+                        <ListItemCard
+                          key={item.id}
+                          item={item}
+                          slug={slug}
+                          canDelete={isMember || isOwner}
+                          isOwner={isOwner}
+                          currentUserId={userId}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </section>
           )}
