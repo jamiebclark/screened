@@ -158,3 +158,46 @@ export async function getPopularMovies(page = 1): Promise<TmdbSearchResponse> {
     results: res.results.map((r) => ({ ...r, media_type: "movie" as const })),
   };
 }
+
+interface TmdbCreditsResponse {
+  cast: { id: number; name: string; order: number }[];
+  crew: { id: number; name: string; job: string }[];
+}
+
+interface TmdbMovieKeywordsResponse {
+  keywords: { id: number; name: string }[];
+}
+
+interface TmdbTvKeywordsResponse {
+  results: { id: number; name: string }[];
+}
+
+export async function getMovieCredits(tmdbId: number): Promise<{ cast: string[]; director: string | null }> {
+  const data = await tmdbFetch<TmdbCreditsResponse>(`/movie/${tmdbId}/credits`);
+  const cast = data.cast
+    .sort((a, b) => a.order - b.order)
+    .slice(0, 8)
+    .map((c) => c.name);
+  const director = data.crew.find((c) => c.job === "Director")?.name ?? null;
+  return { cast, director };
+}
+
+export async function getMovieKeywords(tmdbId: number): Promise<string[]> {
+  const data = await tmdbFetch<TmdbMovieKeywordsResponse>(`/movie/${tmdbId}/keywords`);
+  return data.keywords.map((k) => k.name);
+}
+
+export async function getTvCredits(tmdbId: number): Promise<{ cast: string[]; director: string | null }> {
+  const data = await tmdbFetch<TmdbCreditsResponse>(`/tv/${tmdbId}/credits`);
+  const cast = data.cast
+    .sort((a, b) => a.order - b.order)
+    .slice(0, 8)
+    .map((c) => c.name);
+  const creator = data.crew.find((c) => c.job === "Creator" || c.job === "Series Director")?.name ?? null;
+  return { cast, director: creator };
+}
+
+export async function getTvKeywords(tmdbId: number): Promise<string[]> {
+  const data = await tmdbFetch<TmdbTvKeywordsResponse>(`/tv/${tmdbId}/keywords`);
+  return data.results.map((k) => k.name);
+}
