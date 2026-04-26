@@ -1,3 +1,19 @@
+## [1.8.0](https://github.com/jamiebclark/screened/compare/v1.7.0...v1.8.0) (2026-04-26)
+
+### Features
+
+* **letterboxd:** store diary url on watch entries from rss ([3638837](https://github.com/jamiebclark/screened/commit/3638837adc61f0de9e084040ffbefb84886c176b))
+* **movies:** title chrome site context and outbound catalog links ([252b857](https://github.com/jamiebclark/screened/commit/252b857184644d3491d7f8520c671d65592c3542))
+* **pick:** genre include and exclude in hard filters ([ab82f66](https://github.com/jamiebclark/screened/commit/ab82f663df3f9739c2674c562a75b5e8215cf0c3))
+
+### Bug Fixes
+
+* **ui:** scrollable main region in app shell ([8d85b56](https://github.com/jamiebclark/screened/commit/8d85b567e441cfba79fa7ba3cba20d9a2285fbc2))
+
+### Performance Improvements
+
+* **plex:** cache library tmdb index with ttl and single flight ([7bccdc6](https://github.com/jamiebclark/screened/commit/7bccdc60c82c70fc6c7d22514309d70bf3e43f34))
+
 ## [1.7.0](https://github.com/jamiebclark/screened/compare/v1.6.1...v1.7.0) (2026-04-26)
 
 ### Features
