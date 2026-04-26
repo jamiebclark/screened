@@ -9,6 +9,21 @@ export type ProfileFriendState =
   | { kind: "incoming"; requestId: string }
   | { kind: "none" };
 
+/** All accepted friend user ids (both directions). */
+export async function listFriendUserIds(viewerId: string): Promise<string[]> {
+  const [asLow, asHigh] = await Promise.all([
+    prisma.friendship.findMany({
+      where: { userLowId: viewerId },
+      select: { userHighId: true },
+    }),
+    prisma.friendship.findMany({
+      where: { userHighId: viewerId },
+      select: { userLowId: true },
+    }),
+  ]);
+  return [...asLow.map((r) => r.userHighId), ...asHigh.map((r) => r.userLowId)];
+}
+
 export async function areFriends(userId: string, otherUserId: string): Promise<boolean> {
   if (userId === otherUserId) return true;
   const { userLowId, userHighId } = sortedFriendshipUserIds(userId, otherUserId);
