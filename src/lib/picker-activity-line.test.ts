@@ -14,6 +14,7 @@ function ref(over: Partial<ReferenceMovieJson> & { mediaItemId: string; title: s
     weight: 1,
     saved: false,
     hasEmbedding: true,
+    genres: [],
     ...over,
   };
 }
@@ -44,6 +45,8 @@ function base(over: Partial<PickerRoomState> = {}): PickerRoomState {
     maxRuntime: "",
     requirePeople: [],
     excludePeople: [],
+    includeGenres: [],
+    excludeGenres: [],
     vetoIds: [],
     plexLibraryOnly: false,
     hideAllLogged: false,
@@ -198,6 +201,22 @@ describe("describePickerStateChange", () => {
     const next = { ...prev, requirePeople: ["nolan"] };
     expect(describePickerStateChange(prev, next, { actorId: "p1", youId: "p1" })).toBe(
       "You changed required cast/crew."
+    );
+  });
+
+  it("includeGenres change", () => {
+    const prev = base();
+    const next = { ...prev, includeGenres: ["Comedy"] };
+    expect(describePickerStateChange(prev, next, { actorId: "p1", youId: "p1" })).toBe(
+      "You changed included genres."
+    );
+  });
+
+  it("excludeGenres change", () => {
+    const prev = base();
+    const next = { ...prev, excludeGenres: ["Horror"] };
+    expect(describePickerStateChange(prev, next, { actorId: "p1", youId: "p1" })).toBe(
+      "You changed excluded genres."
     );
   });
 

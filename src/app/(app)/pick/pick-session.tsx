@@ -18,6 +18,7 @@ import {
   UserX,
   Activity,
   User,
+  Tag,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -848,6 +849,139 @@ function PersonTagInput({
   );
 }
 
+// ─── GenreTagInput (TMDB movie genre list + optional freeform) ──────────────
+
+function GenreTagInput({
+  values,
+  onChange,
+  placeholder,
+  colorClass,
+  hint,
+}: {
+  values: string[];
+  onChange: (values: string[]) => void;
+  placeholder: string;
+  colorClass: string;
+  hint?: string;
+}) {
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const suggestions = useMemo(() => filterTmdbMovieGenres(query, 10), [query]);
+  const availableSuggestions = useMemo(
+    () => suggestions.filter((s: string) => !values.some((v) => v.toLowerCase() === s.toLowerCase())),
+    [suggestions, values]
+  );
+
+  useEffect(() => {
+    const onDoc = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, []);
+
+  const addExact = (name: string) => {
+    const t = name.trim();
+    if (!t) return;
+    if (values.some((v) => v.toLowerCase() === t.toLowerCase())) return;
+    onChange([...values, t]);
+    setQuery("");
+    setOpen(false);
+  };
+
+  const add = () => {
+    const t = query.trim();
+    if (!t) return;
+    if (availableSuggestions.length > 0) {
+      addExact(availableSuggestions[0]!);
+      return;
+    }
+    addExact(t);
+  };
+
+  const remove = (name: string) => onChange(values.filter((v) => v !== name));
+  const canAdd = query.trim().length > 0;
+
+  return (
+    <div className="space-y-2">
+      {hint && <p className="text-[11px] text-muted-foreground leading-snug">{hint}</p>}
+      <div ref={containerRef} className="relative space-y-2">
+        <div className="flex gap-2">
+          <div className="relative flex-1 min-w-0">
+            <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
+            <Input
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setOpen(true);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  add();
+                }
+              }}
+              onFocus={() => setOpen(true)}
+              placeholder={placeholder}
+              className="pl-9 pr-3"
+              autoComplete="off"
+            />
+            {open && availableSuggestions.length > 0 && (
+              <div className="absolute z-50 mt-1 w-full max-h-56 overflow-y-auto rounded-md border border-border bg-popover py-0.5 shadow-lg">
+                {availableSuggestions.map((g: string) => (
+                  <button
+                    key={g}
+                    type="button"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      addExact(g);
+                    }}
+                    className="flex w-full px-3 py-2 text-left text-sm transition-colors hover:bg-accent"
+                  >
+                    {g}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={add}
+            disabled={!canAdd}
+            className="shrink-0"
+            title="Add (first match, or your text)"
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+        </div>
+        {values.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {values.map((name) => (
+              <span
+                key={name}
+                className={cn(
+                  "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium",
+                  colorClass
+                )}
+              >
+                {name}
+                <button type="button" onClick={() => remove(name)} className="hover:opacity-70 transition-opacity">
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Main PickSession Component ───────────────────────────────────────────────
 
 export function PickSession({ currentUser, roomId, initialRoomState, hasPlexLinked }: PickSessionProps) {
@@ -912,6 +1046,8 @@ export function PickSession({ currentUser, roomId, initialRoomState, hasPlexLink
     maxRuntime,
     requirePeople,
     excludePeople,
+    includeGenres,
+    excludeGenres,
     vetoIds,
     plexLibraryOnly,
     hideAllLogged,
@@ -954,6 +1090,17 @@ export function PickSession({ currentUser, roomId, initialRoomState, hasPlexLink
   }, [router]);
 
   const vetoIdSet = useMemo(() => new Set(vetoIds), [vetoIds]);
+
+  /** Union of TMDB genres on “Like these” titles — for context only; not wired to “Must include”. */
+  const aggregatedAttractorGenres = useMemo(() => {
+    const s = new Set<string>();
+    for (const a of attractors) {
+      for (const g of a.genres) {
+        if (g.trim()) s.add(g);
+      }
+    }
+    return [...s].sort((a, b) => a.localeCompare(b));
+  }, [attractors]);
 
   const visibleScoringResults = useMemo(() => {
     if (scoringResults === null) return null;
@@ -1061,6 +1208,7 @@ export function PickSession({ currentUser, roomId, initialRoomState, hasPlexLink
         weight: 1.0,
         saved: false,
         hasEmbedding: true,
+        genres: movie.genres,
       };
       const hasRep = prev.repellers.some((r) => r.mediaItemId === movie.id);
       return {
@@ -1155,6 +1303,8 @@ export function PickSession({ currentUser, roomId, initialRoomState, hasPlexLink
             vetoIds: vetoIds.length > 0 ? vetoIds : undefined,
             requirePeople: requirePeople.length ? requirePeople : undefined,
             excludePeople: excludePeople.length ? excludePeople : undefined,
+            includeGenres: includeGenres.length ? includeGenres : undefined,
+            excludeGenres: excludeGenres.length ? excludeGenres : undefined,
             hideAllLogged,
           },
           plexLibraryOnly,
@@ -1326,6 +1476,28 @@ export function PickSession({ currentUser, roomId, initialRoomState, hasPlexLink
                     </div>
                   )}
                 </div>
+                {aggregatedAttractorGenres.length > 0 && (
+                  <div className="rounded-lg border border-border/60 bg-muted/15 px-3 py-2.5 space-y-1.5">
+                    <p className="text-[11px] font-medium text-muted-foreground">
+                      Genres across your &quot;Like these&quot; picks
+                    </p>
+                    <div className="flex flex-wrap gap-1">
+                      {aggregatedAttractorGenres.map((g) => (
+                        <span
+                          key={g}
+                          className="rounded border border-border/70 bg-background/50 px-1.5 py-0.5 text-[10px] text-muted-foreground"
+                        >
+                          {g}
+                        </span>
+                      ))}
+                    </div>
+                    <p className="text-[10px] text-muted-foreground leading-snug">
+                      For reference only. &quot;Must include&quot; / &quot;Exclude genres&quot; in Hard filters apply to the ranked
+                      suggestions—they are not filled in from this list, and your picks steer similarity via embeddings, not
+                      via these tags.
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -1369,7 +1541,7 @@ export function PickSession({ currentUser, roomId, initialRoomState, hasPlexLink
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-base">Hard filters</CardTitle>
-              <p className="text-xs text-muted-foreground">Optional bounds for release year, runtime, and cast</p>
+              <p className="text-xs text-muted-foreground">Optional bounds for year, runtime, cast, and genres</p>
             </CardHeader>
             <CardContent>
               <div className="space-y-5">
@@ -1501,6 +1673,34 @@ export function PickSession({ currentUser, roomId, initialRoomState, hasPlexLink
                     onChange={(values) => setRoomState((p) => ({ ...p, excludePeople: values }))}
                     placeholder="Search for an actor or director…"
                     colorClass="bg-red-500/15 text-red-700 dark:text-red-400"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <Tag className="h-3.5 w-3.5 text-emerald-500" />
+                    <label className="text-xs font-medium text-muted-foreground">Must include a genre</label>
+                  </div>
+                  <GenreTagInput
+                    values={includeGenres}
+                    onChange={(values) => setRoomState((p) => ({ ...p, includeGenres: values }))}
+                    placeholder="Type or pick a genre…"
+                    colorClass="bg-emerald-500/15 text-emerald-800 dark:text-emerald-300"
+                    hint='Applies to ranked suggestions only (not an extra vote from your "Like these" films). Choose from the TMDB list or type to filter it. A suggested film must match at least one tag (OR).'
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <Tag className="h-3.5 w-3.5 text-orange-500" />
+                    <label className="text-xs font-medium text-muted-foreground">Exclude genres</label>
+                  </div>
+                  <GenreTagInput
+                    values={excludeGenres}
+                    onChange={(values) => setRoomState((p) => ({ ...p, excludeGenres: values }))}
+                    placeholder="Type or pick a genre…"
+                    colorClass="bg-orange-500/15 text-orange-800 dark:text-orange-300"
+                    hint='Applies to suggestions only. Suggested titles with any matching genre are removed. Typing "horr" still matches Horror when you add a custom tag.'
                   />
                 </div>
               </div>

@@ -15,6 +15,7 @@ import {
 } from "@/lib/embeddings";
 import { MediaType, WatchStatus } from "@/generated/prisma";
 import type { HardFilterInput, ReferenceItem, ScoredRow } from "./score-types";
+import { passesGenreFilters } from "./genre-filters";
 
 const REPELLER_LAMBDA = 0.7;
 const MAX_TMDB_CANDIDATES = 200;
@@ -228,7 +229,10 @@ export async function scoreFromTmdbDiscovery(
 
   const hasPersonFilter =
     (hard.requirePeople?.length ?? 0) > 0 || (hard.excludePeople?.length ?? 0) > 0;
-  const tmdbInfo = await collectTmdbCandidateMap(attractorTmdbIds, hasPersonFilter);
+  const hasGenreFilter =
+    (hard.includeGenres?.length ?? 0) > 0 || (hard.excludeGenres?.length ?? 0) > 0;
+  const wideCandidatePool = hasPersonFilter || hasGenreFilter;
+  const tmdbInfo = await collectTmdbCandidateMap(attractorTmdbIds, wideCandidatePool);
 
   const plexTmdb = opts.plexLibraryOnly ? opts.plexTmdbIds : null;
   if (opts.plexLibraryOnly && !plexTmdb) {
@@ -238,8 +242,8 @@ export async function scoreFromTmdbDiscovery(
   const minY = hard.minYear;
   const maxY = hard.maxYear;
 
-  /** Wider pool when filtering by people — similar-to lists often put same-director films later. */
-  const preDetailLimit = hasPersonFilter ? MAX_TMDB_CANDIDATES : MAX_TO_EMBED * 2;
+  /** Wider pool when filters shrink the list — need more similar/recommendation rows before details. */
+  const preDetailLimit = wideCandidatePool ? MAX_TMDB_CANDIDATES : MAX_TO_EMBED * 2;
 
   const candidateTmdb: number[] = [];
   for (const [tmdb, meta] of tmdbInfo) {
@@ -293,6 +297,10 @@ export async function scoreFromTmdbDiscovery(
       if (exclude.some((n) => matchesPerson(credits.cast, credits.director, n, credits.directors))) {
         continue;
       }
+    }
+    const genreNames = movie.genres.map((g) => g.name);
+    if (!passesGenreFilters(genreNames, hard.includeGenres, hard.excludeGenres)) {
+      continue;
     }
     filtered.push(d);
   }

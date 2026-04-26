@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { weightedAverage, cosineSimilarity } from "@/lib/embeddings";
 import { MediaType, WatchStatus } from "@/generated/prisma";
 import type { ScoredRow, HardFilterInput, ReferenceItem } from "./score-types";
+import { passesGenreFilters } from "./genre-filters";
 
 const REPELLER_LAMBDA = 0.7;
 
@@ -86,6 +87,7 @@ export async function scoreFromEmbeddedLibrary(
       if (watchedIds.has(c.id) || vetoSet.has(c.id) || referenceSet.has(c.id)) return false;
       if (requirePeople.length > 0 && !requirePeople.every((name) => matchesPerson(c, name))) return false;
       if (excludePeople.length > 0 && excludePeople.some((name) => matchesPerson(c, name))) return false;
+      if (!passesGenreFilters(c.genres, hard.includeGenres, hard.excludeGenres)) return false;
       return true;
     })
     .map((c) => {

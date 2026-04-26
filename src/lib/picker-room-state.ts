@@ -8,6 +8,8 @@ export type ReferenceMovieJson = {
   weight: number;
   saved: boolean;
   hasEmbedding: boolean;
+  /** TMDB genre names for this title (from our MediaItem / embed). */
+  genres: string[];
 };
 
 export type ScoredMovieJson = {
@@ -40,6 +42,10 @@ export type PickerRoomState = {
   maxRuntime: string;
   requirePeople: string[];
   excludePeople: string[];
+  /** Substrings match TMDB genre names (e.g. Animation) — at least one required when non-empty. */
+  includeGenres: string[];
+  /** Drop titles that match any of these (substring match on genre name). */
+  excludeGenres: string[];
   /** Media item ids hard-excluded from the ranked list and scoring pool */
   vetoIds: string[];
   /** Intersect with Plex library TMDB ids (current user must have Plex linked). */
@@ -66,6 +72,8 @@ export function defaultPickerState(currentUser: {
     maxRuntime: "",
     requirePeople: [],
     excludePeople: [],
+    includeGenres: [],
+    excludeGenres: [],
     vetoIds: [],
     plexLibraryOnly: false,
     hideAllLogged: false,
@@ -91,6 +99,10 @@ export function isPickerState(x: unknown): x is PickerRoomState {
   if (
     !Array.isArray(o.requirePeople) ||
     !Array.isArray(o.excludePeople) ||
+    (o.includeGenres !== undefined &&
+      (!Array.isArray(o.includeGenres) || o.includeGenres.some((g) => typeof g !== "string"))) ||
+    (o.excludeGenres !== undefined &&
+      (!Array.isArray(o.excludeGenres) || o.excludeGenres.some((g) => typeof g !== "string"))) ||
     typeof o.hideAllLogged !== "boolean" ||
     typeof o.filtersOpen !== "boolean"
   ) {
@@ -113,9 +125,16 @@ export function isPickerState(x: unknown): x is PickerRoomState {
 export function withScoringDefaults(s: PickerRoomState): PickerRoomState {
   const raw = s as PickerRoomState & { candidateSource?: "tmdb" | "library" };
   const { candidateSource: _legacy, ...rest } = raw;
+  const mapRefs = (arr: ReferenceMovieJson[]) =>
+    arr.map((m) => ({ ...m, genres: m.genres ?? [] }));
+
   return {
     ...rest,
     maxYear: rest.maxYear ?? "",
+    includeGenres: rest.includeGenres ?? [],
+    excludeGenres: rest.excludeGenres ?? [],
+    attractors: mapRefs(rest.attractors ?? []),
+    repellers: mapRefs(rest.repellers ?? []),
     vetoIds: rest.vetoIds ?? [],
     plexLibraryOnly: rest.plexLibraryOnly ?? false,
     filtersOpen: rest.filtersOpen ?? true,

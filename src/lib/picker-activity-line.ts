@@ -130,6 +130,12 @@ export function describePickerStateChange(
   if (JSON.stringify(prev.excludePeople) !== JSON.stringify(next.excludePeople)) {
     return `${labelFor(roster, actorId, youId)} changed excluded cast/crew.`;
   }
+  if (JSON.stringify(prev.includeGenres) !== JSON.stringify(next.includeGenres)) {
+    return `${labelFor(roster, actorId, youId)} changed included genres.`;
+  }
+  if (JSON.stringify(prev.excludeGenres) !== JSON.stringify(next.excludeGenres)) {
+    return `${labelFor(roster, actorId, youId)} changed excluded genres.`;
+  }
   if (prev.filtersOpen !== next.filtersOpen) {
     return `${labelFor(roster, actorId, youId)} ${next.filtersOpen ? "opened" : "collapsed"} the filters.`;
   }

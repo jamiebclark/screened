@@ -29,6 +29,7 @@ export default async function PickPage({ searchParams }: PageProps) {
             poster: true,
             year: true,
             embedding: true,
+            genres: true,
           },
         },
       },
@@ -58,6 +59,7 @@ export default async function PickPage({ searchParams }: PageProps) {
       weight: p.weight,
       saved: true,
       hasEmbedding: p.mediaItem.embedding.length > 0,
+      genres: p.mediaItem.genres,
     }));
 
   const initialRepellers = savedPreferences
@@ -71,6 +73,7 @@ export default async function PickPage({ searchParams }: PageProps) {
       weight: p.weight,
       saved: true,
       hasEmbedding: p.mediaItem.embedding.length > 0,
+      genres: p.mediaItem.genres,
     }));
 
   let initialRoomState: PickerRoomState | null = null;

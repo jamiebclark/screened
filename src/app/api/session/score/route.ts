@@ -26,6 +26,8 @@ function buildHard(h: ScoreRequest): HardFilterInput {
     vetoIds: h.hardFilters?.vetoIds,
     requirePeople: h.hardFilters?.requirePeople,
     excludePeople: h.hardFilters?.excludePeople,
+    includeGenres: h.hardFilters?.includeGenres,
+    excludeGenres: h.hardFilters?.excludeGenres,
     hideAllLogged: h.hardFilters?.hideAllLogged,
   };
 }
@@ -101,7 +103,7 @@ export async function POST(req: NextRequest) {
       results: [],
       total: 0,
       message:
-        "No candidates passed your filters. Try relaxing year/runtime, turning off the Plex limit, or check TMDB for similar/recommendation results for your title.",
+        "No candidates passed your filters. Try relaxing year/runtime or genres, turning off the Plex limit, or check TMDB for similar/recommendation results for your title.",
     });
   }
   return NextResponse.json({ results: disc, total: disc.length });

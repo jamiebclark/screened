@@ -24,5 +24,9 @@ export type HardFilterInput = {
   vetoIds?: string[];
   requirePeople?: string[];
   excludePeople?: string[];
+  /** At least one token must match a genre name (OR). Uses substring match; TMDB names e.g. "Animation". */
+  includeGenres?: string[];
+  /** Drop titles where any token matches any genre. */
+  excludeGenres?: string[];
   hideAllLogged?: boolean;
 };
