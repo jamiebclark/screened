@@ -69,6 +69,8 @@ model User {
   watchlistVisibility ProfileContentVisibility @default(PUBLIC)
   /// Watched and watching activity on your profile (and related stat counts / average rating from visible titles).
   watchHistoryVisibility ProfileContentVisibility @default(PUBLIC)
+  /// Set when the user finishes or skips first-login onboarding (connect Letterboxd / Plex). Null = show onboarding.
+  onboardingCompletedAt DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
