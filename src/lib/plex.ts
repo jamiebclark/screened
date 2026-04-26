@@ -1,3 +1,5 @@
+import { prisma } from "@/lib/prisma";
+
 const PLEX_TV_BASE = "https://plex.tv";
 const PLEX_CLIENT_IDENTIFIER = "screened";
 const PLEX_PRODUCT = "Screened";
@@ -254,4 +256,43 @@ export function extractTmdbIdFromGuid(guids: { id: string }[] | undefined): numb
   if (!tmdbGuid) return null;
   const id = parseInt(tmdbGuid.id.replace("tmdb://", ""), 10);
   return isNaN(id) ? null : id;
+}
+
+/** All movie TMDB ids in the user’s Plex movie libraries, or null if not linked. */
+export async function getPlexMovieTmdbIdSetForUser(userId: string): Promise<Set<number> | null> {
+  const c = await prisma.plexConnection.findUnique({
+    where: { userId },
+    select: { plexToken: true, plexServerId: true },
+  });
+  if (!c) return null;
+  const servers = await getPlexServers(c.plexToken);
+  const server = servers.find((s) => s.machineIdentifier === c.plexServerId) ?? servers[0];
+  if (!server) return null;
+  const token = server.accessToken ?? c.plexToken;
+  const ids = await getPlexLibraryMovieTmdbIds(server.uri, token);
+  return new Set(ids);
+}
+
+export type IntersectingPlexResult =
+  | { kind: "none" }
+  | { kind: "ok"; ids: Set<number> };
+
+/**
+ * Intersection of every participant that has a linked Plex account.
+ * Participants without Plex are ignored (we only constrain using libraries we can read).
+ */
+export async function getIntersectingPlexMovieTmdbIds(participantUserIds: string[]): Promise<IntersectingPlexResult> {
+  if (participantUserIds.length === 0) return { kind: "none" };
+  const sets: Set<number>[] = [];
+  for (const id of participantUserIds) {
+    const s = await getPlexMovieTmdbIdSetForUser(id);
+    if (s) sets.push(s);
+  }
+  if (sets.length === 0) return { kind: "none" };
+  let acc = new Set(sets[0]!);
+  for (let i = 1; i < sets.length; i++) {
+    const b = sets[i]!;
+    acc = new Set([...acc].filter((t) => b.has(t)));
+  }
+  return { kind: "ok", ids: acc };
 }
