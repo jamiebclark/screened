@@ -25,6 +25,11 @@ enum ListRole {
   VIEWER
 }
 
+enum PreferenceType {
+  ATTRACTOR
+  REPELLER
+}
+
 model User {
   id            String    @id @default(cuid())
   email         String    @unique
@@ -35,13 +40,17 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  plexConnection  PlexConnection?
-  mediaStatuses   UserMediaStatus[]
-  episodeStatuses EpisodeStatus[]
+  plexConnection        PlexConnection?
+  letterboxdConnection  LetterboxdConnection?
+  mediaStatuses         UserMediaStatus[]
+  watchEntries          WatchEntry[]
+  episodeStatuses       EpisodeStatus[]
   ownedLists      List[]
   listMemberships ListMember[]
   listItems       ListItem[]
   sessions        Session[]
+  preferences     UserPreference[]
+  pickerRooms     PickerRoom[] @relation("PickerRoomOwner")
 }
 
 model Session {
@@ -68,6 +77,17 @@ model PlexConnection {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+model LetterboxdConnection {
+  id                 String    @id @default(cuid())
+  userId             String    @unique
+  letterboxdUsername String
+  lastSyncedAt       DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
 model MediaItem {
   id        String    @id @default(cuid())
   tmdbId    Int
@@ -79,12 +99,18 @@ model MediaItem {
   overview  String?
   genres    String[]
   runtime   Int?
+  cast      String[]  @default([])
+  director  String?
+  keywords  String[]  @default([])
+  embedding Float[]  @default([])
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
   userStatuses    UserMediaStatus[]
+  watchEntries    WatchEntry[]
   episodeStatuses EpisodeStatus[]
   listItems       ListItem[]
+  preferences     UserPreference[]
 
   @@unique([tmdbId, type])
 }
@@ -95,15 +121,30 @@ model UserMediaStatus {
   mediaItemId String
   status      WatchStatus
   rating      Float?
-  review      String?
-  watchedAt   DateTime?
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  mediaItem MediaItem @relation(fields: [mediaItemId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mediaItem    MediaItem    @relation(fields: [mediaItemId], references: [id], onDelete: Cascade)
+  watchEntries WatchEntry[]
 
   @@unique([userId, mediaItemId])
+}
+
+model WatchEntry {
+  id                String   @id @default(cuid())
+  userId            String
+  mediaItemId       String
+  userMediaStatusId String?
+  watchedAt         DateTime @default(now())
+  review            String?
+  rating            Float?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mediaItem       MediaItem        @relation(fields: [mediaItemId], references: [id], onDelete: Cascade)
+  userMediaStatus UserMediaStatus? @relation(fields: [userMediaStatusId], references: [id], onDelete: SetNull)
 }
 
 model EpisodeStatus {
@@ -162,4 +203,29 @@ model ListItem {
   addedBy   User      @relation(fields: [addedById], references: [id], onDelete: Cascade)
 
   @@unique([listId, mediaItemId])
+}
+
+model UserPreference {
+  id          String         @id @default(cuid())
+  userId      String
+  type        PreferenceType
+  mediaItemId String
+  weight      Float          @default(1.0)
+  createdAt   DateTime       @default(now())
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mediaItem MediaItem @relation(fields: [mediaItemId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, mediaItemId, type])
+}
+
+model PickerRoom {
+  id          String   @id @default(cuid())
+  createdById String
+  state       Json
+  version     Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  createdBy User @relation("PickerRoomOwner", fields: [createdById], references: [id], onDelete: Cascade)
 }
