@@ -7,7 +7,11 @@ import { WatchStatusButton } from "@/components/watch-status-button";
 import { RatingStars } from "@/components/rating-stars";
 import { AddToListDialog } from "@/components/add-to-list-dialog";
 import { WatchHistory } from "@/components/watch-history";
+import { TitleSiteContext } from "@/components/movie-site-context-panel";
+import { TitlePageTopNav } from "@/components/title-page-top-nav";
+import { TitlePageMobilePoster } from "@/components/title-page-mobile-poster";
 import { EpisodeTracker } from "@/components/episode-tracker";
+import { buildTvCatalogLinks } from "@/lib/movie-site-context";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Star, Calendar, Tv } from "lucide-react";
@@ -104,49 +108,59 @@ export default async function TvPage({ params }: Params) {
           </div>
 
           <div className="flex-1 pt-2 sm:pt-16 min-w-0">
-            <div className="flex flex-wrap items-start gap-2 mb-2">
-              {show.genres.slice(0, 3).map((g) => (
-                <Badge key={g.id} variant="secondary" className="text-xs">{g.name}</Badge>
-              ))}
+            <TitlePageTopNav />
+            <div className="flex gap-3 sm:gap-0">
+              <TitlePageMobilePoster posterUrl={posterUrl} title={show.name} />
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-start gap-2 mb-2">
+                  {show.genres.slice(0, 3).map((g) => (
+                    <Badge key={g.id} variant="secondary" className="text-xs">{g.name}</Badge>
+                  ))}
+                </div>
+
+                <h1 className="text-2xl md:text-4xl font-bold mb-2">{show.name}</h1>
+
+                <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-4">
+                  {year && (
+                    <span className="flex items-center gap-1">
+                      <Calendar className="h-3.5 w-3.5" />
+                      {year}
+                    </span>
+                  )}
+                  <span className="flex items-center gap-1">
+                    <Tv className="h-3.5 w-3.5" />
+                    {show.number_of_seasons} season{show.number_of_seasons !== 1 ? "s" : ""} · {show.number_of_episodes} episodes
+                  </span>
+                  {show.vote_average > 0 && (
+                    <span className="flex items-center gap-1">
+                      <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
+                      {show.vote_average.toFixed(1)}
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3 mb-6">
+                  <WatchStatusButton
+                    key={userStatus ? `${userStatus.id}-${userStatus.status}` : `s-${tmdbId}-none`}
+                    tmdbId={tmdbId}
+                    type="tv"
+                    currentStatus={userStatus?.status ?? null}
+                  />
+                  <AddToListDialog tmdbId={tmdbId} type="tv" title={show.name} />
+                  {userStatus && (
+                    <RatingStars tmdbId={tmdbId} type="tv" currentRating={userStatus?.rating ?? null} />
+                  )}
+                </div>
+
+                {show.overview && (
+                  <p className="text-muted-foreground leading-relaxed max-w-2xl">{show.overview}</p>
+                )}
+
+                <TitleSiteContext
+                  catalogLinks={buildTvCatalogLinks(tmdbId, show.external_ids?.imdb_id ?? null)}
+                />
+              </div>
             </div>
-
-            <h1 className="text-2xl md:text-4xl font-bold mb-2">{show.name}</h1>
-
-            <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-4">
-              {year && (
-                <span className="flex items-center gap-1">
-                  <Calendar className="h-3.5 w-3.5" />
-                  {year}
-                </span>
-              )}
-              <span className="flex items-center gap-1">
-                <Tv className="h-3.5 w-3.5" />
-                {show.number_of_seasons} season{show.number_of_seasons !== 1 ? "s" : ""} · {show.number_of_episodes} episodes
-              </span>
-              {show.vote_average > 0 && (
-                <span className="flex items-center gap-1">
-                  <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
-                  {show.vote_average.toFixed(1)}
-                </span>
-              )}
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3 mb-6">
-              <WatchStatusButton
-                key={userStatus ? `${userStatus.id}-${userStatus.status}` : `s-${tmdbId}-none`}
-                tmdbId={tmdbId}
-                type="tv"
-                currentStatus={userStatus?.status ?? null}
-              />
-              <AddToListDialog tmdbId={tmdbId} type="tv" title={show.name} />
-              {userStatus && (
-                <RatingStars tmdbId={tmdbId} type="tv" currentRating={userStatus?.rating ?? null} />
-              )}
-            </div>
-
-            {show.overview && (
-              <p className="text-muted-foreground leading-relaxed max-w-2xl">{show.overview}</p>
-            )}
 
             {session?.user && (
               <WatchHistory
@@ -158,6 +172,7 @@ export default async function TvPage({ params }: Params) {
                   watchedAt: e.watchedAt.toISOString(),
                   review: e.review,
                   rating: e.rating,
+                  letterboxdActivityUrl: e.letterboxdActivityUrl,
                 }))}
                 hasStatus={!!userStatus}
               />

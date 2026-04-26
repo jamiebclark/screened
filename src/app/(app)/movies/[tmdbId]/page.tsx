@@ -3,12 +3,21 @@ import { getMovie, tmdbImage } from "@/lib/tmdb";
 import { prisma } from "@/lib/prisma";
 import Image from "next/image";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import { WatchStatusButton } from "@/components/watch-status-button";
 import { RatingStars } from "@/components/rating-stars";
 import { AddToListDialog } from "@/components/add-to-list-dialog";
 import { WatchHistory } from "@/components/watch-history";
+import { MovieScreenedContextAsync } from "@/components/movie-screened-context";
+import {
+  TitleSiteContext,
+  MovieScreenedContextSkeleton,
+} from "@/components/movie-site-context-panel";
+import { TitlePageTopNav } from "@/components/title-page-top-nav";
+import { TitlePageMobilePoster } from "@/components/title-page-mobile-poster";
 import { Badge } from "@/components/ui/badge";
 import { formatRuntime } from "@/lib/utils";
+import { buildMovieCatalogLinks } from "@/lib/movie-site-context";
 import { Star, Calendar, Clock } from "lucide-react";
 import { MediaType } from "@/generated/prisma";
 
@@ -82,52 +91,66 @@ export default async function MoviePage({ params }: Params) {
 
           {/* Info */}
           <div className="flex-1 pt-2 sm:pt-16 min-w-0">
-            <div className="flex flex-wrap items-start gap-2 mb-2">
-              {movie.genres.slice(0, 3).map((g) => (
-                <Badge key={g.id} variant="secondary" className="text-xs">{g.name}</Badge>
-              ))}
+            <TitlePageTopNav />
+            <div className="flex gap-3 sm:gap-0">
+              <TitlePageMobilePoster posterUrl={posterUrl} title={movie.title} />
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-start gap-2 mb-2">
+                  {movie.genres.slice(0, 3).map((g) => (
+                    <Badge key={g.id} variant="secondary" className="text-xs">{g.name}</Badge>
+                  ))}
+                </div>
+
+                <h1 className="text-2xl md:text-4xl font-bold mb-2">{movie.title}</h1>
+
+                <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-4">
+                  {year && (
+                    <span className="flex items-center gap-1">
+                      <Calendar className="h-3.5 w-3.5" />
+                      {year}
+                    </span>
+                  )}
+                  {movie.runtime && (
+                    <span className="flex items-center gap-1">
+                      <Clock className="h-3.5 w-3.5" />
+                      {formatRuntime(movie.runtime)}
+                    </span>
+                  )}
+                  {movie.vote_average > 0 && (
+                    <span className="flex items-center gap-1">
+                      <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
+                      {movie.vote_average.toFixed(1)}
+                      <span className="text-xs">({movie.vote_count.toLocaleString()})</span>
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3 mb-6">
+                  <WatchStatusButton
+                    key={userStatus ? `${userStatus.id}-${userStatus.status}` : `s-${tmdbId}-none`}
+                    tmdbId={tmdbId}
+                    type="movie"
+                    currentStatus={userStatus?.status ?? null}
+                  />
+                  <AddToListDialog tmdbId={tmdbId} type="movie" title={movie.title} />
+                  {userStatus && (
+                    <RatingStars tmdbId={tmdbId} type="movie" currentRating={userStatus?.rating ?? null} />
+                  )}
+                </div>
+
+                {movie.overview && (
+                  <p className="text-muted-foreground leading-relaxed max-w-2xl">{movie.overview}</p>
+                )}
+
+                <TitleSiteContext catalogLinks={buildMovieCatalogLinks(tmdbId, movie.imdb_id)}>
+                  {session?.user?.id ? (
+                    <Suspense fallback={<MovieScreenedContextSkeleton />}>
+                      <MovieScreenedContextAsync userId={session.user.id} tmdbId={tmdbId} />
+                    </Suspense>
+                  ) : null}
+                </TitleSiteContext>
+              </div>
             </div>
-
-            <h1 className="text-2xl md:text-4xl font-bold mb-2">{movie.title}</h1>
-
-            <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-4">
-              {year && (
-                <span className="flex items-center gap-1">
-                  <Calendar className="h-3.5 w-3.5" />
-                  {year}
-                </span>
-              )}
-              {movie.runtime && (
-                <span className="flex items-center gap-1">
-                  <Clock className="h-3.5 w-3.5" />
-                  {formatRuntime(movie.runtime)}
-                </span>
-              )}
-              {movie.vote_average > 0 && (
-                <span className="flex items-center gap-1">
-                  <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
-                  {movie.vote_average.toFixed(1)}
-                  <span className="text-xs">({movie.vote_count.toLocaleString()})</span>
-                </span>
-              )}
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3 mb-6">
-              <WatchStatusButton
-                key={userStatus ? `${userStatus.id}-${userStatus.status}` : `s-${tmdbId}-none`}
-                tmdbId={tmdbId}
-                type="movie"
-                currentStatus={userStatus?.status ?? null}
-              />
-              <AddToListDialog tmdbId={tmdbId} type="movie" title={movie.title} />
-              {userStatus && (
-                <RatingStars tmdbId={tmdbId} type="movie" currentRating={userStatus?.rating ?? null} />
-              )}
-            </div>
-
-            {movie.overview && (
-              <p className="text-muted-foreground leading-relaxed max-w-2xl">{movie.overview}</p>
-            )}
 
             {session?.user && (
               <WatchHistory
@@ -139,6 +162,7 @@ export default async function MoviePage({ params }: Params) {
                   watchedAt: e.watchedAt.toISOString(),
                   review: e.review,
                   rating: e.rating,
+                  letterboxdActivityUrl: e.letterboxdActivityUrl,
                 }))}
                 hasStatus={!!userStatus}
               />

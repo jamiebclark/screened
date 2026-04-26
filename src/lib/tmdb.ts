@@ -58,6 +58,9 @@ export interface TmdbTvShow {
   number_of_episodes: number;
   vote_average: number;
   seasons: TmdbSeason[];
+  external_ids?: {
+    imdb_id?: string | null;
+  };
 }
 
 export interface TmdbSeason {
@@ -116,7 +119,9 @@ export async function getMovie(tmdbId: number): Promise<TmdbMovie> {
 }
 
 export async function getTvShow(tmdbId: number): Promise<TmdbTvShow> {
-  return tmdbFetch<TmdbTvShow>(`/tv/${tmdbId}`);
+  return tmdbFetch<TmdbTvShow>(`/tv/${tmdbId}`, {
+    append_to_response: "external_ids",
+  });
 }
 
 export async function getTvSeason(tvId: number, seasonNumber: number): Promise<TmdbSeasonDetail> {
