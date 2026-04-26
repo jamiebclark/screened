@@ -4,7 +4,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getMovie, getTvShow, getMovieCredits, getMovieKeywords, getTvCredits, getTvKeywords } from "@/lib/tmdb";
 import { buildEmbeddingText, generateEmbedding } from "@/lib/embeddings";
-import { MediaType, WatchStatus } from "@/generated/prisma";
+import { MediaType, WatchEntrySource, WatchStatus } from "@/generated/prisma";
 
 async function enrichAndEmbed(mediaItemId: string, tmdbId: number, type: "movie" | "tv") {
   try {
@@ -129,6 +129,10 @@ export async function POST(req: NextRequest) {
 
   const mediaItem = await getOrCreateMediaItem(tmdbId, mediaType);
 
+  const previous = await prisma.userMediaStatus.findUnique({
+    where: { userId_mediaItemId: { userId: session.user.id, mediaItemId: mediaItem.id } },
+  });
+
   const data: Record<string, unknown> = {};
   if (status !== undefined) data.status = status as WatchStatus;
   if (rating !== undefined) data.rating = rating;
@@ -143,6 +147,17 @@ export async function POST(req: NextRequest) {
       ...data,
     },
   });
+
+  if (result.status === WatchStatus.WATCHED && previous?.status !== WatchStatus.WATCHED) {
+    await prisma.watchEntry.create({
+      data: {
+        userId: session.user.id,
+        mediaItemId: mediaItem.id,
+        userMediaStatusId: result.id,
+        source: WatchEntrySource.MANUAL,
+      },
+    });
+  }
 
   return NextResponse.json(result);
 }

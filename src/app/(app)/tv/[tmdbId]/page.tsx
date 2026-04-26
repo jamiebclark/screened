@@ -132,7 +132,12 @@ export default async function TvPage({ params }: Params) {
             </div>
 
             <div className="flex flex-wrap items-center gap-3 mb-6">
-              <WatchStatusButton tmdbId={tmdbId} type="tv" currentStatus={userStatus?.status ?? null} />
+              <WatchStatusButton
+                key={userStatus ? `${userStatus.id}-${userStatus.status}` : `s-${tmdbId}-none`}
+                tmdbId={tmdbId}
+                type="tv"
+                currentStatus={userStatus?.status ?? null}
+              />
               <AddToListDialog tmdbId={tmdbId} type="tv" title={show.name} />
               {userStatus && (
                 <RatingStars tmdbId={tmdbId} type="tv" currentRating={userStatus?.rating ?? null} />
@@ -145,6 +150,7 @@ export default async function TvPage({ params }: Params) {
 
             {session?.user && (
               <WatchHistory
+                key={watchEntries.map((e) => e.id).join() || "no-entries"}
                 tmdbId={tmdbId}
                 type="tv"
                 initialEntries={watchEntries.map((e) => ({

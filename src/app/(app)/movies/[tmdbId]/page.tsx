@@ -113,7 +113,12 @@ export default async function MoviePage({ params }: Params) {
             </div>
 
             <div className="flex flex-wrap items-center gap-3 mb-6">
-              <WatchStatusButton tmdbId={tmdbId} type="movie" currentStatus={userStatus?.status ?? null} />
+              <WatchStatusButton
+                key={userStatus ? `${userStatus.id}-${userStatus.status}` : `s-${tmdbId}-none`}
+                tmdbId={tmdbId}
+                type="movie"
+                currentStatus={userStatus?.status ?? null}
+              />
               <AddToListDialog tmdbId={tmdbId} type="movie" title={movie.title} />
               {userStatus && (
                 <RatingStars tmdbId={tmdbId} type="movie" currentRating={userStatus?.rating ?? null} />
@@ -126,6 +131,7 @@ export default async function MoviePage({ params }: Params) {
 
             {session?.user && (
               <WatchHistory
+                key={watchEntries.map((e) => e.id).join() || "no-entries"}
                 tmdbId={tmdbId}
                 type="movie"
                 initialEntries={watchEntries.map((e) => ({
