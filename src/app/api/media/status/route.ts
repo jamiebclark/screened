@@ -154,11 +154,22 @@ export async function POST(req: NextRequest) {
   }
 
   if (result.status === WatchStatus.WATCHED && previous?.status !== WatchStatus.WATCHED) {
+    let watchedAtForLog: Date = new Date();
+    if (mediaItem.type === MediaType.TV) {
+      const lastEpisode = await prisma.episodeStatus.aggregate({
+        where: { userId: session.user.id, mediaItemId: mediaItem.id },
+        _max: { watchedAt: true },
+      });
+      if (lastEpisode._max.watchedAt) {
+        watchedAtForLog = lastEpisode._max.watchedAt;
+      }
+    }
     await prisma.watchEntry.create({
       data: {
         userId: session.user.id,
         mediaItemId: mediaItem.id,
         userMediaStatusId: result.id,
+        watchedAt: watchedAtForLog,
         source: WatchEntrySource.MANUAL,
       },
     });
