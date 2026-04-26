@@ -14,6 +14,7 @@ import {
 } from "@/components/profile-friend-actions";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { buildLastWatchedMsByMediaItemId, sortByLastWatchedDesc } from "@/lib/user-media-sort";
 
 type Params = { params: Promise<{ userId: string }> };
 
@@ -22,31 +23,6 @@ function toFriendJson(s: Awaited<ReturnType<typeof getProfileFriendState>>): Pro
     return { kind: s.kind, requestId: s.requestId };
   }
   return { kind: s.kind };
-}
-
-function buildLastWatchedMsByMediaItemId(
-  watchAgg: { mediaItemId: string; _max: { watchedAt: Date | null } }[],
-  episodeAgg: { mediaItemId: string; _max: { watchedAt: Date | null } }[],
-): Map<string, number> {
-  const map = new Map<string, number>();
-  const bump = (mediaItemId: string, d: Date | null | undefined) => {
-    const t = d?.getTime();
-    if (t == null || Number.isNaN(t)) return;
-    map.set(mediaItemId, Math.max(map.get(mediaItemId) ?? 0, t));
-  };
-  for (const row of watchAgg) bump(row.mediaItemId, row._max.watchedAt);
-  for (const row of episodeAgg) bump(row.mediaItemId, row._max.watchedAt);
-  return map;
-}
-
-function sortByLastWatchedDesc<
-  T extends { mediaItemId: string; updatedAt: Date },
->(items: T[], lastWatchedMs: Map<string, number>): T[] {
-  return [...items].sort((a, b) => {
-    const tb = lastWatchedMs.get(b.mediaItemId) ?? b.updatedAt.getTime();
-    const ta = lastWatchedMs.get(a.mediaItemId) ?? a.updatedAt.getTime();
-    return tb - ta;
-  });
 }
 
 function buildVisibleStatusFilter(canHistory: boolean, canList: boolean): WatchStatus[] {
@@ -170,7 +146,9 @@ export default async function ProfilePage({ params }: Params) {
       )
     : [];
   const watchlist = canSeeWatchlist
-    ? mediaStatuses.filter((s) => s.status === "WATCHLIST")
+    ? mediaStatuses
+        .filter((s) => s.status === "WATCHLIST")
+        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
     : [];
   const rated = canSeeHistory
     ? mediaStatuses.filter((s) => s.rating !== null)
