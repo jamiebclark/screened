@@ -10,8 +10,17 @@ function createPrismaClient() {
   return new PrismaClient({ adapter });
 }
 
-export const prisma = globalForPrisma.prisma ?? createPrismaClient();
-
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
+function getPrisma(): PrismaClient {
+  const existing = globalForPrisma.prisma;
+  // After `prisma generate`, dev HMR can leave a pre-generate client on globalThis without new delegates.
+  if (existing && "notification" in existing) {
+    return existing;
+  }
+  const client = createPrismaClient();
+  if (process.env.NODE_ENV !== "production") {
+    globalForPrisma.prisma = client;
+  }
+  return client;
 }
+
+export const prisma = getPrisma();
