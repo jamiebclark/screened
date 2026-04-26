@@ -60,6 +60,9 @@ jobs:
 
       - run: yarn db:generate
 
+      - name: Unit tests (Vitest)
+        run: yarn test
+
       - name: Build Next.js app
         run: yarn build
         env:
