@@ -30,6 +30,23 @@ enum PreferenceType {
   REPELLER
 }
 
+enum WatchEntrySource {
+  PLEX
+  LETTERBOXD
+  MANUAL
+  UNKNOWN
+}
+
+enum ListAccessRequestStatus {
+  PENDING
+  APPROVED
+  DENIED
+}
+
+enum NotificationType {
+  LIST_ACCESS_REQUEST
+}
+
 model User {
   id            String    @id @default(cuid())
   email         String    @unique
@@ -51,6 +68,9 @@ model User {
   sessions        Session[]
   preferences     UserPreference[]
   pickerRooms     PickerRoom[] @relation("PickerRoomOwner")
+  accessRequestsMade     ListAccessRequest[] @relation("AccessRequestRequester")
+  accessRequestsResolved ListAccessRequest[] @relation("AccessRequestResolver")
+  notifications          Notification[]
 }
 
 model Session {
@@ -132,15 +152,16 @@ model UserMediaStatus {
 }
 
 model WatchEntry {
-  id                String   @id @default(cuid())
+  id                String             @id @default(cuid())
   userId            String
   mediaItemId       String
   userMediaStatusId String?
-  watchedAt         DateTime @default(now())
+  source            WatchEntrySource   @default(UNKNOWN)
+  watchedAt         DateTime           @default(now())
   review            String?
   rating            Float?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
 
   user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   mediaItem       MediaItem        @relation(fields: [mediaItemId], references: [id], onDelete: Cascade)
@@ -172,9 +193,10 @@ model List {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  owner   User         @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  members ListMember[]
-  items   ListItem[]
+  owner          User                @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  members        ListMember[]
+  items          ListItem[]
+  accessRequests ListAccessRequest[]
 }
 
 model ListMember {
@@ -228,4 +250,39 @@ model PickerRoom {
   updatedAt   DateTime @updatedAt
 
   createdBy User @relation("PickerRoomOwner", fields: [createdById], references: [id], onDelete: Cascade)
+}
+
+model ListAccessRequest {
+  id           String                  @id @default(cuid())
+  listId       String
+  requesterId  String
+  status       ListAccessRequestStatus @default(PENDING)
+  message      String?
+  resolvedAt   DateTime?
+  resolvedById String?
+  createdAt    DateTime                @default(now())
+  updatedAt    DateTime                @updatedAt
+
+  list          List           @relation(fields: [listId], references: [id], onDelete: Cascade)
+  requester     User           @relation("AccessRequestRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  resolver      User?          @relation("AccessRequestResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
+  notifications Notification[]
+
+  @@unique([listId, requesterId])
+  @@index([listId, status])
+}
+
+model Notification {
+  id                  String           @id @default(cuid())
+  userId              String
+  type                NotificationType
+  readAt              DateTime?
+  listAccessRequestId String?
+  createdAt           DateTime         @default(now())
+
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listAccessRequest ListAccessRequest? @relation(fields: [listAccessRequestId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+  @@index([listAccessRequestId])
 }
