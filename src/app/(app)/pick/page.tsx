@@ -87,7 +87,7 @@ export default async function PickPage({ searchParams }: PageProps) {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8">
+    <div className="mx-auto max-w-7xl px-4 py-8">
       <div className="mb-8">
         <h1 className="text-2xl font-bold">Movie Night Picker</h1>
         <p className="text-muted-foreground mt-1">

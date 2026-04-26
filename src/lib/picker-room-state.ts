@@ -36,9 +36,12 @@ export type PickerRoomState = {
   attractors: ReferenceMovieJson[];
   repellers: ReferenceMovieJson[];
   minYear: string;
+  maxYear: string;
   maxRuntime: string;
   requirePeople: string[];
   excludePeople: string[];
+  /** Media item ids hard-excluded from the ranked list and scoring pool */
+  vetoIds: string[];
   hideAllLogged: boolean;
   filtersOpen: boolean;
   scoringInProgress: boolean;
@@ -57,11 +60,13 @@ export function defaultPickerState(currentUser: {
     attractors: [],
     repellers: [],
     minYear: "",
+    maxYear: "",
     maxRuntime: "",
     requirePeople: [],
     excludePeople: [],
+    vetoIds: [],
     hideAllLogged: false,
-    filtersOpen: false,
+    filtersOpen: true,
     scoringInProgress: false,
     scoringError: null,
     scoringResults: null,
@@ -88,6 +93,10 @@ export function isPickerState(x: unknown): x is PickerRoomState {
   ) {
     return false;
   }
+  if (o.maxYear !== undefined && typeof o.maxYear !== "string") return false;
+  if (o.vetoIds !== undefined) {
+    if (!Array.isArray(o.vetoIds) || o.vetoIds.some((id) => typeof id !== "string")) return false;
+  }
   if (o.scoringInProgress !== undefined && typeof o.scoringInProgress !== "boolean") return false;
   if (o.scoringError !== undefined && o.scoringError !== null && typeof o.scoringError !== "string") return false;
   if (o.scoringResults !== undefined && o.scoringResults !== null && !Array.isArray(o.scoringResults)) {
@@ -100,6 +109,9 @@ export function isPickerState(x: unknown): x is PickerRoomState {
 export function withScoringDefaults(s: PickerRoomState): PickerRoomState {
   return {
     ...s,
+    maxYear: s.maxYear ?? "",
+    vetoIds: s.vetoIds ?? [],
+    filtersOpen: s.filtersOpen ?? true,
     scoringInProgress: s.scoringInProgress ?? false,
     scoringError: s.scoringError ?? null,
     scoringResults: s.scoringResults !== undefined ? s.scoringResults : null,

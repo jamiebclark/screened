@@ -1,20 +1,19 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Search, X, Plus, Loader2, Sparkles, Film, Clock, Calendar, ChevronDown, ChevronUp, Star, BookmarkCheck, UserCheck, UserX } from "lucide-react";
+import { Search, X, Plus, Loader2, Sparkles, Film, Clock, Calendar, Star, BookmarkCheck, UserCheck, UserX, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { usePickerRoomSync, ensureCurrentUserInRoom } from "./use-picker-room-sync";
 import { useRouter } from "next/navigation";
-import { withScoringDefaults, type PickerRoomState, type ScoredMovieJson } from "@/lib/picker-room-state";
+import { withScoringDefaults, type PickerRoomState, type ReferenceMovieJson, type ScoredMovieJson } from "@/lib/picker-room-state";
 import { Link2, Share2 } from "lucide-react";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -58,6 +57,12 @@ const WEIGHTS = [
   { label: "Normal", value: 1.0 },
   { label: "Strong", value: 2.0 },
 ];
+
+function parseOptionalYear(s: string): number | undefined {
+  if (!s.trim()) return undefined;
+  const n = parseInt(s, 10);
+  return Number.isFinite(n) ? n : undefined;
+}
 
 // ─── MovieSearchInput ─────────────────────────────────────────────────────────
 
@@ -289,7 +294,15 @@ function ReferenceMovieCard({
 
 // ─── ScoredMovieCard ──────────────────────────────────────────────────────────
 
-function ScoredMovieCard({ movie, rank }: { movie: ScoredMovie; rank: number }) {
+function ScoredMovieCard({
+  movie,
+  rank,
+  onDismiss,
+}: {
+  movie: ScoredMovie;
+  rank: number;
+  onDismiss?: (movie: ScoredMovie) => void;
+}) {
   const scorePercent = Math.max(0, Math.min(100, ((movie.score + 1) / 2) * 100));
 
   return (
@@ -337,7 +350,18 @@ function ScoredMovieCard({ movie, rank }: { movie: ScoredMovie; rank: number }) 
               </div>
             </div>
 
-            <div className="text-right shrink-0">
+            <div className="text-right shrink-0 flex flex-col items-end gap-1">
+              {onDismiss && (
+                <button
+                  type="button"
+                  onClick={() => onDismiss(movie)}
+                  className="text-muted-foreground hover:text-foreground transition-colors p-0.5 rounded"
+                  title="Not for tonight — add to Not like and hide from this list"
+                  aria-label={`Remove ${movie.title} from recommendations`}
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
               <div className="flex items-center gap-1 justify-end">
                 <Star className="h-3 w-3 text-yellow-500" />
                 <span className="text-sm font-semibold">{(movie.attractorScore * 100).toFixed(0)}%</span>
@@ -624,27 +648,29 @@ export function PickSession({ currentUser, roomId, initialRoomState }: PickSessi
     attractors,
     repellers,
     minYear,
+    maxYear,
     maxRuntime,
     requirePeople,
     excludePeople,
+    vetoIds,
     hideAllLogged,
-    filtersOpen,
     scoringInProgress,
     scoringError,
     scoringResults,
   } = roomState;
 
+  const vetoIdSet = useMemo(() => new Set(vetoIds), [vetoIds]);
+
+  const visibleScoringResults = useMemo(() => {
+    if (scoringResults === null) return null;
+    return scoringResults.filter((m) => !vetoIdSet.has(m.id));
+  }, [scoringResults, vetoIdSet]);
+
   useEffect(() => {
-    if (scoringResults !== null && scoringResults.length > 0 && !scoringInProgress) {
+    if (visibleScoringResults !== null && visibleScoringResults.length > 0 && !scoringInProgress) {
       setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
     }
-  }, [scoringResults, scoringInProgress]);
-
-  const setFiltersOpen = (v: boolean | ((b: boolean) => boolean)) =>
-    setRoomState((prev) => ({
-      ...prev,
-      filtersOpen: typeof v === "function" ? (v as (b: boolean) => boolean)(prev.filtersOpen) : v,
-    }));
+  }, [visibleScoringResults, scoringInProgress]);
 
   const attractorIds = new Set(attractors.map((a) => String(a.tmdbId)));
   const repellerIds = new Set(repellers.map((r) => String(r.tmdbId)));
@@ -680,7 +706,32 @@ export function PickSession({ currentUser, roomId, initialRoomState }: PickSessi
       if (pool === "attractor") {
         return { ...prev, attractors: prev.attractors.filter((m) => m.mediaItemId !== mediaItemId) };
       }
-      return { ...prev, repellers: prev.repellers.filter((m) => m.mediaItemId !== mediaItemId) };
+      return {
+        ...prev,
+        repellers: prev.repellers.filter((m) => m.mediaItemId !== mediaItemId),
+        vetoIds: prev.vetoIds.filter((id) => id !== mediaItemId),
+      };
+    });
+  };
+
+  const dismissResult = (movie: ScoredMovie) => {
+    setRoomState((prev) => {
+      const nextRef: ReferenceMovieJson = {
+        mediaItemId: movie.id,
+        tmdbId: movie.tmdbId,
+        title: movie.title,
+        poster: movie.poster,
+        year: movie.year,
+        weight: 1.0,
+        saved: false,
+        hasEmbedding: true,
+      };
+      const hasRep = prev.repellers.some((r) => r.mediaItemId === movie.id);
+      return {
+        ...prev,
+        vetoIds: prev.vetoIds.includes(movie.id) ? prev.vetoIds : [...prev.vetoIds, movie.id],
+        repellers: hasRep ? prev.repellers : [...prev.repellers, nextRef],
+      };
     });
   };
 
@@ -758,8 +809,10 @@ export function PickSession({ currentUser, roomId, initialRoomState }: PickSessi
           attractors: attractors.map((a) => ({ mediaItemId: a.mediaItemId, weight: a.weight })),
           repellers: repellers.map((r) => ({ mediaItemId: r.mediaItemId, weight: r.weight })),
           hardFilters: {
-            minYear: minYear ? parseInt(minYear) : undefined,
-            maxRuntime: maxRuntime ? parseInt(maxRuntime) : undefined,
+            minYear: parseOptionalYear(minYear),
+            maxYear: parseOptionalYear(maxYear),
+            maxRuntime: maxRuntime ? parseInt(maxRuntime, 10) : undefined,
+            vetoIds: vetoIds.length > 0 ? vetoIds : undefined,
             requirePeople: requirePeople.length ? requirePeople : undefined,
             excludePeople: excludePeople.length ? excludePeople : undefined,
             hideAllLogged,
@@ -884,237 +937,275 @@ export function PickSession({ currentUser, roomId, initialRoomState }: PickSessi
         </CardContent>
       </Card>
 
-      {/* Reference films */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Attractors */}
-        <Card>
-          <CardHeader className="pb-3">
-            <div className="flex items-center gap-2">
-              <div className="h-2 w-2 rounded-full bg-green-500" />
-              <CardTitle className="text-base">Like these</CardTitle>
-            </div>
-            <p className="text-xs text-muted-foreground">Films that capture the mood you&apos;re after tonight</p>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <MovieSearchInput
-              onAdd={(movie) =>
-                setRoomState((prev) => ({ ...prev, attractors: [...prev.attractors, movie] }))
-              }
-              placeholder="Search for a film..."
-              existingIds={new Set([...attractorIds, ...repellerIds])}
-            />
-            <div className="space-y-2">
-              {attractors.map((m) => (
-                <ReferenceMovieCard
-                  key={m.mediaItemId}
-                  movie={m}
-                  onRemove={() => remove("attractor", m.mediaItemId)}
-                  onWeightChange={(w) => updateWeight("attractor", m.mediaItemId, w)}
-                  onSaveToggle={() => toggleSave("attractor", m)}
-                />
-              ))}
-              {attractors.length === 0 && (
-                <div className="rounded-lg border border-dashed border-border p-4 text-center">
-                  <Plus className="h-5 w-5 text-muted-foreground mx-auto mb-1" />
-                  <p className="text-xs text-muted-foreground">Add at least one film to match against</p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_18.5rem] xl:grid-cols-[1fr_20rem] items-start">
+        <div className="min-w-0 space-y-6">
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <div className="h-2 w-2 rounded-full bg-green-500" />
+                <CardTitle className="text-base">Like these</CardTitle>
+              </div>
+              <p className="text-xs text-muted-foreground">Films that capture the mood you&apos;re after tonight</p>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <MovieSearchInput
+                onAdd={(movie) =>
+                  setRoomState((prev) => ({ ...prev, attractors: [...prev.attractors, movie] }))
+                }
+                placeholder="Search for a film..."
+                existingIds={new Set([...attractorIds, ...repellerIds])}
+              />
+              <div className="space-y-2">
+                {attractors.map((m) => (
+                  <ReferenceMovieCard
+                    key={m.mediaItemId}
+                    movie={m}
+                    onRemove={() => remove("attractor", m.mediaItemId)}
+                    onWeightChange={(w) => updateWeight("attractor", m.mediaItemId, w)}
+                    onSaveToggle={() => toggleSave("attractor", m)}
+                  />
+                ))}
+                {attractors.length === 0 && (
+                  <div className="rounded-lg border border-dashed border-border p-4 text-center">
+                    <Plus className="h-5 w-5 text-muted-foreground mx-auto mb-1" />
+                    <p className="text-xs text-muted-foreground">Add at least one film to match against</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
 
-        {/* Repellers */}
-        <Card>
-          <CardHeader className="pb-3">
-            <div className="flex items-center gap-2">
-              <div className="h-2 w-2 rounded-full bg-red-500" />
-              <CardTitle className="text-base">Not like these</CardTitle>
-            </div>
-            <p className="text-xs text-muted-foreground">Films that are too intense, too slow, or just not tonight</p>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <MovieSearchInput
-              onAdd={(movie) =>
-                setRoomState((prev) => ({ ...prev, repellers: [...prev.repellers, movie] }))
-              }
-              placeholder="Search for a film..."
-              existingIds={new Set([...attractorIds, ...repellerIds])}
-            />
-            <div className="space-y-2">
-              {repellers.map((m) => (
-                <ReferenceMovieCard
-                  key={m.mediaItemId}
-                  movie={m}
-                  onRemove={() => remove("repeller", m.mediaItemId)}
-                  onWeightChange={(w) => updateWeight("repeller", m.mediaItemId, w)}
-                  onSaveToggle={() => toggleSave("repeller", m)}
-                />
-              ))}
-              {repellers.length === 0 && (
-                <div className="rounded-lg border border-dashed border-border p-4 text-center">
-                  <X className="h-5 w-5 text-muted-foreground mx-auto mb-1" />
-                  <p className="text-xs text-muted-foreground">Optionally exclude certain vibes</p>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Hard filters</CardTitle>
+              <p className="text-xs text-muted-foreground">Optional bounds for release year, runtime, and cast</p>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-muted-foreground">Release year from</label>
+                    <Input
+                      type="number"
+                      placeholder="e.g. 1970"
+                      value={minYear}
+                      onChange={(e) => setRoomState((p) => ({ ...p, minYear: e.target.value }))}
+                      min={1900}
+                      max={2100}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-muted-foreground">Release year to</label>
+                    <Input
+                      type="number"
+                      placeholder="e.g. 2015"
+                      value={maxYear}
+                      onChange={(e) => setRoomState((p) => ({ ...p, maxYear: e.target.value }))}
+                      min={1900}
+                      max={2100}
+                    />
+                  </div>
+                  <div className="space-y-1.5 sm:col-span-2 xl:col-span-1">
+                    <label className="text-xs font-medium text-muted-foreground">Max runtime (minutes)</label>
+                    <Input
+                      type="number"
+                      placeholder="e.g. 120"
+                      value={maxRuntime}
+                      onChange={(e) => setRoomState((p) => ({ ...p, maxRuntime: e.target.value }))}
+                      min={1}
+                    />
+                  </div>
                 </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
 
-      {/* Hard filters */}
-      <Card>
-        <button
-          className="w-full flex items-center justify-between px-6 py-4 text-left"
-          onClick={() => setFiltersOpen((v) => !v)}
-        >
-          <span className="text-sm font-medium">Hard filters</span>
-          {filtersOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
-        </button>
-        {filtersOpen && (
-          <CardContent className="pt-0 pb-4">
-            <Separator className="mb-4" />
-            <div className="space-y-5">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex items-center gap-2.5">
+                  <Checkbox
+                    id="hide-logged"
+                    checked={hideAllLogged}
+                    onCheckedChange={(v) => setRoomState((p) => ({ ...p, hideAllLogged: !!v }))}
+                  />
+                  <label htmlFor="hide-logged" className="text-xs font-medium cursor-pointer select-none">
+                    Hide films participants have already logged (watchlist, watching, dropped)
+                  </label>
+                </div>
+
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-muted-foreground">Earliest year</label>
-                  <Input
-                    type="number"
-                    placeholder="e.g. 1970"
-                    value={minYear}
-                    onChange={(e) => setRoomState((p) => ({ ...p, minYear: e.target.value }))}
-                    min={1900}
-                    max={2030}
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <UserCheck className="h-3.5 w-3.5 text-green-500" />
+                    <label className="text-xs font-medium text-muted-foreground">Must include actor or director</label>
+                  </div>
+                  <PeopleTagInput
+                    values={requirePeople}
+                    onChange={(values) => setRoomState((p) => ({ ...p, requirePeople: values }))}
+                    placeholder="e.g. George Clooney"
+                    colorClass="bg-green-500/15 text-green-700 dark:text-green-400"
                   />
                 </div>
+
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-muted-foreground">Max runtime (minutes)</label>
-                  <Input
-                    type="number"
-                    placeholder="e.g. 120"
-                    value={maxRuntime}
-                    onChange={(e) => setRoomState((p) => ({ ...p, maxRuntime: e.target.value }))}
-                    min={1}
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <UserX className="h-3.5 w-3.5 text-red-500" />
+                    <label className="text-xs font-medium text-muted-foreground">Exclude actor or director</label>
+                  </div>
+                  <PeopleTagInput
+                    values={excludePeople}
+                    onChange={(values) => setRoomState((p) => ({ ...p, excludePeople: values }))}
+                    placeholder="e.g. Brad Pitt"
+                    colorClass="bg-red-500/15 text-red-700 dark:text-red-400"
                   />
                 </div>
               </div>
+            </CardContent>
+          </Card>
 
-              <div className="flex items-center gap-2.5">
-                <Checkbox
-                  id="hide-logged"
-                  checked={hideAllLogged}
-                  onCheckedChange={(v) => setRoomState((p) => ({ ...p, hideAllLogged: !!v }))}
-                />
-                <label htmlFor="hide-logged" className="text-xs font-medium cursor-pointer select-none">
-                  Hide films participants have already logged (watchlist, watching, dropped)
-                </label>
-              </div>
-
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <UserCheck className="h-3.5 w-3.5 text-green-500" />
-                  <label className="text-xs font-medium text-muted-foreground">Must include actor or director</label>
-                </div>
-                <PeopleTagInput
-                  values={requirePeople}
-                  onChange={(values) => setRoomState((p) => ({ ...p, requirePeople: values }))}
-                  placeholder="e.g. George Clooney"
-                  colorClass="bg-green-500/15 text-green-700 dark:text-green-400"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <UserX className="h-3.5 w-3.5 text-red-500" />
-                  <label className="text-xs font-medium text-muted-foreground">Exclude actor or director</label>
-                </div>
-                <PeopleTagInput
-                  values={excludePeople}
-                  onChange={(values) => setRoomState((p) => ({ ...p, excludePeople: values }))}
-                  placeholder="e.g. Brad Pitt"
-                  colorClass="bg-red-500/15 text-red-700 dark:text-red-400"
-                />
-              </div>
-            </div>
-          </CardContent>
-        )}
-      </Card>
-
-      {/* Find movies button */}
-      <div className="flex justify-center">
-        <Button
-          size="lg"
-          onClick={findMovies}
-          disabled={!canScore || scoringInProgress}
-          className="px-12 gap-2"
-        >
-          {scoringInProgress ? (
-            <>
-              <Loader2 className="h-5 w-5 animate-spin" />
-              Searching your library...
-            </>
-          ) : (
-            <>
-              <Sparkles className="h-5 w-5" />
-              Find Movies
-            </>
-          )}
-        </Button>
-      </div>
-
-      {!canScore && (
-        <p className="text-center text-sm text-muted-foreground">
-          {participants.length === 0
-            ? "Select at least one participant."
-            : "Add at least one film to the \u201cLike these\u201d section."}
-        </p>
-      )}
-
-      {/* Results */}
-      {scoringInProgress && scoringResults === null && !scoringError && (
-        <Card>
-          <CardContent className="py-10 text-center">
-            <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-2" />
-            <p className="text-sm text-muted-foreground">Scoring the library&hellip; everyone in this
-              room will see the list when it&apos;s ready.</p>
-          </CardContent>
-        </Card>
-      )}
-
-      {scoringError && (
-        <div className="rounded-md bg-destructive/10 border border-destructive/30 px-4 py-3 text-sm text-destructive">
-          {scoringError}
-        </div>
-      )}
-
-      {scoringResults !== null && (
-        <div ref={resultsRef} className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">
-              {scoringResults.length === 0 ? "No matches found" : `${scoringResults.length} matches`}
-            </h2>
-            {scoringResults.length > 0 && (
-              <p className="text-xs text-muted-foreground">Ranked by similarity to your references</p>
-            )}
+          <div className="flex justify-center">
+            <Button
+              size="lg"
+              onClick={findMovies}
+              disabled={!canScore || scoringInProgress}
+              className="px-12 gap-2"
+            >
+              {scoringInProgress ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  Searching your library...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-5 w-5" />
+                  Find Movies
+                </>
+              )}
+            </Button>
           </div>
 
-          {scoringResults.length === 0 ? (
+          {!canScore && (
+            <p className="text-center text-sm text-muted-foreground">
+              {participants.length === 0
+                ? "Select at least one participant."
+                : "Add at least one film to the \u201cLike these\u201d section."}
+            </p>
+          )}
+
+          {scoringInProgress && scoringResults === null && !scoringError && (
             <Card>
-              <CardContent className="py-12 text-center">
-                <Film className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-                <p className="text-muted-foreground text-sm">
-                  No unseen movies matched your criteria. Try adjusting your filters or adding more films to your library.
-                </p>
+              <CardContent className="py-10 text-center">
+                <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">Scoring the library&hellip; everyone in this
+                  room will see the list when it&apos;s ready.</p>
               </CardContent>
             </Card>
-          ) : (
-            <div className="space-y-3">
-              {scoringResults.map((movie, i) => (
-                <ScoredMovieCard key={movie.id} movie={movie} rank={i + 1} />
-              ))}
+          )}
+
+          {scoringError && (
+            <div className="rounded-md bg-destructive/10 border border-destructive/30 px-4 py-3 text-sm text-destructive">
+              {scoringError}
+            </div>
+          )}
+
+          {scoringResults !== null && (
+            <div ref={resultsRef} className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold">
+                  {scoringResults.length === 0
+                    ? "No matches found"
+                    : visibleScoringResults === null || visibleScoringResults.length === 0
+                      ? "No suggestions left in this list"
+                      : `${visibleScoringResults.length} match${visibleScoringResults.length === 1 ? "" : "es"}`}
+                </h2>
+                {visibleScoringResults !== null && visibleScoringResults.length > 0 && (
+                  <p className="text-xs text-muted-foreground">Ranked by similarity to your references</p>
+                )}
+              </div>
+
+              {scoringResults.length === 0 ? (
+                <Card>
+                  <CardContent className="py-12 text-center">
+                    <Film className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                    <p className="text-muted-foreground text-sm">
+                      No unseen movies matched your criteria. Try adjusting your filters or adding more films to your library.
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : visibleScoringResults === null || visibleScoringResults.length === 0 ? (
+                <Card>
+                  <CardContent className="py-10 text-center">
+                    <X className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-muted-foreground text-sm max-w-sm mx-auto">
+                      Every suggestion from this run is marked not for tonight. Use Find Movies again, or
+                      remove titles from Not like these to bring them back into play.
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-3">
+                  {visibleScoringResults.map((movie, i) => (
+                    <ScoredMovieCard
+                      key={movie.id}
+                      movie={movie}
+                      rank={i + 1}
+                      onDismiss={dismissResult}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
-      )}
+
+        <aside className="min-w-0 space-y-4 lg:sticky lg:top-4 lg:self-start">
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <div className="h-2 w-2 rounded-full bg-red-500" />
+                <CardTitle className="text-base">Not like these</CardTitle>
+              </div>
+              <p className="text-xs text-muted-foreground">Too intense, too slow, or not tonight</p>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <MovieSearchInput
+                onAdd={(movie) =>
+                  setRoomState((prev) => ({ ...prev, repellers: [...prev.repellers, movie] }))
+                }
+                placeholder="Search for a film..."
+                existingIds={new Set([...attractorIds, ...repellerIds])}
+              />
+              <div className="space-y-2">
+                {repellers.map((m) => (
+                  <ReferenceMovieCard
+                    key={m.mediaItemId}
+                    movie={m}
+                    onRemove={() => remove("repeller", m.mediaItemId)}
+                    onWeightChange={(w) => updateWeight("repeller", m.mediaItemId, w)}
+                    onSaveToggle={() => toggleSave("repeller", m)}
+                  />
+                ))}
+                {repellers.length === 0 && (
+                  <div className="rounded-lg border border-dashed border-border p-3 text-center">
+                    <X className="h-4 w-4 text-muted-foreground mx-auto mb-1" />
+                    <p className="text-xs text-muted-foreground">Add vibes to steer away from, or use ✕ on a suggestion</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-base">Session</CardTitle>
+              </div>
+              <p className="text-xs text-muted-foreground">Everyone on this link shares the same picks and not-list, live</p>
+            </CardHeader>
+            <CardContent>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Suggestion threads and chat will show up here in a later update. For now, use the shared room and
+                the column beside the results.
+              </p>
+            </CardContent>
+          </Card>
+        </aside>
+      </div>
     </div>
   );
 }

@@ -11,6 +11,7 @@ interface ReferenceItem {
 
 interface HardFilters {
   minYear?: number;
+  maxYear?: number;
   maxRuntime?: number;
   vetoIds?: string[];
   requirePeople?: string[];
@@ -92,12 +93,20 @@ export async function POST(req: NextRequest) {
   // Also exclude the reference movies themselves
   const referenceSet = new Set(referenceIds);
 
+  const yearFilter: { gte?: number; lte?: number } = {};
+  if (hardFilters?.minYear != null) yearFilter.gte = hardFilters.minYear;
+  if (hardFilters?.maxYear != null) yearFilter.lte = hardFilters.maxYear;
+  if (yearFilter.gte != null && yearFilter.lte != null && yearFilter.gte > yearFilter.lte) {
+    [yearFilter.gte, yearFilter.lte] = [yearFilter.lte, yearFilter.gte];
+  }
+  const yearWhere = Object.keys(yearFilter).length > 0 ? { year: yearFilter } : {};
+
   // Fetch all candidate movies with embeddings
   const candidates = await prisma.mediaItem.findMany({
     where: {
       type: MediaType.MOVIE,
       embedding: { isEmpty: false },
-      ...(hardFilters?.minYear ? { year: { gte: hardFilters.minYear } } : {}),
+      ...yearWhere,
       ...(hardFilters?.maxRuntime ? { runtime: { lte: hardFilters.maxRuntime } } : {}),
     },
     select: {
