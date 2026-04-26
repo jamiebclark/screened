@@ -11,6 +11,9 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
+import { WatchStatusButton } from "@/components/watch-status-button";
+import { AddToListDialog } from "@/components/add-to-list-dialog";
+import { RatingStars } from "@/components/rating-stars";
 import { usePickerRoomSync, ensureCurrentUserInRoom } from "./use-picker-room-sync";
 import { useRouter } from "next/navigation";
 import { withScoringDefaults, type PickerRoomState, type ReferenceMovieJson, type ScoredMovieJson } from "@/lib/picker-room-state";
@@ -45,6 +48,8 @@ interface SearchResult {
 }
 
 type ScoredMovie = ScoredMovieJson;
+
+type PickerWatchStatus = "WATCHLIST" | "WATCHING" | "WATCHED" | "DROPPED";
 
 interface PickSessionProps {
   currentUser: User;
@@ -296,14 +301,69 @@ function ReferenceMovieCard({
 
 // ─── ScoredMovieCard ──────────────────────────────────────────────────────────
 
+function PickerScoredMovieActions({
+  tmdbId,
+  title,
+  initialStatus,
+  initialRating,
+  onInvalidatePickerStatuses,
+}: {
+  tmdbId: number;
+  title: string;
+  initialStatus: PickerWatchStatus | null;
+  initialRating: number | null;
+  onInvalidatePickerStatuses: () => void;
+}) {
+  const [trackedStatus, setTrackedStatus] = useState<PickerWatchStatus | null>(initialStatus);
+
+  useEffect(() => {
+    setTrackedStatus(initialStatus);
+  }, [initialStatus]);
+
+  const showRating = (trackedStatus ?? initialStatus) !== null;
+
+  return (
+    <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-border">
+      <WatchStatusButton
+        tmdbId={tmdbId}
+        type="movie"
+        currentStatus={initialStatus}
+        onStatusChange={(s) => {
+          setTrackedStatus(s);
+          onInvalidatePickerStatuses();
+        }}
+      />
+      <AddToListDialog
+        tmdbId={tmdbId}
+        type="movie"
+        title={title}
+        onAddedToList={onInvalidatePickerStatuses}
+      />
+      {showRating && (
+        <RatingStars
+          tmdbId={tmdbId}
+          type="movie"
+          currentRating={initialRating}
+          size="sm"
+          onRatingChange={() => onInvalidatePickerStatuses()}
+        />
+      )}
+    </div>
+  );
+}
+
 function ScoredMovieCard({
   movie,
   rank,
   onDismiss,
+  pickerMediaStatus,
+  onPickerStatusesInvalidate,
 }: {
   movie: ScoredMovie;
   rank: number;
   onDismiss?: (movie: ScoredMovie) => void;
+  pickerMediaStatus: { status: PickerWatchStatus; rating: number | null } | undefined;
+  onPickerStatusesInvalidate: () => void;
 }) {
   const scorePercent = Math.max(0, Math.min(100, ((movie.score + 1) / 2) * 100));
 
@@ -400,6 +460,14 @@ function ScoredMovieCard({
           {movie.overview && (
             <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">{movie.overview}</p>
           )}
+
+          <PickerScoredMovieActions
+            tmdbId={movie.tmdbId}
+            title={movie.title}
+            initialStatus={pickerMediaStatus?.status ?? null}
+            initialRating={pickerMediaStatus?.rating ?? null}
+            onInvalidatePickerStatuses={onPickerStatusesInvalidate}
+          />
         </div>
       </div>
     </Card>
@@ -848,6 +916,48 @@ export function PickSession({ currentUser, roomId, initialRoomState, hasPlexLink
     if (scoringResults === null) return null;
     return scoringResults.filter((m) => !vetoIdSet.has(m.id));
   }, [scoringResults, vetoIdSet]);
+
+  const [pickerStatusByTmdb, setPickerStatusByTmdb] = useState<
+    Record<number, { status: PickerWatchStatus; rating: number | null }>
+  >({});
+  const [pickerStatusesNonce, setPickerStatusesNonce] = useState(0);
+
+  const scoringTmdbIdsKey = useMemo(() => {
+    if (scoringResults === null || scoringResults.length === 0) return "";
+    return [...new Set(scoringResults.map((m) => m.tmdbId))].sort((a, b) => a - b).join(",");
+  }, [scoringResults]);
+
+  const invalidatePickerStatuses = useCallback(() => {
+    setPickerStatusesNonce((n) => n + 1);
+  }, []);
+
+  useEffect(() => {
+    if (!scoringTmdbIdsKey) {
+      setPickerStatusByTmdb({});
+      return;
+    }
+    const ac = new AbortController();
+    const ids = scoringTmdbIdsKey.split(",").map((s) => parseInt(s, 10));
+    void (async () => {
+      try {
+        const res = await fetch(`/api/media/status?tmdbIds=${encodeURIComponent(ids.join(","))}&type=movie`, {
+          signal: ac.signal,
+        });
+        if (!res.ok || ac.signal.aborted) return;
+        const data = (await res.json()) as {
+          statuses?: Record<string, { status: PickerWatchStatus; rating: number | null }>;
+        };
+        const next: Record<number, { status: PickerWatchStatus; rating: number | null }> = {};
+        for (const [k, v] of Object.entries(data.statuses ?? {})) {
+          next[Number(k)] = v;
+        }
+        if (!ac.signal.aborted) setPickerStatusByTmdb(next);
+      } catch {
+        if (!ac.signal.aborted) setPickerStatusByTmdb({});
+      }
+    })();
+    return () => ac.abort();
+  }, [scoringTmdbIdsKey, pickerStatusesNonce]);
 
   useEffect(() => {
     if (visibleScoringResults !== null && visibleScoringResults.length > 0 && !scoringInProgress) {
@@ -1422,6 +1532,8 @@ export function PickSession({ currentUser, roomId, initialRoomState, hasPlexLink
                       movie={movie}
                       rank={i + 1}
                       onDismiss={dismissResult}
+                      pickerMediaStatus={pickerStatusByTmdb[movie.tmdbId]}
+                      onPickerStatusesInvalidate={invalidatePickerStatuses}
                     />
                   ))}
                 </div>
