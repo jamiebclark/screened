@@ -8,6 +8,7 @@ import {
   useCallback,
   FormEvent,
 } from "react";
+import { useRouter } from "next/navigation";
 import { UserPlus, Loader2, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,6 +43,7 @@ function useDebounce<T>(value: T, delay: number): T {
 }
 
 export function InviteMemberForm({ slug }: InviteMemberFormProps) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchUser[]>([]);
@@ -147,6 +149,7 @@ export function InviteMemberForm({ slug }: InviteMemberFormProps) {
         setDropdownOpen(false);
         setError(null);
         setSuccess(`${member.user.name} has been added to the list`);
+        router.refresh();
       } catch {
         setError("Something went wrong");
       }

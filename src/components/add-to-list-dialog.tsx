@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Plus, Check, ListVideo } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,6 +27,7 @@ interface AddToListDialogProps {
 }
 
 export function AddToListDialog({ tmdbId, type, title }: AddToListDialogProps) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [lists, setLists] = useState<List[]>([]);
   const [loading, setLoading] = useState(false);
@@ -52,6 +54,7 @@ export function AddToListDialog({ tmdbId, type, title }: AddToListDialogProps) {
         });
         if (res.ok) {
           setAddedTo((prev) => new Set([...prev, listSlug]));
+          router.refresh();
         }
       } catch {
         // ignore
