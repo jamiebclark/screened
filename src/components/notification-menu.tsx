@@ -46,6 +46,7 @@ export function NotificationMenu({ initialUnreadCount }: { initialUnreadCount: n
   const [actingId, setActingId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
+    await Promise.resolve();
     setLoading(true);
     try {
       const res = await fetch("/api/notifications");
@@ -58,11 +59,18 @@ export function NotificationMenu({ initialUnreadCount }: { initialUnreadCount: n
   }, []);
 
   useEffect(() => {
-    void load();
+    const id = setTimeout(() => {
+      void load();
+    }, 0);
+    return () => clearTimeout(id);
   }, [load]);
 
   useEffect(() => {
-    if (open) void load();
+    if (!open) return;
+    const id = setTimeout(() => {
+      void load();
+    }, 0);
+    return () => clearTimeout(id);
   }, [open, load]);
 
   const unread = data?.unreadCount ?? initialUnreadCount;

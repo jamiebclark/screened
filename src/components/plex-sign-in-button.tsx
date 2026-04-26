@@ -22,8 +22,10 @@ export function PlexSignInButton({ callbackUrl = "/" }: PlexSignInButtonProps) {
   useEffect(() => {
     if (!pinId) return;
 
-    setLoading(true);
-    setError(null);
+    queueMicrotask(() => {
+      setLoading(true);
+      setError(null);
+    });
 
     const verify = async () => {
       try {

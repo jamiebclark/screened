@@ -61,12 +61,16 @@ export function InviteMemberForm({ slug }: InviteMemberFormProps) {
   useEffect(() => {
     if (selected) return;
     if (debouncedQuery.length < 2) {
-      setResults([]);
-      setDropdownOpen(false);
+      startTransition(() => {
+        setResults([]);
+        setDropdownOpen(false);
+      });
       return;
     }
 
-    setIsSearching(true);
+    startTransition(() => {
+      setIsSearching(true);
+    });
     fetch(`/api/users/search?q=${encodeURIComponent(debouncedQuery)}`)
       .then((r) => r.json() as Promise<SearchUser[]>)
       .then((data) => {

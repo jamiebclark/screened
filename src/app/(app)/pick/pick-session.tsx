@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo, useTransition } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Search, X, Plus, Loader2, Sparkles, Film, Clock, Calendar, Star, BookmarkCheck, UserCheck, UserX, MessageSquare, User } from "lucide-react";
@@ -443,16 +443,25 @@ function ParticipantSearch({
   const containerRef = useRef<HTMLDivElement>(null);
   const debouncedQuery = useDebounce(query, 250);
   const participantIds = new Set(participants.map((p) => p.id));
+  const [, startUserSearchTransition] = useTransition();
 
   useEffect(() => {
-    if (debouncedQuery.length < 2) { setResults([]); setOpen(false); return; }
-    setSearching(true);
+    if (debouncedQuery.length < 2) {
+      startUserSearchTransition(() => {
+        setResults([]);
+        setOpen(false);
+      });
+      return;
+    }
+    startUserSearchTransition(() => {
+      setSearching(true);
+    });
     fetch(`/api/users/search?q=${encodeURIComponent(debouncedQuery)}`)
       .then((r) => r.json() as Promise<SearchUser[]>)
       .then((data) => { setResults(data); setOpen(data.length > 0); })
       .catch(() => setResults([]))
       .finally(() => setSearching(false));
-  }, [debouncedQuery]);
+  }, [debouncedQuery, startUserSearchTransition]);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -759,22 +768,25 @@ export function PickSession({ currentUser, roomId, initialRoomState, hasPlexLink
       ensureCurrentUserInRoom(withScoringDefaults(initialRoomState), currentUser).scoringResults !== null
   );
   const [startingRoom, setStartingRoom] = useState(false);
-  const [tabId, setTabId] = useState("");
+  const [tabId] = useState(() => globalThis.crypto?.randomUUID() ?? `t-${Date.now()}`);
   const [emptyScoreHint, setEmptyScoreHint] = useState<string | null>(null);
   const router = useRouter();
-  useEffect(() => {
-    setTabId(globalThis.crypto?.randomUUID() ?? `t-${Date.now()}`);
-  }, []);
   const resultsRef = useRef<HTMLDivElement>(null);
   const roomStateRef = useRef(roomState);
-  roomStateRef.current = roomState;
   const roomIdRef = useRef<string | null>(roomId);
-  roomIdRef.current = roomId;
+  useLayoutEffect(() => {
+    roomStateRef.current = roomState;
+  }, [roomState]);
+  useLayoutEffect(() => {
+    roomIdRef.current = roomId;
+  }, [roomId]);
   const createRoomRequestRef = useRef<Promise<void> | null>(null);
 
   useEffect(() => {
     if (roomState.scoringResults !== null) {
-      setHasCompletedListRun(true);
+      queueMicrotask(() => {
+        setHasCompletedListRun(true);
+      });
     }
   }, [roomState.scoringResults]);
 
@@ -799,7 +811,9 @@ export function PickSession({ currentUser, roomId, initialRoomState, hasPlexLink
 
   useEffect(() => {
     if (participants.length === 1 && !hasPlexLinked) {
-      setRoomState((p) => (p.plexLibraryOnly ? { ...p, plexLibraryOnly: false } : p));
+      queueMicrotask(() => {
+        setRoomState((p) => (p.plexLibraryOnly ? { ...p, plexLibraryOnly: false } : p));
+      });
     }
   }, [hasPlexLinked, participants.length]);
 

@@ -241,7 +241,7 @@ export async function scoreFromTmdbDiscovery(
   /** Wider pool when filtering by people — similar-to lists often put same-director films later. */
   const preDetailLimit = hasPersonFilter ? MAX_TMDB_CANDIDATES : MAX_TO_EMBED * 2;
 
-  let candidateTmdb: number[] = [];
+  const candidateTmdb: number[] = [];
   for (const [tmdb, meta] of tmdbInfo) {
     if (excludeTmdb.has(tmdb)) continue;
     if (watchedTmdb.has(tmdb)) continue;

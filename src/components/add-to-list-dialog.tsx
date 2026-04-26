@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Plus, Check, ListVideo } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -35,13 +36,20 @@ export function AddToListDialog({ tmdbId, type, title }: AddToListDialogProps) {
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
-    if (open) {
+    if (!open) return;
+    const ac = new AbortController();
+    void Promise.resolve().then(() => {
       setLoading(true);
-      fetch("/api/lists?mine=true")
-        .then((r) => r.json())
-        .then((data: List[]) => setLists(data))
-        .finally(() => setLoading(false));
-    }
+      return fetch("/api/lists?mine=true", { signal: ac.signal });
+    })
+      .then((r) => r.json())
+      .then((data: List[]) => {
+        if (!ac.signal.aborted) setLists(data);
+      })
+      .finally(() => {
+        if (!ac.signal.aborted) setLoading(false);
+      });
+    return () => ac.abort();
   }, [open]);
 
   const addToList = (listSlug: string) => {
@@ -87,7 +95,7 @@ export function AddToListDialog({ tmdbId, type, title }: AddToListDialogProps) {
             <ListVideo className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
             <p className="text-sm text-muted-foreground">No lists yet.</p>
             <Button variant="link" asChild className="text-sm mt-1">
-              <a href="/lists/new">Create a list</a>
+              <Link href="/lists/new">Create a list</Link>
             </Button>
           </div>
         ) : (
