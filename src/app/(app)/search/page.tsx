@@ -1,14 +1,17 @@
 import { searchMulti } from "@/lib/tmdb";
 import { MediaCard } from "@/components/media-card";
+import { parseDateOnlyIso } from "@/lib/history-calendar";
 import { Search, Film } from "lucide-react";
 
 interface SearchPageProps {
-  searchParams: Promise<{ q?: string; type?: string }>;
+  searchParams: Promise<{ q?: string; type?: string; watchedDate?: string }>;
 }
 
 export default async function SearchPage({ searchParams }: SearchPageProps) {
-  const { q, type } = await searchParams;
+  const { q, type, watchedDate: watchedDateRaw } = await searchParams;
   const query = q?.trim();
+  const watchedDate = parseDateOnlyIso(watchedDateRaw);
+  const hrefSearch = watchedDate ? `watchedDate=${encodeURIComponent(watchedDate)}` : null;
 
   let results: Awaited<ReturnType<typeof searchMulti>>["results"] = [];
 
@@ -35,6 +38,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
               className="flex h-10 w-full rounded-md border border-input bg-transparent pl-9 pr-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
               autoFocus
             />
+            {watchedDate && <input type="hidden" name="watchedDate" value={watchedDate} />}
           </div>
           <button
             type="submit"
@@ -51,6 +55,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             const params = new URLSearchParams();
             if (query) params.set("q", query);
             if (t) params.set("type", t);
+            if (watchedDate) params.set("watchedDate", watchedDate);
             return (
               <a
                 key={t}
@@ -79,6 +84,11 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         </div>
       ) : (
         <div>
+          {watchedDate && (
+            <p className="text-sm text-muted-foreground mb-3">
+              Watch date {watchedDate} will be suggested when you log a viewing from a title.
+            </p>
+          )}
           <p className="text-sm text-muted-foreground mb-4">
             {results.length} result{results.length !== 1 ? "s" : ""} for &quot;{query}&quot;
           </p>
@@ -97,6 +107,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                     ? new Date(item.first_air_date).getFullYear()
                     : null
                 }
+                hrefSearch={hrefSearch}
               />
             ))}
           </div>
