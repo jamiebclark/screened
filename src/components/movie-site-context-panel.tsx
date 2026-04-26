@@ -22,7 +22,8 @@ const PLEX_CARD_INTERACTIVE = cn(
   "transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 );
 
-function CatalogLinksRow({ links }: { links: TitleCatalogLinks }) {
+/** TMDB, Letterboxd, and IMDb for a title — used beside the poster (desktop) and in the main column (mobile). */
+export function TitleCatalogLinks({ links }: { links: TitleCatalogLinks }) {
   const items: { href: string; label: string }[] = [
     { href: links.tmdbUrl, label: "TMDB" },
     ...(links.letterboxdFilmUrl ? [{ href: links.letterboxdFilmUrl, label: "Letterboxd" }] : []),
@@ -30,7 +31,7 @@ function CatalogLinksRow({ links }: { links: TitleCatalogLinks }) {
   ];
 
   return (
-    <div>
+    <div className="min-w-0">
       <h3 className="text-base font-semibold mb-3">External links</h3>
       <div className="flex flex-wrap gap-2">
         {items.map((item) => (
@@ -160,22 +161,11 @@ function YourPlexBlock({ context }: { context: MovieSiteContext }) {
 }
 
 /**
- * In-app and reference links for a movie/TV title (external links, optional lists + Plex for movies).
+ * In-app blocks for a movie (your lists, Plex). External links use {@link TitleCatalogLinks} beside the poster.
  * Same width/spacing as {@link titlePageSection} / Watch history — not a card wrapper.
  */
-export function TitleSiteContext({
-  catalogLinks,
-  children,
-}: {
-  catalogLinks: TitleCatalogLinks;
-  children?: ReactNode;
-}) {
-  return (
-    <div className={titlePageSectionStack}>
-      <CatalogLinksRow links={catalogLinks} />
-      {children}
-    </div>
-  );
+export function TitleSiteContext({ children }: { children: ReactNode }) {
+  return <div className={titlePageSectionStack}>{children}</div>;
 }
 
 export function MovieScreenedContextSkeleton() {

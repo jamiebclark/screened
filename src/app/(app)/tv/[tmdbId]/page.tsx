@@ -7,7 +7,7 @@ import { WatchStatusButton } from "@/components/watch-status-button";
 import { RatingStars } from "@/components/rating-stars";
 import { AddToListDialog } from "@/components/add-to-list-dialog";
 import { WatchHistory } from "@/components/watch-history";
-import { TitleSiteContext } from "@/components/movie-site-context-panel";
+import { TitleCatalogLinks } from "@/components/movie-site-context-panel";
 import { TitlePageTopNav } from "@/components/title-page-top-nav";
 import { TitlePageMobilePoster } from "@/components/title-page-mobile-poster";
 import { EpisodeTracker } from "@/components/episode-tracker";
@@ -16,8 +16,13 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Star, Calendar, Tv } from "lucide-react";
 import { MediaType } from "@/generated/prisma";
+import { parseDateOnlyIso } from "@/lib/history-calendar";
+import { fetchTitleWatchHistoryForViewer } from "@/lib/watch-history-queries";
 
-type Params = { params: Promise<{ tmdbId: string }> };
+type Params = {
+  params: Promise<{ tmdbId: string }>;
+  searchParams: Promise<{ watchedDate?: string }>;
+};
 
 export async function generateMetadata({ params }: Params) {
   const { tmdbId } = await params;
@@ -25,15 +30,17 @@ export async function generateMetadata({ params }: Params) {
   return { title: show ? `${show.name} | Screened` : "Screened" };
 }
 
-export default async function TvPage({ params }: Params) {
+export default async function TvPage({ params, searchParams }: Params) {
   const { tmdbId: tmdbIdStr } = await params;
+  const sp = await searchParams;
+  const prefillLogDate = parseDateOnlyIso(sp.watchedDate);
   const tmdbId = parseInt(tmdbIdStr);
 
   if (isNaN(tmdbId)) notFound();
 
   const session = await auth();
 
-  const [show, userStatus, watchEntries] = await Promise.all([
+  const [show, userStatus, titleWatchHistory] = await Promise.all([
     getTvShow(tmdbId).catch(() => null),
     session?.user?.id
       ? prisma.userMediaStatus
@@ -43,12 +50,7 @@ export default async function TvPage({ params }: Params) {
           .catch(() => null)
       : null,
     session?.user?.id
-      ? prisma.watchEntry
-          .findMany({
-            where: { userId: session.user.id, mediaItem: { tmdbId, type: MediaType.TV } },
-            orderBy: { watchedAt: "desc" },
-          })
-          .catch(() => [])
+      ? fetchTitleWatchHistoryForViewer(session.user.id, tmdbId, MediaType.TV).catch(() => [])
       : [],
   ]);
 
@@ -81,6 +83,7 @@ export default async function TvPage({ params }: Params) {
   const backdropUrl = tmdbImage(show.backdrop_path, "w1280");
   const posterUrl = tmdbImage(show.poster_path, "w500");
   const year = show.first_air_date ? new Date(show.first_air_date).getFullYear() : null;
+  const catalogLinks = buildTvCatalogLinks(tmdbId, show.external_ids?.imdb_id ?? null);
 
   return (
     <div className="min-h-screen">
@@ -94,9 +97,9 @@ export default async function TvPage({ params }: Params) {
       </div>
 
       <div className="mx-auto max-w-7xl px-4 pb-12">
-        <div className="flex gap-6 -mt-24 relative z-10">
-          <div className="hidden sm:block shrink-0">
-            <div className="w-36 md:w-48 aspect-[2/3] rounded-xl overflow-hidden border border-border shadow-2xl">
+        <div className="flex flex-col sm:flex-row gap-6 -mt-24 relative z-10">
+          <div className="hidden sm:flex flex-col shrink-0 w-36 md:w-48">
+            <div className="aspect-[2/3] rounded-xl overflow-hidden border border-border shadow-2xl">
               {posterUrl ? (
                 <Image src={posterUrl} alt={show.name} width={192} height={288} className="object-cover w-full h-full" />
               ) : (
@@ -104,6 +107,9 @@ export default async function TvPage({ params }: Params) {
                   {show.name}
                 </div>
               )}
+            </div>
+            <div className="mt-4 w-full">
+              <TitleCatalogLinks links={catalogLinks} />
             </div>
           </div>
 
@@ -118,7 +124,7 @@ export default async function TvPage({ params }: Params) {
                   ))}
                 </div>
 
-                <h1 className="text-2xl md:text-4xl font-bold mb-2">{show.name}</h1>
+                <h1 className="text-2xl font-bold md:text-4xl md:tracking-tighter mb-2">{show.name}</h1>
 
                 <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-4">
                   {year && (
@@ -139,7 +145,7 @@ export default async function TvPage({ params }: Params) {
                   )}
                 </div>
 
-                <div className="flex flex-wrap items-center gap-3 mb-6">
+                <div className="flex flex-wrap items-center gap-3 mb-4 sm:mb-6">
                   <WatchStatusButton
                     key={userStatus ? `${userStatus.id}-${userStatus.status}` : `s-${tmdbId}-none`}
                     tmdbId={tmdbId}
@@ -152,29 +158,34 @@ export default async function TvPage({ params }: Params) {
                   )}
                 </div>
 
+                <div className="mb-3 sm:hidden">
+                  <TitleCatalogLinks links={catalogLinks} />
+                </div>
+
                 {show.overview && (
                   <p className="text-muted-foreground leading-relaxed max-w-2xl">{show.overview}</p>
                 )}
-
-                <TitleSiteContext
-                  catalogLinks={buildTvCatalogLinks(tmdbId, show.external_ids?.imdb_id ?? null)}
-                />
               </div>
             </div>
 
             {session?.user && (
               <WatchHistory
-                key={watchEntries.map((e) => e.id).join() || "no-entries"}
+                key={titleWatchHistory.map((e) => e.id).join() || "no-entries"}
                 tmdbId={tmdbId}
                 type="tv"
-                initialEntries={watchEntries.map((e) => ({
+                viewerUserId={session.user.id}
+                initialEntries={titleWatchHistory.map((e) => ({
                   id: e.id,
+                  userId: e.userId,
+                  isViewer: e.isViewer,
                   watchedAt: e.watchedAt.toISOString(),
                   review: e.review,
                   rating: e.rating,
                   letterboxdActivityUrl: e.letterboxdActivityUrl,
+                  user: e.user,
                 }))}
                 hasStatus={!!userStatus}
+                prefillLogDate={prefillLogDate}
               />
             )}
           </div>
