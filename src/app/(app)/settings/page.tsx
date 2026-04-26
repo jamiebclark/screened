@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Sparkles, User } from "lucide-react";
+import { ArrowRight, Lock, Sparkles, User, Users } from "lucide-react";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const metadata = { title: "Settings | Screened" };
@@ -70,6 +70,42 @@ export default function SettingsPage() {
                       </CardTitle>
                       <CardDescription>
                         Display name, email, and password.
+                      </CardDescription>
+                    </div>
+                    <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+                  </CardHeader>
+                </Card>
+              </Link>
+            </li>
+            <li>
+              <Link prefetch={false} href="/settings/privacy" className="block group">
+                <Card className="transition-colors hover:bg-accent/50">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <div>
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Lock className="h-4 w-4 text-primary" />
+                        Privacy
+                      </CardTitle>
+                      <CardDescription>
+                        Who can see your watchlist and watch activity on your profile.
+                      </CardDescription>
+                    </div>
+                    <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+                  </CardHeader>
+                </Card>
+              </Link>
+            </li>
+            <li>
+              <Link prefetch={false} href="/settings/friends" className="block group">
+                <Card className="transition-colors hover:bg-accent/50">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <div>
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Users className="h-4 w-4 text-primary" />
+                        Friends
+                      </CardTitle>
+                      <CardDescription>
+                        Send and manage friend requests.
                       </CardDescription>
                     </div>
                     <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />

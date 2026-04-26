@@ -45,6 +45,15 @@ enum ListAccessRequestStatus {
 
 enum NotificationType {
   LIST_ACCESS_REQUEST
+  FRIEND_REQUEST
+}
+
+/// Who can see a profile section. All values apply to signed-in users only; this app is login-protected.
+enum ProfileContentVisibility {
+  /// Any Screened user.
+  PUBLIC
+  /// Only users you have friended.
+  FRIENDS
 }
 
 model User {
@@ -56,6 +65,10 @@ model User {
   bio           String?
   /// Secret query token for the per-user Radarr watchlist export (movies only). Unique when set.
   watchlistRadarrToken String? @unique
+  /// Watchlist tab and item grid on your profile.
+  watchlistVisibility ProfileContentVisibility @default(PUBLIC)
+  /// Watched and watching activity on your profile (and related stat counts / average rating from visible titles).
+  watchHistoryVisibility ProfileContentVisibility @default(PUBLIC)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -73,6 +86,11 @@ model User {
   accessRequestsMade     ListAccessRequest[] @relation("AccessRequestRequester")
   accessRequestsResolved ListAccessRequest[] @relation("AccessRequestResolver")
   notifications          Notification[]
+
+  friendRequestsSent     FriendRequest[]  @relation("FriendRequestFrom")
+  friendRequestsReceived FriendRequest[]  @relation("FriendRequestTo")
+  friendshipsLower       Friendship[]     @relation("FriendUserLow")
+  friendshipsUpper       Friendship[]     @relation("FriendUserHigh")
 }
 
 model Session {
@@ -280,11 +298,46 @@ model Notification {
   type                NotificationType
   readAt              DateTime?
   listAccessRequestId String?
+  friendRequestId     String?
   createdAt           DateTime         @default(now())
 
   user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   listAccessRequest ListAccessRequest? @relation(fields: [listAccessRequestId], references: [id], onDelete: Cascade)
+  friendRequest     FriendRequest?     @relation(fields: [friendRequestId], references: [id], onDelete: Cascade)
 
   @@index([userId, readAt])
   @@index([listAccessRequestId])
+  @@index([friendRequestId])
+}
+
+/// Pending friend request from one user to another (one row per direction).
+model FriendRequest {
+  id         String   @id @default(cuid())
+  fromUserId String
+  toUserId   String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  fromUser      User            @relation("FriendRequestFrom", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUser        User            @relation("FriendRequestTo", fields: [toUserId], references: [id], onDelete: Cascade)
+  notifications Notification[]
+
+  @@unique([fromUserId, toUserId])
+  @@index([toUserId])
+  @@index([fromUserId])
+}
+
+/// Accepted friendship; `userLowId` is always the lexicographically smaller user id.
+model Friendship {
+  id         String   @id @default(cuid())
+  userLowId  String
+  userHighId String
+  createdAt  DateTime @default(now())
+
+  userLow  User @relation("FriendUserLow", fields: [userLowId], references: [id], onDelete: Cascade)
+  userHigh User @relation("FriendUserHigh", fields: [userHighId], references: [id], onDelete: Cascade)
+
+  @@unique([userLowId, userHighId])
+  @@index([userHighId])
+  @@index([userLowId])
 }

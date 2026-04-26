@@ -31,6 +31,10 @@ type NotificationItem = {
     list: { id: string; name: string; slug: string };
     requester: { id: string; name: string; avatarUrl: string | null };
   } | null;
+  friendRequest: {
+    id: string;
+    fromUser: { id: string; name: string; avatarUrl: string | null };
+  } | null;
 };
 
 type NotificationsResponse = {
@@ -91,6 +95,28 @@ export function NotificationMenu({ initialUnreadCount }: { initialUnreadCount: n
     }
   };
 
+  const respondFriend = async (requestId: string, action: "accept" | "decline") => {
+    setActingId(requestId);
+    try {
+      if (action === "accept") {
+        const res = await fetch(
+          `/api/friends/requests/${encodeURIComponent(requestId)}/accept`,
+          { method: "POST" }
+        );
+        if (!res.ok) return;
+      } else {
+        const res = await fetch(`/api/friends/requests/${encodeURIComponent(requestId)}`, {
+          method: "DELETE",
+        });
+        if (!res.ok) return;
+      }
+      await load();
+      router.refresh();
+    } finally {
+      setActingId(null);
+    }
+  };
+
   const items = data?.items ?? [];
 
   return (
@@ -133,6 +159,13 @@ export function NotificationMenu({ initialUnreadCount }: { initialUnreadCount: n
                       onApprove={() => respond(n.listAccessRequest!.id, "approve")}
                       onDeny={() => respond(n.listAccessRequest!.id, "deny")}
                     />
+                  ) : n.type === NotificationType.FRIEND_REQUEST && n.friendRequest ? (
+                    <FriendRequestRow
+                      n={n}
+                      actingId={actingId}
+                      onAccept={() => respondFriend(n.friendRequest!.id, "accept")}
+                      onDecline={() => respondFriend(n.friendRequest!.id, "decline")}
+                    />
                   ) : (
                     <span className="text-muted-foreground">Notification</span>
                   )}
@@ -143,6 +176,79 @@ export function NotificationMenu({ initialUnreadCount }: { initialUnreadCount: n
         </div>
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+}
+
+function FriendRequestRow({
+  n,
+  actingId,
+  onAccept,
+  onDecline,
+}: {
+  n: NotificationItem;
+  actingId: string | null;
+  onAccept: () => void;
+  onDecline: () => void;
+}) {
+  const fr = n.friendRequest!;
+  const busy = actingId === fr.id;
+  const initials =
+    fr.fromUser.name
+      ?.split(" ")
+      .map((s) => s[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2) ?? "?";
+
+  return (
+    <div className="space-y-2">
+      <div className="flex gap-2">
+        <Link href={`/profile/${fr.fromUser.id}`}>
+          <Avatar className="h-8 w-8 shrink-0">
+            <AvatarImage src={fr.fromUser.avatarUrl ?? undefined} />
+            <AvatarFallback className="text-[10px]">{initials}</AvatarFallback>
+          </Avatar>
+        </Link>
+        <div className="min-w-0 flex-1">
+          <p className="text-xs text-muted-foreground leading-tight">
+            <Link
+              href={`/profile/${fr.fromUser.id}`}
+              className="font-medium text-foreground hover:underline"
+            >
+              {fr.fromUser.name}
+            </Link>{" "}
+            sent you a friend request
+          </p>
+        </div>
+      </div>
+      <div className="flex gap-2 justify-end">
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-8"
+          disabled={busy}
+          onClick={(e) => {
+            e.preventDefault();
+            onDecline();
+          }}
+        >
+          {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <X className="h-3.5 w-3.5" />}
+          <span className="ml-1">Decline</span>
+        </Button>
+        <Button
+          size="sm"
+          className="h-8"
+          disabled={busy}
+          onClick={(e) => {
+            e.preventDefault();
+            onAccept();
+          }}
+        >
+          {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+          <span className="ml-1">Accept</span>
+        </Button>
+      </div>
+    </div>
   );
 }
 

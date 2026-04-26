@@ -11,6 +11,7 @@ export type ListAccessRequestStatus =
 
 export const NotificationType = {
   LIST_ACCESS_REQUEST: "LIST_ACCESS_REQUEST",
+  FRIEND_REQUEST: "FRIEND_REQUEST",
 } as const;
 
 export type NotificationType = (typeof NotificationType)[keyof typeof NotificationType];

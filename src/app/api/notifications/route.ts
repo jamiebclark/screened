@@ -24,6 +24,11 @@ export async function GET() {
             requester: { select: { id: true, name: true, avatarUrl: true } },
           },
         },
+        friendRequest: {
+          include: {
+            fromUser: { select: { id: true, name: true, avatarUrl: true } },
+          },
+        },
       },
     }),
     prisma.notification.count({
@@ -44,6 +49,12 @@ export async function GET() {
             status: n.listAccessRequest.status,
             list: n.listAccessRequest.list,
             requester: n.listAccessRequest.requester,
+          }
+        : null,
+      friendRequest: n.friendRequest
+        ? {
+            id: n.friendRequest.id,
+            fromUser: n.friendRequest.fromUser,
           }
         : null,
     })),
