@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Migrate, schema check, build
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: screened_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d screened_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/screened_ci
+      SHADOW_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/prisma_shadow_ci
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: yarn
+
+      - run: yarn install --frozen-lockfile --ignore-engines
+
+      - name: Apply migrations (same as production entrypoint)
+        run: yarn prisma migrate deploy
+
+      - name: Assert migrations match schema.prisma
+        run: yarn prisma migrate diff --from-migrations prisma/migrations --to-schema prisma/schema.prisma --exit-code
+
+      - run: yarn prisma generate
+
+      - name: Build Next.js app
+        run: yarn build
+        env:
+          # Build-time placeholders; only required so `next build` can compile.
+          AUTH_SECRET: ci-build-placeholder-min-32-chars-long!!
+          NEXTAUTH_URL: http://localhost:3000
+          TMDB_API_KEY: "00000000000000000000000000000000"
