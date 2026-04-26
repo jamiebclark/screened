@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { MediaType, WatchEntrySource } from "@/generated/prisma";
+import { areFriends } from "@/lib/friendship";
+import { findMergeCandidateWatchEntry } from "@/lib/watch-entry-merge";
+import { MediaType, WatchEntrySource, WatchStatus } from "@/generated/prisma";
 
 type Params = { params: Promise<{ tmdbId: string }> };
 
@@ -38,8 +40,19 @@ export async function POST(req: NextRequest, { params }: Params) {
 
   const { tmdbId: tmdbIdStr } = await params;
   const tmdbId = parseInt(tmdbIdStr);
-  const body = await req.json() as { type?: string; watchedAt?: string; review?: string | null; rating?: number | null };
+  const body = await req.json() as {
+    type?: string;
+    watchedAt?: string;
+    review?: string | null;
+    rating?: number | null;
+    /** Friend user ids to log the same viewing for (optional). */
+    withUserIds?: unknown;
+  };
   const { type, watchedAt, review, rating } = body;
+  const withUserIdsRaw = body.withUserIds;
+  const withUserIds: string[] = Array.isArray(withUserIdsRaw)
+    ? [...new Set(withUserIdsRaw.filter((u): u is string => typeof u === "string" && u.trim() !== ""))]
+    : [];
 
   if (isNaN(tmdbId) || !type || !["movie", "tv"].includes(type)) {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
@@ -55,21 +68,80 @@ export async function POST(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "Media not found — set a watch status first" }, { status: 404 });
   }
 
-  const userStatus = await prisma.userMediaStatus.findUnique({
-    where: { userId_mediaItemId: { userId: session.user.id, mediaItemId: mediaItem.id } },
+  if (withUserIds.length > 20) {
+    return NextResponse.json({ error: "At most 20 friends can be tagged per log" }, { status: 400 });
+  }
+
+  for (const uid of withUserIds) {
+    if (uid === session.user.id) {
+      return NextResponse.json({ error: "You cannot include yourself in withUserIds" }, { status: 400 });
+    }
+    if (!(await areFriends(session.user.id, uid))) {
+      return NextResponse.json(
+        { error: "You can only tag people you are friends with" },
+        { status: 400 },
+      );
+    }
+  }
+
+  const at = watchedAt ? new Date(watchedAt) : new Date();
+
+  const { entry, taggedCreatedCount } = await prisma.$transaction(async (tx) => {
+    const userStatus = await tx.userMediaStatus.findUnique({
+      where: { userId_mediaItemId: { userId: session.user.id, mediaItemId: mediaItem.id } },
+    });
+
+    const main = await tx.watchEntry.create({
+      data: {
+        userId: session.user.id,
+        mediaItemId: mediaItem.id,
+        userMediaStatusId: userStatus?.id ?? null,
+        watchedAt: at,
+        review: review ?? null,
+        rating: rating ?? null,
+        source: WatchEntrySource.MANUAL,
+      },
+    });
+
+    let taggedCreatedCount = 0;
+    for (const friendId of withUserIds) {
+      const existing = await findMergeCandidateWatchEntry(
+        friendId,
+        mediaItem.id,
+        at,
+        tx,
+      );
+      if (existing) continue;
+
+      const friendStatus = await tx.userMediaStatus.upsert({
+        where: { userId_mediaItemId: { userId: friendId, mediaItemId: mediaItem.id } },
+        update: { status: WatchStatus.WATCHED },
+        create: {
+          userId: friendId,
+          mediaItemId: mediaItem.id,
+          status: WatchStatus.WATCHED,
+        },
+      });
+
+      await tx.watchEntry.create({
+        data: {
+          userId: friendId,
+          mediaItemId: mediaItem.id,
+          userMediaStatusId: friendStatus.id,
+          watchedAt: at,
+          review: review ?? null,
+          rating: rating ?? null,
+          source: WatchEntrySource.MANUAL,
+        },
+      });
+      taggedCreatedCount += 1;
+    }
+
+    return { entry: main, taggedCreatedCount };
   });
 
-  const entry = await prisma.watchEntry.create({
-    data: {
-      userId: session.user.id,
-      mediaItemId: mediaItem.id,
-      userMediaStatusId: userStatus?.id ?? null,
-      watchedAt: watchedAt ? new Date(watchedAt) : new Date(),
-      review: review ?? null,
-      rating: rating ?? null,
-      source: WatchEntrySource.MANUAL,
-    },
-  });
-
-  return NextResponse.json(entry, { status: 201 });
+  return NextResponse.json(
+    { ...entry, taggedCreatedCount } as typeof entry & { taggedCreatedCount: number },
+    { status: 201 },
+  );
 }

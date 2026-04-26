@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -61,9 +63,12 @@ export function WatchEntryDialog({
   onSave,
   defaultWatchedAtForNew = null,
 }: WatchEntryDialogProps) {
+  const router = useRouter();
   const isEditing = !!entry;
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [tagFriends, setTagFriends] = useState<{ id: string; name: string }[]>([]);
+  const [taggedIds, setTaggedIds] = useState<Set<string>>(() => new Set());
   const [dateValue, setDateValue] = useState(() => {
     if (!entry && defaultWatchedAtForNew) return dateOnlyToDatetimeLocal(defaultWatchedAtForNew);
     return toDatetimeLocal(entry?.watchedAt) || toDatetimeLocal(new Date());
@@ -78,9 +83,24 @@ export function WatchEntryDialog({
         setDateValue(toDatetimeLocal(entry?.watchedAt) || toDatetimeLocal(new Date()));
       }
       setReviewValue(entry?.review ?? "");
+      if (!entry) setTaggedIds(new Set());
     }
     setOpen(val);
   };
+
+  useEffect(() => {
+    if (!open || isEditing) return;
+    let cancelled = false;
+    (async () => {
+      const res = await fetch("/api/friends");
+      if (!res.ok || cancelled) return;
+      const data = (await res.json()) as { friends: { id: string; name: string }[] };
+      if (!cancelled) setTagFriends(data.friends);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, isEditing]);
 
   const handleSave = () => {
     startTransition(async () => {
@@ -99,14 +119,21 @@ export function WatchEntryDialog({
           setOpen(false);
         }
       } else {
+        const withUserIds = Array.from(taggedIds);
         const res = await fetch(`/api/media/${tmdbId}/entries`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ type, watchedAt, review }),
+          body: JSON.stringify({
+            type,
+            watchedAt,
+            review,
+            ...(withUserIds.length > 0 ? { withUserIds } : {}),
+          }),
         });
         if (res.ok) {
-          const created = await res.json() as WatchEntry;
+          const created = (await res.json()) as WatchEntry & { taggedCreatedCount?: number };
           onSave(created);
+          if (withUserIds.length > 0) router.refresh();
           setOpen(false);
         }
       }
@@ -144,6 +171,37 @@ export function WatchEntryDialog({
               className="w-fit"
             />
           </div>
+
+          {!isEditing && tagFriends.length > 0 && (
+            <div className="space-y-2">
+              <Label>Also log for</Label>
+              <p className="text-xs text-muted-foreground">
+                Creates a watch entry for each friend (same time and review). Skips a friend if they
+                already have a log for that title the same day.
+              </p>
+              <ul className="max-h-40 space-y-2 overflow-y-auto rounded-md border border-border p-3">
+                {tagFriends.map((f) => (
+                  <li key={f.id} className="flex items-center gap-2">
+                    <Checkbox
+                      id={`tag-friend-${f.id}`}
+                      checked={taggedIds.has(f.id)}
+                      onCheckedChange={() => {
+                        setTaggedIds((prev) => {
+                          const next = new Set(prev);
+                          if (next.has(f.id)) next.delete(f.id);
+                          else next.add(f.id);
+                          return next;
+                        });
+                      }}
+                    />
+                    <label htmlFor={`tag-friend-${f.id}`} className="text-sm cursor-pointer">
+                      {f.name}
+                    </label>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           <div className="space-y-1.5">
             <Label>Review <span className="text-muted-foreground font-normal">(optional)</span></Label>
