@@ -2,7 +2,6 @@ import { test, expect } from "@playwright/test";
 import {
   ensureLoggedIn,
   ensureTestUsersExist,
-  logout,
   login,
   TEST_USER_2,
 } from "./helpers";
@@ -34,7 +33,7 @@ test.describe("Lists - Advanced", () => {
       expect(apiCheck.status()).toBe(403);
 
       // UI: visiting the list page should show a not-found/error page
-      const response = await page2.goto(`/lists/${list.slug}`);
+      await page2.goto(`/lists/${list.slug}`);
       // The page should redirect or show 404 (Next.js renders 404 for notFound())
       const pageText = (await page2.locator("body").textContent()) ?? "";
       expect(/404|not found|Could not be found/i.test(pageText)).toBe(true);

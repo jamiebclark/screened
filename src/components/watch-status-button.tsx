@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, Clock, Bookmark, X, ChevronDown, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -35,7 +35,14 @@ const statusConfig: Record<
   DROPPED: { label: "Dropped", icon: X, color: "text-muted-foreground" },
 };
 
-export function WatchStatusButton({
+/** Remount when server-sourced status changes so local state stays aligned without a prop-sync effect. */
+export function WatchStatusButton(props: WatchStatusButtonProps) {
+  return (
+    <WatchStatusButtonInner key={props.currentStatus ?? "none"} {...props} />
+  );
+}
+
+function WatchStatusButtonInner({
   tmdbId,
   type,
   currentStatus,
@@ -44,10 +51,6 @@ export function WatchStatusButton({
   const router = useRouter();
   const [status, setStatus] = useState<WatchStatus | null>(currentStatus);
   const [isPending, startTransition] = useTransition();
-
-  useEffect(() => {
-    setStatus(currentStatus);
-  }, [currentStatus]);
 
   const updateStatus = async (newStatus: WatchStatus | null) => {
     startTransition(async () => {

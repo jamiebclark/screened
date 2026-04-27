@@ -59,10 +59,7 @@ export function TitleCatalogLinks({ links }: { links: TitleCatalogLinks }) {
               className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-1 text-sm font-medium text-foreground hover:bg-muted/80 transition-colors"
             >
               {brand && (
-                <SimpleBrandIcon
-                  icon={brand}
-                  className="h-3.5 w-3.5 text-muted-foreground"
-                />
+                <SimpleBrandIcon icon={brand} className="text-muted-foreground" />
               )}
               {item.label}
               <span className="sr-only"> (opens in new tab)</span>

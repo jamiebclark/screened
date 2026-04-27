@@ -144,7 +144,8 @@ export function isPickerState(x: unknown): x is PickerRoomState {
 /** Ensures scoring fields exist (for legacy DB rows and partial parses). */
 export function withScoringDefaults(s: PickerRoomState): PickerRoomState {
   const raw = s as PickerRoomState & { candidateSource?: "tmdb" | "library" };
-  const { candidateSource: _legacy, ...rest } = raw;
+  const { candidateSource: _legacyCandidateSource, ...rest } = raw;
+  void _legacyCandidateSource;
   const mapRefs = (arr: ReferenceMovieJson[]) =>
     arr.map((m) => ({ ...m, genres: m.genres ?? [] }));
 

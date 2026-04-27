@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { login, ensureLoggedIn, ensureTestUsersExist } from "./helpers";
+import { ensureLoggedIn, ensureTestUsersExist } from "./helpers";
 
 test.beforeEach(async ({ page }) => {
   await ensureTestUsersExist(page);

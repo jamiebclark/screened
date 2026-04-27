@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Star } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -14,7 +14,12 @@ interface RatingStarsProps {
   size?: "sm" | "md" | "lg";
 }
 
-export function RatingStars({
+/** Remount when server-sourced rating changes so local state stays aligned without a prop-sync effect. */
+export function RatingStars(props: RatingStarsProps) {
+  return <RatingStarsInner key={props.currentRating ?? "none"} {...props} />;
+}
+
+function RatingStarsInner({
   tmdbId,
   type,
   currentRating,
@@ -25,10 +30,6 @@ export function RatingStars({
   const router = useRouter();
   const [rating, setRating] = useState<number | null>(currentRating);
   const [hover, setHover] = useState<number | null>(null);
-
-  useEffect(() => {
-    setRating(currentRating);
-  }, [currentRating]);
 
   const sizes = {
     sm: "h-3.5 w-3.5",

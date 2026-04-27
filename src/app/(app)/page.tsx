@@ -1,12 +1,9 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import Image from "next/image";
 import { getTrending } from "@/lib/tmdb";
 import { MediaCard } from "@/components/media-card";
-import { tmdbImageUrl, formatRuntime } from "@/lib/utils";
 import { Eye, Clock, Bookmark, ListVideo, Star } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MediaType, WatchStatus } from "@/generated/prisma";
 

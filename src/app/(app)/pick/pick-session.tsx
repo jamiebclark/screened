@@ -383,13 +383,34 @@ function PickerScoredMovieActions({
   initialRating: number | null;
   onInvalidatePickerStatuses: () => void;
 }) {
+  return (
+    <PickerScoredMovieActionsInner
+      key={`${initialStatus ?? "s"}-${initialRating ?? "r"}`}
+      tmdbId={tmdbId}
+      title={title}
+      initialStatus={initialStatus}
+      initialRating={initialRating}
+      onInvalidatePickerStatuses={onInvalidatePickerStatuses}
+    />
+  );
+}
+
+function PickerScoredMovieActionsInner({
+  tmdbId,
+  title,
+  initialStatus,
+  initialRating,
+  onInvalidatePickerStatuses,
+}: {
+  tmdbId: number;
+  title: string;
+  initialStatus: PickerWatchStatus | null;
+  initialRating: number | null;
+  onInvalidatePickerStatuses: () => void;
+}) {
   const [trackedStatus, setTrackedStatus] = useState<PickerWatchStatus | null>(
     initialStatus,
   );
-
-  useEffect(() => {
-    setTrackedStatus(initialStatus);
-  }, [initialStatus]);
 
   const showRating = (trackedStatus ?? initialStatus) !== null;
 
@@ -398,7 +419,7 @@ function PickerScoredMovieActions({
       <WatchStatusButton
         tmdbId={tmdbId}
         type="movie"
-        currentStatus={initialStatus}
+        currentStatus={trackedStatus}
         onStatusChange={(s) => {
           setTrackedStatus(s);
           onInvalidatePickerStatuses();
@@ -1271,13 +1292,15 @@ export function PickSession({
   }, []);
 
   useEffect(() => {
-    if (!scoringTmdbIdsKey) {
-      setPickerStatusByTmdb({});
-      return;
-    }
     const ac = new AbortController();
     const ids = scoringTmdbIdsKey.split(",").map((s) => parseInt(s, 10));
     void (async () => {
+      await Promise.resolve();
+      if (ac.signal.aborted) return;
+      if (!scoringTmdbIdsKey) {
+        setPickerStatusByTmdb({});
+        return;
+      }
       try {
         const res = await fetch(
           `/api/media/status?tmdbIds=${encodeURIComponent(ids.join(","))}&type=movie`,

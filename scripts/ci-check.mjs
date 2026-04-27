@@ -1,6 +1,6 @@
 /**
  * Local parity with `.github/workflows/ci.yml`:
- * format check → migrate deploy → ensure shadow DB exists → migrate diff → generate → test → build.
+ * format check → lint → migrate deploy → ensure shadow DB exists → migrate diff → generate → test → build.
  *
  * Requires DATABASE_URL (e.g. from `.env`). If SHADOW_DATABASE_URL is unset,
  * uses same host/user as DATABASE_URL with database name `prisma_shadow_ci`.
@@ -51,6 +51,7 @@ function shadowDbNameFromUrl(shadowUrl) {
 }
 
 run("yarn", ["format:check"]);
+run("yarn", ["lint"]);
 
 loadDotEnv();
 

@@ -1,4 +1,4 @@
-import { Page, expect } from "@playwright/test";
+import { Page } from "@playwright/test";
 
 export const TEST_USER = {
   name: "E2E Tester",
@@ -51,7 +51,7 @@ export async function logout(page: Page) {
 
 export async function ensureLoggedIn(page: Page, user = TEST_USER) {
   // Try to visit home; if redirected to login, log in
-  const response = await page.goto("/");
+  await page.goto("/");
   if (page.url().includes("/login") || page.url().includes("/register")) {
     await login(page, user);
   }

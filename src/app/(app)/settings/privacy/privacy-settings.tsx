@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState, useEffect } from "react";
+import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -32,7 +32,17 @@ interface PrivacySettingsProps {
   initial: { watchlistVisibility: V; watchHistoryVisibility: V };
 }
 
+/** Remount when server-sourced visibility values change (e.g. after refresh) without a prop-sync effect. */
 export function PrivacySettings({ initial }: PrivacySettingsProps) {
+  return (
+    <PrivacySettingsForm
+      key={`${initial.watchlistVisibility}-${initial.watchHistoryVisibility}`}
+      initial={initial}
+    />
+  );
+}
+
+function PrivacySettingsForm({ initial }: PrivacySettingsProps) {
   const router = useRouter();
   const [watchlist, setWatchlist] = useState<V>(initial.watchlistVisibility);
   const [watchHistory, setWatchHistory] = useState<V>(
@@ -43,11 +53,6 @@ export function PrivacySettings({ initial }: PrivacySettingsProps) {
   const changed =
     watchlist !== initial.watchlistVisibility ||
     watchHistory !== initial.watchHistoryVisibility;
-
-  useEffect(() => {
-    setWatchlist(initial.watchlistVisibility);
-    setWatchHistory(initial.watchHistoryVisibility);
-  }, [initial.watchlistVisibility, initial.watchHistoryVisibility]);
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();

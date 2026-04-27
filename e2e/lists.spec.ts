@@ -1,4 +1,4 @@
-import { test, expect, Page } from "@playwright/test";
+import { test, expect } from "@playwright/test";
 import { ensureLoggedIn, ensureTestUsersExist, TEST_USER_2 } from "./helpers";
 
 const LIST_NAME = `E2E List ${Date.now()}`;
@@ -39,7 +39,7 @@ test.describe("Lists", () => {
       headers: { "Content-Type": "application/json" },
     });
     expect(res.ok()).toBeTruthy();
-    const list = (await res.json()) as { slug: string };
+    void (await res.json());
 
     // Go to Inception movie page and add to list
     await page.goto("/movies/27205");

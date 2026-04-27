@@ -161,10 +161,6 @@ test.describe("Watch Status", () => {
     });
     await page.goto(MOVIE_URL);
 
-    // Rating stars should be visible now
-    const stars = page.locator(
-      "[data-testid='rating-stars'], [aria-label*='star'], button[title*='star']",
-    );
     // If stars render as buttons, click the 4th star
     const starBtns = page.locator("button[data-rating]");
     if ((await starBtns.count()) > 0) {

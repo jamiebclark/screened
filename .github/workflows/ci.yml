@@ -43,6 +43,9 @@ jobs:
       - name: Prettier (format check)
         run: yarn format:check
 
+      - name: ESLint
+        run: yarn lint
+
       - name: Apply migrations (same as production entrypoint)
         run: yarn prisma migrate deploy
 

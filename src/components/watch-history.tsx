@@ -119,10 +119,7 @@ function EntryCard({
                     rel="noopener noreferrer"
                     aria-label="Open on Letterboxd"
                   >
-                    <SimpleBrandIcon
-                      icon={siLetterboxd}
-                      className="h-3.5 w-3.5"
-                    />
+                    <SimpleBrandIcon icon={siLetterboxd} />
                   </a>
                 </Button>
               )}
@@ -202,10 +199,7 @@ function EntryCard({
                     rel="noopener noreferrer"
                     aria-label="Open on Letterboxd"
                   >
-                    <SimpleBrandIcon
-                      icon={siLetterboxd}
-                      className="h-3.5 w-3.5"
-                    />
+                    <SimpleBrandIcon icon={siLetterboxd} />
                   </a>
                 </Button>
               )}

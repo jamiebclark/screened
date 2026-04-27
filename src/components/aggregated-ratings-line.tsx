@@ -40,7 +40,11 @@ export function AggregatedRatingsLine({ ratings }: Props) {
   if (!ratings?.length) return null;
 
   return (
-    <span className="contents" data-testid="omdb-aggregated-ratings" role="presentation">
+    <span
+      className="contents"
+      data-testid="omdb-aggregated-ratings"
+      role="presentation"
+    >
       {ratings.map((r, i) => {
         const display = formatOmdbValue(r.source, r.value);
         const icon = omdbSourceIcon(r.source);
@@ -53,10 +57,7 @@ export function AggregatedRatingsLine({ ratings }: Props) {
               className="flex items-center gap-1"
               aria-label={aria}
             >
-              <SimpleBrandIcon
-                icon={icon}
-                className="h-3.5 w-3.5 text-muted-foreground"
-              />
+              <SimpleBrandIcon icon={icon} className="text-muted-foreground" />
               <span aria-hidden className="tabular-nums">
                 {display}
               </span>

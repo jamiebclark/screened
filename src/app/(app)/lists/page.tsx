@@ -4,7 +4,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { Plus, ListVideo, Lock, Globe, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { tmdbImageUrl } from "@/lib/utils";
 
 export default async function ListsPage() {

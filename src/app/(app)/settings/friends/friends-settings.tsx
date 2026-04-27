@@ -60,17 +60,25 @@ export function FriendsSettings() {
   const debouncedQuery = useDebounce(query, 250);
 
   const load = useCallback(async () => {
-    setLoadError(null);
     const res = await fetch("/api/friends");
     if (!res.ok) {
       setLoadError("Could not load friends");
       return;
     }
+    setLoadError(null);
     setData((await res.json()) as ApiFriends);
   }, []);
 
   useEffect(() => {
-    void load();
+    let cancelled = false;
+    void (async () => {
+      await Promise.resolve();
+      if (cancelled) return;
+      await load();
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [load]);
 
   useEffect(() => {
@@ -81,18 +89,28 @@ export function FriendsSettings() {
       });
       return;
     }
-    setIsSearching(true);
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (!cancelled) setIsSearching(true);
+    });
     fetch(`/api/users/search?q=${encodeURIComponent(debouncedQuery)}`)
       .then((r) => r.json() as Promise<SearchUser[]>)
       .then((rows) => {
+        if (cancelled) return;
         setResults(rows);
         setDropdownOpen(rows.length > 0);
       })
       .catch(() => {
+        if (cancelled) return;
         setResults([]);
         setDropdownOpen(false);
       })
-      .finally(() => setIsSearching(false));
+      .finally(() => {
+        if (!cancelled) setIsSearching(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [debouncedQuery]);
 
   useEffect(() => {
