@@ -5,12 +5,12 @@ A self-hosted web app for tracking movies and TV shows with friends, Plex sync, 
 ## Features
 
 - **Personal tracking** — watchlist, watching, watched, dropped status with star ratings and reviews
-- **Episode tracking** — season and episode-level progress for TV shows
+- **Episode tracking** — season and episode-level progress for TV shows; each episode can show last watched time, optional notes, and **Unmark** (soft unwatch keeps the prior time if you mark it again)
 - **Collaborative lists** — create shared movie lists, invite members by email, everyone contributes
 - **Plex sync** — link your Plex account; import your watch history (manual sync, plus optional scheduled sync when you use Docker)
 - **Letterboxd** — connect your public Letterboxd profile to import diary and ratings; a secured cron API exists if you add your own scheduler
 - **Movie Night Picker** — collaborative “what should we watch?” session with shareable rooms, reference titles, and optional discovery scoring
-- **Watch history** — per-source log (Plex, Letterboxd, manual) with import management and list-driven CSV import on shared lists
+- **Watch history** — per-source log (Plex, Letterboxd, manual) with import management and list-driven CSV import on shared lists; global history and calendar merge movie/TV diary lines with TV episode watches (Plex or in-app). **Movies** keep a **Watch history** section on the title page; **TV** logs viewings per episode under **Episodes**
 - **Radarr export** — every list exposes a live URL endpoint that Radarr can poll to auto-download movies
 - **Taste / embeddings (optional)** — with `OPENAI_API_KEY` set, titles get text embeddings for picker scoring and “similar to your picks”-style features
 

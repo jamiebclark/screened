@@ -38,11 +38,12 @@ Living reference for page layout, typography, and component patterns so detail p
 
 - **Wayfinding** — A light top line: **Search** · **Home** (`TitlePageTopNav`), not a second chrome bar.
 - **Narrow viewports** — A **small poster** beside the title block (`TitlePageMobilePoster`); the large poster remains in the **side column from `sm` up** so the hero still reads.
-- **Section stack** — Shared width/spacing: `titlePageSection` and `titlePageSectionStack` in `src/lib/title-page-layout.ts` with **Watch history** and **`TitleSiteContext`** (external links + optional lists/Plex) so the column rhythm matches.
+- **Section stack** — Shared width/spacing: `titlePageSection` and `titlePageSectionStack` in `src/lib/title-page-layout.ts` with **`TitleSiteContext`** (external links + optional lists/Plex). **Movies** also stack **Watch history** in that column; **TV** does not use a separate Watch history block on the title page (episode dates and **Log** live under the **Episodes** tab).
 
 ## Where this is applied
 
-- **Movie & TV detail** — “External links” is a **plain section** (no outer card). **Your lists** (movies, when any) and **Plex** sit in **`TitleSiteContext`**; **Watch history** uses the same column tokens below.
+- **Movie detail** — “External links” is a **plain section** (no outer card). **Your lists** (when any) and **Plex** sit in **`TitleSiteContext`**; **Watch history** uses the same column tokens below.
+- **TV detail** — Same **External links** / lists / Plex pattern. Episode-level watched dates and logging use the **Episodes** tab (`EpisodeTracker`, `EpisodeLogDialog`), not a second Watch history section beside the hero.
 
 ## Loading, empty, and error states
 
