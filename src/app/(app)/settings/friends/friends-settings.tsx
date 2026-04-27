@@ -1,23 +1,26 @@
 "use client";
 
-import {
-  useState,
-  useRef,
-  useEffect,
-  useCallback,
-  useTransition,
-} from "react";
+import { useState, useRef, useEffect, useCallback, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Check, Loader2, Search, UserPlus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 type UserBrief = { id: string; name: string; avatarUrl: string | null };
 
-type SearchUser = UserBrief & { email: string; plexConnection: { plexUsername: string } | null };
+type SearchUser = UserBrief & {
+  email: string;
+  plexConnection: { plexUsername: string } | null;
+};
 
 interface ApiFriends {
   friends: UserBrief[];
@@ -128,7 +131,7 @@ export function FriendsSettings() {
     try {
       const res = await fetch(
         `/api/friends/requests/${encodeURIComponent(requestId)}/accept`,
-        { method: "POST" }
+        { method: "POST" },
       );
       if (!res.ok) return;
       await load();
@@ -141,9 +144,12 @@ export function FriendsSettings() {
   const onDeleteRequest = async (requestId: string) => {
     setActing(`del-${requestId}`);
     try {
-      const res = await fetch(`/api/friends/requests/${encodeURIComponent(requestId)}`, {
-        method: "DELETE",
-      });
+      const res = await fetch(
+        `/api/friends/requests/${encodeURIComponent(requestId)}`,
+        {
+          method: "DELETE",
+        },
+      );
       if (!res.ok) return;
       await load();
       router.refresh();
@@ -155,7 +161,9 @@ export function FriendsSettings() {
   const onUnfriend = async (userId: string) => {
     setActing(`un-${userId}`);
     try {
-      const res = await fetch(`/api/friends/${encodeURIComponent(userId)}`, { method: "DELETE" });
+      const res = await fetch(`/api/friends/${encodeURIComponent(userId)}`, {
+        method: "DELETE",
+      });
       if (!res.ok) return;
       await load();
       router.refresh();
@@ -167,7 +175,7 @@ export function FriendsSettings() {
   const friendIds = new Set(data?.friends.map((f) => f.id) ?? []);
   const outgoingIds = new Set(data?.outgoing.map((o) => o.toUser.id) ?? []);
   const searchFiltered = results.filter(
-    (u) => !friendIds.has(u.id) && !outgoingIds.has(u.id)
+    (u) => !friendIds.has(u.id) && !outgoingIds.has(u.id),
   );
 
   return (
@@ -176,8 +184,8 @@ export function FriendsSettings() {
         <CardHeader>
           <CardTitle>Add a friend</CardTitle>
           <CardDescription>
-            Search by name, email, or Plex username. You can also send a request from someone’s
-            profile.
+            Search by name, email, or Plex username. You can also send a request
+            from someone’s profile.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -190,35 +198,43 @@ export function FriendsSettings() {
                   placeholder="Search people…"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  onFocus={() => searchFiltered.length > 0 && setDropdownOpen(true)}
+                  onFocus={() =>
+                    searchFiltered.length > 0 && setDropdownOpen(true)
+                  }
                   autoComplete="off"
                 />
               </div>
             </div>
-            {dropdownOpen && (searchFiltered.length > 0 || (isSearching && query.length >= 2)) && (
-              <ul className="absolute z-20 mt-1 w-full max-h-56 overflow-y-auto rounded-md border border-border bg-popover p-1 shadow-md text-sm">
-                {isSearching && searchFiltered.length === 0 && (
-                  <li className="px-2 py-2 text-muted-foreground">Searching…</li>
-                )}
-                {searchFiltered.map((u) => (
-                  <li key={u.id}>
-                    <button
-                      type="button"
-                      className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left hover:bg-accent"
-                      onClick={() => void onAdd(u.id)}
-                      disabled={acting != null}
-                    >
-                      <Avatar className="h-7 w-7">
-                        <AvatarImage src={u.avatarUrl ?? undefined} />
-                        <AvatarFallback className="text-[10px]">{initials(u.name)}</AvatarFallback>
-                      </Avatar>
-                      <span className="truncate font-medium">{u.name}</span>
-                      <UserPlus className="ml-auto h-3.5 w-3.5 text-muted-foreground" />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
+            {dropdownOpen &&
+              (searchFiltered.length > 0 ||
+                (isSearching && query.length >= 2)) && (
+                <ul className="absolute z-20 mt-1 w-full max-h-56 overflow-y-auto rounded-md border border-border bg-popover p-1 shadow-md text-sm">
+                  {isSearching && searchFiltered.length === 0 && (
+                    <li className="px-2 py-2 text-muted-foreground">
+                      Searching…
+                    </li>
+                  )}
+                  {searchFiltered.map((u) => (
+                    <li key={u.id}>
+                      <button
+                        type="button"
+                        className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left hover:bg-accent"
+                        onClick={() => void onAdd(u.id)}
+                        disabled={acting != null}
+                      >
+                        <Avatar className="h-7 w-7">
+                          <AvatarImage src={u.avatarUrl ?? undefined} />
+                          <AvatarFallback className="text-[10px]">
+                            {initials(u.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="truncate font-medium">{u.name}</span>
+                        <UserPlus className="ml-auto h-3.5 w-3.5 text-muted-foreground" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
           </div>
         </CardContent>
       </Card>
@@ -240,12 +256,17 @@ export function FriendsSettings() {
                 key={r.id}
                 className="flex items-center justify-between gap-3 rounded-lg border border-border p-3"
               >
-                <Link href={`/profile/${r.fromUser.id}`} className="flex items-center gap-2 min-w-0">
+                <Link
+                  href={`/profile/${r.fromUser.id}`}
+                  className="flex items-center gap-2 min-w-0"
+                >
                   <Avatar className="h-9 w-9">
                     <AvatarImage src={r.fromUser.avatarUrl ?? undefined} />
                     <AvatarFallback>{initials(r.fromUser.name)}</AvatarFallback>
                   </Avatar>
-                  <span className="font-medium truncate hover:underline">{r.fromUser.name}</span>
+                  <span className="font-medium truncate hover:underline">
+                    {r.fromUser.name}
+                  </span>
                 </Link>
                 <div className="flex gap-2 shrink-0">
                   <Button
@@ -291,12 +312,17 @@ export function FriendsSettings() {
                 key={r.id}
                 className="flex items-center justify-between gap-3 rounded-lg border border-border p-3"
               >
-                <Link href={`/profile/${r.toUser.id}`} className="flex items-center gap-2 min-w-0">
+                <Link
+                  href={`/profile/${r.toUser.id}`}
+                  className="flex items-center gap-2 min-w-0"
+                >
                   <Avatar className="h-9 w-9">
                     <AvatarImage src={r.toUser.avatarUrl ?? undefined} />
                     <AvatarFallback>{initials(r.toUser.name)}</AvatarFallback>
                   </Avatar>
-                  <span className="font-medium truncate hover:underline">{r.toUser.name}</span>
+                  <span className="font-medium truncate hover:underline">
+                    {r.toUser.name}
+                  </span>
                 </Link>
                 <Button
                   size="sm"
@@ -304,7 +330,11 @@ export function FriendsSettings() {
                   onClick={() => void onDeleteRequest(r.id)}
                   disabled={acting != null}
                 >
-                  {acting === `del-${r.id}` ? <Loader2 className="h-4 w-4 animate-spin" /> : "Cancel"}
+                  {acting === `del-${r.id}` ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    "Cancel"
+                  )}
                 </Button>
               </li>
             ))}
@@ -323,12 +353,17 @@ export function FriendsSettings() {
                 key={f.id}
                 className="flex items-center justify-between gap-3 rounded-lg border border-border p-3"
               >
-                <Link href={`/profile/${f.id}`} className="flex items-center gap-2 min-w-0">
+                <Link
+                  href={`/profile/${f.id}`}
+                  className="flex items-center gap-2 min-w-0"
+                >
                   <Avatar className="h-9 w-9">
                     <AvatarImage src={f.avatarUrl ?? undefined} />
                     <AvatarFallback>{initials(f.name)}</AvatarFallback>
                   </Avatar>
-                  <span className="font-medium truncate hover:underline">{f.name}</span>
+                  <span className="font-medium truncate hover:underline">
+                    {f.name}
+                  </span>
                 </Link>
                 <Button
                   size="sm"
@@ -336,7 +371,11 @@ export function FriendsSettings() {
                   onClick={() => void onUnfriend(f.id)}
                   disabled={acting != null}
                 >
-                  {acting === `un-${f.id}` ? <Loader2 className="h-4 w-4 animate-spin" /> : "Unfriend"}
+                  {acting === `un-${f.id}` ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    "Unfriend"
+                  )}
                 </Button>
               </li>
             ))}
@@ -344,9 +383,14 @@ export function FriendsSettings() {
         </section>
       )}
 
-      {data && data.friends.length === 0 && data.incoming.length === 0 && data.outgoing.length === 0 && (
-        <p className="text-sm text-muted-foreground">You have not added any friends yet.</p>
-      )}
+      {data &&
+        data.friends.length === 0 &&
+        data.incoming.length === 0 &&
+        data.outgoing.length === 0 && (
+          <p className="text-sm text-muted-foreground">
+            You have not added any friends yet.
+          </p>
+        )}
     </div>
   );
 }

@@ -1,6 +1,10 @@
 import { SettingsNav } from "./settings-nav";
 
-export default function SettingsLayout({ children }: { children: React.ReactNode }) {
+export default function SettingsLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
       <div className="flex flex-col gap-8 md:flex-row md:items-start">

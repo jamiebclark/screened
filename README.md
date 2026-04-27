@@ -41,16 +41,18 @@ cp .env.example .env
 
 Open `.env` and fill in the required values:
 
-| Variable | Description |
-|---|---|
-| `DATABASE_URL` | PostgreSQL connection string |
-| `AUTH_SECRET` | Random 32+ character string — run `openssl rand -base64 32` |
-| `TMDB_API_KEY` | Read access token from [themoviedb.org/settings/api](https://www.themoviedb.org/settings/api) |
-| `NEXTAUTH_URL` | Base URL of your app (e.g. `http://localhost:3000`) |
-| `NEXT_PUBLIC_APP_URL` | Same as above — used client-side for OAuth redirects and absolute links |
-| `CRON_SECRET` | Shared secret for `/api/cron/*` (Plex and Letterboxd scheduled sync in Docker) — e.g. `openssl rand -hex 32` |
-| `SYNC_INTERVAL_HOURS` | Hours between automatic Plex/Letterboxd sync jobs when using Docker cron (default: `6`) |
-| `OPENAI_API_KEY` | Optional; enables text embeddings for the Movie Night Picker and related scoring |
+| Variable              | Description                                                                                                              |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `DATABASE_URL`        | PostgreSQL connection string                                                                                             |
+| `AUTH_SECRET`         | Random 32+ character string — run `openssl rand -base64 32`                                                              |
+| `TMDB_API_KEY`        | Read access token from [themoviedb.org/settings/api](https://www.themoviedb.org/settings/api)                            |
+| `NEXTAUTH_URL`        | Base URL of your app (e.g. `http://localhost:3000`)                                                                      |
+| `NEXT_PUBLIC_APP_URL` | Same as above — used client-side for OAuth redirects and absolute links                                                  |
+| `CRON_SECRET`         | Shared secret for `/api/cron/*` (Plex and Letterboxd scheduled sync in Docker) — e.g. `openssl rand -hex 32`             |
+| `SYNC_INTERVAL_HOURS` | Hours between automatic Plex/Letterboxd sync jobs when using Docker cron (default: `6`)                                  |
+| `OPENAI_API_KEY`      | Optional; enables text embeddings for the Movie Night Picker and related scoring                                         |
+| `ALLOW_PUBLIC_SIGNUP` | Optional; default `true`. Set to `false` for invite-only signup (see `.env.example`).                                    |
+| `SITE_ADMIN_EMAILS`   | Optional; comma-separated emails that may create signup invites (Settings → Signup invites) when using invite-only mode. |
 
 ### 3. Start a local database
 
@@ -191,14 +193,14 @@ List owners can also review **access requests** for private lists; contributors 
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Framework | Next.js 16 (App Router) + TypeScript |
-| Styling | Tailwind CSS v4 + Radix UI |
-| Database | PostgreSQL + Prisma 7 |
-| Auth | Auth.js v5 (credentials + Plex OAuth) |
-| Metadata | TMDB API |
-| Deployment | Docker Compose |
+| Layer      | Technology                            |
+| ---------- | ------------------------------------- |
+| Framework  | Next.js 16 (App Router) + TypeScript  |
+| Styling    | Tailwind CSS v4 + Radix UI            |
+| Database   | PostgreSQL + Prisma 7                 |
+| Auth       | Auth.js v5 (credentials + Plex OAuth) |
+| Metadata   | TMDB API                              |
+| Deployment | Docker Compose                        |
 
 ---
 
@@ -206,16 +208,16 @@ List owners can also review **access requests** for private lists; contributors 
 
 ### Available scripts
 
-| Command | Description |
-|---|---|
-| `yarn dev` | Start development server |
-| `yarn build` | Build for production |
-| `yarn lint` | Run ESLint |
-| `yarn db:migrate` | Run Prisma migrations |
-| `yarn db:push` | Push schema without a migration (dev / throwaway only — use migrations for anything `migrate deploy` will run) |
-| `yarn test:e2e` | Playwright end-to-end tests |
-| `yarn db:studio` | Open Prisma Studio (database GUI) |
-| `yarn db:generate` | Regenerate Prisma client |
+| Command            | Description                                                                                                    |
+| ------------------ | -------------------------------------------------------------------------------------------------------------- |
+| `yarn dev`         | Start development server                                                                                       |
+| `yarn build`       | Build for production                                                                                           |
+| `yarn lint`        | Run ESLint                                                                                                     |
+| `yarn db:migrate`  | Run Prisma migrations                                                                                          |
+| `yarn db:push`     | Push schema without a migration (dev / throwaway only — use migrations for anything `migrate deploy` will run) |
+| `yarn test:e2e`    | Playwright end-to-end tests                                                                                    |
+| `yarn db:studio`   | Open Prisma Studio (database GUI)                                                                              |
+| `yarn db:generate` | Regenerate Prisma client                                                                                       |
 
 ### Project structure
 

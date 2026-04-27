@@ -1,7 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { NotificationType } from "@/generated/prisma";
 
-export async function listAdminUserIdsForList(listId: string): Promise<string[]> {
+export async function listAdminUserIdsForList(
+  listId: string,
+): Promise<string[]> {
   const list = await prisma.list.findUnique({
     where: { id: listId },
     select: { ownerId: true },
@@ -9,7 +11,10 @@ export async function listAdminUserIdsForList(listId: string): Promise<string[]>
   return list ? [list.ownerId] : [];
 }
 
-export async function notifyAdminsOfPendingAccessRequest(listId: string, requestId: string) {
+export async function notifyAdminsOfPendingAccessRequest(
+  listId: string,
+  requestId: string,
+) {
   const adminIds = await listAdminUserIdsForList(listId);
   if (adminIds.length === 0) return;
 

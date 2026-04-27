@@ -71,15 +71,22 @@ export async function POST(req: NextRequest) {
   }
 
   const body = (await req.json()) as { toUserId?: unknown };
-  const toUserId = typeof body.toUserId === "string" ? body.toUserId.trim() : "";
+  const toUserId =
+    typeof body.toUserId === "string" ? body.toUserId.trim() : "";
   if (!toUserId) {
     return NextResponse.json({ error: "toUserId required" }, { status: 400 });
   }
   if (toUserId === session.user.id) {
-    return NextResponse.json({ error: "You cannot add yourself" }, { status: 400 });
+    return NextResponse.json(
+      { error: "You cannot add yourself" },
+      { status: 400 },
+    );
   }
 
-  const target = await prisma.user.findUnique({ where: { id: toUserId }, select: { id: true } });
+  const target = await prisma.user.findUnique({
+    where: { id: toUserId },
+    select: { id: true },
+  });
   if (!target) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
@@ -94,19 +101,21 @@ export async function POST(req: NextRequest) {
   if (forward) {
     return NextResponse.json(
       { error: "A request is already pending", requestId: forward.id },
-      { status: 409 }
+      { status: 409 },
     );
   }
 
   const reverse = await prisma.friendRequest.findUnique({
-    where: { fromUserId_toUserId: { fromUserId: toUserId, toUserId: session.user.id } },
+    where: {
+      fromUserId_toUserId: { fromUserId: toUserId, toUserId: session.user.id },
+    },
   });
   if (reverse) {
     await createFriendshipAndClearPending(session.user.id, toUserId);
     const friendState = await getProfileFriendState(session.user.id, toUserId);
     return NextResponse.json(
       { status: "friends" as const, friendState },
-      { status: 201 }
+      { status: 201 },
     );
   }
 
@@ -123,6 +132,6 @@ export async function POST(req: NextRequest) {
       requestId: created.id,
       createdAt: created.createdAt,
     },
-    { status: 201 }
+    { status: 201 },
   );
 }

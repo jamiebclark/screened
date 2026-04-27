@@ -26,11 +26,17 @@ interface EpisodeTrackerProps {
   watchedEpisodes: { seasonNumber: number; episodeNumber: number }[];
 }
 
-export function EpisodeTracker({ tmdbId, seasons, watchedEpisodes }: EpisodeTrackerProps) {
+export function EpisodeTracker({
+  tmdbId,
+  seasons,
+  watchedEpisodes,
+}: EpisodeTrackerProps) {
   const [watched, setWatched] = useState(
-    new Set(watchedEpisodes.map((e) => `${e.seasonNumber}x${e.episodeNumber}`))
+    new Set(watchedEpisodes.map((e) => `${e.seasonNumber}x${e.episodeNumber}`)),
   );
-  const [expanded, setExpanded] = useState<number | null>(seasons[0]?.season_number ?? null);
+  const [expanded, setExpanded] = useState<number | null>(
+    seasons[0]?.season_number ?? null,
+  );
   const [isPending, startTransition] = useTransition();
 
   const toggleEpisode = (seasonNumber: number, episodeNumber: number) => {
@@ -65,7 +71,9 @@ export function EpisodeTracker({ tmdbId, seasons, watchedEpisodes }: EpisodeTrac
         episodeNumber: e.episode_number,
       }));
 
-      const allWatched = episodes.every((e) => watched.has(`${e.seasonNumber}x${e.episodeNumber}`));
+      const allWatched = episodes.every((e) =>
+        watched.has(`${e.seasonNumber}x${e.episodeNumber}`),
+      );
 
       try {
         const res = await fetch(`/api/media/${tmdbId}/episodes`, {
@@ -97,16 +105,25 @@ export function EpisodeTracker({ tmdbId, seasons, watchedEpisodes }: EpisodeTrac
       {filteredSeasons.map((season) => {
         const isExpanded = expanded === season.season_number;
         const seasonWatched = season.episodes.filter((e) =>
-          watched.has(`${season.season_number}x${e.episode_number}`)
+          watched.has(`${season.season_number}x${e.episode_number}`),
         ).length;
-        const progress = season.episode_count > 0 ? (seasonWatched / season.episode_count) * 100 : 0;
-        const allWatched = seasonWatched === season.episode_count && season.episode_count > 0;
+        const progress =
+          season.episode_count > 0
+            ? (seasonWatched / season.episode_count) * 100
+            : 0;
+        const allWatched =
+          seasonWatched === season.episode_count && season.episode_count > 0;
 
         return (
-          <div key={season.season_number} className="rounded-lg border border-border overflow-hidden">
+          <div
+            key={season.season_number}
+            className="rounded-lg border border-border overflow-hidden"
+          >
             <div
               className="flex items-center gap-3 p-3 cursor-pointer hover:bg-accent/50 transition-colors"
-              onClick={() => setExpanded(isExpanded ? null : season.season_number)}
+              onClick={() =>
+                setExpanded(isExpanded ? null : season.season_number)
+              }
             >
               {isExpanded ? (
                 <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
@@ -115,7 +132,9 @@ export function EpisodeTracker({ tmdbId, seasons, watchedEpisodes }: EpisodeTrac
               )}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-sm font-medium truncate">{season.name}</span>
+                  <span className="text-sm font-medium truncate">
+                    {season.name}
+                  </span>
                   <span className="text-xs text-muted-foreground shrink-0">
                     {seasonWatched}/{season.episode_count}
                   </span>
@@ -125,7 +144,10 @@ export function EpisodeTracker({ tmdbId, seasons, watchedEpisodes }: EpisodeTrac
               <Button
                 variant={allWatched ? "secondary" : "ghost"}
                 size="sm"
-                className={cn("h-7 px-2 text-xs shrink-0", allWatched && "text-green-400")}
+                className={cn(
+                  "h-7 px-2 text-xs shrink-0",
+                  allWatched && "text-green-400",
+                )}
                 onClick={(e) => {
                   e.stopPropagation();
                   markSeasonWatched(season);
@@ -147,22 +169,38 @@ export function EpisodeTracker({ tmdbId, seasons, watchedEpisodes }: EpisodeTrac
                       key={episode.episode_number}
                       className={cn(
                         "flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors",
-                        isWatched ? "bg-green-500/5" : "hover:bg-accent/30"
+                        isWatched ? "bg-green-500/5" : "hover:bg-accent/30",
                       )}
-                      onClick={() => toggleEpisode(season.season_number, episode.episode_number)}
+                      onClick={() =>
+                        toggleEpisode(
+                          season.season_number,
+                          episode.episode_number,
+                        )
+                      }
                     >
                       <div
                         className={cn(
                           "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-xs",
                           isWatched
                             ? "border-green-500 bg-green-500 text-white"
-                            : "border-border text-muted-foreground"
+                            : "border-border text-muted-foreground",
                         )}
                       >
-                        {isWatched ? <Check className="h-3 w-3" /> : episode.episode_number}
+                        {isWatched ? (
+                          <Check className="h-3 w-3" />
+                        ) : (
+                          episode.episode_number
+                        )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className={cn("text-sm truncate", isWatched && "text-muted-foreground line-through")}>{episode.name}</p>
+                        <p
+                          className={cn(
+                            "text-sm truncate",
+                            isWatched && "text-muted-foreground line-through",
+                          )}
+                        >
+                          {episode.name}
+                        </p>
                         {episode.air_date && (
                           <p className="text-xs text-muted-foreground">
                             {new Date(episode.air_date).getFullYear()}

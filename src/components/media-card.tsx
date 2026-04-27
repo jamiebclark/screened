@@ -24,7 +24,11 @@ const statusIcons = {
   WATCHED: { icon: Eye, label: "Watched", color: "text-green-400" },
   WATCHING: { icon: Clock, label: "Watching", color: "text-yellow-400" },
   WATCHLIST: { icon: Bookmark, label: "Watchlist", color: "text-blue-400" },
-  DROPPED: { icon: TvMinimal, label: "Dropped", color: "text-muted-foreground" },
+  DROPPED: {
+    icon: TvMinimal,
+    label: "Dropped",
+    color: "text-muted-foreground",
+  },
 };
 
 export function MediaCard({
@@ -49,7 +53,7 @@ export function MediaCard({
       <div
         className={cn(
           "relative overflow-hidden rounded-lg bg-card border border-border transition-all duration-200 group-hover:border-primary/50 group-hover:shadow-lg group-hover:shadow-primary/10",
-          compact ? "aspect-[2/3]" : "aspect-[2/3]"
+          compact ? "aspect-[2/3]" : "aspect-[2/3]",
         )}
       >
         {imageUrl ? (
@@ -62,7 +66,9 @@ export function MediaCard({
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-muted">
-            <span className="text-muted-foreground text-xs text-center px-2">{title}</span>
+            <span className="text-muted-foreground text-xs text-center px-2">
+              {title}
+            </span>
           </div>
         )}
 
@@ -70,7 +76,9 @@ export function MediaCard({
 
         {statusInfo && (
           <div className="absolute top-2 right-2">
-            <div className={cn("rounded-full bg-black/70 p-1", statusInfo.color)}>
+            <div
+              className={cn("rounded-full bg-black/70 p-1", statusInfo.color)}
+            >
               <statusInfo.icon className="h-3.5 w-3.5" />
             </div>
           </div>
@@ -79,7 +87,9 @@ export function MediaCard({
         {rating && (
           <div className="absolute top-2 left-2 flex items-center gap-0.5 rounded-full bg-black/70 px-1.5 py-0.5">
             <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-            <span className="text-xs font-medium text-white">{rating.toFixed(1)}</span>
+            <span className="text-xs font-medium text-white">
+              {rating.toFixed(1)}
+            </span>
           </div>
         )}
 
@@ -93,7 +103,9 @@ export function MediaCard({
         <div className="mt-2 space-y-0.5">
           <p className="text-sm font-medium line-clamp-1">{title}</p>
           <div className="flex items-center gap-2">
-            {year && <span className="text-xs text-muted-foreground">{year}</span>}
+            {year && (
+              <span className="text-xs text-muted-foreground">{year}</span>
+            )}
             <Badge variant="outline" className="text-[10px] px-1 py-0">
               {type === "movie" ? "Movie" : "TV"}
             </Badge>

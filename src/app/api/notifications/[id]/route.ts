@@ -11,10 +11,13 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   }
 
   const { id } = await params;
-  const body = await req.json().catch(() => ({})) as { read?: boolean };
+  const body = (await req.json().catch(() => ({}))) as { read?: boolean };
 
   if (body.read !== true) {
-    return NextResponse.json({ error: "Only read: true is supported" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Only read: true is supported" },
+      { status: 400 },
+    );
   }
 
   const updated = await prisma.notification.updateMany({

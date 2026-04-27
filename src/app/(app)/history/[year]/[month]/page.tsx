@@ -55,8 +55,12 @@ export default async function HistoryMonthPage({ params }: Params) {
   ]);
 
   const adj = adjacentMonthHrefs(year, month);
-  const prevMonthHref = adj.prev ? historyMonthPath(adj.prev.year, adj.prev.month) : null;
-  const nextMonthHref = adj.next ? historyMonthPath(adj.next.year, adj.next.month) : null;
+  const prevMonthHref = adj.prev
+    ? historyMonthPath(adj.prev.year, adj.prev.month)
+    : null;
+  const nextMonthHref = adj.next
+    ? historyMonthPath(adj.next.year, adj.next.month)
+    : null;
 
   const monthTitle = new Date(year, month - 1, 1).toLocaleDateString("en-US", {
     month: "long",
@@ -89,11 +93,17 @@ export default async function HistoryMonthPage({ params }: Params) {
         All viewings this month
       </h2>
       {entries.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Nothing logged this month yet.</p>
+        <p className="text-sm text-muted-foreground">
+          Nothing logged this month yet.
+        </p>
       ) : (
         <div className="space-y-2">
           {entries.map((entry) => (
-            <HistoryWatchEntryRow key={entry.id} entry={entry} timeLabel={formatTime(entry.watchedAt)} />
+            <HistoryWatchEntryRow
+              key={entry.id}
+              entry={entry}
+              timeLabel={formatTime(entry.watchedAt)}
+            />
           ))}
         </div>
       )}

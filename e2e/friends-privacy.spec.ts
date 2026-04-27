@@ -49,7 +49,9 @@ test.describe("Friends and profile privacy", () => {
     await logout(page);
     await login(page, TEST_USER_2);
     await page.goto(`/profile/${user1Id}`);
-    await expect(page.getByText(/not visible to you/i)).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText(/not visible to you/i)).toBeVisible({
+      timeout: 10_000,
+    });
     await expect(page.getByRole("tab", { name: /Watched/i })).toHaveCount(0);
     await expect(page.getByRole("tab", { name: /Watchlist/i })).toHaveCount(0);
 
@@ -58,7 +60,10 @@ test.describe("Friends and profile privacy", () => {
       data: { toUserId: user1Id },
     });
     expect(addFr.status()).toBe(201);
-    const addJson = (await addFr.json()) as { status: string; requestId?: string };
+    const addJson = (await addFr.json()) as {
+      status: string;
+      requestId?: string;
+    };
     expect(addJson.status).toBe("pending");
     expect(addJson.requestId).toBeTruthy();
 

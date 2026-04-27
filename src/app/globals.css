@@ -64,36 +64,146 @@ body {
 }
 
 /* Animations for Radix UI */
-@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
-@keyframes fade-out { from { opacity: 1; } to { opacity: 0; } }
-@keyframes zoom-in-95 { from { transform: scale(0.95); } to { transform: scale(1); } }
-@keyframes zoom-out-95 { from { transform: scale(1); } to { transform: scale(0.95); } }
-@keyframes slide-in-from-top-2 { from { transform: translateY(-0.5rem); } to { transform: translateY(0); } }
-@keyframes slide-in-from-bottom-2 { from { transform: translateY(0.5rem); } to { transform: translateY(0); } }
-@keyframes slide-in-from-left-2 { from { transform: translateX(-0.5rem); } to { transform: translateX(0); } }
-@keyframes slide-in-from-right-2 { from { transform: translateX(0.5rem); } to { transform: translateX(0); } }
-@keyframes slide-out-to-left-half { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-@keyframes slide-out-to-top-48 { from { transform: translateY(0); } to { transform: translateY(-48%); } }
-@keyframes slide-in-from-left-half { from { transform: translateX(-50%); } to { transform: translateX(0); } }
-@keyframes slide-in-from-top-48 { from { transform: translateY(-48%); } to { transform: translateY(0); } }
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@keyframes zoom-in-95 {
+  from {
+    transform: scale(0.95);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+@keyframes zoom-out-95 {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(0.95);
+  }
+}
+@keyframes slide-in-from-top-2 {
+  from {
+    transform: translateY(-0.5rem);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+@keyframes slide-in-from-bottom-2 {
+  from {
+    transform: translateY(0.5rem);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+@keyframes slide-in-from-left-2 {
+  from {
+    transform: translateX(-0.5rem);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+@keyframes slide-in-from-right-2 {
+  from {
+    transform: translateX(0.5rem);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+@keyframes slide-out-to-left-half {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+@keyframes slide-out-to-top-48 {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-48%);
+  }
+}
+@keyframes slide-in-from-left-half {
+  from {
+    transform: translateX(-50%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+@keyframes slide-in-from-top-48 {
+  from {
+    transform: translateY(-48%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
 
 @theme inline {
   --animate-fade-in: fade-in 0.2s ease;
   --animate-fade-out: fade-out 0.2s ease;
 }
 
-[data-state=open].animate-in { animation-fill-mode: both; animation-duration: 150ms; }
-[data-state=closed].animate-out { animation-fill-mode: both; animation-duration: 150ms; }
-.data-\[state\=open\]\:animate-in[data-state=open] { animation: fade-in 150ms ease; }
-.data-\[state\=closed\]\:animate-out[data-state=closed] { animation: fade-out 150ms ease; }
-.data-\[state\=open\]\:fade-in-0[data-state=open] { animation-name: fade-in; }
-.data-\[state\=closed\]\:fade-out-0[data-state=closed] { animation-name: fade-out; }
-.data-\[state\=open\]\:zoom-in-95[data-state=open] { animation-name: zoom-in-95; }
-.data-\[state\=closed\]\:zoom-out-95[data-state=closed] { animation-name: zoom-out-95; }
-.data-\[side\=bottom\]\:slide-in-from-top-2[data-side=bottom] { animation-name: slide-in-from-top-2; }
-.data-\[side\=top\]\:slide-in-from-bottom-2[data-side=top] { animation-name: slide-in-from-bottom-2; }
-.data-\[side\=left\]\:slide-in-from-right-2[data-side=left] { animation-name: slide-in-from-right-2; }
-.data-\[side\=right\]\:slide-in-from-left-2[data-side=right] { animation-name: slide-in-from-left-2; }
+[data-state="open"].animate-in {
+  animation-fill-mode: both;
+  animation-duration: 150ms;
+}
+[data-state="closed"].animate-out {
+  animation-fill-mode: both;
+  animation-duration: 150ms;
+}
+.data-\[state\=open\]\:animate-in[data-state="open"] {
+  animation: fade-in 150ms ease;
+}
+.data-\[state\=closed\]\:animate-out[data-state="closed"] {
+  animation: fade-out 150ms ease;
+}
+.data-\[state\=open\]\:fade-in-0[data-state="open"] {
+  animation-name: fade-in;
+}
+.data-\[state\=closed\]\:fade-out-0[data-state="closed"] {
+  animation-name: fade-out;
+}
+.data-\[state\=open\]\:zoom-in-95[data-state="open"] {
+  animation-name: zoom-in-95;
+}
+.data-\[state\=closed\]\:zoom-out-95[data-state="closed"] {
+  animation-name: zoom-out-95;
+}
+.data-\[side\=bottom\]\:slide-in-from-top-2[data-side="bottom"] {
+  animation-name: slide-in-from-top-2;
+}
+.data-\[side\=top\]\:slide-in-from-bottom-2[data-side="top"] {
+  animation-name: slide-in-from-bottom-2;
+}
+.data-\[side\=left\]\:slide-in-from-right-2[data-side="left"] {
+  animation-name: slide-in-from-right-2;
+}
+.data-\[side\=right\]\:slide-in-from-left-2[data-side="right"] {
+  animation-name: slide-in-from-left-2;
+}
 
 /* Scrollbar */
 ::-webkit-scrollbar {

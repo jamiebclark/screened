@@ -15,17 +15,28 @@ export function historyMonthPath(year: number, month: number): string {
   return `/history/${year}/${pad2(month)}`;
 }
 
-export function historyDayPath(year: number, month: number, day: number): string {
+export function historyDayPath(
+  year: number,
+  month: number,
+  day: number,
+): string {
   return `/history/${year}/${pad2(month)}/${pad2(day)}`;
 }
 
-export function localDayRange(year: number, month: number, day: number): { start: Date; end: Date } {
+export function localDayRange(
+  year: number,
+  month: number,
+  day: number,
+): { start: Date; end: Date } {
   const start = new Date(year, month - 1, day, 0, 0, 0, 0);
   const end = new Date(year, month - 1, day, 23, 59, 59, 999);
   return { start, end };
 }
 
-export function localMonthRange(year: number, month: number): { start: Date; end: Date } {
+export function localMonthRange(
+  year: number,
+  month: number,
+): { start: Date; end: Date } {
   const start = new Date(year, month - 1, 1, 0, 0, 0, 0);
   const end = new Date(year, month, 0, 23, 59, 59, 999);
   return { start, end };
@@ -59,25 +70,46 @@ export function parseDaySegment(s: string): number | null {
 }
 
 /** Returns true if y-m-d is a real calendar date (no overflow). */
-export function isValidCalendarDate(year: number, month: number, day: number): boolean {
+export function isValidCalendarDate(
+  year: number,
+  month: number,
+  day: number,
+): boolean {
   const t = new Date(year, month - 1, day);
-  return t.getFullYear() === year && t.getMonth() === month - 1 && t.getDate() === day;
+  return (
+    t.getFullYear() === year &&
+    t.getMonth() === month - 1 &&
+    t.getDate() === day
+  );
 }
 
-export function monthCanonicalPath(year: number, month: number, monthSegment: string): string | null {
+export function monthCanonicalPath(
+  year: number,
+  month: number,
+  monthSegment: string,
+): string | null {
   const canon = pad2(month);
   if (monthSegment !== canon) return historyMonthPath(year, month);
   return null;
 }
 
-export function dayCanonicalPath(year: number, month: number, day: number, daySegment: string): string | null {
+export function dayCanonicalPath(
+  year: number,
+  month: number,
+  day: number,
+  daySegment: string,
+): string | null {
   const canon = pad2(day);
   if (daySegment !== canon) return historyDayPath(year, month, day);
   return null;
 }
 
 /** YYYY-MM-DD for search + dialog prefill */
-export function toDateOnlyIso(year: number, month: number, day: number): string {
+export function toDateOnlyIso(
+  year: number,
+  month: number,
+  day: number,
+): string {
   return `${year}-${pad2(month)}-${pad2(day)}`;
 }
 
@@ -94,7 +126,11 @@ export function parseDateOnlyIso(s: string | undefined | null): string | null {
   return `${y}-${pad2(mo)}-${pad2(d)}`;
 }
 
-export function localCalendarParts(date: Date): { year: number; month: number; day: number } {
+export function localCalendarParts(date: Date): {
+  year: number;
+  month: number;
+  day: number;
+} {
   return {
     year: date.getFullYear(),
     month: date.getMonth() + 1,
@@ -105,7 +141,10 @@ export function localCalendarParts(date: Date): { year: number; month: number; d
 export function adjacentMonthHrefs(
   year: number,
   month: number,
-): { prev: { year: number; month: number } | null; next: { year: number; month: number } | null } {
+): {
+  prev: { year: number; month: number } | null;
+  next: { year: number; month: number } | null;
+} {
   let py = year;
   let pm = month - 1;
   if (pm < 1) {
@@ -124,7 +163,10 @@ export function adjacentMonthHrefs(
   };
 }
 
-export function adjacentYearHrefs(year: number): { prev: number | null; next: number | null } {
+export function adjacentYearHrefs(year: number): {
+  prev: number | null;
+  next: number | null;
+} {
   return {
     prev: year > HISTORY_YEAR_MIN ? year - 1 : null,
     next: year < HISTORY_YEAR_MAX ? year + 1 : null,

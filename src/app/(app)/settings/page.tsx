@@ -1,10 +1,26 @@
 import Link from "next/link";
-import { ArrowRight, Lock, Sparkles, User, Users } from "lucide-react";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  ArrowRight,
+  Lock,
+  Sparkles,
+  User,
+  UserPlus,
+  Users,
+} from "lucide-react";
+import {
+  Card,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { auth } from "@/lib/auth";
+import { isSiteAdminEmail } from "@/lib/signup-invites";
 
 export const metadata = { title: "Settings | Screened" };
 
-export default function SettingsPage() {
+export default async function SettingsPage() {
+  const session = await auth();
+  const isSiteAdmin = isSiteAdminEmail(session?.user?.email);
   return (
     <div className="mx-auto max-w-2xl">
       <h1 className="text-2xl font-bold mb-2">Settings</h1>
@@ -18,11 +34,16 @@ export default function SettingsPage() {
             Integrations
           </h2>
           <p className="text-sm text-muted-foreground mb-4">
-            Connect external services to sync watch history and keep Screened up to date.
+            Connect external services to sync watch history and keep Screened up
+            to date.
           </p>
           <ul className="flex flex-col gap-3">
             <li>
-              <Link prefetch={false} href="/settings/plex" className="block group">
+              <Link
+                prefetch={false}
+                href="/settings/plex"
+                className="block group"
+              >
                 <Card className="transition-colors hover:bg-accent/50">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <div>
@@ -37,7 +58,11 @@ export default function SettingsPage() {
               </Link>
             </li>
             <li>
-              <Link prefetch={false} href="/settings/letterboxd" className="block group">
+              <Link
+                prefetch={false}
+                href="/settings/letterboxd"
+                className="block group"
+              >
                 <Card className="transition-colors hover:bg-accent/50">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <div>
@@ -59,8 +84,37 @@ export default function SettingsPage() {
             General
           </h2>
           <ul className="flex flex-col gap-3">
+            {isSiteAdmin && (
+              <li>
+                <Link
+                  prefetch={false}
+                  href="/settings/invites"
+                  className="block group"
+                >
+                  <Card className="transition-colors hover:bg-accent/50">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <div>
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <UserPlus className="h-4 w-4 text-primary" />
+                          Signup invites
+                        </CardTitle>
+                        <CardDescription>
+                          Create links for new members when this server is
+                          invite-only.
+                        </CardDescription>
+                      </div>
+                      <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+                    </CardHeader>
+                  </Card>
+                </Link>
+              </li>
+            )}
             <li>
-              <Link prefetch={false} href="/settings/account" className="block group">
+              <Link
+                prefetch={false}
+                href="/settings/account"
+                className="block group"
+              >
                 <Card className="transition-colors hover:bg-accent/50">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <div>
@@ -78,7 +132,11 @@ export default function SettingsPage() {
               </Link>
             </li>
             <li>
-              <Link prefetch={false} href="/settings/privacy" className="block group">
+              <Link
+                prefetch={false}
+                href="/settings/privacy"
+                className="block group"
+              >
                 <Card className="transition-colors hover:bg-accent/50">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <div>
@@ -87,7 +145,8 @@ export default function SettingsPage() {
                         Privacy
                       </CardTitle>
                       <CardDescription>
-                        Who can see your watchlist and watch activity on your profile.
+                        Who can see your watchlist and watch activity on your
+                        profile.
                       </CardDescription>
                     </div>
                     <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
@@ -96,7 +155,11 @@ export default function SettingsPage() {
               </Link>
             </li>
             <li>
-              <Link prefetch={false} href="/settings/friends" className="block group">
+              <Link
+                prefetch={false}
+                href="/settings/friends"
+                className="block group"
+              >
                 <Card className="transition-colors hover:bg-accent/50">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <div>
@@ -114,7 +177,11 @@ export default function SettingsPage() {
               </Link>
             </li>
             <li>
-              <Link prefetch={false} href="/settings/preferences" className="block group">
+              <Link
+                prefetch={false}
+                href="/settings/preferences"
+                className="block group"
+              >
                 <Card className="transition-colors hover:bg-accent/50">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <div>
@@ -132,13 +199,20 @@ export default function SettingsPage() {
               </Link>
             </li>
             <li>
-              <Link prefetch={false} href="/settings/watch-history" className="block group">
+              <Link
+                prefetch={false}
+                href="/settings/watch-history"
+                className="block group"
+              >
                 <Card className="transition-colors hover:bg-accent/50">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <div>
-                      <CardTitle className="text-base">Watch history & imports</CardTitle>
+                      <CardTitle className="text-base">
+                        Watch history & imports
+                      </CardTitle>
                       <CardDescription>
-                        Review counts by Plex, Letterboxd, and manual entries — clear specific groups.
+                        Review counts by Plex, Letterboxd, and manual entries —
+                        clear specific groups.
                       </CardDescription>
                     </div>
                     <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />

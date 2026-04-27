@@ -1,7 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { extractTmdbIdFromGuid } from "@/lib/plex-metadata-utils";
 
-export { extractTmdbIdFromGuid, plexWebAppMovieUrl } from "@/lib/plex-metadata-utils";
+export {
+  extractTmdbIdFromGuid,
+  plexWebAppMovieUrl,
+} from "@/lib/plex-metadata-utils";
 
 const PLEX_TV_BASE = "https://plex.tv";
 const PLEX_CLIENT_IDENTIFIER = "screened";
@@ -111,12 +114,12 @@ export async function getPlexServers(token: string): Promise<PlexServer[]> {
         "X-Plex-Client-Identifier": PLEX_CLIENT_IDENTIFIER,
         Accept: "application/json",
       },
-    }
+    },
   );
 
   if (!res.ok) throw new Error("Failed to get Plex servers");
 
-  const resources = await res.json() as Array<{
+  const resources = (await res.json()) as Array<{
     name: string;
     clientIdentifier: string;
     accessToken: string;
@@ -146,7 +149,9 @@ export async function getPlexServers(token: string): Promise<PlexServer[]> {
         accessToken: r.accessToken,
         // Use the uri field directly — it contains the plex.direct hostname that
         // matches the SSL cert, rather than a raw IP that would fail verification
-        uri: conn?.uri ?? `${conn?.protocol ?? "https"}://${conn?.address}:${conn?.port ?? 32400}`,
+        uri:
+          conn?.uri ??
+          `${conn?.protocol ?? "https"}://${conn?.address}:${conn?.port ?? 32400}`,
         scheme: conn?.protocol ?? "https",
         address: conn?.address ?? "",
         port: String(conn?.port ?? 32400),
@@ -176,12 +181,17 @@ async function plexServerFetch(url: string): Promise<Response> {
     }
   }
 
-  if (!res.ok) throw new Error(`Plex server request failed: ${res.status} ${res.statusText}`);
+  if (!res.ok)
+    throw new Error(
+      `Plex server request failed: ${res.status} ${res.statusText}`,
+    );
 
   const contentType = res.headers.get("content-type") ?? "";
   if (!contentType.includes("json")) {
     const body = await res.text();
-    throw new Error(`Plex returned non-JSON response (${contentType}): ${body.slice(0, 120)}`);
+    throw new Error(
+      `Plex returned non-JSON response (${contentType}): ${body.slice(0, 120)}`,
+    );
   }
 
   return res;
@@ -190,12 +200,14 @@ async function plexServerFetch(url: string): Promise<Response> {
 export async function getPlexWatchHistory(
   serverUrl: string,
   token: string,
-  type: "movie" | "show" = "movie"
+  type: "movie" | "show" = "movie",
 ): Promise<PlexWatchedItem[]> {
   const typeCode = type === "movie" ? 1 : 2;
   const url = `${serverUrl}/library/all?type=${typeCode}&viewCount>=1&includeGuids=1&X-Plex-Token=${token}`;
   const res = await plexServerFetch(url);
-  const data = await res.json() as { MediaContainer?: { Metadata?: PlexWatchedItem[] } };
+  const data = (await res.json()) as {
+    MediaContainer?: { Metadata?: PlexWatchedItem[] };
+  };
   return data?.MediaContainer?.Metadata ?? [];
 }
 
@@ -204,18 +216,30 @@ const PLEX_PAGE_SIZE = 200;
 /** How long a full Plex movie index stays hot per user/server (generation). */
 const PLEX_LIBRARY_INDEX_TTL_MS = 10 * 60 * 1000;
 
-const plexLibraryIndexCache = new Map<string, { map: Map<number, string>; expiresAt: number }>();
-const plexLibraryIndexInflight = new Map<string, Promise<Map<number, string>>>();
+const plexLibraryIndexCache = new Map<
+  string,
+  { map: Map<number, string>; expiresAt: number }
+>();
+const plexLibraryIndexInflight = new Map<
+  string,
+  Promise<Map<number, string>>
+>();
 const plexLibraryIndexGeneration = new Map<string, number>();
 
 /**
  * Call when Plex is linked, unlinked, or tokens/server change so cached library indexes are abandoned.
  */
 export function bumpPlexLibraryIndexCacheGeneration(userId: string): void {
-  plexLibraryIndexGeneration.set(userId, (plexLibraryIndexGeneration.get(userId) ?? 0) + 1);
+  plexLibraryIndexGeneration.set(
+    userId,
+    (plexLibraryIndexGeneration.get(userId) ?? 0) + 1,
+  );
 }
 
-function plexLibraryIndexCacheKey(userId: string, machineIdentifier: string): string {
+function plexLibraryIndexCacheKey(
+  userId: string,
+  machineIdentifier: string,
+): string {
   const gen = plexLibraryIndexGeneration.get(userId) ?? 0;
   return `${userId}:${machineIdentifier}:g${gen}`;
 }
@@ -226,17 +250,21 @@ function plexLibraryIndexCacheKey(userId: string, machineIdentifier: string): st
  */
 export async function getPlexLibraryMovieTmdbToRatingKey(
   serverUrl: string,
-  token: string
+  token: string,
 ): Promise<Map<number, string>> {
   const byTmdb = new Map<number, string>();
   let start = 0;
   for (;;) {
     const url = `${serverUrl}/library/all?type=1&includeGuids=1&X-Plex-Token=${encodeURIComponent(
-      token
+      token,
     )}&X-Plex-Container-Start=${start}&X-Plex-Container-Size=${PLEX_PAGE_SIZE}`;
     const res = await plexServerFetch(url);
-    const data = await res.json() as {
-      MediaContainer?: { Metadata?: PlexWatchedItem[]; totalSize?: number; size?: number };
+    const data = (await res.json()) as {
+      MediaContainer?: {
+        Metadata?: PlexWatchedItem[];
+        totalSize?: number;
+        size?: number;
+      };
     };
     const met = data?.MediaContainer?.Metadata ?? [];
     const total = data?.MediaContainer?.totalSize ?? start + met.length;
@@ -250,7 +278,10 @@ export async function getPlexLibraryMovieTmdbToRatingKey(
   return byTmdb;
 }
 
-async function getPlexLibraryMovieIndexCached(userId: string, ctx: PlexServerContext): Promise<Map<number, string>> {
+async function getPlexLibraryMovieIndexCached(
+  userId: string,
+  ctx: PlexServerContext,
+): Promise<Map<number, string>> {
   const cacheKey = plexLibraryIndexCacheKey(userId, ctx.machineIdentifier);
   const now = Date.now();
   const hit = plexLibraryIndexCache.get(cacheKey);
@@ -280,30 +311,37 @@ async function getPlexLibraryMovieIndexCached(userId: string, ctx: PlexServerCon
  * All movies in the user’s library (watched or not) with a TMDB guid.
  * Paginated for large libraries.
  */
-export async function getPlexLibraryMovieTmdbIds(serverUrl: string, token: string): Promise<number[]> {
+export async function getPlexLibraryMovieTmdbIds(
+  serverUrl: string,
+  token: string,
+): Promise<number[]> {
   const map = await getPlexLibraryMovieTmdbToRatingKey(serverUrl, token);
   return [...map.keys()];
 }
 
 export async function getPlexWatchedEpisodes(
   serverUrl: string,
-  token: string
+  token: string,
 ): Promise<PlexWatchedEpisode[]> {
   const url = `${serverUrl}/library/all?type=4&viewCount>=1&X-Plex-Token=${token}`;
   const res = await plexServerFetch(url);
-  const data = await res.json() as { MediaContainer?: { Metadata?: PlexWatchedEpisode[] } };
+  const data = (await res.json()) as {
+    MediaContainer?: { Metadata?: PlexWatchedEpisode[] };
+  };
   return data?.MediaContainer?.Metadata ?? [];
 }
 
 export async function getPlexItemMetadata(
   serverUrl: string,
   token: string,
-  ratingKey: string
+  ratingKey: string,
 ): Promise<PlexWatchedItem | null> {
   const url = `${serverUrl}/library/metadata/${ratingKey}?X-Plex-Token=${token}`;
   try {
     const res = await plexServerFetch(url);
-    const data = await res.json() as { MediaContainer?: { Metadata?: PlexWatchedItem[] } };
+    const data = (await res.json()) as {
+      MediaContainer?: { Metadata?: PlexWatchedItem[] };
+    };
     return data?.MediaContainer?.Metadata?.[0] ?? null;
   } catch {
     return null;
@@ -317,14 +355,17 @@ export type PlexServerContext = {
 };
 
 /** Resolved server URL, token, and machine id for API calls and deep links, or null if Plex is not linked. */
-export async function getPlexServerContextForUser(userId: string): Promise<PlexServerContext | null> {
+export async function getPlexServerContextForUser(
+  userId: string,
+): Promise<PlexServerContext | null> {
   const c = await prisma.plexConnection.findUnique({
     where: { userId },
     select: { plexToken: true, plexServerId: true },
   });
   if (!c) return null;
   const servers = await getPlexServers(c.plexToken);
-  const server = servers.find((s) => s.machineIdentifier === c.plexServerId) ?? servers[0];
+  const server =
+    servers.find((s) => s.machineIdentifier === c.plexServerId) ?? servers[0];
   if (!server) return null;
   return {
     serverUrl: server.uri,
@@ -341,15 +382,17 @@ export async function getPlexServerContextForUser(userId: string): Promise<PlexS
 export async function findPlexMovieByTmdbId(
   serverUrl: string,
   token: string,
-  tmdbId: number
+  tmdbId: number,
 ): Promise<{ ratingKey: string } | null> {
   const guidParam = encodeURIComponent(`tmdb://${tmdbId}`);
   const tryUrl = `${serverUrl}/library/all?type=1&includeGuids=1&guid=${guidParam}&X-Plex-Token=${encodeURIComponent(
-    token
+    token,
   )}`;
   try {
     const res = await plexServerFetch(tryUrl);
-    const data = await res.json() as { MediaContainer?: { Metadata?: PlexWatchedItem[] } };
+    const data = (await res.json()) as {
+      MediaContainer?: { Metadata?: PlexWatchedItem[] };
+    };
     for (const item of data?.MediaContainer?.Metadata ?? []) {
       if (item.ratingKey && extractTmdbIdFromGuid(item.Guid) === tmdbId) {
         return { ratingKey: item.ratingKey };
@@ -362,11 +405,15 @@ export async function findPlexMovieByTmdbId(
   let start = 0;
   for (;;) {
     const pageUrl = `${serverUrl}/library/all?type=1&includeGuids=1&X-Plex-Token=${encodeURIComponent(
-      token
+      token,
     )}&X-Plex-Container-Start=${start}&X-Plex-Container-Size=${PLEX_PAGE_SIZE}`;
     const res = await plexServerFetch(pageUrl);
-    const data = await res.json() as {
-      MediaContainer?: { Metadata?: PlexWatchedItem[]; totalSize?: number; size?: number };
+    const data = (await res.json()) as {
+      MediaContainer?: {
+        Metadata?: PlexWatchedItem[];
+        totalSize?: number;
+        size?: number;
+      };
     };
     const items = data?.MediaContainer?.Metadata ?? [];
     const total = data?.MediaContainer?.totalSize ?? start + items.length;
@@ -383,7 +430,7 @@ export async function findPlexMovieByTmdbId(
 
 export async function findPlexMovieByTmdbIdForUser(
   userId: string,
-  tmdbId: number
+  tmdbId: number,
 ): Promise<{ ratingKey: string; machineIdentifier: string } | null> {
   const ctx = await getPlexServerContextForUser(userId);
   if (!ctx) return null;
@@ -394,7 +441,9 @@ export async function findPlexMovieByTmdbIdForUser(
 }
 
 /** All movie TMDB ids in the user’s Plex movie libraries, or null if not linked. */
-export async function getPlexMovieTmdbIdSetForUser(userId: string): Promise<Set<number> | null> {
+export async function getPlexMovieTmdbIdSetForUser(
+  userId: string,
+): Promise<Set<number> | null> {
   const ctx = await getPlexServerContextForUser(userId);
   if (!ctx) return null;
   const map = await getPlexLibraryMovieIndexCached(userId, ctx);
@@ -409,7 +458,9 @@ export type IntersectingPlexResult =
  * Intersection of every participant that has a linked Plex account.
  * Participants without Plex are ignored (we only constrain using libraries we can read).
  */
-export async function getIntersectingPlexMovieTmdbIds(participantUserIds: string[]): Promise<IntersectingPlexResult> {
+export async function getIntersectingPlexMovieTmdbIds(
+  participantUserIds: string[],
+): Promise<IntersectingPlexResult> {
   if (participantUserIds.length === 0) return { kind: "none" };
   const sets: Set<number>[] = [];
   for (const id of participantUserIds) {

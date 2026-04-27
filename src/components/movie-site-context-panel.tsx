@@ -5,7 +5,13 @@ import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { titlePageSectionStack } from "@/lib/title-page-layout";
-import type { MovieSiteContext, TitleCatalogLinks } from "@/lib/movie-site-context";
+import { siImdb, siLetterboxd, siThemoviedatabase } from "simple-icons";
+import type { SimpleIcon } from "simple-icons";
+import { SimpleBrandIcon } from "@/components/simple-brand-icon";
+import type {
+  MovieSiteContext,
+  TitleCatalogLinks,
+} from "@/lib/movie-site-context";
 
 function initialsFromName(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -19,14 +25,22 @@ const PLEX_CARD =
 
 const PLEX_CARD_INTERACTIVE = cn(
   PLEX_CARD,
-  "transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+  "transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
 );
+
+const CATALOG_BRAND: Record<string, SimpleIcon> = {
+  TMDB: siThemoviedatabase,
+  Letterboxd: siLetterboxd,
+  IMDb: siImdb,
+};
 
 /** TMDB, Letterboxd, and IMDb for a title — used beside the poster (desktop) and in the main column (mobile). */
 export function TitleCatalogLinks({ links }: { links: TitleCatalogLinks }) {
   const items: { href: string; label: string }[] = [
     { href: links.tmdbUrl, label: "TMDB" },
-    ...(links.letterboxdFilmUrl ? [{ href: links.letterboxdFilmUrl, label: "Letterboxd" }] : []),
+    ...(links.letterboxdFilmUrl
+      ? [{ href: links.letterboxdFilmUrl, label: "Letterboxd" }]
+      : []),
     ...(links.imdbUrl ? [{ href: links.imdbUrl, label: "IMDb" }] : []),
   ];
 
@@ -34,18 +48,27 @@ export function TitleCatalogLinks({ links }: { links: TitleCatalogLinks }) {
     <div className="min-w-0">
       <h3 className="text-base font-semibold mb-3">External links</h3>
       <div className="flex flex-wrap gap-2">
-        {items.map((item) => (
-          <a
-            key={item.label}
-            href={item.href}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center rounded-md border border-border bg-background px-2.5 py-1 text-sm font-medium text-foreground hover:bg-muted/80 transition-colors"
-          >
-            {item.label}
-            <span className="sr-only"> (opens in new tab)</span>
-          </a>
-        ))}
+        {items.map((item) => {
+          const brand = CATALOG_BRAND[item.label];
+          return (
+            <a
+              key={item.label}
+              href={item.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-1 text-sm font-medium text-foreground hover:bg-muted/80 transition-colors"
+            >
+              {brand && (
+                <SimpleBrandIcon
+                  icon={brand}
+                  className="h-3.5 w-3.5 text-muted-foreground"
+                />
+              )}
+              {item.label}
+              <span className="sr-only"> (opens in new tab)</span>
+            </a>
+          );
+        })}
       </div>
     </div>
   );
@@ -84,18 +107,34 @@ function PlexLinkCard({
       />
       <Avatar className="h-10 w-10">
         <AvatarImage src={avatarUrl ?? undefined} alt="" />
-        <AvatarFallback className="text-xs">{initialsFromName(name)}</AvatarFallback>
+        <AvatarFallback className="text-xs">
+          {initialsFromName(name)}
+        </AvatarFallback>
       </Avatar>
       <div className="min-w-0">
-        <p className="text-sm font-medium text-foreground leading-tight line-clamp-2">{primary}</p>
-        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2 leading-snug">{secondary}</p>
+        <p className="text-sm font-medium text-foreground leading-tight line-clamp-2">
+          {primary}
+        </p>
+        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2 leading-snug">
+          {secondary}
+        </p>
       </div>
     </a>
   );
 }
 
-function PlexStaticCard({ children, className }: { children: ReactNode; className?: string }) {
-  return <div className={cn(PLEX_CARD, "text-sm text-muted-foreground", className)}>{children}</div>;
+function PlexStaticCard({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={cn(PLEX_CARD, "text-sm text-muted-foreground", className)}>
+      {children}
+    </div>
+  );
 }
 
 function YourPlexBlock({ context }: { context: MovieSiteContext }) {
@@ -106,10 +145,7 @@ function YourPlexBlock({ context }: { context: MovieSiteContext }) {
     return (
       <Link
         href="/settings/plex"
-        className={cn(
-          PLEX_CARD_INTERACTIVE,
-          "text-foreground no-underline"
-        )}
+        className={cn(PLEX_CARD_INTERACTIVE, "text-foreground no-underline")}
       >
         <span className="sr-only">Connect Plex in settings (same window)</span>
         <Settings2
@@ -118,11 +154,16 @@ function YourPlexBlock({ context }: { context: MovieSiteContext }) {
         />
         <Avatar className="h-10 w-10">
           <AvatarImage src={avatarUrl ?? undefined} alt="" />
-          <AvatarFallback className="text-xs">{initialsFromName(name)}</AvatarFallback>
+          <AvatarFallback className="text-xs">
+            {initialsFromName(name)}
+          </AvatarFallback>
         </Avatar>
-        <p className="text-sm font-semibold text-foreground leading-tight">Connect Plex</p>
+        <p className="text-sm font-semibold text-foreground leading-tight">
+          Connect Plex
+        </p>
         <p className="text-xs text-muted-foreground leading-snug">
-          Link your account to match this title in your library and open it from Screened.
+          Link your account to match this title in your library and open it from
+          Screened.
         </p>
       </Link>
     );
@@ -135,14 +176,22 @@ function YourPlexBlock({ context }: { context: MovieSiteContext }) {
           <div className="flex gap-2.5">
             <Avatar className="h-10 w-10">
               <AvatarImage src={avatarUrl ?? undefined} alt="" />
-              <AvatarFallback className="text-xs">{initialsFromName(name)}</AvatarFallback>
+              <AvatarFallback className="text-xs">
+                {initialsFromName(name)}
+              </AvatarFallback>
             </Avatar>
             <div className="min-w-0">
-              <p className="text-sm font-medium text-foreground line-clamp-2">{name}</p>
-              <p className="text-xs text-muted-foreground leading-snug mt-0.5">Your Plex library</p>
+              <p className="text-sm font-medium text-foreground line-clamp-2">
+                {name}
+              </p>
+              <p className="text-xs text-muted-foreground leading-snug mt-0.5">
+                Your Plex library
+              </p>
             </div>
           </div>
-          <p className="text-xs text-muted-foreground">Not in your movies on Plex.</p>
+          <p className="text-xs text-muted-foreground">
+            Not in your movies on Plex.
+          </p>
         </div>
       </PlexStaticCard>
     );
@@ -178,12 +227,18 @@ export function MovieScreenedContextSkeleton() {
         className="h-[118px] w-44 flex-shrink-0 rounded-lg border border-border bg-muted/50 animate-pulse"
         aria-hidden
       />
-      <p className="text-xs text-muted-foreground">Loading your lists and Plex…</p>
+      <p className="text-xs text-muted-foreground">
+        Loading your lists and Plex…
+      </p>
     </>
   );
 }
 
-export function MovieScreenedContextBody({ context }: { context: MovieSiteContext }) {
+export function MovieScreenedContextBody({
+  context,
+}: {
+  context: MovieSiteContext;
+}) {
   const hasLists = context.lists.length > 0;
   return (
     <>
@@ -208,7 +263,10 @@ export function MovieScreenedContextBody({ context }: { context: MovieSiteContex
 
       <div className={hasLists ? "mt-6" : ""}>
         <h3 className="text-base font-semibold mb-3">Plex</h3>
-        <div className="flex flex-wrap gap-3" aria-label="Plex libraries for this title">
+        <div
+          className="flex flex-wrap gap-3"
+          aria-label="Plex libraries for this title"
+        >
           <YourPlexBlock context={context} />
           {context.friendsInPlex.map((f) => (
             <PlexLinkCard

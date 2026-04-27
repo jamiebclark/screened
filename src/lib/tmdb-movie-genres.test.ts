@@ -1,5 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { filterTmdbMovieGenres, TMDB_MOVIE_GENRE_NAMES } from "./tmdb-movie-genres";
+import {
+  filterTmdbMovieGenres,
+  TMDB_MOVIE_GENRE_NAMES,
+} from "./tmdb-movie-genres";
 
 describe("filterTmdbMovieGenres", () => {
   it("returns first N alphabetically when query empty", () => {

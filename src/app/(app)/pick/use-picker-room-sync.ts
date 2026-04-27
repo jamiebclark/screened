@@ -1,8 +1,18 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useRef, type Dispatch, type SetStateAction } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
 import { useRouter } from "next/navigation";
-import { withScoringDefaults, type PickerRoomState } from "@/lib/picker-room-state";
+import {
+  withScoringDefaults,
+  type PickerRoomState,
+} from "@/lib/picker-room-state";
 
 const POLL_MS = 2500;
 
@@ -16,7 +26,11 @@ export type UsePickerRoomSyncOptions = {
    * Called when another tab (or user)’s state was merged in. Omitted for initial `sync` and polling
    * (no `sourceUserId`) so the UI does not show a false “everyone changed everything” line.
    */
-  onRemoteApplied?: (previous: PickerRoomState, next: PickerRoomState, meta: PickerRemoteAppliedMeta) => void;
+  onRemoteApplied?: (
+    previous: PickerRoomState,
+    next: PickerRoomState,
+    meta: PickerRemoteAppliedMeta,
+  ) => void;
 };
 
 type UserLite = {
@@ -40,7 +54,7 @@ export function usePickerRoomSync(
   currentUser: UserLite,
   state: PickerRoomState,
   setState: Dispatch<SetStateAction<PickerRoomState>>,
-  options?: UsePickerRoomSyncOptions
+  options?: UsePickerRoomSyncOptions,
 ) {
   const router = useRouter();
   const onRemoteAppliedRef = useRef(options?.onRemoteApplied);
@@ -53,20 +67,28 @@ export function usePickerRoomSync(
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const applyRemote = useCallback(
-    (next: PickerRoomState, _version: number, sourceTabId: string, sourceUserId: string) => {
+    (
+      next: PickerRoomState,
+      _version: number,
+      sourceTabId: string,
+      sourceUserId: string,
+    ) => {
       if (sourceTabId && sourceTabId === tabId) return;
       setState((prev) => {
         const incoming = withScoringDefaults(next);
         const merged = ensureCurrentUserInRoom(incoming, currentUser);
         lastPushedJson.current = stableStringify(merged);
         if (sourceUserId && onRemoteAppliedRef.current) {
-          onRemoteAppliedRef.current(prev, merged, { sourceUserId, sourceTabId });
+          onRemoteAppliedRef.current(prev, merged, {
+            sourceUserId,
+            sourceTabId,
+          });
         }
         return merged;
       });
     },
     // tabId must be current so we skip only our own tab's echo
-    [tabId, currentUser, setState]
+    [tabId, currentUser, setState],
   );
 
   useEffect(() => {
@@ -163,7 +185,10 @@ export function usePickerRoomSync(
           body: JSON.stringify({ state, sourceTabId: tabId }),
         });
         if (res.ok) {
-          const data = (await res.json()) as { state: PickerRoomState; version: number };
+          const data = (await res.json()) as {
+            state: PickerRoomState;
+            version: number;
+          };
           lastPushedJson.current = stableStringify(data.state);
         }
       })();
@@ -180,9 +205,8 @@ export function usePickerRoomSync(
  */
 export function ensureCurrentUserInRoom(
   s: PickerRoomState,
-  me: UserLite
+  me: UserLite,
 ): PickerRoomState {
   if (s.participants.some((p) => p.id === me.id)) return s;
   return { ...s, participants: [me, ...s.participants] };
 }
-

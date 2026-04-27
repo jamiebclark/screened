@@ -50,7 +50,10 @@ export function EditableListSearchAdd(props: EditableListSearchAddProps) {
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
         setOpen(false);
       }
     };
@@ -67,7 +70,9 @@ export function EditableListSearchAdd(props: EditableListSearchAddProps) {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(q)}&type=multi`);
+      const res = await fetch(
+        `/api/search?q=${encodeURIComponent(q)}&type=multi`,
+      );
       if (!res.ok) {
         setError("Search failed");
         setResults([]);
@@ -181,7 +186,7 @@ export function EditableListSearchAdd(props: EditableListSearchAddProps) {
                       "flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm transition-colors",
                       isOnList
                         ? "cursor-not-allowed opacity-50"
-                        : "hover:bg-accent cursor-pointer"
+                        : "hover:bg-accent cursor-pointer",
                     )}
                   >
                     {r.poster ? (
@@ -216,7 +221,9 @@ export function EditableListSearchAdd(props: EditableListSearchAddProps) {
                       </div>
                     </div>
                     {isOnList ? (
-                      <span className="text-xs text-muted-foreground shrink-0">Added</span>
+                      <span className="text-xs text-muted-foreground shrink-0">
+                        Added
+                      </span>
                     ) : (
                       <Plus className="h-4 w-4 text-muted-foreground shrink-0" />
                     )}

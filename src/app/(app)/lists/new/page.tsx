@@ -7,7 +7,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 export default function NewListPage() {
   const router = useRouter();
@@ -34,13 +41,13 @@ export default function NewListPage() {
       });
 
       if (!res.ok) {
-        const data = await res.json() as { error?: string };
+        const data = (await res.json()) as { error?: string };
         setError(data.error ?? "Failed to create list");
         setLoading(false);
         return;
       }
 
-      const list = await res.json() as { slug: string };
+      const list = (await res.json()) as { slug: string };
       router.push(`/lists/${list.slug}`);
     } catch {
       setError("Something went wrong");
@@ -56,7 +63,9 @@ export default function NewListPage() {
         </div>
         <div>
           <h1 className="text-2xl font-bold">New list</h1>
-          <p className="text-muted-foreground text-sm">Create a collaborative movie list</p>
+          <p className="text-muted-foreground text-sm">
+            Create a collaborative movie list
+          </p>
         </div>
       </div>
 
@@ -71,7 +80,12 @@ export default function NewListPage() {
 
             <div className="space-y-1.5">
               <Label htmlFor="name">List name</Label>
-              <Input id="name" name="name" required placeholder="e.g. Friday Night Movies" />
+              <Input
+                id="name"
+                name="name"
+                required
+                placeholder="e.g. Friday Night Movies"
+              />
             </div>
 
             <div className="space-y-1.5">
@@ -113,7 +127,11 @@ export default function NewListPage() {
               {loading && <Loader2 className="h-4 w-4 animate-spin" />}
               Create list
             </Button>
-            <Button type="button" variant="outline" onClick={() => router.back()}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => router.back()}
+            >
               Cancel
             </Button>
           </CardFooter>

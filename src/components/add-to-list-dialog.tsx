@@ -29,7 +29,12 @@ interface AddToListDialogProps {
   onAddedToList?: () => void;
 }
 
-export function AddToListDialog({ tmdbId, type, title, onAddedToList }: AddToListDialogProps) {
+export function AddToListDialog({
+  tmdbId,
+  type,
+  title,
+  onAddedToList,
+}: AddToListDialogProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [lists, setLists] = useState<List[]>([]);
@@ -40,10 +45,11 @@ export function AddToListDialog({ tmdbId, type, title, onAddedToList }: AddToLis
   useEffect(() => {
     if (!open) return;
     const ac = new AbortController();
-    void Promise.resolve().then(() => {
-      setLoading(true);
-      return fetch("/api/lists?mine=true", { signal: ac.signal });
-    })
+    void Promise.resolve()
+      .then(() => {
+        setLoading(true);
+        return fetch("/api/lists?mine=true", { signal: ac.signal });
+      })
       .then((r) => r.json())
       .then((data: List[]) => {
         if (!ac.signal.aborted) setLists(data);
@@ -114,7 +120,7 @@ export function AddToListDialog({ tmdbId, type, title, onAddedToList }: AddToLis
                     "w-full flex items-center justify-between rounded-md border border-border px-3 py-2.5 text-sm transition-colors",
                     isAdded
                       ? "bg-green-500/10 border-green-500/30 text-green-400"
-                      : "hover:bg-accent cursor-pointer"
+                      : "hover:bg-accent cursor-pointer",
                   )}
                 >
                   <span className="font-medium">{list.name}</span>

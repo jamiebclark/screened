@@ -18,7 +18,9 @@ test.beforeEach(async ({ page }) => {
 test.describe("Episode Tracker", () => {
   test("TV show page loads with episode tracker", async ({ page }) => {
     await page.goto(TV_URL);
-    await expect(page.getByRole("heading", { name: "Breaking Bad" })).toBeVisible({ timeout: 10000 });
+    await expect(
+      page.getByRole("heading", { name: "Breaking Bad" }),
+    ).toBeVisible({ timeout: 10000 });
     await expect(page.getByRole("tab", { name: "Episodes" })).toBeVisible();
   });
 
@@ -28,7 +30,9 @@ test.describe("Episode Tracker", () => {
     await expect(page.getByText("Pilot")).toBeVisible({ timeout: 5000 });
   });
 
-  test("toggle single episode changes its watched indicator", async ({ page }) => {
+  test("toggle single episode changes its watched indicator", async ({
+    page,
+  }) => {
     // Start with ep 1 unwatched
     await page.request.delete(`/api/media/${TV_TMDB_ID}/episodes`, {
       data: { seasonNumber: 1, episodeNumber: 1 },
@@ -45,12 +49,18 @@ test.describe("Episode Tracker", () => {
 
     // Click to mark as watched — wait for the API response
     await Promise.all([
-      page.waitForResponse((r) => r.url().includes(`/api/media/${TV_TMDB_ID}/episodes`) && r.request().method() === "POST"),
+      page.waitForResponse(
+        (r) =>
+          r.url().includes(`/api/media/${TV_TMDB_ID}/episodes`) &&
+          r.request().method() === "POST",
+      ),
       pilotRow.click(),
     ]);
 
     // Ep 1 should now show as watched (green circle)
-    await expect(pilotRow.locator(".bg-green-500")).toBeVisible({ timeout: 5000 });
+    await expect(pilotRow.locator(".bg-green-500")).toBeVisible({
+      timeout: 5000,
+    });
   });
 
   test("toggle episode from watched to unwatched", async ({ page }) => {
@@ -67,28 +77,39 @@ test.describe("Episode Tracker", () => {
     const secondEpRow = page.locator(".divide-y > div").nth(1);
 
     // Verify ep 2 IS watched (has green circle)
-    await expect(secondEpRow.locator(".bg-green-500")).toBeVisible({ timeout: 5000 });
+    await expect(secondEpRow.locator(".bg-green-500")).toBeVisible({
+      timeout: 5000,
+    });
 
     // Click to unwatch — wait for DELETE response
     await Promise.all([
-      page.waitForResponse((r) => r.url().includes(`/api/media/${TV_TMDB_ID}/episodes`) && r.request().method() === "DELETE"),
+      page.waitForResponse(
+        (r) =>
+          r.url().includes(`/api/media/${TV_TMDB_ID}/episodes`) &&
+          r.request().method() === "DELETE",
+      ),
       secondEpRow.click(),
     ]);
 
     // Ep 2 should now be unwatched (green circle gone)
-    await expect(secondEpRow.locator(".bg-green-500")).not.toBeAttached({ timeout: 5000 });
+    await expect(secondEpRow.locator(".bg-green-500")).not.toBeAttached({
+      timeout: 5000,
+    });
   });
 
   test("mark all episodes in season via API succeeds", async ({ page }) => {
     // Mark all 7 episodes of BB S1 via API
     const res = await page.request.post(`/api/media/${TV_TMDB_ID}/episodes`, {
       data: {
-        episodes: [1, 2, 3, 4, 5, 6, 7].map((n) => ({ seasonNumber: 1, episodeNumber: n })),
+        episodes: [1, 2, 3, 4, 5, 6, 7].map((n) => ({
+          seasonNumber: 1,
+          episodeNumber: n,
+        })),
       },
       headers: { "Content-Type": "application/json" },
     });
     expect(res.ok()).toBeTruthy();
-    const data = await res.json() as { success: boolean };
+    const data = (await res.json()) as { success: boolean };
     expect(data.success).toBe(true);
 
     // Visit page and verify episodes are shown as watched
@@ -98,16 +119,23 @@ test.describe("Episode Tracker", () => {
     // When all episodes are watched the first 7 rows all show green circles
     // Verify ep 1 AND ep 7 both have a green watched indicator
     const rows = page.locator(".divide-y > div");
-    await expect(rows.first().locator(".bg-green-500")).toBeVisible({ timeout: 5000 });
+    await expect(rows.first().locator(".bg-green-500")).toBeVisible({
+      timeout: 5000,
+    });
     // At least 7 green circles visible in the episode list (all S1 watched)
-    await expect(page.locator(".divide-y .bg-green-500")).toHaveCount(7, { timeout: 5000 });
+    await expect(page.locator(".divide-y .bg-green-500")).toHaveCount(7, {
+      timeout: 5000,
+    });
   });
 
   test("unmark all episodes in season via API succeeds", async ({ page }) => {
     // Clear all S1 episodes
     const res = await page.request.delete(`/api/media/${TV_TMDB_ID}/episodes`, {
       data: {
-        episodes: [1, 2, 3, 4, 5, 6, 7].map((n) => ({ seasonNumber: 1, episodeNumber: n })),
+        episodes: [1, 2, 3, 4, 5, 6, 7].map((n) => ({
+          seasonNumber: 1,
+          episodeNumber: n,
+        })),
       },
       headers: { "Content-Type": "application/json" },
     });
@@ -116,10 +144,14 @@ test.describe("Episode Tracker", () => {
     // Visit page and verify "Mark all" button is shown in season header
     await page.goto(TV_URL);
     await expect(page.getByText("Pilot")).toBeVisible({ timeout: 10000 });
-    await expect(page.getByRole("button", { name: "Mark all" }).first()).toBeVisible({ timeout: 5000 });
+    await expect(
+      page.getByRole("button", { name: "Mark all" }).first(),
+    ).toBeVisible({ timeout: 5000 });
   });
 
-  test("episode marking creates media item when show not in DB", async ({ page }) => {
+  test("episode marking creates media item when show not in DB", async ({
+    page,
+  }) => {
     // Post directly to the episode API for a show that may not be in DB
     const novelId = 1396; // BB — always works; the route now auto-creates
     const res = await page.request.post(`/api/media/${novelId}/episodes`, {

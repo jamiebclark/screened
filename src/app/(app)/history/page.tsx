@@ -3,7 +3,11 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { Eye } from "lucide-react";
 import { HistoryWatchEntryRow } from "@/components/history-watch-entry-row";
-import { historyDayPath, historyMonthPath, localCalendarParts } from "@/lib/history-calendar";
+import {
+  historyDayPath,
+  historyMonthPath,
+  localCalendarParts,
+} from "@/lib/history-calendar";
 
 function formatGroupDate(date: Date): string {
   const now = new Date();
@@ -16,8 +20,13 @@ function formatGroupDate(date: Date): string {
   if (diffDays === 0) return "Today";
   if (diffDays === 1) return "Yesterday";
   if (diffDays < 7) return d.toLocaleDateString("en-US", { weekday: "long" });
-  if (diffDays < 365) return d.toLocaleDateString("en-US", { month: "long", day: "numeric" });
-  return d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+  if (diffDays < 365)
+    return d.toLocaleDateString("en-US", { month: "long", day: "numeric" });
+  return d.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
 }
 
 function formatTime(date: Date): string {
@@ -72,7 +81,11 @@ export default async function HistoryPage() {
             href={historyMonthPath(cy, cm)}
             className="text-sm font-medium text-primary hover:underline"
           >
-            Calendar · {new Date(cy, cm - 1, 1).toLocaleDateString("en-US", { month: "long", year: "numeric" })}
+            Calendar ·{" "}
+            {new Date(cy, cm - 1, 1).toLocaleDateString("en-US", {
+              month: "long",
+              year: "numeric",
+            })}
           </Link>
           <Link
             href="/settings/watch-history"
@@ -87,7 +100,9 @@ export default async function HistoryPage() {
         <div className="text-center py-16 text-muted-foreground">
           <Eye className="h-12 w-12 mx-auto mb-3 opacity-30" />
           <p className="font-medium">No watch history yet</p>
-          <p className="text-sm mt-1">Mark something as watched or sync your Plex history to get started.</p>
+          <p className="text-sm mt-1">
+            Mark something as watched or sync your Plex history to get started.
+          </p>
         </div>
       ) : (
         <div className="space-y-8">
@@ -97,7 +112,10 @@ export default async function HistoryPage() {
             return (
               <div key={`${group.label}-${group.date.toISOString()}`}>
                 <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 sticky top-16 bg-background/95 backdrop-blur py-1 -mx-4 px-4">
-                  <Link href={dayHref} className="hover:text-foreground transition-colors">
+                  <Link
+                    href={dayHref}
+                    className="hover:text-foreground transition-colors"
+                  >
                     {group.label}
                   </Link>
                 </h2>
@@ -116,8 +134,8 @@ export default async function HistoryPage() {
 
           {watched.length === 200 && (
             <p className="text-center text-sm text-muted-foreground py-4">
-              Showing your 200 most recent. Older history is still tracked — open a month on the calendar to browse by
-              date.
+              Showing your 200 most recent. Older history is still tracked —
+              open a month on the calendar to browse by date.
             </p>
           )}
         </div>

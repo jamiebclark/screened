@@ -38,7 +38,10 @@ export async function generateMetadata({ params }: Params) {
   const month = parseMonthSegment(mStr);
   const day = parseDaySegment(dStr);
   const title =
-    year != null && month != null && day != null && isValidCalendarDate(year, month, day)
+    year != null &&
+    month != null &&
+    day != null &&
+    isValidCalendarDate(year, month, day)
       ? `${new Date(year, month - 1, day).toLocaleDateString("en-US", {
           weekday: "long",
           month: "long",
@@ -108,18 +111,26 @@ export default async function HistoryDayPage({ params }: Params) {
       </div>
 
       <p className="text-sm text-muted-foreground mb-6">
-        Search opens with a watch date saved on each result. Pick a title, then use &quot;Log a viewing&quot; — the
-        date defaults to this day.
+        Search opens with a watch date saved on each result. Pick a title, then
+        use &quot;Log a viewing&quot; — the date defaults to this day.
       </p>
 
       <section className="mb-10">
-        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Your viewings</h2>
+        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+          Your viewings
+        </h2>
         {myEntries.length === 0 ? (
-          <p className="text-sm text-muted-foreground">You did not log anything this day.</p>
+          <p className="text-sm text-muted-foreground">
+            You did not log anything this day.
+          </p>
         ) : (
           <div className="space-y-2">
             {myEntries.map((entry) => (
-              <HistoryWatchEntryRow key={entry.id} entry={entry} timeLabel={formatTime(entry.watchedAt)} />
+              <HistoryWatchEntryRow
+                key={entry.id}
+                entry={entry}
+                timeLabel={formatTime(entry.watchedAt)}
+              />
             ))}
           </div>
         )}
@@ -144,8 +155,13 @@ export default async function HistoryDayPage({ params }: Params) {
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0 space-y-1">
-                  <p className="text-xs text-muted-foreground font-medium">{entry.user.name}</p>
-                  <HistoryWatchEntryRow entry={entry} timeLabel={formatTime(entry.watchedAt)} />
+                  <p className="text-xs text-muted-foreground font-medium">
+                    {entry.user.name}
+                  </p>
+                  <HistoryWatchEntryRow
+                    entry={entry}
+                    timeLabel={formatTime(entry.watchedAt)}
+                  />
                 </div>
               </div>
             ))}

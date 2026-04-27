@@ -34,7 +34,8 @@ export function HistoryCalendarGrid({
   while (cells.length % 7 !== 0) cells.push(null);
 
   const now = new Date();
-  const isThisMonth = now.getFullYear() === year && now.getMonth() + 1 === month;
+  const isThisMonth =
+    now.getFullYear() === year && now.getMonth() + 1 === month;
   const todayDay = isThisMonth ? now.getDate() : null;
 
   return (
@@ -47,7 +48,13 @@ export function HistoryCalendarGrid({
             </Link>
           </Button>
         ) : (
-          <Button variant="outline" size="icon" className="shrink-0" disabled aria-label="Previous month">
+          <Button
+            variant="outline"
+            size="icon"
+            className="shrink-0"
+            disabled
+            aria-label="Previous month"
+          >
             <ChevronLeft className="h-4 w-4" />
           </Button>
         )}
@@ -55,7 +62,10 @@ export function HistoryCalendarGrid({
           href={historyMonthPath(year, month)}
           className="text-sm font-semibold hover:text-primary transition-colors"
         >
-          {new Date(year, month - 1, 1).toLocaleDateString("en-US", { month: "long", year: "numeric" })}
+          {new Date(year, month - 1, 1).toLocaleDateString("en-US", {
+            month: "long",
+            year: "numeric",
+          })}
         </Link>
         {nextMonthHref ? (
           <Button variant="outline" size="icon" className="shrink-0" asChild>
@@ -64,7 +74,13 @@ export function HistoryCalendarGrid({
             </Link>
           </Button>
         ) : (
-          <Button variant="outline" size="icon" className="shrink-0" disabled aria-label="Next month">
+          <Button
+            variant="outline"
+            size="icon"
+            className="shrink-0"
+            disabled
+            aria-label="Next month"
+          >
             <ChevronRight className="h-4 w-4" />
           </Button>
         )}
@@ -97,14 +113,20 @@ export function HistoryCalendarGrid({
               )}
             >
               <span>{d}</span>
-              {hasEntry && <span className="h-1 w-1 rounded-full bg-primary mt-0.5" aria-hidden />}
+              {hasEntry && (
+                <span
+                  className="h-1 w-1 rounded-full bg-primary mt-0.5"
+                  aria-hidden
+                />
+              )}
             </Link>
           );
         })}
       </div>
 
       <p className="text-xs text-muted-foreground mt-3">
-        A dot marks days you logged a viewing. Open a day for the full list and friend activity.
+        A dot marks days you logged a viewing. Open a day for the full list and
+        friend activity.
       </p>
     </div>
   );

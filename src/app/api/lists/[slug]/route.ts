@@ -13,7 +13,9 @@ export async function GET(req: NextRequest, { params }: Params) {
     include: {
       owner: { select: { id: true, name: true, avatarUrl: true } },
       members: {
-        include: { user: { select: { id: true, name: true, avatarUrl: true } } },
+        include: {
+          user: { select: { id: true, name: true, avatarUrl: true } },
+        },
         orderBy: { createdAt: "asc" },
       },
       items: {
@@ -47,7 +49,11 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   }
 
   const { slug } = await params;
-  const body = await req.json() as { name?: string; description?: string; isPublic?: boolean };
+  const body = (await req.json()) as {
+    name?: string;
+    description?: string;
+    isPublic?: boolean;
+  };
 
   const list = await prisma.list.findUnique({ where: { slug } });
   if (!list || list.ownerId !== session.user.id) {

@@ -47,25 +47,35 @@ export function HistoryWatchEntryRow({
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-            {isMovie ? <Film className="h-4 w-4" /> : <Tv className="h-4 w-4" />}
+            {isMovie ? (
+              <Film className="h-4 w-4" />
+            ) : (
+              <Tv className="h-4 w-4" />
+            )}
           </div>
         )}
       </div>
 
       <div className="flex-1 min-w-0">
-        <p className="font-medium truncate group-hover:text-primary transition-colors">{entry.mediaItem.title}</p>
+        <p className="font-medium truncate group-hover:text-primary transition-colors">
+          {entry.mediaItem.title}
+        </p>
         <div className="flex items-center gap-2 mt-0.5">
           <Badge variant="outline" className="text-xs px-1.5 py-0">
             {isMovie ? "Movie" : "TV"}
           </Badge>
           {entry.mediaItem.year != null && (
-            <span className="text-xs text-muted-foreground">{entry.mediaItem.year}</span>
+            <span className="text-xs text-muted-foreground">
+              {entry.mediaItem.year}
+            </span>
           )}
         </div>
       </div>
 
       {timeLabel != null && (
-        <time className="text-xs text-muted-foreground shrink-0">{timeLabel}</time>
+        <time className="text-xs text-muted-foreground shrink-0">
+          {timeLabel}
+        </time>
       )}
     </Link>
   );

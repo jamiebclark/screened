@@ -93,6 +93,21 @@ model User {
   friendRequestsReceived FriendRequest[]  @relation("FriendRequestTo")
   friendshipsLower       Friendship[]     @relation("FriendUserLow")
   friendshipsUpper       Friendship[]     @relation("FriendUserHigh")
+  signupInvitesCreated   SignupInvite[]  @relation("SignupInviteCreatedBy")
+}
+
+/// Single- or multi-use token for self-service signup when public registration is disabled.
+model SignupInvite {
+  id          String    @id @default(cuid())
+  tokenHash   String    @unique
+  createdAt   DateTime  @default(now())
+  expiresAt   DateTime?
+  revokedAt   DateTime?
+  maxUses     Int       @default(1)
+  uses        Int       @default(0)
+  note        String?
+  createdById String?
+  createdBy   User?     @relation("SignupInviteCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
 }
 
 model Session {
@@ -155,6 +170,13 @@ model MediaItem {
   preferences     UserPreference[]
 
   @@unique([tmdbId, type])
+}
+
+/// Cached OMDb "Ratings" (RT, Metacritic, IMDb, etc.) keyed by IMDb title id. Optional feature when OMDB_API_KEY is set.
+model OmdbRatingCache {
+  imdbId    String   @id
+  ratings   Json
+  fetchedAt DateTime
 }
 
 model UserMediaStatus {

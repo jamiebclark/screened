@@ -24,7 +24,10 @@ export async function GET(req: NextRequest, { params }: Params) {
   const entries = await prisma.watchEntry.findMany({
     where: {
       userId: session.user.id,
-      mediaItem: { tmdbId, type: type === "movie" ? MediaType.MOVIE : MediaType.TV },
+      mediaItem: {
+        tmdbId,
+        type: type === "movie" ? MediaType.MOVIE : MediaType.TV,
+      },
     },
     orderBy: { watchedAt: "desc" },
   });
@@ -40,7 +43,7 @@ export async function POST(req: NextRequest, { params }: Params) {
 
   const { tmdbId: tmdbIdStr } = await params;
   const tmdbId = parseInt(tmdbIdStr);
-  const body = await req.json() as {
+  const body = (await req.json()) as {
     type?: string;
     watchedAt?: string;
     review?: string | null;
@@ -51,7 +54,13 @@ export async function POST(req: NextRequest, { params }: Params) {
   const { type, watchedAt, review, rating } = body;
   const withUserIdsRaw = body.withUserIds;
   const withUserIds: string[] = Array.isArray(withUserIdsRaw)
-    ? [...new Set(withUserIdsRaw.filter((u): u is string => typeof u === "string" && u.trim() !== ""))]
+    ? [
+        ...new Set(
+          withUserIdsRaw.filter(
+            (u): u is string => typeof u === "string" && u.trim() !== "",
+          ),
+        ),
+      ]
     : [];
 
   if (isNaN(tmdbId) || !type || !["movie", "tv"].includes(type)) {
@@ -65,16 +74,25 @@ export async function POST(req: NextRequest, { params }: Params) {
   });
 
   if (!mediaItem) {
-    return NextResponse.json({ error: "Media not found — set a watch status first" }, { status: 404 });
+    return NextResponse.json(
+      { error: "Media not found — set a watch status first" },
+      { status: 404 },
+    );
   }
 
   if (withUserIds.length > 20) {
-    return NextResponse.json({ error: "At most 20 friends can be tagged per log" }, { status: 400 });
+    return NextResponse.json(
+      { error: "At most 20 friends can be tagged per log" },
+      { status: 400 },
+    );
   }
 
   for (const uid of withUserIds) {
     if (uid === session.user.id) {
-      return NextResponse.json({ error: "You cannot include yourself in withUserIds" }, { status: 400 });
+      return NextResponse.json(
+        { error: "You cannot include yourself in withUserIds" },
+        { status: 400 },
+      );
     }
     if (!(await areFriends(session.user.id, uid))) {
       return NextResponse.json(
@@ -86,62 +104,73 @@ export async function POST(req: NextRequest, { params }: Params) {
 
   const at = watchedAt ? new Date(watchedAt) : new Date();
 
-  const { entry, taggedCreatedCount } = await prisma.$transaction(async (tx) => {
-    const userStatus = await tx.userMediaStatus.findUnique({
-      where: { userId_mediaItemId: { userId: session.user.id, mediaItemId: mediaItem.id } },
-    });
-
-    const main = await tx.watchEntry.create({
-      data: {
-        userId: session.user.id,
-        mediaItemId: mediaItem.id,
-        userMediaStatusId: userStatus?.id ?? null,
-        watchedAt: at,
-        review: review ?? null,
-        rating: rating ?? null,
-        source: WatchEntrySource.MANUAL,
-      },
-    });
-
-    let taggedCreatedCount = 0;
-    for (const friendId of withUserIds) {
-      const existing = await findMergeCandidateWatchEntry(
-        friendId,
-        mediaItem.id,
-        at,
-        tx,
-      );
-      if (existing) continue;
-
-      const friendStatus = await tx.userMediaStatus.upsert({
-        where: { userId_mediaItemId: { userId: friendId, mediaItemId: mediaItem.id } },
-        update: { status: WatchStatus.WATCHED },
-        create: {
-          userId: friendId,
-          mediaItemId: mediaItem.id,
-          status: WatchStatus.WATCHED,
+  const { entry, taggedCreatedCount } = await prisma.$transaction(
+    async (tx) => {
+      const userStatus = await tx.userMediaStatus.findUnique({
+        where: {
+          userId_mediaItemId: {
+            userId: session.user.id,
+            mediaItemId: mediaItem.id,
+          },
         },
       });
 
-      await tx.watchEntry.create({
+      const main = await tx.watchEntry.create({
         data: {
-          userId: friendId,
+          userId: session.user.id,
           mediaItemId: mediaItem.id,
-          userMediaStatusId: friendStatus.id,
+          userMediaStatusId: userStatus?.id ?? null,
           watchedAt: at,
           review: review ?? null,
           rating: rating ?? null,
           source: WatchEntrySource.MANUAL,
         },
       });
-      taggedCreatedCount += 1;
-    }
 
-    return { entry: main, taggedCreatedCount };
-  });
+      let taggedCreatedCount = 0;
+      for (const friendId of withUserIds) {
+        const existing = await findMergeCandidateWatchEntry(
+          friendId,
+          mediaItem.id,
+          at,
+          tx,
+        );
+        if (existing) continue;
+
+        const friendStatus = await tx.userMediaStatus.upsert({
+          where: {
+            userId_mediaItemId: { userId: friendId, mediaItemId: mediaItem.id },
+          },
+          update: { status: WatchStatus.WATCHED },
+          create: {
+            userId: friendId,
+            mediaItemId: mediaItem.id,
+            status: WatchStatus.WATCHED,
+          },
+        });
+
+        await tx.watchEntry.create({
+          data: {
+            userId: friendId,
+            mediaItemId: mediaItem.id,
+            userMediaStatusId: friendStatus.id,
+            watchedAt: at,
+            review: review ?? null,
+            rating: rating ?? null,
+            source: WatchEntrySource.MANUAL,
+          },
+        });
+        taggedCreatedCount += 1;
+      }
+
+      return { entry: main, taggedCreatedCount };
+    },
+  );
 
   return NextResponse.json(
-    { ...entry, taggedCreatedCount } as typeof entry & { taggedCreatedCount: number },
+    { ...entry, taggedCreatedCount } as typeof entry & {
+      taggedCreatedCount: number;
+    },
     { status: 201 },
   );
 }

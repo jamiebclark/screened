@@ -1,5 +1,9 @@
 import { test, expect } from "@playwright/test";
-import { ensureLoggedIn, ensureTestUsersExist, openUserMenuFromHeader } from "./helpers";
+import {
+  ensureLoggedIn,
+  ensureTestUsersExist,
+  openUserMenuFromHeader,
+} from "./helpers";
 
 test.beforeEach(async ({ page }) => {
   await ensureTestUsersExist(page);
@@ -31,8 +35,16 @@ test.describe("Profile", () => {
 
     await openNavProfile(page);
     // Stats section has labels like "Watched", "Watchlist"
-    await expect(page.locator(".text-xs.text-muted-foreground", { hasText: "Watched" }).first()).toBeVisible();
-    await expect(page.locator(".text-xs.text-muted-foreground", { hasText: "Watchlist" }).first()).toBeVisible();
+    await expect(
+      page
+        .locator(".text-xs.text-muted-foreground", { hasText: "Watched" })
+        .first(),
+    ).toBeVisible();
+    await expect(
+      page
+        .locator(".text-xs.text-muted-foreground", { hasText: "Watchlist" })
+        .first(),
+    ).toBeVisible();
   });
 
   test("profile shows watched tab with media", async ({ page }) => {
@@ -43,11 +55,15 @@ test.describe("Profile", () => {
 
     await openNavProfile(page);
     await page.getByRole("tab", { name: /watched/i }).click();
-    await expect(page.locator("a[href^='/movies/']").first()).toBeVisible({ timeout: 5000 });
+    await expect(page.locator("a[href^='/movies/']").first()).toBeVisible({
+      timeout: 5000,
+    });
   });
 
   test("non-existent user profile shows 404", async ({ page }) => {
     await page.goto("/profile/nonexistentuseridxyz99999");
-    await expect(page.getByText(/not found|404/i)).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/not found|404/i)).toBeVisible({
+      timeout: 5000,
+    });
   });
 });

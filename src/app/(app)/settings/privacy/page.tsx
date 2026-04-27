@@ -19,8 +19,8 @@ export default async function PrivacyPage() {
     <div>
       <h1 className="text-2xl font-bold mb-2">Privacy</h1>
       <p className="text-muted-foreground mb-8">
-        Control who can see your watchlist and your watched/watching activity on your public
-        profile.
+        Control who can see your watchlist and your watched/watching activity on
+        your public profile.
       </p>
       <PrivacySettings
         initial={{

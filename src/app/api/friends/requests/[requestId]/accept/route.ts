@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { createFriendshipAndClearPending, getProfileFriendState } from "@/lib/friendship";
+import {
+  createFriendshipAndClearPending,
+  getProfileFriendState,
+} from "@/lib/friendship";
 
 type Params = { params: Promise<{ requestId: string }> };
 

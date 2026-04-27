@@ -8,7 +8,10 @@ function getHeaders() {
   };
 }
 
-async function tmdbFetch<T>(path: string, params?: Record<string, string>): Promise<T> {
+async function tmdbFetch<T>(
+  path: string,
+  params?: Record<string, string>,
+): Promise<T> {
   const url = new URL(`${TMDB_BASE}${path}`);
   if (params) {
     Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
@@ -26,7 +29,10 @@ async function tmdbFetch<T>(path: string, params?: Record<string, string>): Prom
   return res.json() as Promise<T>;
 }
 
-export function tmdbImage(path: string | null | undefined, size = "w500"): string | null {
+export function tmdbImage(
+  path: string | null | undefined,
+  size = "w500",
+): string | null {
   if (!path) return null;
   return `${TMDB_IMAGE_BASE}/${size}${path}`;
 }
@@ -43,6 +49,7 @@ export interface TmdbMovie {
   vote_average: number;
   vote_count: number;
   imdb_id: string | null;
+  external_ids?: { imdb_id?: string | null };
 }
 
 export interface TmdbTvShow {
@@ -106,7 +113,10 @@ export interface TmdbSearchResponse {
   page: number;
 }
 
-export async function searchMulti(query: string, page = 1): Promise<TmdbSearchResponse> {
+export async function searchMulti(
+  query: string,
+  page = 1,
+): Promise<TmdbSearchResponse> {
   return tmdbFetch<TmdbSearchResponse>("/search/multi", {
     query,
     page: String(page),
@@ -115,7 +125,11 @@ export async function searchMulti(query: string, page = 1): Promise<TmdbSearchRe
 }
 
 export async function getMovie(tmdbId: number): Promise<TmdbMovie> {
-  return tmdbFetch<TmdbMovie>(`/movie/${tmdbId}`);
+  const data = await tmdbFetch<TmdbMovie>(`/movie/${tmdbId}`, {
+    append_to_response: "external_ids",
+  });
+  const imdb_id = data.external_ids?.imdb_id ?? data.imdb_id ?? null;
+  return { ...data, imdb_id };
 }
 
 export async function getTvShow(tmdbId: number): Promise<TmdbTvShow> {
@@ -124,20 +138,23 @@ export async function getTvShow(tmdbId: number): Promise<TmdbTvShow> {
   });
 }
 
-export async function getTvSeason(tvId: number, seasonNumber: number): Promise<TmdbSeasonDetail> {
+export async function getTvSeason(
+  tvId: number,
+  seasonNumber: number,
+): Promise<TmdbSeasonDetail> {
   return tmdbFetch<TmdbSeasonDetail>(`/tv/${tvId}/season/${seasonNumber}`);
 }
 
 export async function getTrending(
   type: "movie" | "tv" | "all" = "all",
-  window: "day" | "week" = "week"
+  window: "day" | "week" = "week",
 ): Promise<TmdbSearchResponse> {
   return tmdbFetch<TmdbSearchResponse>(`/trending/${type}/${window}`);
 }
 
 export async function searchMovie(
   query: string,
-  year?: number
+  year?: number,
 ): Promise<TmdbSearchResponse> {
   const params: Record<string, string> = { query, include_adult: "false" };
   if (year) params.primary_release_year = String(year);
@@ -154,10 +171,12 @@ export async function searchMovie(
 }
 
 export async function getPopularMovies(page = 1): Promise<TmdbSearchResponse> {
-  const res = await tmdbFetch<{ results: TmdbSearchResult[]; total_results: number; total_pages: number; page: number }>(
-    "/movie/popular",
-    { page: String(page) }
-  );
+  const res = await tmdbFetch<{
+    results: TmdbSearchResult[];
+    total_results: number;
+    total_pages: number;
+    page: number;
+  }>("/movie/popular", { page: String(page) });
   return {
     ...res,
     results: res.results.map((r) => ({ ...r, media_type: "movie" as const })),
@@ -185,7 +204,10 @@ type TmdbPersonSearchResponse = {
   page: number;
 };
 
-export async function searchPerson(query: string, page = 1): Promise<TmdbPersonSearchResponse> {
+export async function searchPerson(
+  query: string,
+  page = 1,
+): Promise<TmdbPersonSearchResponse> {
   return tmdbFetch<TmdbPersonSearchResponse>("/search/person", {
     query,
     page: String(page),
@@ -194,16 +216,27 @@ export async function searchPerson(query: string, page = 1): Promise<TmdbPersonS
 }
 
 /** TMDB "Because you liked X" and similar-titles; returns movie-shaped results. */
-export async function getMovieRecommendations(tmdbId: number, page = 1): Promise<TmdbMovieListPage> {
-  const res = await tmdbFetch<TmdbMovieListPage>(`/movie/${tmdbId}/recommendations`, { page: String(page) });
+export async function getMovieRecommendations(
+  tmdbId: number,
+  page = 1,
+): Promise<TmdbMovieListPage> {
+  const res = await tmdbFetch<TmdbMovieListPage>(
+    `/movie/${tmdbId}/recommendations`,
+    { page: String(page) },
+  );
   return {
     ...res,
     results: res.results.map((r) => ({ ...r, media_type: "movie" as const })),
   };
 }
 
-export async function getMovieSimilar(tmdbId: number, page = 1): Promise<TmdbMovieListPage> {
-  const res = await tmdbFetch<TmdbMovieListPage>(`/movie/${tmdbId}/similar`, { page: String(page) });
+export async function getMovieSimilar(
+  tmdbId: number,
+  page = 1,
+): Promise<TmdbMovieListPage> {
+  const res = await tmdbFetch<TmdbMovieListPage>(`/movie/${tmdbId}/similar`, {
+    page: String(page),
+  });
   return {
     ...res,
     results: res.results.map((r) => ({ ...r, media_type: "movie" as const })),
@@ -233,33 +266,45 @@ export type TmdbMovieCredits = {
   directors: string[];
 };
 
-export async function getMovieCredits(tmdbId: number): Promise<TmdbMovieCredits> {
+export async function getMovieCredits(
+  tmdbId: number,
+): Promise<TmdbMovieCredits> {
   const data = await tmdbFetch<TmdbCreditsResponse>(`/movie/${tmdbId}/credits`);
   const cast = data.cast
     .sort((a, b) => a.order - b.order)
     .slice(0, 8)
     .map((c) => c.name);
-  const directorNames = data.crew.filter((c) => DIRECTOR_JOBS.has(c.job)).map((c) => c.name);
+  const directorNames = data.crew
+    .filter((c) => DIRECTOR_JOBS.has(c.job))
+    .map((c) => c.name);
   const directors = [...new Set(directorNames)];
   return { cast, director: directors[0] ?? null, directors };
 }
 
 export async function getMovieKeywords(tmdbId: number): Promise<string[]> {
-  const data = await tmdbFetch<TmdbMovieKeywordsResponse>(`/movie/${tmdbId}/keywords`);
+  const data = await tmdbFetch<TmdbMovieKeywordsResponse>(
+    `/movie/${tmdbId}/keywords`,
+  );
   return data.keywords.map((k) => k.name);
 }
 
-export async function getTvCredits(tmdbId: number): Promise<{ cast: string[]; director: string | null }> {
+export async function getTvCredits(
+  tmdbId: number,
+): Promise<{ cast: string[]; director: string | null }> {
   const data = await tmdbFetch<TmdbCreditsResponse>(`/tv/${tmdbId}/credits`);
   const cast = data.cast
     .sort((a, b) => a.order - b.order)
     .slice(0, 8)
     .map((c) => c.name);
-  const creator = data.crew.find((c) => c.job === "Creator" || c.job === "Series Director")?.name ?? null;
+  const creator =
+    data.crew.find((c) => c.job === "Creator" || c.job === "Series Director")
+      ?.name ?? null;
   return { cast, director: creator };
 }
 
 export async function getTvKeywords(tmdbId: number): Promise<string[]> {
-  const data = await tmdbFetch<TmdbTvKeywordsResponse>(`/tv/${tmdbId}/keywords`);
+  const data = await tmdbFetch<TmdbTvKeywordsResponse>(
+    `/tv/${tmdbId}/keywords`,
+  );
   return data.results.map((k) => k.name);
 }

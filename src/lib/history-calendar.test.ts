@@ -70,7 +70,10 @@ describe("history-calendar", () => {
     expect(adjacentMonthHrefs(1900, 1).prev).toBeNull();
     expect(adjacentMonthHrefs(1900, 1).next).toEqual({ year: 1900, month: 2 });
     expect(adjacentMonthHrefs(2100, 12).next).toBeNull();
-    expect(adjacentMonthHrefs(2100, 12).prev).toEqual({ year: 2100, month: 11 });
+    expect(adjacentMonthHrefs(2100, 12).prev).toEqual({
+      year: 2100,
+      month: 11,
+    });
     expect(adjacentMonthHrefs(2026, 1).prev).toEqual({ year: 2025, month: 12 });
   });
 

@@ -2,12 +2,17 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { WatchEntryDialog, type WatchEntry } from "@/components/watch-entry-dialog";
+import {
+  WatchEntryDialog,
+  type WatchEntry,
+} from "@/components/watch-entry-dialog";
 import { MarkdownContent } from "@/components/markdown-content";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { CalendarCheck, Trash2, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
+import { siLetterboxd } from "simple-icons";
+import { SimpleBrandIcon } from "@/components/simple-brand-icon";
+import { CalendarCheck, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { titlePageSection } from "@/lib/title-page-layout";
 import { historyDayPath, localCalendarParts } from "@/lib/history-calendar";
 import { cn } from "@/lib/utils";
@@ -70,7 +75,9 @@ function EntryCard({
 
   const handleDelete = () => {
     startDelete(async () => {
-      const res = await fetch(`/api/media/entries/${entry.id}`, { method: "DELETE" });
+      const res = await fetch(`/api/media/entries/${entry.id}`, {
+        method: "DELETE",
+      });
       if (res.ok) onDelete(entry.id);
     });
   };
@@ -91,7 +98,7 @@ function EntryCard({
       <div
         className={cn(
           "flex items-start justify-between gap-2",
-          !isOwn && "flex-wrap sm:flex-nowrap"
+          !isOwn && "flex-wrap sm:flex-nowrap",
         )}
       >
         {isOwn ? (
@@ -112,7 +119,10 @@ function EntryCard({
                     rel="noopener noreferrer"
                     aria-label="Open on Letterboxd"
                   >
-                    <ExternalLink className="h-3.5 w-3.5" />
+                    <SimpleBrandIcon
+                      icon={siLetterboxd}
+                      className="h-3.5 w-3.5"
+                    />
                   </a>
                 </Button>
               )}
@@ -124,7 +134,11 @@ function EntryCard({
                   onClick={() => setExpanded((v) => !v)}
                   aria-label={expanded ? "Collapse review" : "Expand review"}
                 >
-                  {expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                  {expanded ? (
+                    <ChevronUp className="h-3.5 w-3.5" />
+                  ) : (
+                    <ChevronDown className="h-3.5 w-3.5" />
+                  )}
                 </Button>
               )}
               <WatchEntryDialog
@@ -149,11 +163,19 @@ function EntryCard({
         ) : (
           <>
             <div className="flex min-w-0 flex-1 items-start gap-2.5">
-              <Link href={`/profile/${entry.user?.id}`} className="shrink-0 rounded-full ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              <Link
+                href={`/profile/${entry.user?.id}`}
+                className="shrink-0 rounded-full ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
                 <span className="sr-only">{entry.user?.name} profile</span>
                 <Avatar className="h-9 w-9">
-                  <AvatarImage src={entry.user?.avatarUrl ?? undefined} alt="" />
-                  <AvatarFallback className="text-xs">{initialsFromName(entry.user?.name ?? "")}</AvatarFallback>
+                  <AvatarImage
+                    src={entry.user?.avatarUrl ?? undefined}
+                    alt=""
+                  />
+                  <AvatarFallback className="text-xs">
+                    {initialsFromName(entry.user?.name ?? "")}
+                  </AvatarFallback>
                 </Avatar>
               </Link>
               <div className="min-w-0 flex-1 space-y-1">
@@ -180,7 +202,10 @@ function EntryCard({
                     rel="noopener noreferrer"
                     aria-label="Open on Letterboxd"
                   >
-                    <ExternalLink className="h-3.5 w-3.5" />
+                    <SimpleBrandIcon
+                      icon={siLetterboxd}
+                      className="h-3.5 w-3.5"
+                    />
                   </a>
                 </Button>
               )}
@@ -192,7 +217,11 @@ function EntryCard({
                   onClick={() => setExpanded((v) => !v)}
                   aria-label={expanded ? "Collapse review" : "Expand review"}
                 >
-                  {expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                  {expanded ? (
+                    <ChevronUp className="h-3.5 w-3.5" />
+                  ) : (
+                    <ChevronDown className="h-3.5 w-3.5" />
+                  )}
                 </Button>
               )}
             </div>
@@ -210,7 +239,11 @@ function EntryCard({
   );
 }
 
-function toClientRow(saved: WatchEntry, viewerUserId: string, prevUser: TitlePageWatchEntryClient["user"]): TitlePageWatchEntryClient {
+function toClientRow(
+  saved: WatchEntry,
+  viewerUserId: string,
+  prevUser: TitlePageWatchEntryClient["user"],
+): TitlePageWatchEntryClient {
   return {
     id: saved.id,
     userId: viewerUserId,
@@ -231,7 +264,8 @@ export function WatchHistory({
   hasStatus,
   prefillLogDate = null,
 }: WatchHistoryProps) {
-  const [entries, setEntries] = useState<TitlePageWatchEntryClient[]>(initialEntries);
+  const [entries, setEntries] =
+    useState<TitlePageWatchEntryClient[]>(initialEntries);
 
   const handleSave = (saved: WatchEntry) => {
     setEntries((prev) => {
@@ -241,7 +275,7 @@ export function WatchHistory({
         (() => {
           const idx = prev.findIndex((e) => e.id === saved.id);
           return idx >= 0 ? prev[idx]!.user : null;
-        })()
+        })(),
       );
       const idx = prev.findIndex((e) => e.id === row.id);
       if (idx >= 0) {
@@ -284,7 +318,7 @@ export function WatchHistory({
       {entries.length === 0 ? (
         <p className="text-sm text-muted-foreground">
           {hasStatus
-            ? "No viewings logged yet. Click \"Log a viewing\" to record one."
+            ? 'No viewings logged yet. Click "Log a viewing" to record one.'
             : "Set a watch status first to start logging viewings."}
         </p>
       ) : (
@@ -307,7 +341,8 @@ export function WatchHistory({
           )}
           {hasStatus && !hasOwnEntry && (
             <p className="text-sm text-muted-foreground pt-1">
-              You have not logged a viewing here yet. Use &quot;Log a viewing&quot; to add one.
+              You have not logged a viewing here yet. Use &quot;Log a
+              viewing&quot; to add one.
             </p>
           )}
         </div>

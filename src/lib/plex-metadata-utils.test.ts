@@ -1,9 +1,14 @@
 import { describe, it, expect } from "vitest";
-import { extractTmdbIdFromGuid, plexWebAppMovieUrl } from "./plex-metadata-utils";
+import {
+  extractTmdbIdFromGuid,
+  plexWebAppMovieUrl,
+} from "./plex-metadata-utils";
 
 describe("extractTmdbIdFromGuid", () => {
   it("finds tmdb:// from Guid array", () => {
-    expect(extractTmdbIdFromGuid([{ id: "imdb://tt123" }, { id: "tmdb://27205" }])).toBe(27205);
+    expect(
+      extractTmdbIdFromGuid([{ id: "imdb://tt123" }, { id: "tmdb://27205" }]),
+    ).toBe(27205);
   });
 
   it("returns null when no tmdb guid", () => {

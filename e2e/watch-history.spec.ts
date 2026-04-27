@@ -6,7 +6,9 @@ const TV_TMDB = 1396;
 const MOVIE_URL = `/movies/${MOVIE_TMDB}`;
 
 async function clearMovieWatchData(page: import("@playwright/test").Page) {
-  const res = await page.request.get(`/api/media/${MOVIE_TMDB}/entries?type=movie`);
+  const res = await page.request.get(
+    `/api/media/${MOVIE_TMDB}/entries?type=movie`,
+  );
   if (res.ok()) {
     const entries = (await res.json()) as { id: string }[];
     for (const e of entries) {
@@ -35,24 +37,40 @@ test.describe("Watch history", () => {
     });
     await page.goto(MOVIE_URL);
 
-    await expect(page.getByRole("heading", { name: /watch history/i })).toBeVisible({ timeout: 10000 });
+    await expect(
+      page.getByRole("heading", { name: /watch history/i }),
+    ).toBeVisible({ timeout: 10000 });
     await expect(page.getByText(/no viewings logged yet/i)).toBeVisible();
 
     await page.getByRole("button", { name: "Log a viewing" }).click();
-    await expect(page.getByRole("dialog", { name: "Log a viewing" })).toBeVisible({ timeout: 10000 });
+    await expect(
+      page.getByRole("dialog", { name: "Log a viewing" }),
+    ).toBeVisible({ timeout: 10000 });
     await page.getByRole("button", { name: "Save", exact: true }).click();
     await expect(page.getByRole("dialog")).not.toBeVisible({ timeout: 15000 });
 
-    await expect(page.getByText(/\(\s*1\s+viewing\s*\)/)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(/\(\s*1\s+viewing\s*\)/)).toBeVisible({
+      timeout: 10000,
+    });
     await page.getByLabel("Delete viewing").click();
-    await expect(page.getByText(/no viewings logged yet/i)).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/no viewings logged yet/i)).toBeVisible({
+      timeout: 5000,
+    });
   });
 
-  test("watch history section when logged in with no status (movie)", async ({ page }) => {
+  test("watch history section when logged in with no status (movie)", async ({
+    page,
+  }) => {
     await page.goto(MOVIE_URL);
-    await expect(page.getByRole("heading", { name: /watch history/i })).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText(/set a watch status first to start logging viewings/i)).toBeVisible();
-    await expect(page.getByRole("button", { name: "Log a viewing" })).not.toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: /watch history/i }),
+    ).toBeVisible({ timeout: 10000 });
+    await expect(
+      page.getByText(/set a watch status first to start logging viewings/i),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Log a viewing" }),
+    ).not.toBeVisible();
   });
 
   test("watch history heading on TV when watched", async ({ page }) => {
@@ -61,6 +79,8 @@ test.describe("Watch history", () => {
       headers: { "Content-Type": "application/json" },
     });
     await page.goto(`/tv/${TV_TMDB}`);
-    await expect(page.getByRole("heading", { name: /watch history/i })).toBeVisible({ timeout: 10000 });
+    await expect(
+      page.getByRole("heading", { name: /watch history/i }),
+    ).toBeVisible({ timeout: 10000 });
   });
 });

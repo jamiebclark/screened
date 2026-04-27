@@ -12,7 +12,7 @@ const listeners = new Map<string, Set<(msg: RoomBroadcast) => void>>();
 
 export function subscribeToPickerRoom(
   roomId: string,
-  onMessage: (msg: RoomBroadcast) => void
+  onMessage: (msg: RoomBroadcast) => void,
 ): () => void {
   if (!listeners.has(roomId)) listeners.set(roomId, new Set());
   const set = listeners.get(roomId)!;

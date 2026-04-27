@@ -2,12 +2,23 @@ import { NextRequest, NextResponse } from "next/server";
 import { after } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getMovie, getTvShow, getMovieCredits, getMovieKeywords, getTvCredits, getTvKeywords } from "@/lib/tmdb";
+import {
+  getMovie,
+  getTvShow,
+  getMovieCredits,
+  getMovieKeywords,
+  getTvCredits,
+  getTvKeywords,
+} from "@/lib/tmdb";
 import { buildEmbeddingText, generateEmbedding } from "@/lib/embeddings";
 import { ensureWatchlistRadarrToken } from "@/lib/ensure-watchlist-radarr-token";
 import { MediaType, WatchEntrySource, WatchStatus } from "@/generated/prisma";
 
-async function enrichAndEmbed(mediaItemId: string, tmdbId: number, type: "movie" | "tv") {
+async function enrichAndEmbed(
+  mediaItemId: string,
+  tmdbId: number,
+  type: "movie" | "tv",
+) {
   try {
     let cast: string[] = [];
     let director: string | null = null;
@@ -15,7 +26,11 @@ async function enrichAndEmbed(mediaItemId: string, tmdbId: number, type: "movie"
 
     if (type === "movie") {
       const [credits, kws] = await Promise.all([
-        getMovieCredits(tmdbId).catch(() => ({ cast: [] as string[], director: null, directors: [] as string[] })),
+        getMovieCredits(tmdbId).catch(() => ({
+          cast: [] as string[],
+          director: null,
+          directors: [] as string[],
+        })),
         getMovieKeywords(tmdbId).catch(() => [] as string[]),
       ]);
       cast = credits.cast;
@@ -23,7 +38,10 @@ async function enrichAndEmbed(mediaItemId: string, tmdbId: number, type: "movie"
       keywords = kws;
     } else {
       const [credits, kws] = await Promise.all([
-        getTvCredits(tmdbId).catch(() => ({ cast: [] as string[], director: null })),
+        getTvCredits(tmdbId).catch(() => ({
+          cast: [] as string[],
+          director: null,
+        })),
         getTvKeywords(tmdbId).catch(() => [] as string[]),
       ]);
       cast = credits.cast;
@@ -60,7 +78,12 @@ async function enrichAndEmbed(mediaItemId: string, tmdbId: number, type: "movie"
 
 async function getOrCreateMediaItem(tmdbId: number, type: "movie" | "tv") {
   const existing = await prisma.mediaItem.findUnique({
-    where: { tmdbId_type: { tmdbId, type: type === "movie" ? MediaType.MOVIE : MediaType.TV } },
+    where: {
+      tmdbId_type: {
+        tmdbId,
+        type: type === "movie" ? MediaType.MOVIE : MediaType.TV,
+      },
+    },
   });
   if (existing) return existing;
 
@@ -73,7 +96,9 @@ async function getOrCreateMediaItem(tmdbId: number, type: "movie" | "tv") {
         title: movie.title,
         poster: movie.poster_path,
         backdrop: movie.backdrop_path,
-        year: movie.release_date ? new Date(movie.release_date).getFullYear() : null,
+        year: movie.release_date
+          ? new Date(movie.release_date).getFullYear()
+          : null,
         overview: movie.overview,
         genres: movie.genres.map((g) => g.name),
         runtime: movie.runtime,
@@ -90,7 +115,9 @@ async function getOrCreateMediaItem(tmdbId: number, type: "movie" | "tv") {
         title: show.name,
         poster: show.poster_path,
         backdrop: show.backdrop_path,
-        year: show.first_air_date ? new Date(show.first_air_date).getFullYear() : null,
+        year: show.first_air_date
+          ? new Date(show.first_air_date).getFullYear()
+          : null,
         overview: show.overview,
         genres: show.genres.map((g) => g.name),
         runtime: show.episode_run_time[0] ?? null,
@@ -107,7 +134,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = await req.json() as { tmdbId?: number; type?: string; status?: string | null; rating?: number | null };
+  const body = (await req.json()) as {
+    tmdbId?: number;
+    type?: string;
+    status?: string | null;
+    rating?: number | null;
+  };
   const { tmdbId, type, status, rating } = body;
 
   if (!tmdbId || !type || !["movie", "tv"].includes(type)) {
@@ -118,12 +150,23 @@ export async function POST(req: NextRequest) {
 
   if (status === null && rating === undefined) {
     const mediaItem = await prisma.mediaItem.findUnique({
-      where: { tmdbId_type: { tmdbId, type: mediaType === "movie" ? MediaType.MOVIE : MediaType.TV } },
+      where: {
+        tmdbId_type: {
+          tmdbId,
+          type: mediaType === "movie" ? MediaType.MOVIE : MediaType.TV,
+        },
+      },
     });
     if (mediaItem) {
-      await prisma.userMediaStatus.deleteMany({
-        where: { userId: session.user.id, mediaItemId: mediaItem.id },
-      });
+      const whereUserTitle = {
+        userId: session.user.id,
+        mediaItemId: mediaItem.id,
+      };
+      await prisma.$transaction([
+        prisma.watchEntry.deleteMany({ where: whereUserTitle }),
+        prisma.episodeStatus.deleteMany({ where: whereUserTitle }),
+        prisma.userMediaStatus.deleteMany({ where: whereUserTitle }),
+      ]);
     }
     return NextResponse.json({ success: true });
   }
@@ -131,7 +174,12 @@ export async function POST(req: NextRequest) {
   const mediaItem = await getOrCreateMediaItem(tmdbId, mediaType);
 
   const previous = await prisma.userMediaStatus.findUnique({
-    where: { userId_mediaItemId: { userId: session.user.id, mediaItemId: mediaItem.id } },
+    where: {
+      userId_mediaItemId: {
+        userId: session.user.id,
+        mediaItemId: mediaItem.id,
+      },
+    },
   });
 
   const data: Record<string, unknown> = {};
@@ -139,7 +187,12 @@ export async function POST(req: NextRequest) {
   if (rating !== undefined) data.rating = rating;
 
   const result = await prisma.userMediaStatus.upsert({
-    where: { userId_mediaItemId: { userId: session.user.id, mediaItemId: mediaItem.id } },
+    where: {
+      userId_mediaItemId: {
+        userId: session.user.id,
+        mediaItemId: mediaItem.id,
+      },
+    },
     update: data,
     create: {
       userId: session.user.id,
@@ -149,11 +202,17 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  if (mediaItem.type === MediaType.MOVIE && result.status === WatchStatus.WATCHLIST) {
+  if (
+    mediaItem.type === MediaType.MOVIE &&
+    result.status === WatchStatus.WATCHLIST
+  ) {
     await ensureWatchlistRadarrToken(session.user.id);
   }
 
-  if (result.status === WatchStatus.WATCHED && previous?.status !== WatchStatus.WATCHED) {
+  if (
+    result.status === WatchStatus.WATCHED &&
+    previous?.status !== WatchStatus.WATCHED
+  ) {
     let watchedAtForLog: Date = new Date();
     if (mediaItem.type === MediaType.TV) {
       const lastEpisode = await prisma.episodeStatus.aggregate({
@@ -190,7 +249,10 @@ export async function GET(req: NextRequest) {
 
   if (tmdbIdsParam != null && tmdbIdsParam !== "") {
     if (!type || !["movie", "tv"].includes(type)) {
-      return NextResponse.json({ error: "Missing or invalid type" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Missing or invalid type" },
+        { status: 400 },
+      );
     }
     const rawIds = tmdbIdsParam
       .split(",")
@@ -198,7 +260,12 @@ export async function GET(req: NextRequest) {
       .filter((n) => Number.isFinite(n));
     const ids = [...new Set(rawIds)];
     if (ids.length === 0) {
-      return NextResponse.json({ statuses: {} as Record<string, { status: WatchStatus; rating: number | null }> });
+      return NextResponse.json({
+        statuses: {} as Record<
+          string,
+          { status: WatchStatus; rating: number | null }
+        >,
+      });
     }
     if (ids.length > 80) {
       return NextResponse.json({ error: "Too many tmdbIds" }, { status: 400 });
@@ -209,7 +276,12 @@ export async function GET(req: NextRequest) {
       select: { id: true, tmdbId: true },
     });
     if (items.length === 0) {
-      return NextResponse.json({ statuses: {} as Record<string, { status: WatchStatus; rating: number | null }> });
+      return NextResponse.json({
+        statuses: {} as Record<
+          string,
+          { status: WatchStatus; rating: number | null }
+        >,
+      });
     }
     const statuses = await prisma.userMediaStatus.findMany({
       where: {
@@ -219,7 +291,10 @@ export async function GET(req: NextRequest) {
       select: { mediaItemId: true, status: true, rating: true },
     });
     const mediaIdToTmdb = new Map(items.map((i) => [i.id, i.tmdbId]));
-    const byTmdb: Record<string, { status: WatchStatus; rating: number | null }> = {};
+    const byTmdb: Record<
+      string,
+      { status: WatchStatus; rating: number | null }
+    > = {};
     for (const row of statuses) {
       const tmdb = mediaIdToTmdb.get(row.mediaItemId);
       if (tmdb !== undefined) {
@@ -236,13 +311,23 @@ export async function GET(req: NextRequest) {
   }
 
   const mediaItem = await prisma.mediaItem.findUnique({
-    where: { tmdbId_type: { tmdbId, type: type === "movie" ? MediaType.MOVIE : MediaType.TV } },
+    where: {
+      tmdbId_type: {
+        tmdbId,
+        type: type === "movie" ? MediaType.MOVIE : MediaType.TV,
+      },
+    },
   });
 
   if (!mediaItem) return NextResponse.json(null);
 
   const status = await prisma.userMediaStatus.findUnique({
-    where: { userId_mediaItemId: { userId: session.user.id, mediaItemId: mediaItem.id } },
+    where: {
+      userId_mediaItemId: {
+        userId: session.user.id,
+        mediaItemId: mediaItem.id,
+      },
+    },
   });
 
   return NextResponse.json(status);

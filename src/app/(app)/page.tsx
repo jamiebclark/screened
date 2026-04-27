@@ -42,7 +42,10 @@ export default async function HomePage() {
   const statusRows =
     recentMediaIds.length > 0
       ? await prisma.userMediaStatus.findMany({
-          where: { userId: session!.user.id, mediaItemId: { in: recentMediaIds } },
+          where: {
+            userId: session!.user.id,
+            mediaItemId: { in: recentMediaIds },
+          },
         })
       : [];
   const statusByMediaId = new Map(statusRows.map((s) => [s.mediaItemId, s]));
@@ -50,7 +53,8 @@ export default async function HomePage() {
   const recentActivity = recentByLastWatch.map((entry) => ({
     key: entry.mediaItem.id,
     mediaItem: entry.mediaItem,
-    status: statusByMediaId.get(entry.mediaItemId)?.status ?? WatchStatus.WATCHED,
+    status:
+      statusByMediaId.get(entry.mediaItemId)?.status ?? WatchStatus.WATCHED,
   }));
 
   const statMap = Object.fromEntries(stats.map((s) => [s.status, s._count]));
@@ -64,10 +68,30 @@ export default async function HomePage() {
     .slice(0, 10);
 
   const statusIcons = {
-    WATCHED: { icon: Eye, label: "Watched", color: "text-green-400", href: "/history" },
-    WATCHING: { icon: Clock, label: "Watching", color: "text-yellow-400", href: "/watching" },
-    WATCHLIST: { icon: Bookmark, label: "Watchlist", color: "text-blue-400", href: "/watchlist" },
-    DROPPED: { icon: Star, label: "Dropped", color: "text-muted-foreground", href: "/dropped" },
+    WATCHED: {
+      icon: Eye,
+      label: "Watched",
+      color: "text-green-400",
+      href: "/history",
+    },
+    WATCHING: {
+      icon: Clock,
+      label: "Watching",
+      color: "text-yellow-400",
+      href: "/watching",
+    },
+    WATCHLIST: {
+      icon: Bookmark,
+      label: "Watchlist",
+      color: "text-blue-400",
+      href: "/watchlist",
+    },
+    DROPPED: {
+      icon: Star,
+      label: "Dropped",
+      color: "text-muted-foreground",
+      href: "/dropped",
+    },
   };
 
   return (
@@ -75,24 +99,26 @@ export default async function HomePage() {
       {/* Stats */}
       <section>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {(["WATCHED", "WATCHING", "WATCHLIST", "DROPPED"] as const).map((status) => {
-            const { icon: Icon, label, color, href } = statusIcons[status];
-            return (
-              <Link
-                key={status}
-                href={href}
-                className="rounded-xl border border-border bg-card p-4 flex items-center gap-3 transition-colors hover:bg-muted/50"
-              >
-                <div className={`rounded-full bg-muted p-2 ${color}`}>
-                  <Icon className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{statMap[status] ?? 0}</p>
-                  <p className="text-xs text-muted-foreground">{label}</p>
-                </div>
-              </Link>
-            );
-          })}
+          {(["WATCHED", "WATCHING", "WATCHLIST", "DROPPED"] as const).map(
+            (status) => {
+              const { icon: Icon, label, color, href } = statusIcons[status];
+              return (
+                <Link
+                  key={status}
+                  href={href}
+                  className="rounded-xl border border-border bg-card p-4 flex items-center gap-3 transition-colors hover:bg-muted/50"
+                >
+                  <div className={`rounded-full bg-muted p-2 ${color}`}>
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{statMap[status] ?? 0}</p>
+                    <p className="text-xs text-muted-foreground">{label}</p>
+                  </div>
+                </Link>
+              );
+            },
+          )}
         </div>
       </section>
 
@@ -110,7 +136,9 @@ export default async function HomePage() {
               <MediaCard
                 key={activity.key}
                 tmdbId={activity.mediaItem.tmdbId}
-                type={activity.mediaItem.type === MediaType.MOVIE ? "movie" : "tv"}
+                type={
+                  activity.mediaItem.type === MediaType.MOVIE ? "movie" : "tv"
+                }
                 title={activity.mediaItem.title}
                 poster={activity.mediaItem.poster}
                 year={activity.mediaItem.year}
@@ -139,7 +167,11 @@ export default async function HomePage() {
                 type="movie"
                 title={movie.title ?? movie.name ?? ""}
                 poster={movie.poster_path}
-                year={movie.release_date ? new Date(movie.release_date).getFullYear() : null}
+                year={
+                  movie.release_date
+                    ? new Date(movie.release_date).getFullYear()
+                    : null
+                }
                 compact
               />
             ))}
@@ -164,7 +196,11 @@ export default async function HomePage() {
                 type="tv"
                 title={show.name ?? show.title ?? ""}
                 poster={show.poster_path}
-                year={show.first_air_date ? new Date(show.first_air_date).getFullYear() : null}
+                year={
+                  show.first_air_date
+                    ? new Date(show.first_air_date).getFullYear()
+                    : null
+                }
                 compact
               />
             ))}
@@ -177,7 +213,9 @@ export default async function HomePage() {
         <div className="text-center py-12">
           <ListVideo className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-lg font-semibold mb-2">Start tracking</h3>
-          <p className="text-muted-foreground mb-6">Search for movies and TV shows to add to your watchlist</p>
+          <p className="text-muted-foreground mb-6">
+            Search for movies and TV shows to add to your watchlist
+          </p>
           <div className="flex gap-3 justify-center">
             <Button asChild>
               <Link href="/search">Search movies</Link>

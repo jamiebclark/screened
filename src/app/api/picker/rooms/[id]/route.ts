@@ -34,7 +34,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "Invalid state" }, { status: 400 });
   }
   const state: PickerRoomState = body.state;
-  const sourceTabId = typeof body.sourceTabId === "string" ? body.sourceTabId : "";
+  const sourceTabId =
+    typeof body.sourceTabId === "string" ? body.sourceTabId : "";
 
   const me = await prisma.user.findUnique({
     where: { id: session.user.id },
@@ -43,7 +44,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   if (me && !state.participants.some((p) => p.id === me.id)) {
     return NextResponse.json(
       { error: "Requesting user must appear in participants" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -54,7 +55,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     });
     const st = room.state;
     if (!isPickerState(st)) {
-      return NextResponse.json({ error: "Invalid stored state" }, { status: 500 });
+      return NextResponse.json(
+        { error: "Invalid stored state" },
+        { status: 500 },
+      );
     }
     broadcastPickerRoom(id, {
       version: room.version,

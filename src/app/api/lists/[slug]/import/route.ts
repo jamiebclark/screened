@@ -38,7 +38,9 @@ async function getOrCreateMediaItem(tmdbId: number, type: "movie" | "tv") {
         title: movie.title,
         poster: movie.poster_path,
         backdrop: movie.backdrop_path,
-        year: movie.release_date ? new Date(movie.release_date).getFullYear() : null,
+        year: movie.release_date
+          ? new Date(movie.release_date).getFullYear()
+          : null,
         overview: movie.overview,
         genres: movie.genres.map((g) => g.name),
         runtime: movie.runtime,
@@ -53,7 +55,9 @@ async function getOrCreateMediaItem(tmdbId: number, type: "movie" | "tv") {
         title: show.name,
         poster: show.poster_path,
         backdrop: show.backdrop_path,
-        year: show.first_air_date ? new Date(show.first_air_date).getFullYear() : null,
+        year: show.first_air_date
+          ? new Date(show.first_air_date).getFullYear()
+          : null,
         overview: show.overview,
         genres: show.genres.map((g) => g.name),
         runtime: show.episode_run_time[0] ?? null,
@@ -130,7 +134,7 @@ async function scrapeLetterboxdList(rawUrl: string): Promise<LetterboxdFilm[]> {
 }
 
 async function resolveToTmdb(
-  film: LetterboxdFilm
+  film: LetterboxdFilm,
 ): Promise<{ tmdbId: number; type: "movie" | "tv" } | null> {
   try {
     // Search TMDB movies with title + year for high accuracy
@@ -164,7 +168,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   if (!letterboxdUrl?.includes("letterboxd.com")) {
     return NextResponse.json(
       { error: "A valid Letterboxd URL is required" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -176,7 +180,8 @@ export async function POST(req: NextRequest, { params }: Params) {
   if (!list) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const isMember = list.members.some((m) => m.userId === session.user.id);
-  if (!isMember) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!isMember)
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   let films: LetterboxdFilm[];
   try {
@@ -187,14 +192,14 @@ export async function POST(req: NextRequest, { params }: Params) {
         error:
           "Could not fetch the Letterboxd list. Make sure the URL is correct and the list is public.",
       },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
   if (films.length === 0) {
     return NextResponse.json(
       { error: "No films found in the Letterboxd list." },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -218,14 +223,27 @@ export async function POST(req: NextRequest, { params }: Params) {
             };
           }
 
-          const mediaItem = await getOrCreateMediaItem(tmdbData.tmdbId, tmdbData.type);
+          const mediaItem = await getOrCreateMediaItem(
+            tmdbData.tmdbId,
+            tmdbData.type,
+          );
 
           const existing = await prisma.listItem.findUnique({
-            where: { listId_mediaItemId: { listId: list.id, mediaItemId: mediaItem.id } },
+            where: {
+              listId_mediaItemId: {
+                listId: list.id,
+                mediaItemId: mediaItem.id,
+              },
+            },
           });
 
           await prisma.listItem.upsert({
-            where: { listId_mediaItemId: { listId: list.id, mediaItemId: mediaItem.id } },
+            where: {
+              listId_mediaItemId: {
+                listId: list.id,
+                mediaItemId: mediaItem.id,
+              },
+            },
             update: {},
             create: {
               listId: list.id,
@@ -249,12 +267,15 @@ export async function POST(req: NextRequest, { params }: Params) {
             error: err instanceof Error ? err.message : "Unknown error",
           };
         }
-      })
+      }),
     );
     results.push(...batchResults);
   }
 
-  await prisma.list.update({ where: { id: list.id }, data: { updatedAt: new Date() } });
+  await prisma.list.update({
+    where: { id: list.id },
+    data: { updatedAt: new Date() },
+  });
 
   return NextResponse.json({
     added: results.filter((r) => r.status === "added").length,

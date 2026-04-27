@@ -9,7 +9,9 @@ export const APP_VERSION: string = packageJson.version;
  * The first `## ...` block in root CHANGELOG.md (semantic-release format):
  * from the first release heading through the line before the next `##` heading.
  */
-export function parseFirstChangelogReleaseSection(changelog: string): string | null {
+export function parseFirstChangelogReleaseSection(
+  changelog: string,
+): string | null {
   const t = changelog.trimStart();
   if (!t.startsWith("## ")) {
     return null;
@@ -22,7 +24,9 @@ export function parseFirstChangelogReleaseSection(changelog: string): string | n
 }
 
 /** First `https://github.com/owner/repo` in the changelog (used for a “full changelog” link). */
-export function parseGithubRepoBaseFromChangelog(changelog: string): string | null {
+export function parseGithubRepoBaseFromChangelog(
+  changelog: string,
+): string | null {
   const m = changelog.match(/https:\/\/github\.com\/[^/]+\/[^/]+/);
   return m ? m[0] : null;
 }

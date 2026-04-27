@@ -1,9 +1,15 @@
 import { describe, it, expect } from "vitest";
-import { buildMovieCatalogLinks, buildTvCatalogLinks, imdbTitleUrl } from "./movie-catalog-links";
+import {
+  buildMovieCatalogLinks,
+  buildTvCatalogLinks,
+  imdbTitleUrl,
+} from "./movie-catalog-links";
 
 describe("imdbTitleUrl", () => {
   it("returns IMDb title URL for tt ids", () => {
-    expect(imdbTitleUrl("tt0111161")).toBe("https://www.imdb.com/title/tt0111161/");
+    expect(imdbTitleUrl("tt0111161")).toBe(
+      "https://www.imdb.com/title/tt0111161/",
+    );
   });
 
   it("trims whitespace", () => {

@@ -9,7 +9,11 @@ import {
   getTvCredits,
   getTvKeywords,
 } from "@/lib/tmdb";
-import { buildEmbeddingText, generateEmbedding, isEmbeddingEnabled } from "@/lib/embeddings";
+import {
+  buildEmbeddingText,
+  generateEmbedding,
+  isEmbeddingEnabled,
+} from "@/lib/embeddings";
 import { MediaType } from "@/generated/prisma";
 
 export async function POST(req: NextRequest) {
@@ -45,11 +49,17 @@ export async function POST(req: NextRequest) {
       if (type === "movie") {
         const [movie, credits, kws] = await Promise.all([
           getMovie(tmdbId),
-          getMovieCredits(tmdbId).catch(() => ({ cast: [] as string[], director: null, directors: [] as string[] })),
+          getMovieCredits(tmdbId).catch(() => ({
+            cast: [] as string[],
+            director: null,
+            directors: [] as string[],
+          })),
           getMovieKeywords(tmdbId).catch(() => [] as string[]),
         ]);
         title = movie.title;
-        year = movie.release_date ? new Date(movie.release_date).getFullYear() : null;
+        year = movie.release_date
+          ? new Date(movie.release_date).getFullYear()
+          : null;
         overview = movie.overview;
         genres = movie.genres.map((g) => g.name);
         runtime = movie.runtime;
@@ -59,11 +69,16 @@ export async function POST(req: NextRequest) {
       } else {
         const [show, credits, kws] = await Promise.all([
           getTvShow(tmdbId),
-          getTvCredits(tmdbId).catch(() => ({ cast: [] as string[], director: null })),
+          getTvCredits(tmdbId).catch(() => ({
+            cast: [] as string[],
+            director: null,
+          })),
           getTvKeywords(tmdbId).catch(() => [] as string[]),
         ]);
         title = show.name;
-        year = show.first_air_date ? new Date(show.first_air_date).getFullYear() : null;
+        year = show.first_air_date
+          ? new Date(show.first_air_date).getFullYear()
+          : null;
         overview = show.overview;
         genres = show.genres.map((g) => g.name);
         runtime = show.episode_run_time[0] ?? null;
@@ -73,14 +88,31 @@ export async function POST(req: NextRequest) {
       }
 
       mediaItem = await prisma.mediaItem.create({
-        data: { tmdbId, type: mediaType, title, poster: null, backdrop: null, year, overview, genres, runtime, cast, director, keywords },
+        data: {
+          tmdbId,
+          type: mediaType,
+          title,
+          poster: null,
+          backdrop: null,
+          year,
+          overview,
+          genres,
+          runtime,
+          cast,
+          director,
+          keywords,
+        },
       });
     } else {
       // Fill in missing enrichment
       if (!mediaItem.cast.length || !mediaItem.keywords.length) {
         if (type === "movie") {
           const [credits, kws] = await Promise.all([
-            getMovieCredits(tmdbId).catch(() => ({ cast: [] as string[], director: null, directors: [] as string[] })),
+            getMovieCredits(tmdbId).catch(() => ({
+              cast: [] as string[],
+              director: null,
+              directors: [] as string[],
+            })),
             getMovieKeywords(tmdbId).catch(() => [] as string[]),
           ]);
           cast = credits.cast.length ? credits.cast : mediaItem.cast;
@@ -88,7 +120,10 @@ export async function POST(req: NextRequest) {
           keywords = kws.length ? kws : mediaItem.keywords;
         } else {
           const [credits, kws] = await Promise.all([
-            getTvCredits(tmdbId).catch(() => ({ cast: [] as string[], director: null })),
+            getTvCredits(tmdbId).catch(() => ({
+              cast: [] as string[],
+              director: null,
+            })),
             getTvKeywords(tmdbId).catch(() => [] as string[]),
           ]);
           cast = credits.cast.length ? credits.cast : mediaItem.cast;
@@ -113,7 +148,15 @@ export async function POST(req: NextRequest) {
     // Generate or refresh embedding
     let hasEmbedding = mediaItem.embedding.length > 0;
     if (!hasEmbedding && isEmbeddingEnabled()) {
-      const text = buildEmbeddingText({ title, year, overview, genres, cast, director, keywords });
+      const text = buildEmbeddingText({
+        title,
+        year,
+        overview,
+        genres,
+        cast,
+        director,
+        keywords,
+      });
       const embedding = await generateEmbedding(text);
       if (embedding) {
         mediaItem = await prisma.mediaItem.update({
@@ -138,6 +181,9 @@ export async function POST(req: NextRequest) {
     });
   } catch (err) {
     console.error("[embed] error:", err);
-    return NextResponse.json({ error: "Failed to process media item" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to process media item" },
+      { status: 500 },
+    );
   }
 }

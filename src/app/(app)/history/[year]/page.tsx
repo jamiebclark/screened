@@ -18,7 +18,11 @@ type Params = { params: Promise<{ year: string }> };
 export async function generateMetadata({ params }: Params) {
   const { year: yStr } = await params;
   const year = parseYearSegment(yStr);
-  return { title: year ? `${year} | Watch history | Screened` : "Watch history | Screened" };
+  return {
+    title: year
+      ? `${year} | Watch history | Screened`
+      : "Watch history | Screened",
+  };
 }
 
 export default async function HistoryYearPage({ params }: Params) {
@@ -28,7 +32,11 @@ export default async function HistoryYearPage({ params }: Params) {
 
   const session = await auth();
   const { start, end } = localYearRange(year);
-  const entries = await fetchMyWatchEntriesInRange(session!.user.id, start, end);
+  const entries = await fetchMyWatchEntriesInRange(
+    session!.user.id,
+    start,
+    end,
+  );
 
   const byMonth = new Map<number, number>();
   for (const e of entries) {
@@ -80,13 +88,17 @@ export default async function HistoryYearPage({ params }: Params) {
       </div>
 
       <p className="text-sm text-muted-foreground mb-6">
-        {entries.length} viewing{entries.length !== 1 ? "s" : ""} logged in {year}.
+        {entries.length} viewing{entries.length !== 1 ? "s" : ""} logged in{" "}
+        {year}.
       </p>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => {
           const count = byMonth.get(month) ?? 0;
-          const label = new Date(year, month - 1, 1).toLocaleDateString("en-US", { month: "long" });
+          const label = new Date(year, month - 1, 1).toLocaleDateString(
+            "en-US",
+            { month: "long" },
+          );
           return (
             <Link
               key={month}
@@ -95,7 +107,9 @@ export default async function HistoryYearPage({ params }: Params) {
             >
               <p className="font-medium">{label}</p>
               <p className="text-sm text-muted-foreground mt-1">
-                {count === 0 ? "No entries" : `${count} viewing${count !== 1 ? "s" : ""}`}
+                {count === 0
+                  ? "No entries"
+                  : `${count} viewing${count !== 1 ? "s" : ""}`}
               </p>
             </Link>
           );

@@ -19,6 +19,8 @@ import { TitlePageMobilePoster } from "@/components/title-page-mobile-poster";
 import { Badge } from "@/components/ui/badge";
 import { formatRuntime } from "@/lib/utils";
 import { buildMovieCatalogLinks } from "@/lib/movie-site-context";
+import { getCachedOmdbRatings } from "@/lib/omdb";
+import { AggregatedRatingsLine } from "@/components/aggregated-ratings-line";
 import { Star, Calendar, Clock } from "lucide-react";
 import { MediaType } from "@/generated/prisma";
 import { parseDateOnlyIso } from "@/lib/history-calendar";
@@ -50,20 +52,31 @@ export default async function MoviePage({ params, searchParams }: Params) {
     session?.user?.id
       ? prisma.userMediaStatus
           .findFirst({
-            where: { userId: session.user.id, mediaItem: { tmdbId, type: MediaType.MOVIE } },
+            where: {
+              userId: session.user.id,
+              mediaItem: { tmdbId, type: MediaType.MOVIE },
+            },
           })
           .catch(() => null)
       : null,
     session?.user?.id
-      ? fetchTitleWatchHistoryForViewer(session.user.id, tmdbId, MediaType.MOVIE).catch(() => [])
+      ? fetchTitleWatchHistoryForViewer(
+          session.user.id,
+          tmdbId,
+          MediaType.MOVIE,
+        ).catch(() => [])
       : [],
   ]);
 
   if (!movie) notFound();
 
+  const omdbRatings = await getCachedOmdbRatings(movie.imdb_id);
+
   const backdropUrl = tmdbImage(movie.backdrop_path, "w1280");
   const posterUrl = tmdbImage(movie.poster_path, "w500");
-  const year = movie.release_date ? new Date(movie.release_date).getFullYear() : null;
+  const year = movie.release_date
+    ? new Date(movie.release_date).getFullYear()
+    : null;
   const catalogLinks = buildMovieCatalogLinks(tmdbId, movie.imdb_id);
 
   return (
@@ -71,7 +84,13 @@ export default async function MoviePage({ params, searchParams }: Params) {
       {/* Backdrop */}
       <div className="relative h-64 md:h-80 lg:h-96 overflow-hidden">
         {backdropUrl ? (
-          <Image src={backdropUrl} alt={movie.title} fill className="object-cover" priority />
+          <Image
+            src={backdropUrl}
+            alt={movie.title}
+            fill
+            className="object-cover"
+            priority
+          />
         ) : (
           <div className="h-full bg-muted" />
         )}
@@ -84,7 +103,13 @@ export default async function MoviePage({ params, searchParams }: Params) {
           <div className="hidden sm:flex flex-col shrink-0 w-36 md:w-48">
             <div className="aspect-[2/3] rounded-xl overflow-hidden border border-border shadow-2xl">
               {posterUrl ? (
-                <Image src={posterUrl} alt={movie.title} width={192} height={288} className="object-cover w-full h-full" />
+                <Image
+                  src={posterUrl}
+                  alt={movie.title}
+                  width={192}
+                  height={288}
+                  className="object-cover w-full h-full"
+                />
               ) : (
                 <div className="w-full h-full bg-muted flex items-center justify-center text-sm text-muted-foreground text-center p-2">
                   {movie.title}
@@ -100,15 +125,22 @@ export default async function MoviePage({ params, searchParams }: Params) {
           <div className="flex-1 pt-2 sm:pt-16 min-w-0">
             <TitlePageTopNav />
             <div className="flex gap-3 sm:gap-0">
-              <TitlePageMobilePoster posterUrl={posterUrl} title={movie.title} />
+              <TitlePageMobilePoster
+                posterUrl={posterUrl}
+                title={movie.title}
+              />
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-start gap-2 mb-2">
                   {movie.genres.slice(0, 3).map((g) => (
-                    <Badge key={g.id} variant="secondary" className="text-xs">{g.name}</Badge>
+                    <Badge key={g.id} variant="secondary" className="text-xs">
+                      {g.name}
+                    </Badge>
                   ))}
                 </div>
 
-                <h1 className="text-2xl font-bold md:text-4xl md:tracking-tighter mb-2">{movie.title}</h1>
+                <h1 className="text-2xl font-bold md:text-4xl md:tracking-tighter mb-2">
+                  {movie.title}
+                </h1>
 
                 <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-4">
                   {year && (
@@ -127,21 +159,36 @@ export default async function MoviePage({ params, searchParams }: Params) {
                     <span className="flex items-center gap-1">
                       <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
                       {movie.vote_average.toFixed(1)}
-                      <span className="text-xs">({movie.vote_count.toLocaleString()})</span>
+                      <span className="text-xs">
+                        ({movie.vote_count.toLocaleString()})
+                      </span>
                     </span>
                   )}
+                  <AggregatedRatingsLine ratings={omdbRatings} />
                 </div>
 
                 <div className="flex flex-wrap items-center gap-3 mb-4 sm:mb-6">
                   <WatchStatusButton
-                    key={userStatus ? `${userStatus.id}-${userStatus.status}` : `s-${tmdbId}-none`}
+                    key={
+                      userStatus
+                        ? `${userStatus.id}-${userStatus.status}`
+                        : `s-${tmdbId}-none`
+                    }
                     tmdbId={tmdbId}
                     type="movie"
                     currentStatus={userStatus?.status ?? null}
                   />
-                  <AddToListDialog tmdbId={tmdbId} type="movie" title={movie.title} />
+                  <AddToListDialog
+                    tmdbId={tmdbId}
+                    type="movie"
+                    title={movie.title}
+                  />
                   {userStatus && (
-                    <RatingStars tmdbId={tmdbId} type="movie" currentRating={userStatus?.rating ?? null} />
+                    <RatingStars
+                      tmdbId={tmdbId}
+                      type="movie"
+                      currentRating={userStatus?.rating ?? null}
+                    />
                   )}
                 </div>
 
@@ -150,13 +197,18 @@ export default async function MoviePage({ params, searchParams }: Params) {
                 </div>
 
                 {movie.overview && (
-                  <p className="text-muted-foreground leading-relaxed max-w-2xl">{movie.overview}</p>
+                  <p className="text-muted-foreground leading-relaxed max-w-2xl">
+                    {movie.overview}
+                  </p>
                 )}
 
                 {session?.user?.id ? (
                   <TitleSiteContext>
                     <Suspense fallback={<MovieScreenedContextSkeleton />}>
-                      <MovieScreenedContextAsync userId={session.user.id} tmdbId={tmdbId} />
+                      <MovieScreenedContextAsync
+                        userId={session.user.id}
+                        tmdbId={tmdbId}
+                      />
                     </Suspense>
                   </TitleSiteContext>
                 ) : null}

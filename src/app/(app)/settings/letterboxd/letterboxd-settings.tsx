@@ -2,11 +2,24 @@
 
 import { useState, useTransition, FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { Film, RefreshCw, Unlink, CheckCircle, Loader2, AlertCircle } from "lucide-react";
+import {
+  Film,
+  RefreshCw,
+  Unlink,
+  CheckCircle,
+  Loader2,
+  AlertCircle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 interface LetterboxdSettingsProps {
   connection: {
@@ -21,7 +34,9 @@ interface SyncResult {
   alreadyWatched: number;
 }
 
-export function LetterboxdSettings({ connection: initialConnection }: LetterboxdSettingsProps) {
+export function LetterboxdSettings({
+  connection: initialConnection,
+}: LetterboxdSettingsProps) {
   const router = useRouter();
   const [connection, setConnection] = useState(initialConnection);
   const [syncing, setSyncing] = useState(false);
@@ -43,11 +58,18 @@ export function LetterboxdSettings({ connection: initialConnection }: Letterboxd
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "link", username }),
       });
-      const data = (await res.json()) as { ok?: boolean; username?: string; error?: string };
+      const data = (await res.json()) as {
+        ok?: boolean;
+        username?: string;
+        error?: string;
+      };
       if (!res.ok) {
         setError(data.error ?? "Failed to connect.");
       } else {
-        setConnection({ letterboxdUsername: data.username!, lastSyncedAt: null });
+        setConnection({
+          letterboxdUsername: data.username!,
+          lastSyncedAt: null,
+        });
         router.refresh();
       }
     } catch {
@@ -103,10 +125,15 @@ export function LetterboxdSettings({ connection: initialConnection }: Letterboxd
         <div className="rounded-md bg-green-500/10 border border-green-500/30 px-3 py-2 text-sm text-green-400 space-y-0.5">
           <p className="font-medium">Sync complete</p>
           <p>
-            {syncResult.synced} film{syncResult.synced !== 1 ? "s" : ""} newly marked as watched
-            {syncResult.alreadyWatched > 0 && ` · ${syncResult.alreadyWatched} already tracked`}
-            {syncResult.skipped > 0 && ` · ${syncResult.skipped} could not be matched`}
-            {syncResult.synced === 0 && syncResult.alreadyWatched > 0 ? " — nothing new" : ""}
+            {syncResult.synced} film{syncResult.synced !== 1 ? "s" : ""} newly
+            marked as watched
+            {syncResult.alreadyWatched > 0 &&
+              ` · ${syncResult.alreadyWatched} already tracked`}
+            {syncResult.skipped > 0 &&
+              ` · ${syncResult.skipped} could not be matched`}
+            {syncResult.synced === 0 && syncResult.alreadyWatched > 0
+              ? " — nothing new"
+              : ""}
           </p>
         </div>
       )}
@@ -118,7 +145,8 @@ export function LetterboxdSettings({ connection: initialConnection }: Letterboxd
             Letterboxd Account
           </CardTitle>
           <CardDescription>
-            Connect your Letterboxd account to automatically import your diary and mark films as watched.
+            Connect your Letterboxd account to automatically import your diary
+            and mark films as watched.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -127,13 +155,18 @@ export function LetterboxdSettings({ connection: initialConnection }: Letterboxd
               <div className="flex items-center gap-3 rounded-lg border border-green-500/30 bg-green-500/10 p-3">
                 <CheckCircle className="h-5 w-5 text-green-400 shrink-0" />
                 <div>
-                  <p className="text-sm font-medium">Connected as @{connection.letterboxdUsername}</p>
+                  <p className="text-sm font-medium">
+                    Connected as @{connection.letterboxdUsername}
+                  </p>
                   {connection.lastSyncedAt ? (
                     <p className="text-xs text-muted-foreground">
-                      Last synced: {new Date(connection.lastSyncedAt).toLocaleString()}
+                      Last synced:{" "}
+                      {new Date(connection.lastSyncedAt).toLocaleString()}
                     </p>
                   ) : (
-                    <p className="text-xs text-muted-foreground">Never synced — click Sync now to import your history.</p>
+                    <p className="text-xs text-muted-foreground">
+                      Never synced — click Sync now to import your history.
+                    </p>
                   )}
                 </div>
               </div>
@@ -160,13 +193,15 @@ export function LetterboxdSettings({ connection: initialConnection }: Letterboxd
               </div>
 
               <p className="text-xs text-muted-foreground">
-                Syncs your most recent Letterboxd diary entries, including watch dates and star ratings. Runs automatically every few hours.
+                Syncs your most recent Letterboxd diary entries, including watch
+                dates and star ratings. Runs automatically every few hours.
               </p>
             </div>
           ) : (
             <form onSubmit={handleLink} className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                Enter your Letterboxd username to connect your diary. Your profile must be public.
+                Enter your Letterboxd username to connect your diary. Your
+                profile must be public.
               </p>
               <div className="space-y-1.5">
                 <Label htmlFor="letterboxd-username">Letterboxd username</Label>

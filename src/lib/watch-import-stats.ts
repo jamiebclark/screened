@@ -1,10 +1,22 @@
 import { prisma } from "@/lib/prisma";
 import { MediaType, WatchEntrySource } from "@/generated/prisma";
-import type { WatchEntryScope, WatchHistoryResetScope, WatchImportCounts } from "@/lib/watch-history-scopes";
+import type {
+  WatchEntryScope,
+  WatchHistoryResetScope,
+  WatchImportCounts,
+} from "@/lib/watch-history-scopes";
 import { PLEX_EPISODES_SCOPE } from "@/lib/watch-history-scopes";
 
-export type { WatchEntryScope, WatchHistoryResetScope, WatchImportCounts } from "@/lib/watch-history-scopes";
-export { WATCH_ENTRY_SCOPES, isWatchHistoryResetScope, PLEX_EPISODES_SCOPE } from "@/lib/watch-history-scopes";
+export type {
+  WatchEntryScope,
+  WatchHistoryResetScope,
+  WatchImportCounts,
+} from "@/lib/watch-history-scopes";
+export {
+  WATCH_ENTRY_SCOPES,
+  isWatchHistoryResetScope,
+  PLEX_EPISODES_SCOPE,
+} from "@/lib/watch-history-scopes";
 
 function watchEntryWhere(userId: string, scope: WatchEntryScope) {
   switch (scope) {
@@ -49,7 +61,9 @@ function watchEntryWhere(userId: string, scope: WatchEntryScope) {
   }
 }
 
-export async function getWatchImportCounts(userId: string): Promise<WatchImportCounts> {
+export async function getWatchImportCounts(
+  userId: string,
+): Promise<WatchImportCounts> {
   const [
     plexMovie,
     plexTv,
@@ -65,7 +79,9 @@ export async function getWatchImportCounts(userId: string): Promise<WatchImportC
     prisma.watchEntry.count({ where: watchEntryWhere(userId, "letterboxd") }),
     prisma.watchEntry.count({ where: watchEntryWhere(userId, "manual_movie") }),
     prisma.watchEntry.count({ where: watchEntryWhere(userId, "manual_tv") }),
-    prisma.watchEntry.count({ where: watchEntryWhere(userId, "unknown_movie") }),
+    prisma.watchEntry.count({
+      where: watchEntryWhere(userId, "unknown_movie"),
+    }),
     prisma.watchEntry.count({ where: watchEntryWhere(userId, "unknown_tv") }),
     prisma.episodeStatus.count({ where: { userId } }),
   ]);
@@ -82,9 +98,14 @@ export async function getWatchImportCounts(userId: string): Promise<WatchImportC
   };
 }
 
-export async function resetWatchHistoryScope(userId: string, scope: WatchHistoryResetScope) {
+export async function resetWatchHistoryScope(
+  userId: string,
+  scope: WatchHistoryResetScope,
+) {
   if (scope === PLEX_EPISODES_SCOPE) {
     return prisma.episodeStatus.deleteMany({ where: { userId } });
   }
-  return prisma.watchEntry.deleteMany({ where: watchEntryWhere(userId, scope) });
+  return prisma.watchEntry.deleteMany({
+    where: watchEntryWhere(userId, scope),
+  });
 }

@@ -2,7 +2,9 @@ import { prisma } from "@/lib/prisma";
 import { generateToken } from "@/lib/utils";
 
 /** Ensures the user has a Radarr export token; creates one on first use (e.g. legacy accounts). */
-export async function ensureWatchlistRadarrToken(userId: string): Promise<string> {
+export async function ensureWatchlistRadarrToken(
+  userId: string,
+): Promise<string> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { watchlistRadarrToken: true },

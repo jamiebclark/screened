@@ -4,7 +4,11 @@ import { findPlexMovieByTmdbIdForUser } from "@/lib/plex";
 import { plexWebAppMovieUrl } from "@/lib/plex-metadata-utils";
 
 export type { TitleCatalogLinks } from "@/lib/movie-catalog-links";
-export { buildMovieCatalogLinks, buildTvCatalogLinks, imdbTitleUrl } from "@/lib/movie-catalog-links";
+export {
+  buildMovieCatalogLinks,
+  buildTvCatalogLinks,
+  imdbTitleUrl,
+} from "@/lib/movie-catalog-links";
 
 export type MovieSiteContext = {
   /** Signed-in user (for “your” Plex card). */
@@ -14,7 +18,12 @@ export type MovieSiteContext = {
     | { state: "not_linked" }
     | { state: "not_in_library" }
     | { state: "in_library"; openUrl: string };
-  friendsInPlex: { userId: string; name: string; avatarUrl: string | null; openUrl: string }[];
+  friendsInPlex: {
+    userId: string;
+    name: string;
+    avatarUrl: string | null;
+    openUrl: string;
+  }[];
 };
 
 async function listSummariesForViewerMovie(userId: string, tmdbId: number) {
@@ -68,7 +77,10 @@ async function friendSummariesWithPlex(viewerId: string) {
 }
 
 /** Lists you’re on, your Plex library, and friends’ Plex libraries (for one movie). */
-export async function getMovieSiteContext(userId: string, tmdbId: number): Promise<MovieSiteContext> {
+export async function getMovieSiteContext(
+  userId: string,
+  tmdbId: number,
+): Promise<MovieSiteContext> {
   const [lists, friends, viewer] = await Promise.all([
     listSummariesForViewerMovie(userId, tmdbId),
     friendSummariesWithPlex(userId),
@@ -86,16 +98,23 @@ export async function getMovieSiteContext(userId: string, tmdbId: number): Promi
   if (!linked) {
     myPlex = { state: "not_linked" };
   } else {
-    const myHit = await findPlexMovieByTmdbIdForUser(userId, tmdbId).catch(() => null);
+    const myHit = await findPlexMovieByTmdbIdForUser(userId, tmdbId).catch(
+      () => null,
+    );
     myPlex = myHit
-      ? { state: "in_library", openUrl: plexWebAppMovieUrl(myHit.machineIdentifier, myHit.ratingKey) }
+      ? {
+          state: "in_library",
+          openUrl: plexWebAppMovieUrl(myHit.machineIdentifier, myHit.ratingKey),
+        }
       : { state: "not_in_library" };
   }
 
   const friendsInPlex: MovieSiteContext["friendsInPlex"] = [];
   await Promise.all(
     friends.map(async (f) => {
-      const hit = await findPlexMovieByTmdbIdForUser(f.id, tmdbId).catch(() => null);
+      const hit = await findPlexMovieByTmdbIdForUser(f.id, tmdbId).catch(
+        () => null,
+      );
       if (hit) {
         friendsInPlex.push({
           userId: f.id,
@@ -104,7 +123,7 @@ export async function getMovieSiteContext(userId: string, tmdbId: number): Promi
           openUrl: plexWebAppMovieUrl(hit.machineIdentifier, hit.ratingKey),
         });
       }
-    })
+    }),
   );
   friendsInPlex.sort((a, b) => a.name.localeCompare(b.name));
 

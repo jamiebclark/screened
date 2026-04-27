@@ -8,17 +8,25 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = (await req.json()) as { action: "link" | "unlink"; username?: string };
+  const body = (await req.json()) as {
+    action: "link" | "unlink";
+    username?: string;
+  };
 
   if (body.action === "unlink") {
-    await prisma.letterboxdConnection.deleteMany({ where: { userId: session.user.id } });
+    await prisma.letterboxdConnection.deleteMany({
+      where: { userId: session.user.id },
+    });
     return NextResponse.json({ ok: true });
   }
 
   if (body.action === "link") {
     const username = body.username?.trim().toLowerCase();
     if (!username) {
-      return NextResponse.json({ error: "Username is required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Username is required" },
+        { status: 400 },
+      );
     }
 
     // Verify the profile exists and RSS is reachable
@@ -30,8 +38,11 @@ export async function POST(req: NextRequest) {
 
     if (!check.ok) {
       return NextResponse.json(
-        { error: "Could not find a public Letterboxd profile for that username." },
-        { status: 400 }
+        {
+          error:
+            "Could not find a public Letterboxd profile for that username.",
+        },
+        { status: 400 },
       );
     }
 

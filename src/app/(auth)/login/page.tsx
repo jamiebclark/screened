@@ -8,7 +8,14 @@ import { Film, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { PlexSignInButton } from "@/components/plex-sign-in-button";
 import { safeCallbackPath } from "@/lib/safe-callback-path";
 
@@ -16,6 +23,10 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackPath = safeCallbackPath(searchParams.get("callbackUrl"));
+  const invite = searchParams.get("invite");
+  const registerHref = invite
+    ? `/register?invite=${encodeURIComponent(invite)}`
+    : "/register";
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -54,7 +65,9 @@ function LoginForm() {
             <span className="w-full border-t border-border" />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-card px-2 text-muted-foreground">or continue with email</span>
+            <span className="bg-card px-2 text-muted-foreground">
+              or continue with email
+            </span>
           </div>
         </div>
       </CardContent>
@@ -95,7 +108,10 @@ function LoginForm() {
           </Button>
           <p className="text-sm text-muted-foreground">
             Don&apos;t have an account?{" "}
-            <Link href="/register" className="text-primary hover:underline font-medium">
+            <Link
+              href={registerHref}
+              className="text-primary hover:underline font-medium"
+            >
               Register
             </Link>
           </p>
@@ -117,7 +133,13 @@ export default function LoginPage() {
           <p className="text-muted-foreground text-sm">Track movies together</p>
         </div>
 
-        <Suspense fallback={<Card className="p-8"><Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" /></Card>}>
+        <Suspense
+          fallback={
+            <Card className="p-8">
+              <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
+            </Card>
+          }
+        >
           <LoginForm />
         </Suspense>
       </div>

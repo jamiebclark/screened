@@ -36,7 +36,9 @@ export async function GET(req: NextRequest, { params }: Params) {
     }
   }
 
-  const radarrList = mediaItemsToRadarrJson(list.items.map((item) => item.mediaItem));
+  const radarrList = mediaItemsToRadarrJson(
+    list.items.map((item) => item.mediaItem),
+  );
 
   return NextResponse.json(radarrList, {
     headers: {

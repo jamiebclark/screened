@@ -13,8 +13,8 @@ export default async function WatchHistorySettingsPage() {
     <div className="mx-auto max-w-3xl">
       <h1 className="text-2xl font-bold mb-2">Watch history & imports</h1>
       <p className="text-muted-foreground mb-8">
-        See how many watch history entries came from each integration, and clear specific groups without affecting your
-        account or connections.
+        See how many watch history entries came from each integration, and clear
+        specific groups without affecting your account or connections.
       </p>
       <WatchHistorySettings initialCounts={initialCounts} />
     </div>

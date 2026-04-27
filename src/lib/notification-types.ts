@@ -14,4 +14,5 @@ export const NotificationType = {
   FRIEND_REQUEST: "FRIEND_REQUEST",
 } as const;
 
-export type NotificationType = (typeof NotificationType)[keyof typeof NotificationType];
+export type NotificationType =
+  (typeof NotificationType)[keyof typeof NotificationType];

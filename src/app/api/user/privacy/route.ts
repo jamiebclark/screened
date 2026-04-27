@@ -36,25 +36,29 @@ export async function PATCH(req: NextRequest) {
     watchHistoryVisibility?: unknown;
   };
 
-  const wl = body.watchlistVisibility !== undefined
-    ? parseVisibility(body.watchlistVisibility)
-    : undefined;
-  const wh = body.watchHistoryVisibility !== undefined
-    ? parseVisibility(body.watchHistoryVisibility)
-    : undefined;
+  const wl =
+    body.watchlistVisibility !== undefined
+      ? parseVisibility(body.watchlistVisibility)
+      : undefined;
+  const wh =
+    body.watchHistoryVisibility !== undefined
+      ? parseVisibility(body.watchHistoryVisibility)
+      : undefined;
 
   if (wl === null || wh === null) {
     return NextResponse.json(
       { error: "Invalid visibility. Use PUBLIC or FRIENDS." },
-      { status: 400 }
+      { status: 400 },
     );
   }
   if (wl === undefined && wh === undefined) {
     return NextResponse.json({ error: "No changes" }, { status: 400 });
   }
 
-  const data: { watchlistVisibility?: ProfileContentVisibility; watchHistoryVisibility?: ProfileContentVisibility } =
-    {};
+  const data: {
+    watchlistVisibility?: ProfileContentVisibility;
+    watchHistoryVisibility?: ProfileContentVisibility;
+  } = {};
   if (wl !== undefined) data.watchlistVisibility = wl;
   if (wh !== undefined) data.watchHistoryVisibility = wh;
 

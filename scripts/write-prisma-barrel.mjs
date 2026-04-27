@@ -14,5 +14,5 @@ mkdirSync(dir, { recursive: true });
 writeFileSync(
   file,
   `export * from "./client";\nexport * from "./enums";\nexport * from "./models";\n`,
-  "utf8"
+  "utf8",
 );

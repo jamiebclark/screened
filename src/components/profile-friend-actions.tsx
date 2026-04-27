@@ -71,7 +71,11 @@ export function ProfileFriendActions({
             })
           }
         >
-          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
+          {busy ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <UserPlus className="h-4 w-4" />
+          )}
           <span className="ml-1.5">Add friend</span>
         </Button>
       )}
@@ -87,22 +91,30 @@ export function ProfileFriendActions({
               void withBusy(async () => {
                 const res = await fetch(
                   `/api/friends/requests/${encodeURIComponent(state.requestId)}`,
-                  { method: "DELETE" }
+                  { method: "DELETE" },
                 );
-                const j = (await res.json().catch(() => ({}))) as { friendState?: ProfileFriendStateJson };
+                const j = (await res.json().catch(() => ({}))) as {
+                  friendState?: ProfileFriendStateJson;
+                };
                 if (res.ok && j.friendState) setState(j.friendState);
                 else if (res.ok) setState({ kind: "none" });
               })
             }
           >
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Cancel request"}
+            {busy ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              "Cancel request"
+            )}
           </Button>
         </>
       )}
 
       {state.kind === "incoming" && (
         <>
-          <span className="text-sm text-amber-600 dark:text-amber-400">Friend request</span>
+          <span className="text-sm text-amber-600 dark:text-amber-400">
+            Friend request
+          </span>
           <Button
             size="sm"
             disabled={busy}
@@ -110,16 +122,22 @@ export function ProfileFriendActions({
               void withBusy(async () => {
                 const res = await fetch(
                   `/api/friends/requests/${encodeURIComponent(state.requestId)}/accept`,
-                  { method: "POST" }
+                  { method: "POST" },
                 );
-                const j = (await res.json().catch(() => ({}))) as { friendState?: ProfileFriendStateJson };
+                const j = (await res.json().catch(() => ({}))) as {
+                  friendState?: ProfileFriendStateJson;
+                };
                 if (res.ok) {
                   setState(j.friendState ?? { kind: "friends" });
                 }
               })
             }
           >
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+            {busy ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Check className="h-4 w-4" />
+            )}
             <span className="ml-1">Accept</span>
           </Button>
           <Button
@@ -130,14 +148,20 @@ export function ProfileFriendActions({
               void withBusy(async () => {
                 const res = await fetch(
                   `/api/friends/requests/${encodeURIComponent(state.requestId)}`,
-                  { method: "DELETE" }
+                  { method: "DELETE" },
                 );
-                const j = (await res.json().catch(() => ({}))) as { friendState?: ProfileFriendStateJson };
+                const j = (await res.json().catch(() => ({}))) as {
+                  friendState?: ProfileFriendStateJson;
+                };
                 if (res.ok) setState(j.friendState ?? { kind: "none" });
               })
             }
           >
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}
+            {busy ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <X className="h-4 w-4" />
+            )}
             <span className="ml-1">Decline</span>
           </Button>
         </>
@@ -145,7 +169,9 @@ export function ProfileFriendActions({
 
       {state.kind === "friends" && (
         <>
-          <span className="text-sm font-medium text-muted-foreground">Friends</span>
+          <span className="text-sm font-medium text-muted-foreground">
+            Friends
+          </span>
           <Button
             size="sm"
             variant="outline"
@@ -154,14 +180,20 @@ export function ProfileFriendActions({
               void withBusy(async () => {
                 const res = await fetch(
                   `/api/friends/${encodeURIComponent(profileUserId)}`,
-                  { method: "DELETE" }
+                  { method: "DELETE" },
                 );
-                const j = (await res.json().catch(() => ({}))) as { friendState?: ProfileFriendStateJson };
+                const j = (await res.json().catch(() => ({}))) as {
+                  friendState?: ProfileFriendStateJson;
+                };
                 if (res.ok) setState(j.friendState ?? { kind: "none" });
               })
             }
           >
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserMinus className="h-4 w-4" />}
+            {busy ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <UserMinus className="h-4 w-4" />
+            )}
             <span className="ml-1">Unfriend</span>
           </Button>
         </>

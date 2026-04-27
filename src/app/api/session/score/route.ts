@@ -42,10 +42,16 @@ export async function POST(req: NextRequest) {
   const { participantIds, attractors, repellers } = body;
 
   if (!participantIds?.length) {
-    return NextResponse.json({ error: "At least one participant required" }, { status: 400 });
+    return NextResponse.json(
+      { error: "At least one participant required" },
+      { status: 400 },
+    );
   }
   if (!attractors?.length) {
-    return NextResponse.json({ error: "At least one attractor required" }, { status: 400 });
+    return NextResponse.json(
+      { error: "At least one attractor required" },
+      { status: 400 },
+    );
   }
 
   const referenceIds = [
@@ -56,7 +62,12 @@ export async function POST(req: NextRequest) {
   const source = body.candidateSource ?? "tmdb";
 
   if (source === "library") {
-    const results = await scoreFromEmbeddedLibrary(referenceIds, attractors, repellers, hard);
+    const results = await scoreFromEmbeddedLibrary(
+      referenceIds,
+      attractors,
+      repellers,
+      hard,
+    );
     if (results.length === 0) {
       const refItems = await prisma.mediaItem.findMany({
         where: { id: { in: attractors.map((a) => a.mediaItemId) } },
@@ -69,7 +80,7 @@ export async function POST(req: NextRequest) {
             error:
               "None of the selected reference films have embeddings yet. Use discovery mode, or add OPENAI_API_KEY and re-add references.",
           },
-          { status: 422 }
+          { status: 422 },
         );
       }
     }
@@ -85,7 +96,7 @@ export async function POST(req: NextRequest) {
           error:
             "At least one participant must link Plex in settings to limit suggestions by library.",
         },
-        { status: 422 }
+        { status: 422 },
       );
     }
     plexTmdbIds = plexR.ids;

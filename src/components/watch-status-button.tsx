@@ -21,14 +21,26 @@ interface WatchStatusButtonProps {
   onStatusChange?: (status: WatchStatus | null) => void;
 }
 
-const statusConfig: Record<WatchStatus, { label: string; icon: React.ComponentType<{ className?: string }>; color: string }> = {
+const statusConfig: Record<
+  WatchStatus,
+  {
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+    color: string;
+  }
+> = {
   WATCHED: { label: "Watched", icon: Eye, color: "text-green-400" },
   WATCHING: { label: "Watching", icon: Clock, color: "text-yellow-400" },
   WATCHLIST: { label: "Watchlist", icon: Bookmark, color: "text-blue-400" },
   DROPPED: { label: "Dropped", icon: X, color: "text-muted-foreground" },
 };
 
-export function WatchStatusButton({ tmdbId, type, currentStatus, onStatusChange }: WatchStatusButtonProps) {
+export function WatchStatusButton({
+  tmdbId,
+  type,
+  currentStatus,
+  onStatusChange,
+}: WatchStatusButtonProps) {
   const router = useRouter();
   const [status, setStatus] = useState<WatchStatus | null>(currentStatus);
   const [isPending, startTransition] = useTransition();
@@ -82,19 +94,22 @@ export function WatchStatusButton({ tmdbId, type, currentStatus, onStatusChange 
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">
-        {(Object.entries(statusConfig) as [WatchStatus, typeof statusConfig[WatchStatus]][]).map(
-          ([value, { label, icon: Icon, color }]) => (
-            <DropdownMenuItem
-              key={value}
-              onClick={() => updateStatus(value)}
-              className={cn("cursor-pointer", status === value && "bg-accent")}
-            >
-              <Icon className={cn("mr-2 h-4 w-4", color)} />
-              {label}
-              {status === value && <Check className="ml-auto h-4 w-4" />}
-            </DropdownMenuItem>
-          )
-        )}
+        {(
+          Object.entries(statusConfig) as [
+            WatchStatus,
+            (typeof statusConfig)[WatchStatus],
+          ][]
+        ).map(([value, { label, icon: Icon, color }]) => (
+          <DropdownMenuItem
+            key={value}
+            onClick={() => updateStatus(value)}
+            className={cn("cursor-pointer", status === value && "bg-accent")}
+          >
+            <Icon className={cn("mr-2 h-4 w-4", color)} />
+            {label}
+            {status === value && <Check className="ml-auto h-4 w-4" />}
+          </DropdownMenuItem>
+        ))}
         {status && (
           <DropdownMenuItem
             onClick={() => updateStatus(null)}

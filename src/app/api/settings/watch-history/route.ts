@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { isWatchHistoryResetScope } from "@/lib/watch-history-scopes";
-import { getWatchImportCounts, resetWatchHistoryScope } from "@/lib/watch-import-stats";
+import {
+  getWatchImportCounts,
+  resetWatchHistoryScope,
+} from "@/lib/watch-import-stats";
 
 export async function GET() {
   const session = await auth();
@@ -19,7 +22,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = await req.json().catch(() => null) as { scope?: string } | null;
+  const body = (await req.json().catch(() => null)) as {
+    scope?: string;
+  } | null;
   const scope = body?.scope;
 
   if (!scope || !isWatchHistoryResetScope(scope)) {

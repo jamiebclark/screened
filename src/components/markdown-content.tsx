@@ -26,7 +26,7 @@ export function MarkdownContent({ content, className }: MarkdownContentProps) {
         "[&_pre_code]:bg-transparent [&_pre_code]:p-0",
         "[&_a]:text-primary [&_a]:underline [&_a]:underline-offset-2",
         "[&_hr]:border-border [&_hr]:my-4",
-        className
+        className,
       )}
     >
       <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>

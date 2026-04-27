@@ -13,11 +13,14 @@ export async function POST(req: NextRequest, { params }: Params) {
   }
 
   const { requestId } = await params;
-  const body = await req.json().catch(() => ({})) as { action?: string };
+  const body = (await req.json().catch(() => ({}))) as { action?: string };
   const action = body.action;
 
   if (action !== "approve" && action !== "deny") {
-    return NextResponse.json({ error: "action must be approve or deny" }, { status: 400 });
+    return NextResponse.json(
+      { error: "action must be approve or deny" },
+      { status: 400 },
+    );
   }
 
   const request = await prisma.listAccessRequest.findUnique({
@@ -34,7 +37,10 @@ export async function POST(req: NextRequest, { params }: Params) {
   }
 
   if (request.status !== ListAccessRequestStatus.PENDING) {
-    return NextResponse.json({ error: "This request is no longer pending" }, { status: 409 });
+    return NextResponse.json(
+      { error: "This request is no longer pending" },
+      { status: 409 },
+    );
   }
 
   const now = new Date();
@@ -50,12 +56,17 @@ export async function POST(req: NextRequest, { params }: Params) {
       },
     });
     await markAccessRequestNotificationsRead(requestId);
-    return NextResponse.json({ ok: true, status: ListAccessRequestStatus.DENIED });
+    return NextResponse.json({
+      ok: true,
+      status: ListAccessRequestStatus.DENIED,
+    });
   }
 
   await prisma.$transaction(async (tx) => {
     await tx.listMember.upsert({
-      where: { listId_userId: { listId: request.listId, userId: request.requesterId } },
+      where: {
+        listId_userId: { listId: request.listId, userId: request.requesterId },
+      },
       update: { role: "CONTRIBUTOR" },
       create: {
         listId: request.listId,

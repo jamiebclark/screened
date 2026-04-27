@@ -20,12 +20,18 @@ test.describe("Lists", () => {
 
   test("view own lists page", async ({ page }) => {
     await page.goto("/lists");
-    await expect(page.getByRole("heading", { name: "Lists", exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Lists", exact: true }),
+    ).toBeVisible();
     // Create list link should be present
-    await expect(page.getByRole("link", { name: /new list|create/i })).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: /new list|create/i }),
+    ).toBeVisible();
   });
 
-  test("create list and add a movie from movie detail page", async ({ page }) => {
+  test("create list and add a movie from movie detail page", async ({
+    page,
+  }) => {
     // First create a list
     const listName = `Movie List ${Date.now()}`;
     const res = await page.request.post("/api/lists", {
@@ -33,7 +39,7 @@ test.describe("Lists", () => {
       headers: { "Content-Type": "application/json" },
     });
     expect(res.ok()).toBeTruthy();
-    const list = await res.json() as { slug: string };
+    const list = (await res.json()) as { slug: string };
 
     // Go to Inception movie page and add to list
     await page.goto("/movies/27205");
@@ -47,7 +53,9 @@ test.describe("Lists", () => {
     await expect(listButton).toBeVisible({ timeout: 5000 });
     await listButton.click();
     // After adding, the button turns green with a check icon (no text success message)
-    await expect(page.locator(".text-green-400").first()).toBeVisible({ timeout: 5000 });
+    await expect(page.locator(".text-green-400").first()).toBeVisible({
+      timeout: 5000,
+    });
   });
 
   test("remove movie from list", async ({ page }) => {
@@ -57,7 +65,7 @@ test.describe("Lists", () => {
       data: { name: listName, isPublic: true },
       headers: { "Content-Type": "application/json" },
     });
-    const list = await res.json() as { slug: string };
+    const list = (await res.json()) as { slug: string };
 
     await page.request.post(`/api/lists/${list.slug}/items`, {
       data: { tmdbId: 27205, type: "movie" },
@@ -68,8 +76,13 @@ test.describe("Lists", () => {
     await expect(page.getByText("Inception")).toBeVisible({ timeout: 10000 });
 
     // Corner X (accessible name includes "Remove")
-    await page.getByRole("button", { name: /remove from list/i }).first().click();
-    await expect(page.getByText("Inception")).not.toBeVisible({ timeout: 5000 });
+    await page
+      .getByRole("button", { name: /remove from list/i })
+      .first()
+      .click();
+    await expect(page.getByText("Inception")).not.toBeVisible({
+      timeout: 5000,
+    });
   });
 
   test("invite a member to a list by searching name", async ({ page }) => {
@@ -79,7 +92,7 @@ test.describe("Lists", () => {
       data: { name: listName, isPublic: true },
       headers: { "Content-Type": "application/json" },
     });
-    const list = await res.json() as { slug: string };
+    const list = (await res.json()) as { slug: string };
 
     await page.goto(`/lists/${list.slug}`);
 
@@ -95,7 +108,9 @@ test.describe("Lists", () => {
 
     // Submit
     await page.getByRole("button", { name: /add to list/i }).click();
-    await expect(page.getByText(/has been added/i)).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/has been added/i)).toBeVisible({
+      timeout: 5000,
+    });
   });
 
   test("invite member by email directly", async ({ page }) => {
@@ -104,7 +119,7 @@ test.describe("Lists", () => {
       data: { name: listName, isPublic: true },
       headers: { "Content-Type": "application/json" },
     });
-    const list = await res.json() as { slug: string };
+    const list = (await res.json()) as { slug: string };
 
     await page.goto(`/lists/${list.slug}`);
     await page.getByRole("button", { name: /invite/i }).click();
@@ -112,7 +127,9 @@ test.describe("Lists", () => {
 
     await page.getByPlaceholder(/search users/i).fill(TEST_USER_2.email);
     await page.getByRole("button", { name: /add to list/i }).click();
-    await expect(page.getByText(/has been added/i)).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/has been added/i)).toBeVisible({
+      timeout: 5000,
+    });
   });
 
   test("invite fails for non-existent user", async ({ page }) => {
@@ -121,13 +138,17 @@ test.describe("Lists", () => {
       data: { name: listName, isPublic: true },
       headers: { "Content-Type": "application/json" },
     });
-    const list = await res.json() as { slug: string };
+    const list = (await res.json()) as { slug: string };
 
     await page.goto(`/lists/${list.slug}`);
     await page.getByRole("button", { name: /invite/i }).click();
-    await page.getByPlaceholder(/search users/i).fill("nobody@doesnotexist.test");
+    await page
+      .getByPlaceholder(/search users/i)
+      .fill("nobody@doesnotexist.test");
     await page.getByRole("button", { name: /add to list/i }).click();
-    await expect(page.getByText(/not found|no user/i)).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/not found|no user/i)).toBeVisible({
+      timeout: 5000,
+    });
   });
 
   test("list shows radarr URL when movies are present", async ({ page }) => {
@@ -136,7 +157,7 @@ test.describe("Lists", () => {
       data: { name: listName, isPublic: true },
       headers: { "Content-Type": "application/json" },
     });
-    const list = await res.json() as { slug: string };
+    const list = (await res.json()) as { slug: string };
 
     await page.request.post(`/api/lists/${list.slug}/items`, {
       data: { tmdbId: 27205, type: "movie" },
@@ -144,12 +165,16 @@ test.describe("Lists", () => {
     });
 
     await page.goto(`/lists/${list.slug}`);
-    await expect(page.getByText("Radarr import URL")).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText("Radarr import URL")).toBeVisible({
+      timeout: 10000,
+    });
     await expect(page.getByText(/\/api\/lists\//)).toBeVisible();
   });
 
   test("non-existent list shows 404", async ({ page }) => {
     await page.goto("/lists/this-list-does-not-exist-xyz");
-    await expect(page.getByText(/not found|404/i)).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/not found|404/i)).toBeVisible({
+      timeout: 5000,
+    });
   });
 });

@@ -30,7 +30,9 @@ export function buildEmbeddingText(item: {
   return parts.join("\n");
 }
 
-export async function generateEmbedding(text: string): Promise<number[] | null> {
+export async function generateEmbedding(
+  text: string,
+): Promise<number[] | null> {
   const client = getClient();
   if (!client) return null;
   try {
@@ -45,7 +47,9 @@ export async function generateEmbedding(text: string): Promise<number[] | null> 
   }
 }
 
-export function weightedAverage(entries: { vector: number[]; weight: number }[]): number[] {
+export function weightedAverage(
+  entries: { vector: number[]; weight: number }[],
+): number[] {
   if (entries.length === 0) return [];
   const totalWeight = entries.reduce((sum, e) => sum + e.weight, 0);
   const dim = entries[0].vector.length;

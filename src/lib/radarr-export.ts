@@ -7,7 +7,7 @@ export type RadarrListEntry = {
 };
 
 export function mediaItemsToRadarrJson(
-  items: Pick<MediaItem, "tmdbId" | "title" | "year">[]
+  items: Pick<MediaItem, "tmdbId" | "title" | "year">[],
 ): RadarrListEntry[] {
   return items.map((item) => ({
     tmdbId: item.tmdbId,

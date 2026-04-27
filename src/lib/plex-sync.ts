@@ -43,7 +43,11 @@ export async function syncPlexUser(userId: string): Promise<PlexSyncResult> {
   const serverToken = server.accessToken ?? connection.plexToken;
 
   // --- Movie sync ---
-  const watchedMovies = await getPlexWatchHistory(serverUrl, serverToken, "movie");
+  const watchedMovies = await getPlexWatchHistory(
+    serverUrl,
+    serverToken,
+    "movie",
+  );
 
   let synced = 0;
   let skipped = 0;
@@ -69,7 +73,9 @@ export async function syncPlexUser(userId: string): Promise<PlexSyncResult> {
             title: movie.title,
             poster: movie.poster_path,
             backdrop: movie.backdrop_path,
-            year: movie.release_date ? new Date(movie.release_date).getFullYear() : null,
+            year: movie.release_date
+              ? new Date(movie.release_date).getFullYear()
+              : null,
             overview: movie.overview,
             genres: movie.genres.map((g) => g.name),
             runtime: movie.runtime,
@@ -81,12 +87,18 @@ export async function syncPlexUser(userId: string): Promise<PlexSyncResult> {
       }
     }
 
-    const watchedAt = item.lastViewedAt ? new Date(item.lastViewedAt * 1000) : new Date();
+    const watchedAt = item.lastViewedAt
+      ? new Date(item.lastViewedAt * 1000)
+      : new Date();
 
     const upserted = await prisma.userMediaStatus.upsert({
       where: { userId_mediaItemId: { userId, mediaItemId: mediaItem.id } },
       update: { status: WatchStatus.WATCHED },
-      create: { userId, mediaItemId: mediaItem.id, status: WatchStatus.WATCHED },
+      create: {
+        userId,
+        mediaItemId: mediaItem.id,
+        status: WatchStatus.WATCHED,
+      },
     });
 
     const existingEntry = await findMergeCandidateWatchEntry(
@@ -125,7 +137,11 @@ export async function syncPlexUser(userId: string): Promise<PlexSyncResult> {
     const showTmdbIdMap = new Map<string, number>();
 
     for (const ratingKey of uniqueShowKeys) {
-      const showMeta = await getPlexItemMetadata(serverUrl, serverToken, ratingKey);
+      const showMeta = await getPlexItemMetadata(
+        serverUrl,
+        serverToken,
+        ratingKey,
+      );
       if (showMeta) {
         const tmdbId = extractTmdbIdFromGuid(showMeta.Guid);
         if (tmdbId) showTmdbIdMap.set(ratingKey, tmdbId);
@@ -176,7 +192,7 @@ export async function syncPlexUser(userId: string): Promise<PlexSyncResult> {
       }
 
       const validEpisodes = showEpisodes.filter(
-        (ep) => ep.parentIndex != null && ep.index != null
+        (ep) => ep.parentIndex != null && ep.index != null,
       );
 
       await prisma.episodeStatus.createMany({
@@ -185,7 +201,9 @@ export async function syncPlexUser(userId: string): Promise<PlexSyncResult> {
           mediaItemId: mediaItem!.id,
           seasonNumber: ep.parentIndex,
           episodeNumber: ep.index,
-          watchedAt: ep.lastViewedAt ? new Date(ep.lastViewedAt * 1000) : new Date(),
+          watchedAt: ep.lastViewedAt
+            ? new Date(ep.lastViewedAt * 1000)
+            : new Date(),
         })),
         skipDuplicates: true,
       });
@@ -196,7 +214,11 @@ export async function syncPlexUser(userId: string): Promise<PlexSyncResult> {
 
       if (!existingStatus) {
         await prisma.userMediaStatus.create({
-          data: { userId, mediaItemId: mediaItem.id, status: WatchStatus.WATCHING },
+          data: {
+            userId,
+            mediaItemId: mediaItem.id,
+            status: WatchStatus.WATCHING,
+          },
         });
       } else if (existingStatus.status === WatchStatus.WATCHLIST) {
         await prisma.userMediaStatus.update({

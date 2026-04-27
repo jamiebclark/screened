@@ -24,9 +24,15 @@ export async function listFriendUserIds(viewerId: string): Promise<string[]> {
   return [...asLow.map((r) => r.userHighId), ...asHigh.map((r) => r.userLowId)];
 }
 
-export async function areFriends(userId: string, otherUserId: string): Promise<boolean> {
+export async function areFriends(
+  userId: string,
+  otherUserId: string,
+): Promise<boolean> {
   if (userId === otherUserId) return true;
-  const { userLowId, userHighId } = sortedFriendshipUserIds(userId, otherUserId);
+  const { userLowId, userHighId } = sortedFriendshipUserIds(
+    userId,
+    otherUserId,
+  );
   const row = await prisma.friendship.findUnique({
     where: { userLowId_userHighId: { userLowId, userHighId } },
     select: { id: true },
@@ -41,7 +47,10 @@ export async function getProfileFriendState(
   if (!viewerId) return { kind: "none" };
   if (viewerId === profileUserId) return { kind: "self" };
 
-  const { userLowId, userHighId } = sortedFriendshipUserIds(viewerId, profileUserId);
+  const { userLowId, userHighId } = sortedFriendshipUserIds(
+    viewerId,
+    profileUserId,
+  );
   const existing = await prisma.friendship.findUnique({
     where: { userLowId_userHighId: { userLowId, userHighId } },
     select: { id: true },
@@ -49,13 +58,17 @@ export async function getProfileFriendState(
   if (existing) return { kind: "friends" };
 
   const outgoing = await prisma.friendRequest.findUnique({
-    where: { fromUserId_toUserId: { fromUserId: viewerId, toUserId: profileUserId } },
+    where: {
+      fromUserId_toUserId: { fromUserId: viewerId, toUserId: profileUserId },
+    },
     select: { id: true },
   });
   if (outgoing) return { kind: "outgoing", requestId: outgoing.id };
 
   const incoming = await prisma.friendRequest.findUnique({
-    where: { fromUserId_toUserId: { fromUserId: profileUserId, toUserId: viewerId } },
+    where: {
+      fromUserId_toUserId: { fromUserId: profileUserId, toUserId: viewerId },
+    },
     select: { id: true },
   });
   if (incoming) return { kind: "incoming", requestId: incoming.id };
@@ -64,7 +77,10 @@ export async function getProfileFriendState(
 }
 
 /** Creates friendship (idempotent) and removes pending requests in either direction. */
-export async function createFriendshipAndClearPending(userA: string, userB: string) {
+export async function createFriendshipAndClearPending(
+  userA: string,
+  userB: string,
+) {
   const { userLowId, userHighId } = sortedFriendshipUserIds(userA, userB);
   return prisma.$transaction(async (tx) => {
     await tx.friendship.upsert({
@@ -92,4 +108,3 @@ export async function notifyFriendRequest(requestId: string, toUserId: string) {
     },
   });
 }
-

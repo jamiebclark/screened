@@ -17,9 +17,15 @@ type PrivateListGateProps = {
   initialRequestStatus: AccessStatus | null;
 };
 
-export function PrivateListGate({ slug, listName, initialRequestStatus }: PrivateListGateProps) {
+export function PrivateListGate({
+  slug,
+  listName,
+  initialRequestStatus,
+}: PrivateListGateProps) {
   const router = useRouter();
-  const [status, setStatus] = useState<AccessStatus | null>(initialRequestStatus);
+  const [status, setStatus] = useState<AccessStatus | null>(
+    initialRequestStatus,
+  );
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -28,14 +34,21 @@ export function PrivateListGate({ slug, listName, initialRequestStatus }: Privat
     setError(null);
     setLoading(true);
     try {
-      const res = await fetch(`/api/lists/${encodeURIComponent(slug)}/access-requests`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: message.trim() || undefined }),
-      });
+      const res = await fetch(
+        `/api/lists/${encodeURIComponent(slug)}/access-requests`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: message.trim() || undefined }),
+        },
+      );
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(typeof data.error === "string" ? data.error : "Could not send request");
+        setError(
+          typeof data.error === "string"
+            ? data.error
+            : "Could not send request",
+        );
         return;
       }
       setStatus(ListAccessRequestStatus.PENDING);
@@ -56,7 +69,8 @@ export function PrivateListGate({ slug, listName, initialRequestStatus }: Privat
         </div>
         <h1 className="text-xl font-semibold mb-1">Private list</h1>
         <p className="text-muted-foreground text-sm mb-6">
-          <span className="font-medium text-foreground">{listName}</span> is private. Ask the owner for access.
+          <span className="font-medium text-foreground">{listName}</span> is
+          private. Ask the owner for access.
         </p>
 
         {status === ListAccessRequestStatus.PENDING && (
@@ -84,9 +98,7 @@ export function PrivateListGate({ slug, listName, initialRequestStatus }: Privat
                 maxLength={500}
               />
             </div>
-            {error && (
-              <p className="text-sm text-destructive">{error}</p>
-            )}
+            {error && <p className="text-sm text-destructive">{error}</p>}
             <Button className="w-full" onClick={submit} disabled={loading}>
               {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
               Request access

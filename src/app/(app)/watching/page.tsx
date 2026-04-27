@@ -3,7 +3,10 @@ import { prisma } from "@/lib/prisma";
 import { MediaCard } from "@/components/media-card";
 import { ClearTrackingCornerButton } from "@/components/clear-tracking-corner-button";
 import { EditableListSearchAdd } from "@/components/editable-list-search-add";
-import { buildLastWatchedMsByMediaItemId, sortByLastWatchedDesc } from "@/lib/user-media-sort";
+import {
+  buildLastWatchedMsByMediaItemId,
+  sortByLastWatchedDesc,
+} from "@/lib/user-media-sort";
 import { Clock } from "lucide-react";
 import { MediaType } from "@/generated/prisma";
 
@@ -32,7 +35,8 @@ export default async function WatchingPage() {
   const items = sortByLastWatchedDesc(rows, lastWatchedMs);
 
   const existingKeys = items.map(
-    (i) => `${i.mediaItem.type === MediaType.MOVIE ? "movie" : "tv"}-${i.mediaItem.tmdbId}`
+    (i) =>
+      `${i.mediaItem.type === MediaType.MOVIE ? "movie" : "tv"}-${i.mediaItem.tmdbId}`,
   );
 
   return (
@@ -43,7 +47,9 @@ export default async function WatchingPage() {
         </div>
         <div>
           <h1 className="text-2xl font-bold">Watching</h1>
-          <p className="text-sm text-muted-foreground">{items.length} title{items.length !== 1 ? "s" : ""} in progress</p>
+          <p className="text-sm text-muted-foreground">
+            {items.length} title{items.length !== 1 ? "s" : ""} in progress
+          </p>
         </div>
       </div>
 
@@ -53,12 +59,15 @@ export default async function WatchingPage() {
         <div className="text-center py-20 border border-dashed border-border rounded-xl">
           <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
           <p className="font-medium mb-1">Nothing in progress</p>
-          <p className="text-sm text-muted-foreground">Mark something as watching to see it here.</p>
+          <p className="text-sm text-muted-foreground">
+            Mark something as watching to see it here.
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-3">
           {items.map((item) => {
-            const type = item.mediaItem.type === MediaType.MOVIE ? "movie" : "tv";
+            const type =
+              item.mediaItem.type === MediaType.MOVIE ? "movie" : "tv";
             return (
               <div key={item.id} className="relative">
                 <ClearTrackingCornerButton

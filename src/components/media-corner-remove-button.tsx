@@ -35,7 +35,7 @@ export function MediaCornerRemoveButton({
       title={title}
       className={cn(
         "absolute z-10 h-7 w-7 rounded-full border border-border bg-background/90 shadow-sm text-muted-foreground hover:text-destructive hover:bg-background",
-        positionClass[position]
+        positionClass[position],
       )}
       disabled={disabled}
       onClick={onClick}

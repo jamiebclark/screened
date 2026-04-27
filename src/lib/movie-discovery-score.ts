@@ -31,7 +31,7 @@ function yearFromTmdbDate(release: string | null | undefined): number | null {
 function yearInRange(
   y: number | null,
   minY: number | undefined,
-  maxY: number | undefined
+  maxY: number | undefined,
 ): boolean {
   if (y == null) return true;
   if (minY != null && y < minY) return false;
@@ -43,14 +43,18 @@ function matchesPerson(
   cast: string[],
   director: string | null,
   name: string,
-  directors: string[] = []
+  directors: string[] = [],
 ): boolean {
   const dList = directors.length > 0 ? directors : director ? [director] : [];
   const all = [...cast, ...dList].map((s) => s.toLowerCase());
   return all.some((s) => s.includes(name));
 }
 
-async function mapPool<T, R>(items: T[], poolSize: number, fn: (t: T) => Promise<R>): Promise<R[]> {
+async function mapPool<T, R>(
+  items: T[],
+  poolSize: number,
+  fn: (t: T) => Promise<R>,
+): Promise<R[]> {
   const out: R[] = [];
   for (let i = 0; i < items.length; i += poolSize) {
     const batch = items.slice(i, i + poolSize);
@@ -60,7 +64,10 @@ async function mapPool<T, R>(items: T[], poolSize: number, fn: (t: T) => Promise
 }
 
 /** Ensure all reference items have a stored embedding; build aggregate vectors. */
-async function getReferenceVectors(attractors: ReferenceItem[], repellers: ReferenceItem[]) {
+async function getReferenceVectors(
+  attractors: ReferenceItem[],
+  repellers: ReferenceItem[],
+) {
   const referenceIds = [
     ...attractors.map((a) => a.mediaItemId),
     ...repellers.map((r) => r.mediaItemId),
@@ -102,13 +109,23 @@ async function getReferenceVectors(attractors: ReferenceItem[], repellers: Refer
       getMovieKeywords(row.tmdbId).catch(() => [] as string[]),
     ]);
     const title = movie.title;
-    const year = movie.release_date ? new Date(movie.release_date).getFullYear() : null;
+    const year = movie.release_date
+      ? new Date(movie.release_date).getFullYear()
+      : null;
     const overview = movie.overview;
     const genres = movie.genres.map((g) => g.name);
     const cast = credits.cast;
     const director = credits.director;
     const keywords = kws;
-    const text = buildEmbeddingText({ title, year, overview, genres, cast, director, keywords });
+    const text = buildEmbeddingText({
+      title,
+      year,
+      overview,
+      genres,
+      cast,
+      director,
+      keywords,
+    });
     const emb = await generateEmbedding(text);
     if (!emb) {
       return { ok: false as const, error: "embed_failed" as const };
@@ -132,10 +149,16 @@ async function getReferenceVectors(attractors: ReferenceItem[], repellers: Refer
   }
 
   const attractorEntries = attractors
-    .map((a) => ({ vector: byId.get(a.mediaItemId)?.embedding ?? [], weight: a.weight }))
+    .map((a) => ({
+      vector: byId.get(a.mediaItemId)?.embedding ?? [],
+      weight: a.weight,
+    }))
     .filter((e) => e.vector.length > 0);
   const repellerEntries = repellers
-    .map((r) => ({ vector: byId.get(r.mediaItemId)?.embedding ?? [], weight: r.weight }))
+    .map((r) => ({
+      vector: byId.get(r.mediaItemId)?.embedding ?? [],
+      weight: r.weight,
+    }))
     .filter((e) => e.vector.length > 0);
 
   if (attractorEntries.length === 0) {
@@ -145,25 +168,33 @@ async function getReferenceVectors(attractors: ReferenceItem[], repellers: Refer
   return {
     ok: true as const,
     attractorVec: weightedAverage(attractorEntries),
-    repellerVec: repellerEntries.length > 0 ? weightedAverage(repellerEntries) : null,
+    repellerVec:
+      repellerEntries.length > 0 ? weightedAverage(repellerEntries) : null,
   };
 }
 
 /** TMDB id → first-seen list row (for quick year prefilter). */
 async function collectTmdbCandidateMap(
   attractorTmdbIds: number[],
-  wide: boolean
+  wide: boolean,
 ): Promise<Map<number, { release_date?: string }>> {
   const out = new Map<number, { release_date?: string }>();
   const listPages = wide ? ([1, 2, 3, 4] as const) : ([1, 2] as const);
   for (const aid of attractorTmdbIds) {
     const listResults = await Promise.all(
-      listPages.flatMap((p) => [getMovieRecommendations(aid, p), getMovieSimilar(aid, p)])
+      listPages.flatMap((p) => [
+        getMovieRecommendations(aid, p),
+        getMovieSimilar(aid, p),
+      ]),
     );
     for (const p of listResults) {
       for (const m of p.results) {
         if (!m.id || out.has(m.id)) continue;
-        if ("name" in m && (m as { name?: string }).name && !("title" in m && (m as { title?: string }).title)) {
+        if (
+          "name" in m &&
+          (m as { name?: string }).name &&
+          !("title" in m && (m as { title?: string }).title)
+        ) {
           continue;
         }
         out.set(m.id, { release_date: m.release_date });
@@ -178,7 +209,7 @@ export async function scoreFromTmdbDiscovery(
   attractors: ReferenceItem[],
   repellers: ReferenceItem[],
   hard: HardFilterInput,
-  opts: { plexLibraryOnly: boolean; plexTmdbIds: Set<number> | null }
+  opts: { plexLibraryOnly: boolean; plexTmdbIds: Set<number> | null },
 ): Promise<ScoredRow[] | { error: string }> {
   if (!isEmbeddingEnabled()) {
     return { error: "Add OPENAI_API_KEY to use discovery scoring." };
@@ -186,10 +217,18 @@ export async function scoreFromTmdbDiscovery(
 
   const refVecs = await getReferenceVectors(attractors, repellers);
   if (!refVecs.ok) {
-    if (refVecs.error === "no_embeddings" || refVecs.error === "no_attractor_vectors") {
-      return { error: "Could not build embeddings for your reference films. Add OPENAI_API_KEY or wait for them to process." };
+    if (
+      refVecs.error === "no_embeddings" ||
+      refVecs.error === "no_attractor_vectors"
+    ) {
+      return {
+        error:
+          "Could not build embeddings for your reference films. Add OPENAI_API_KEY or wait for them to process.",
+      };
     }
-    return { error: "Embedding failed for a reference title. Try again in a moment." };
+    return {
+      error: "Embedding failed for a reference title. Try again in a moment.",
+    };
   }
   const { attractorVec, repellerVec } = refVecs;
 
@@ -216,9 +255,7 @@ export async function scoreFromTmdbDiscovery(
     where: { userId: { in: hard.participantIds }, ...statusWhere },
     select: { mediaItem: { select: { tmdbId: true } } },
   });
-  const watchedTmdb = new Set(
-    logged.map((l) => l.mediaItem.tmdbId)
-  );
+  const watchedTmdb = new Set(logged.map((l) => l.mediaItem.tmdbId));
 
   const attractorTmdbIds = (
     await prisma.mediaItem.findMany({
@@ -228,22 +265,31 @@ export async function scoreFromTmdbDiscovery(
   ).map((r) => r.tmdbId);
 
   const hasPersonFilter =
-    (hard.requirePeople?.length ?? 0) > 0 || (hard.excludePeople?.length ?? 0) > 0;
+    (hard.requirePeople?.length ?? 0) > 0 ||
+    (hard.excludePeople?.length ?? 0) > 0;
   const hasGenreFilter =
-    (hard.includeGenres?.length ?? 0) > 0 || (hard.excludeGenres?.length ?? 0) > 0;
+    (hard.includeGenres?.length ?? 0) > 0 ||
+    (hard.excludeGenres?.length ?? 0) > 0;
   const wideCandidatePool = hasPersonFilter || hasGenreFilter;
-  const tmdbInfo = await collectTmdbCandidateMap(attractorTmdbIds, wideCandidatePool);
+  const tmdbInfo = await collectTmdbCandidateMap(
+    attractorTmdbIds,
+    wideCandidatePool,
+  );
 
   const plexTmdb = opts.plexLibraryOnly ? opts.plexTmdbIds : null;
   if (opts.plexLibraryOnly && !plexTmdb) {
-    return { error: "Connect Plex in settings to limit suggestions to your library." };
+    return {
+      error: "Connect Plex in settings to limit suggestions to your library.",
+    };
   }
 
   const minY = hard.minYear;
   const maxY = hard.maxYear;
 
   /** Wider pool when filters shrink the list — need more similar/recommendation rows before details. */
-  const preDetailLimit = wideCandidatePool ? MAX_TMDB_CANDIDATES : MAX_TO_EMBED * 2;
+  const preDetailLimit = wideCandidatePool
+    ? MAX_TMDB_CANDIDATES
+    : MAX_TO_EMBED * 2;
 
   const candidateTmdb: number[] = [];
   for (const [tmdb, meta] of tmdbInfo) {
@@ -260,22 +306,18 @@ export async function scoreFromTmdbDiscovery(
     return [];
   }
 
-  const details = await mapPool(
-    candidateTmdb,
-    8,
-    async (tmdb) => {
-      const [movie, credits, kws] = await Promise.all([
-        getMovie(tmdb),
-        getMovieCredits(tmdb).catch(() => ({
-          cast: [] as string[],
-          director: null,
-          directors: [] as string[],
-        })),
-        getMovieKeywords(tmdb).catch(() => [] as string[]),
-      ]);
-      return { tmdb, movie, credits, kws };
-    }
-  );
+  const details = await mapPool(candidateTmdb, 8, async (tmdb) => {
+    const [movie, credits, kws] = await Promise.all([
+      getMovie(tmdb),
+      getMovieCredits(tmdb).catch(() => ({
+        cast: [] as string[],
+        director: null,
+        directors: [] as string[],
+      })),
+      getMovieKeywords(tmdb).catch(() => [] as string[]),
+    ]);
+    return { tmdb, movie, credits, kws };
+  });
 
   const require = (hard.requirePeople ?? []).map((p) => p.toLowerCase());
   const exclude = (hard.excludePeople ?? []).map((p) => p.toLowerCase());
@@ -285,21 +327,34 @@ export async function scoreFromTmdbDiscovery(
     const { movie, credits } = d;
     const y = yearFromTmdbDate(movie.release_date);
     if (!yearInRange(y, minY, maxY)) continue;
-    if (hard.maxRuntime != null && (movie.runtime == null || movie.runtime > hard.maxRuntime)) {
+    if (
+      hard.maxRuntime != null &&
+      (movie.runtime == null || movie.runtime > hard.maxRuntime)
+    ) {
       continue;
     }
     if (require.length > 0) {
-      if (!require.every((n) => matchesPerson(credits.cast, credits.director, n, credits.directors))) {
+      if (
+        !require.every((n) =>
+          matchesPerson(credits.cast, credits.director, n, credits.directors),
+        )
+      ) {
         continue;
       }
     }
     if (exclude.length > 0) {
-      if (exclude.some((n) => matchesPerson(credits.cast, credits.director, n, credits.directors))) {
+      if (
+        exclude.some((n) =>
+          matchesPerson(credits.cast, credits.director, n, credits.directors),
+        )
+      ) {
         continue;
       }
     }
     const genreNames = movie.genres.map((g) => g.name);
-    if (!passesGenreFilters(genreNames, hard.includeGenres, hard.excludeGenres)) {
+    if (
+      !passesGenreFilters(genreNames, hard.includeGenres, hard.excludeGenres)
+    ) {
       continue;
     }
     filtered.push(d);
@@ -310,7 +365,11 @@ export async function scoreFromTmdbDiscovery(
   }
 
   const toEmbed = filtered.slice(0, MAX_TO_EMBED);
-  type ScoredW = { row: ScoredRow; embedding: number[]; db: (typeof toEmbed)[0] };
+  type ScoredW = {
+    row: ScoredRow;
+    embedding: number[];
+    db: (typeof toEmbed)[0];
+  };
   const scored: ScoredW[] = [];
 
   for (let i = 0; i < toEmbed.length; i += 5) {
@@ -331,7 +390,7 @@ export async function scoreFromTmdbDiscovery(
         });
         const v = await generateEmbedding(text);
         return { d, v };
-      })
+      }),
     );
     for (const { d, v } of vecResults) {
       if (!v || v.length === 0) continue;
@@ -363,7 +422,9 @@ export async function scoreFromTmdbDiscovery(
     }
   }
 
-  const sorted = scored.sort((a, b) => b.row.score - a.row.score).slice(0, RESULTS);
+  const sorted = scored
+    .sort((a, b) => b.row.score - a.row.score)
+    .slice(0, RESULTS);
 
   const out: ScoredRow[] = [];
   for (const s of sorted) {

@@ -12,6 +12,8 @@ import { TitlePageTopNav } from "@/components/title-page-top-nav";
 import { TitlePageMobilePoster } from "@/components/title-page-mobile-poster";
 import { EpisodeTracker } from "@/components/episode-tracker";
 import { buildTvCatalogLinks } from "@/lib/movie-site-context";
+import { getCachedOmdbRatings } from "@/lib/omdb";
+import { AggregatedRatingsLine } from "@/components/aggregated-ratings-line";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Star, Calendar, Tv } from "lucide-react";
@@ -45,16 +47,27 @@ export default async function TvPage({ params, searchParams }: Params) {
     session?.user?.id
       ? prisma.userMediaStatus
           .findFirst({
-            where: { userId: session.user.id, mediaItem: { tmdbId, type: MediaType.TV } },
+            where: {
+              userId: session.user.id,
+              mediaItem: { tmdbId, type: MediaType.TV },
+            },
           })
           .catch(() => null)
       : null,
     session?.user?.id
-      ? fetchTitleWatchHistoryForViewer(session.user.id, tmdbId, MediaType.TV).catch(() => [])
+      ? fetchTitleWatchHistoryForViewer(
+          session.user.id,
+          tmdbId,
+          MediaType.TV,
+        ).catch(() => [])
       : [],
   ]);
 
   if (!show) notFound();
+
+  const omdbRatings = await getCachedOmdbRatings(
+    show.external_ids?.imdb_id ?? null,
+  );
 
   const realSeasons = show.seasons.filter((s) => s.season_number > 0);
 
@@ -64,8 +77,8 @@ export default async function TvPage({ params, searchParams }: Params) {
         getTvSeason(tmdbId, s.season_number).catch(() => ({
           ...s,
           episodes: [],
-        }))
-      )
+        })),
+      ),
     ),
     session?.user?.id
       ? prisma.episodeStatus
@@ -82,14 +95,25 @@ export default async function TvPage({ params, searchParams }: Params) {
 
   const backdropUrl = tmdbImage(show.backdrop_path, "w1280");
   const posterUrl = tmdbImage(show.poster_path, "w500");
-  const year = show.first_air_date ? new Date(show.first_air_date).getFullYear() : null;
-  const catalogLinks = buildTvCatalogLinks(tmdbId, show.external_ids?.imdb_id ?? null);
+  const year = show.first_air_date
+    ? new Date(show.first_air_date).getFullYear()
+    : null;
+  const catalogLinks = buildTvCatalogLinks(
+    tmdbId,
+    show.external_ids?.imdb_id ?? null,
+  );
 
   return (
     <div className="min-h-screen">
       <div className="relative h-64 md:h-80 lg:h-96 overflow-hidden">
         {backdropUrl ? (
-          <Image src={backdropUrl} alt={show.name} fill className="object-cover" priority />
+          <Image
+            src={backdropUrl}
+            alt={show.name}
+            fill
+            className="object-cover"
+            priority
+          />
         ) : (
           <div className="h-full bg-muted" />
         )}
@@ -101,7 +125,13 @@ export default async function TvPage({ params, searchParams }: Params) {
           <div className="hidden sm:flex flex-col shrink-0 w-36 md:w-48">
             <div className="aspect-[2/3] rounded-xl overflow-hidden border border-border shadow-2xl">
               {posterUrl ? (
-                <Image src={posterUrl} alt={show.name} width={192} height={288} className="object-cover w-full h-full" />
+                <Image
+                  src={posterUrl}
+                  alt={show.name}
+                  width={192}
+                  height={288}
+                  className="object-cover w-full h-full"
+                />
               ) : (
                 <div className="w-full h-full bg-muted flex items-center justify-center text-sm text-muted-foreground text-center p-2">
                   {show.name}
@@ -120,11 +150,15 @@ export default async function TvPage({ params, searchParams }: Params) {
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-start gap-2 mb-2">
                   {show.genres.slice(0, 3).map((g) => (
-                    <Badge key={g.id} variant="secondary" className="text-xs">{g.name}</Badge>
+                    <Badge key={g.id} variant="secondary" className="text-xs">
+                      {g.name}
+                    </Badge>
                   ))}
                 </div>
 
-                <h1 className="text-2xl font-bold md:text-4xl md:tracking-tighter mb-2">{show.name}</h1>
+                <h1 className="text-2xl font-bold md:text-4xl md:tracking-tighter mb-2">
+                  {show.name}
+                </h1>
 
                 <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-4">
                   {year && (
@@ -135,7 +169,9 @@ export default async function TvPage({ params, searchParams }: Params) {
                   )}
                   <span className="flex items-center gap-1">
                     <Tv className="h-3.5 w-3.5" />
-                    {show.number_of_seasons} season{show.number_of_seasons !== 1 ? "s" : ""} · {show.number_of_episodes} episodes
+                    {show.number_of_seasons} season
+                    {show.number_of_seasons !== 1 ? "s" : ""} ·{" "}
+                    {show.number_of_episodes} episodes
                   </span>
                   {show.vote_average > 0 && (
                     <span className="flex items-center gap-1">
@@ -143,18 +179,31 @@ export default async function TvPage({ params, searchParams }: Params) {
                       {show.vote_average.toFixed(1)}
                     </span>
                   )}
+                  <AggregatedRatingsLine ratings={omdbRatings} />
                 </div>
 
                 <div className="flex flex-wrap items-center gap-3 mb-4 sm:mb-6">
                   <WatchStatusButton
-                    key={userStatus ? `${userStatus.id}-${userStatus.status}` : `s-${tmdbId}-none`}
+                    key={
+                      userStatus
+                        ? `${userStatus.id}-${userStatus.status}`
+                        : `s-${tmdbId}-none`
+                    }
                     tmdbId={tmdbId}
                     type="tv"
                     currentStatus={userStatus?.status ?? null}
                   />
-                  <AddToListDialog tmdbId={tmdbId} type="tv" title={show.name} />
+                  <AddToListDialog
+                    tmdbId={tmdbId}
+                    type="tv"
+                    title={show.name}
+                  />
                   {userStatus && (
-                    <RatingStars tmdbId={tmdbId} type="tv" currentRating={userStatus?.rating ?? null} />
+                    <RatingStars
+                      tmdbId={tmdbId}
+                      type="tv"
+                      currentRating={userStatus?.rating ?? null}
+                    />
                   )}
                 </div>
 
@@ -163,7 +212,9 @@ export default async function TvPage({ params, searchParams }: Params) {
                 </div>
 
                 {show.overview && (
-                  <p className="text-muted-foreground leading-relaxed max-w-2xl">{show.overview}</p>
+                  <p className="text-muted-foreground leading-relaxed max-w-2xl">
+                    {show.overview}
+                  </p>
                 )}
               </div>
             </div>
@@ -209,7 +260,9 @@ export default async function TvPage({ params, searchParams }: Params) {
                   watchedEpisodes={watchedEpisodes}
                 />
               ) : (
-                <p className="text-muted-foreground text-sm">No episode data available.</p>
+                <p className="text-muted-foreground text-sm">
+                  No episode data available.
+                </p>
               )}
             </TabsContent>
           </Tabs>

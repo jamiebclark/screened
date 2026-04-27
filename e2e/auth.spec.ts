@@ -14,7 +14,9 @@ test.beforeAll(async ({ request }) => {
 test.describe("Authentication", () => {
   test("register new user and land on dashboard", async ({ page }) => {
     await page.goto("/register");
-    await expect(page.getByRole("heading", { name: "Create account" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Create account" }),
+    ).toBeVisible();
 
     await page.getByLabel("Name").fill("New User");
     await page.getByLabel("Email").fill(UNIQUE_EMAIL);
@@ -39,7 +41,9 @@ test.describe("Authentication", () => {
     await page.getByLabel("Email").fill(TEST_USER.email);
     await page.getByLabel("Password").fill("wrongpassword");
     await page.getByRole("button", { name: "Sign in", exact: true }).click();
-    await expect(page.getByText("Invalid email or password")).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText("Invalid email or password")).toBeVisible({
+      timeout: 5000,
+    });
     await expect(page).toHaveURL(/\/login/);
   });
 
@@ -48,7 +52,9 @@ test.describe("Authentication", () => {
     await page.getByLabel("Email").fill("nobody@nowhere.test");
     await page.getByLabel("Password").fill("somepassword123");
     await page.getByRole("button", { name: "Sign in", exact: true }).click();
-    await expect(page.getByText("Invalid email or password")).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText("Invalid email or password")).toBeVisible({
+      timeout: 5000,
+    });
   });
 
   test("shows error when registering with existing email", async ({ page }) => {
@@ -57,7 +63,9 @@ test.describe("Authentication", () => {
     await page.getByLabel("Email").fill(TEST_USER.email);
     await page.getByLabel("Password").fill("testpassword123");
     await page.getByRole("button", { name: "Create account" }).click();
-    await expect(page.getByText("Email already in use")).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText("Email already in use")).toBeVisible({
+      timeout: 5000,
+    });
   });
 
   test("unauthenticated user is redirected to login", async ({ page }) => {
@@ -68,7 +76,11 @@ test.describe("Authentication", () => {
   test("logout via nav dropdown", async ({ page }) => {
     await login(page);
     // Click avatar dropdown
-    await page.getByRole("button").filter({ has: page.locator(".rounded-full") }).first().click();
+    await page
+      .getByRole("button")
+      .filter({ has: page.locator(".rounded-full") })
+      .first()
+      .click();
     await page.getByRole("menuitem", { name: /sign out/i }).click();
     await page.waitForURL(/\/login/, { timeout: 10000 });
     await expect(page).toHaveURL(/\/login/);

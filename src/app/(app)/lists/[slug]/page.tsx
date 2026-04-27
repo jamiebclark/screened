@@ -24,7 +24,9 @@ export default async function ListPage({ params }: Params) {
     include: {
       owner: { select: { id: true, name: true, avatarUrl: true } },
       members: {
-        include: { user: { select: { id: true, name: true, avatarUrl: true } } },
+        include: {
+          user: { select: { id: true, name: true, avatarUrl: true } },
+        },
         orderBy: { createdAt: "asc" },
       },
       items: {
@@ -40,7 +42,9 @@ export default async function ListPage({ params }: Params) {
   if (!list) notFound();
 
   const userId = session?.user?.id;
-  const isMember = userId ? list.members.some((m) => m.userId === userId) : false;
+  const isMember = userId
+    ? list.members.some((m) => m.userId === userId)
+    : false;
   const isOwner = userId === list.ownerId;
 
   if (!list.isPublic && !isMember) {
@@ -78,7 +82,7 @@ export default async function ListPage({ params }: Params) {
               },
               select: { mediaItemId: true },
             })
-          ).map((r) => r.mediaItemId)
+          ).map((r) => r.mediaItemId),
         )
       : new Set<string>();
 
@@ -89,14 +93,25 @@ export default async function ListPage({ params }: Params) {
     ? list.items.filter((i) => watchedIdSet.has(i.mediaItemId))
     : [];
 
-  const allMovies = list.items.filter((i) => i.mediaItem.type === MediaType.MOVIE);
-  const movies = unwatchedItems.filter((i) => i.mediaItem.type === MediaType.MOVIE);
-  const tvShows = unwatchedItems.filter((i) => i.mediaItem.type === MediaType.TV);
-  const watchedMovies = watchedItems.filter((i) => i.mediaItem.type === MediaType.MOVIE);
-  const watchedTv = watchedItems.filter((i) => i.mediaItem.type === MediaType.TV);
+  const allMovies = list.items.filter(
+    (i) => i.mediaItem.type === MediaType.MOVIE,
+  );
+  const movies = unwatchedItems.filter(
+    (i) => i.mediaItem.type === MediaType.MOVIE,
+  );
+  const tvShows = unwatchedItems.filter(
+    (i) => i.mediaItem.type === MediaType.TV,
+  );
+  const watchedMovies = watchedItems.filter(
+    (i) => i.mediaItem.type === MediaType.MOVIE,
+  );
+  const watchedTv = watchedItems.filter(
+    (i) => i.mediaItem.type === MediaType.TV,
+  );
 
   const existingListKeys = list.items.map(
-    (i) => `${i.mediaItem.type === MediaType.MOVIE ? "movie" : "tv"}-${i.mediaItem.tmdbId}`
+    (i) =>
+      `${i.mediaItem.type === MediaType.MOVIE ? "movie" : "tv"}-${i.mediaItem.tmdbId}`,
   );
 
   return (
@@ -109,7 +124,9 @@ export default async function ListPage({ params }: Params) {
             ) : (
               <Lock className="h-4 w-4 text-muted-foreground" />
             )}
-            <span className="text-xs text-muted-foreground">{list.isPublic ? "Public" : "Private"} list</span>
+            <span className="text-xs text-muted-foreground">
+              {list.isPublic ? "Public" : "Private"} list
+            </span>
           </div>
           <h1 className="text-3xl font-bold">{list.name}</h1>
           {list.description && (
@@ -118,7 +135,10 @@ export default async function ListPage({ params }: Params) {
           <div className="flex items-center gap-3 mt-3">
             <div className="flex -space-x-2">
               {list.members.slice(0, 5).map((m) => (
-                <Avatar key={m.id} className="h-7 w-7 border-2 border-background">
+                <Avatar
+                  key={m.id}
+                  className="h-7 w-7 border-2 border-background"
+                >
                   <AvatarImage src={m.user.avatarUrl ?? undefined} />
                   <AvatarFallback className="text-[10px]">
                     {m.user.name?.[0]?.toUpperCase()}
@@ -150,7 +170,11 @@ export default async function ListPage({ params }: Params) {
       </div>
 
       {isMember && (
-        <EditableListSearchAdd variant="list" listSlug={slug} existingKeys={existingListKeys} />
+        <EditableListSearchAdd
+          variant="list"
+          listSlug={slug}
+          existingKeys={existingListKeys}
+        />
       )}
 
       {/* Radarr URL */}
@@ -163,7 +187,8 @@ export default async function ListPage({ params }: Params) {
                 Radarr import URL
               </p>
               <p className="text-xs text-muted-foreground mb-2">
-                Add this URL as a &quot;Custom List&quot; in Radarr to auto-import movies from this list.
+                Add this URL as a &quot;Custom List&quot; in Radarr to
+                auto-import movies from this list.
               </p>
               <code className="text-xs bg-muted px-2 py-1 rounded font-mono break-all block">
                 {radarrUrl}
@@ -321,25 +346,44 @@ function ListItemCard({
       {canDelete && (isOwner || item.addedBy.id === currentUserId) && (
         <ListItemActions itemId={item.id} slug={slug} />
       )}
-      <Link href={href} className="flex gap-3 p-3 hover:bg-accent/30 transition-colors">
+      <Link
+        href={href}
+        className="flex gap-3 p-3 hover:bg-accent/30 transition-colors"
+      >
         <div className="w-12 shrink-0 aspect-[2/3] rounded overflow-hidden bg-muted">
           {posterUrl ? (
-            <Image src={posterUrl} alt={item.mediaItem.title} width={48} height={72} className="object-cover w-full h-full" />
+            <Image
+              src={posterUrl}
+              alt={item.mediaItem.title}
+              width={48}
+              height={72}
+              className="object-cover w-full h-full"
+            />
           ) : null}
         </div>
         <div className="flex-1 min-w-0 pr-6">
-          <p className="text-sm font-medium line-clamp-1">{item.mediaItem.title}</p>
+          <p className="text-sm font-medium line-clamp-1">
+            {item.mediaItem.title}
+          </p>
           {item.mediaItem.year && (
-            <p className="text-xs text-muted-foreground">{item.mediaItem.year}</p>
+            <p className="text-xs text-muted-foreground">
+              {item.mediaItem.year}
+            </p>
           )}
           {item.notes && (
-            <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{item.notes}</p>
+            <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
+              {item.notes}
+            </p>
           )}
           <div className="flex items-center gap-1 mt-1.5">
             <Avatar className="h-4 w-4">
-              <AvatarFallback className="text-[8px]">{item.addedBy.name?.[0]?.toUpperCase()}</AvatarFallback>
+              <AvatarFallback className="text-[8px]">
+                {item.addedBy.name?.[0]?.toUpperCase()}
+              </AvatarFallback>
             </Avatar>
-            <span className="text-xs text-muted-foreground">{item.addedBy.name}</span>
+            <span className="text-xs text-muted-foreground">
+              {item.addedBy.name}
+            </span>
           </div>
         </div>
       </Link>

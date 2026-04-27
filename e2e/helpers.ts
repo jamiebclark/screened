@@ -37,7 +37,12 @@ export async function logout(page: Page) {
   // Clear all auth-related cookies so the next navigation starts fresh
   const cookies = await page.context().cookies();
   const authCookieNames = cookies
-    .filter((c) => c.name.includes("next-auth") || c.name.includes("authjs") || c.name.startsWith("__Secure"))
+    .filter(
+      (c) =>
+        c.name.includes("next-auth") ||
+        c.name.includes("authjs") ||
+        c.name.startsWith("__Secure"),
+    )
     .map((c) => ({ name: c.name, domain: c.domain, path: c.path }));
   if (authCookieNames.length > 0) {
     await page.context().clearCookies();
@@ -107,12 +112,16 @@ export async function clearFriendshipStateBetween(
     }
     for (const o of data.outgoing) {
       if (o.toUser.id === peerId) {
-        await page.request.delete(`/api/friends/requests/${encodeURIComponent(o.id)}`);
+        await page.request.delete(
+          `/api/friends/requests/${encodeURIComponent(o.id)}`,
+        );
       }
     }
     for (const i of data.incoming) {
       if (i.fromUser.id === peerId) {
-        await page.request.delete(`/api/friends/requests/${encodeURIComponent(i.id)}`);
+        await page.request.delete(
+          `/api/friends/requests/${encodeURIComponent(i.id)}`,
+        );
       }
     }
   };

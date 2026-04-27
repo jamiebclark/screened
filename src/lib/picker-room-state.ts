@@ -100,9 +100,11 @@ export function isPickerState(x: unknown): x is PickerRoomState {
     !Array.isArray(o.requirePeople) ||
     !Array.isArray(o.excludePeople) ||
     (o.includeGenres !== undefined &&
-      (!Array.isArray(o.includeGenres) || o.includeGenres.some((g) => typeof g !== "string"))) ||
+      (!Array.isArray(o.includeGenres) ||
+        o.includeGenres.some((g) => typeof g !== "string"))) ||
     (o.excludeGenres !== undefined &&
-      (!Array.isArray(o.excludeGenres) || o.excludeGenres.some((g) => typeof g !== "string"))) ||
+      (!Array.isArray(o.excludeGenres) ||
+        o.excludeGenres.some((g) => typeof g !== "string"))) ||
     typeof o.hideAllLogged !== "boolean" ||
     typeof o.filtersOpen !== "boolean"
   ) {
@@ -110,12 +112,30 @@ export function isPickerState(x: unknown): x is PickerRoomState {
   }
   if (o.maxYear !== undefined && typeof o.maxYear !== "string") return false;
   if (o.vetoIds !== undefined) {
-    if (!Array.isArray(o.vetoIds) || o.vetoIds.some((id) => typeof id !== "string")) return false;
+    if (
+      !Array.isArray(o.vetoIds) ||
+      o.vetoIds.some((id) => typeof id !== "string")
+    )
+      return false;
   }
-  if (o.plexLibraryOnly !== undefined && typeof o.plexLibraryOnly !== "boolean") return false;
-  if (o.scoringInProgress !== undefined && typeof o.scoringInProgress !== "boolean") return false;
-  if (o.scoringError !== undefined && o.scoringError !== null && typeof o.scoringError !== "string") return false;
-  if (o.scoringResults !== undefined && o.scoringResults !== null && !Array.isArray(o.scoringResults)) {
+  if (o.plexLibraryOnly !== undefined && typeof o.plexLibraryOnly !== "boolean")
+    return false;
+  if (
+    o.scoringInProgress !== undefined &&
+    typeof o.scoringInProgress !== "boolean"
+  )
+    return false;
+  if (
+    o.scoringError !== undefined &&
+    o.scoringError !== null &&
+    typeof o.scoringError !== "string"
+  )
+    return false;
+  if (
+    o.scoringResults !== undefined &&
+    o.scoringResults !== null &&
+    !Array.isArray(o.scoringResults)
+  ) {
     return false;
   }
   return true;
@@ -140,6 +160,7 @@ export function withScoringDefaults(s: PickerRoomState): PickerRoomState {
     filtersOpen: rest.filtersOpen ?? true,
     scoringInProgress: rest.scoringInProgress ?? false,
     scoringError: rest.scoringError ?? null,
-    scoringResults: rest.scoringResults !== undefined ? rest.scoringResults : null,
+    scoringResults:
+      rest.scoringResults !== undefined ? rest.scoringResults : null,
   };
 }

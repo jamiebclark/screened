@@ -22,14 +22,20 @@ interface PreferenceItem {
   };
 }
 
-export function PreferencesSettings({ preferences }: { preferences: PreferenceItem[] }) {
+export function PreferencesSettings({
+  preferences,
+}: {
+  preferences: PreferenceItem[];
+}) {
   const [items, setItems] = useState(preferences);
   const [deleting, setDeleting] = useState<string | null>(null);
 
   const handleDelete = async (id: string) => {
     setDeleting(id);
     try {
-      const res = await fetch(`/api/preferences?id=${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/preferences?id=${id}`, {
+        method: "DELETE",
+      });
       if (res.ok) {
         setItems((prev) => prev.filter((p) => p.id !== id));
       }
@@ -47,7 +53,8 @@ export function PreferencesSettings({ preferences }: { preferences: PreferenceIt
         <CardContent className="py-12 text-center">
           <Film className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
           <p className="text-muted-foreground text-sm mb-4">
-            No saved preferences yet. Use the Movie Night Picker and save films you always want to influence your recommendations.
+            No saved preferences yet. Use the Movie Night Picker and save films
+            you always want to influence your recommendations.
           </p>
           <Button asChild>
             <Link href="/pick">Go to Picker</Link>
@@ -63,11 +70,18 @@ export function PreferencesSettings({ preferences }: { preferences: PreferenceIt
         <section>
           <div className="flex items-center gap-2 mb-3">
             <ThumbsUp className="h-4 w-4 text-green-500" />
-            <h2 className="font-semibold text-sm">Like these ({attractors.length})</h2>
+            <h2 className="font-semibold text-sm">
+              Like these ({attractors.length})
+            </h2>
           </div>
           <div className="space-y-2">
             {attractors.map((pref) => (
-              <PreferenceRow key={pref.id} pref={pref} onDelete={handleDelete} deleting={deleting} />
+              <PreferenceRow
+                key={pref.id}
+                pref={pref}
+                onDelete={handleDelete}
+                deleting={deleting}
+              />
             ))}
           </div>
         </section>
@@ -77,11 +91,18 @@ export function PreferencesSettings({ preferences }: { preferences: PreferenceIt
         <section>
           <div className="flex items-center gap-2 mb-3">
             <ThumbsDown className="h-4 w-4 text-red-500" />
-            <h2 className="font-semibold text-sm">Not like these ({repellers.length})</h2>
+            <h2 className="font-semibold text-sm">
+              Not like these ({repellers.length})
+            </h2>
           </div>
           <div className="space-y-2">
             {repellers.map((pref) => (
-              <PreferenceRow key={pref.id} pref={pref} onDelete={handleDelete} deleting={deleting} />
+              <PreferenceRow
+                key={pref.id}
+                pref={pref}
+                onDelete={handleDelete}
+                deleting={deleting}
+              />
             ))}
           </div>
         </section>
@@ -99,7 +120,8 @@ function PreferenceRow({
   onDelete: (id: string) => void;
   deleting: string | null;
 }) {
-  const weightLabel = pref.weight <= 0.5 ? "Soft" : pref.weight >= 2.0 ? "Strong" : "Normal";
+  const weightLabel =
+    pref.weight <= 0.5 ? "Soft" : pref.weight >= 2.0 ? "Strong" : "Normal";
 
   return (
     <div className="flex items-center gap-3 rounded-lg border border-border p-3">
@@ -126,7 +148,9 @@ function PreferenceRow({
         </Link>
         <div className="flex items-center gap-2 mt-1">
           {pref.mediaItem.year && (
-            <span className="text-xs text-muted-foreground">{pref.mediaItem.year}</span>
+            <span className="text-xs text-muted-foreground">
+              {pref.mediaItem.year}
+            </span>
           )}
           <Badge variant="outline" className="text-xs px-1.5 py-0">
             {weightLabel}

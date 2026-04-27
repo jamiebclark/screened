@@ -23,7 +23,10 @@ interface OnboardingClientProps {
   letterboxdConnection: LetterboxdConnection;
 }
 
-export function OnboardingClient({ plexConnection, letterboxdConnection }: OnboardingClientProps) {
+export function OnboardingClient({
+  plexConnection,
+  letterboxdConnection,
+}: OnboardingClientProps) {
   const router = useRouter();
   const [finishing, setFinishing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,7 +35,9 @@ export function OnboardingClient({ plexConnection, letterboxdConnection }: Onboa
     setError(null);
     setFinishing(true);
     try {
-      const res = await fetch("/api/user/onboarding/complete", { method: "POST" });
+      const res = await fetch("/api/user/onboarding/complete", {
+        method: "POST",
+      });
       if (!res.ok) {
         const data = (await res.json().catch(() => ({}))) as { error?: string };
         setError(data.error ?? "Could not continue.");

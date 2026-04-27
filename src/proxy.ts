@@ -9,7 +9,9 @@ function nextWithPathname(request: NextRequest) {
 
 export default auth((req) => {
   const isLoggedIn = !!req.auth;
-  const isAuthPage = req.nextUrl.pathname.startsWith("/login") || req.nextUrl.pathname.startsWith("/register");
+  const isAuthPage =
+    req.nextUrl.pathname.startsWith("/login") ||
+    req.nextUrl.pathname.startsWith("/register");
   const isApiAuth = req.nextUrl.pathname.startsWith("/api/auth");
   const isPlexAuthEndpoint = req.nextUrl.pathname === "/api/plex/auth";
   const isRadarrEndpoint = req.nextUrl.pathname.includes("/radarr");

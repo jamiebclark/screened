@@ -37,7 +37,12 @@ export async function fetchTitleWatchHistoryForViewer(
     orderBy: { watchedAt: "desc" },
     include: {
       user: {
-        select: { id: true, name: true, avatarUrl: true, watchHistoryVisibility: true },
+        select: {
+          id: true,
+          name: true,
+          avatarUrl: true,
+          watchHistoryVisibility: true,
+        },
       },
     },
   });

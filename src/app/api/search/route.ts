@@ -21,16 +21,17 @@ export async function GET(req: NextRequest) {
       .filter((r) =>
         movieOnly
           ? r.media_type === "movie"
-          : r.media_type === "movie" || r.media_type === "tv"
+          : r.media_type === "movie" || r.media_type === "tv",
       )
       .slice(0, 8)
       .map((r) => ({
         tmdbId: r.id,
         title: r.title ?? r.name ?? "Unknown",
         poster: tmdbImage(r.poster_path, "w185"),
-        year: (r.release_date ?? r.first_air_date)
-          ? new Date((r.release_date ?? r.first_air_date)!).getFullYear()
-          : null,
+        year:
+          (r.release_date ?? r.first_air_date)
+            ? new Date((r.release_date ?? r.first_air_date)!).getFullYear()
+            : null,
         type: r.media_type ?? "movie",
       }));
 

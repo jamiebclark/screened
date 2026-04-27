@@ -20,7 +20,9 @@ async function getOrCreateTvItem(tmdbId: number) {
       title: show.name,
       poster: show.poster_path,
       backdrop: show.backdrop_path,
-      year: show.first_air_date ? new Date(show.first_air_date).getFullYear() : null,
+      year: show.first_air_date
+        ? new Date(show.first_air_date).getFullYear()
+        : null,
       overview: show.overview,
       genres: show.genres.map((g) => g.name),
       runtime: show.episode_run_time[0] ?? null,
@@ -36,7 +38,11 @@ export async function POST(req: NextRequest, { params }: Params) {
 
   const { tmdbId: tmdbIdStr } = await params;
   const tmdbId = parseInt(tmdbIdStr);
-  const body = await req.json() as { seasonNumber?: number; episodeNumber?: number; episodes?: { seasonNumber: number; episodeNumber: number }[] };
+  const body = (await req.json()) as {
+    seasonNumber?: number;
+    episodeNumber?: number;
+    episodes?: { seasonNumber: number; episodeNumber: number }[];
+  };
 
   const mediaItem = await getOrCreateTvItem(tmdbId).catch(() => null);
 
@@ -69,7 +75,11 @@ export async function DELETE(req: NextRequest, { params }: Params) {
 
   const { tmdbId: tmdbIdStr } = await params;
   const tmdbId = parseInt(tmdbIdStr);
-  const body = await req.json() as { seasonNumber?: number; episodeNumber?: number; episodes?: { seasonNumber: number; episodeNumber: number }[] };
+  const body = (await req.json()) as {
+    seasonNumber?: number;
+    episodeNumber?: number;
+    episodes?: { seasonNumber: number; episodeNumber: number }[];
+  };
 
   const mediaItem = await prisma.mediaItem.findUnique({
     where: { tmdbId_type: { tmdbId, type: MediaType.TV } },

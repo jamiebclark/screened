@@ -42,7 +42,11 @@ type NotificationsResponse = {
   items: NotificationItem[];
 };
 
-export function NotificationMenu({ initialUnreadCount }: { initialUnreadCount: number }) {
+export function NotificationMenu({
+  initialUnreadCount,
+}: {
+  initialUnreadCount: number;
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [data, setData] = useState<NotificationsResponse | null>(null);
@@ -82,11 +86,14 @@ export function NotificationMenu({ initialUnreadCount }: { initialUnreadCount: n
   const respond = async (requestId: string, action: "approve" | "deny") => {
     setActingId(requestId);
     try {
-      const res = await fetch(`/api/access-requests/${encodeURIComponent(requestId)}/respond`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action }),
-      });
+      const res = await fetch(
+        `/api/access-requests/${encodeURIComponent(requestId)}/respond`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action }),
+        },
+      );
       if (!res.ok) return;
       await load();
       router.refresh();
@@ -95,19 +102,25 @@ export function NotificationMenu({ initialUnreadCount }: { initialUnreadCount: n
     }
   };
 
-  const respondFriend = async (requestId: string, action: "accept" | "decline") => {
+  const respondFriend = async (
+    requestId: string,
+    action: "accept" | "decline",
+  ) => {
     setActingId(requestId);
     try {
       if (action === "accept") {
         const res = await fetch(
           `/api/friends/requests/${encodeURIComponent(requestId)}/accept`,
-          { method: "POST" }
+          { method: "POST" },
         );
         if (!res.ok) return;
       } else {
-        const res = await fetch(`/api/friends/requests/${encodeURIComponent(requestId)}`, {
-          method: "DELETE",
-        });
+        const res = await fetch(
+          `/api/friends/requests/${encodeURIComponent(requestId)}`,
+          {
+            method: "DELETE",
+          },
+        );
         if (!res.ok) return;
       }
       await load();
@@ -122,7 +135,12 @@ export function NotificationMenu({ initialUnreadCount }: { initialUnreadCount: n
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative rounded-full" aria-label="Notifications">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="relative rounded-full"
+          aria-label="Notifications"
+        >
           <Bell className="h-5 w-5" />
           {unread > 0 && (
             <Badge
@@ -144,27 +162,40 @@ export function NotificationMenu({ initialUnreadCount }: { initialUnreadCount: n
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
           ) : items.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8 px-3">No notifications yet</p>
+            <p className="text-sm text-muted-foreground text-center py-8 px-3">
+              No notifications yet
+            </p>
           ) : (
             <ul className="divide-y divide-border">
               {items.map((n) => (
                 <li
                   key={n.id}
-                  className={cn("px-3 py-2.5 text-sm", !n.readAt && "bg-muted/40")}
+                  className={cn(
+                    "px-3 py-2.5 text-sm",
+                    !n.readAt && "bg-muted/40",
+                  )}
                 >
-                  {n.type === NotificationType.LIST_ACCESS_REQUEST && n.listAccessRequest ? (
+                  {n.type === NotificationType.LIST_ACCESS_REQUEST &&
+                  n.listAccessRequest ? (
                     <AccessRequestRow
                       n={n}
                       actingId={actingId}
-                      onApprove={() => respond(n.listAccessRequest!.id, "approve")}
+                      onApprove={() =>
+                        respond(n.listAccessRequest!.id, "approve")
+                      }
                       onDeny={() => respond(n.listAccessRequest!.id, "deny")}
                     />
-                  ) : n.type === NotificationType.FRIEND_REQUEST && n.friendRequest ? (
+                  ) : n.type === NotificationType.FRIEND_REQUEST &&
+                    n.friendRequest ? (
                     <FriendRequestRow
                       n={n}
                       actingId={actingId}
-                      onAccept={() => respondFriend(n.friendRequest!.id, "accept")}
-                      onDecline={() => respondFriend(n.friendRequest!.id, "decline")}
+                      onAccept={() =>
+                        respondFriend(n.friendRequest!.id, "accept")
+                      }
+                      onDecline={() =>
+                        respondFriend(n.friendRequest!.id, "decline")
+                      }
                     />
                   ) : (
                     <span className="text-muted-foreground">Notification</span>
@@ -232,7 +263,11 @@ function FriendRequestRow({
             onDecline();
           }}
         >
-          {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <X className="h-3.5 w-3.5" />}
+          {busy ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <X className="h-3.5 w-3.5" />
+          )}
           <span className="ml-1">Decline</span>
         </Button>
         <Button
@@ -244,7 +279,11 @@ function FriendRequestRow({
             onAccept();
           }}
         >
-          {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+          {busy ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Check className="h-3.5 w-3.5" />
+          )}
           <span className="ml-1">Accept</span>
         </Button>
       </div>
@@ -266,7 +305,13 @@ function AccessRequestRow({
   const req = n.listAccessRequest!;
   const pending = req.status === ListAccessRequestStatus.PENDING;
   const busy = actingId === req.id;
-  const initials = req.requester.name?.split(" ").map((s) => s[0]).join("").toUpperCase().slice(0, 2) ?? "?";
+  const initials =
+    req.requester.name
+      ?.split(" ")
+      .map((s) => s[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2) ?? "?";
 
   return (
     <div className="space-y-2">
@@ -277,9 +322,14 @@ function AccessRequestRow({
         </Avatar>
         <div className="min-w-0 flex-1">
           <p className="text-xs text-muted-foreground leading-tight">
-            <span className="font-medium text-foreground">{req.requester.name}</span>
-            {" "}requested access to{" "}
-            <Link href={`/lists/${req.list.slug}`} className="text-primary hover:underline font-medium">
+            <span className="font-medium text-foreground">
+              {req.requester.name}
+            </span>{" "}
+            requested access to{" "}
+            <Link
+              href={`/lists/${req.list.slug}`}
+              className="text-primary hover:underline font-medium"
+            >
               {req.list.name}
             </Link>
           </p>
@@ -297,7 +347,11 @@ function AccessRequestRow({
               onDeny();
             }}
           >
-            {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <X className="h-3.5 w-3.5" />}
+            {busy ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <X className="h-3.5 w-3.5" />
+            )}
             <span className="ml-1">Deny</span>
           </Button>
           <Button
@@ -309,13 +363,19 @@ function AccessRequestRow({
               onApprove();
             }}
           >
-            {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+            {busy ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Check className="h-3.5 w-3.5" />
+            )}
             <span className="ml-1">Approve</span>
           </Button>
         </div>
       ) : (
         <p className="text-xs text-muted-foreground">
-          {req.status === ListAccessRequestStatus.APPROVED ? "Approved" : "Declined"}
+          {req.status === ListAccessRequestStatus.APPROVED
+            ? "Approved"
+            : "Declined"}
         </p>
       )}
     </div>

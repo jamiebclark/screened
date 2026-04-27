@@ -4,7 +4,13 @@ import { FormEvent, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -29,11 +35,14 @@ interface PrivacySettingsProps {
 export function PrivacySettings({ initial }: PrivacySettingsProps) {
   const router = useRouter();
   const [watchlist, setWatchlist] = useState<V>(initial.watchlistVisibility);
-  const [watchHistory, setWatchHistory] = useState<V>(initial.watchHistoryVisibility);
+  const [watchHistory, setWatchHistory] = useState<V>(
+    initial.watchHistoryVisibility,
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const changed =
-    watchlist !== initial.watchlistVisibility || watchHistory !== initial.watchHistoryVisibility;
+    watchlist !== initial.watchlistVisibility ||
+    watchHistory !== initial.watchHistoryVisibility;
 
   useEffect(() => {
     setWatchlist(initial.watchlistVisibility);
@@ -71,13 +80,16 @@ export function PrivacySettings({ initial }: PrivacySettingsProps) {
         <CardHeader>
           <CardTitle>What others can see on your profile</CardTitle>
           <CardDescription>
-            Screened is sign-in only. “All Screened users” means anyone on the app; “Friends only”
-            means people you have accepted on the Friends page.
+            Screened is sign-in only. “All Screened users” means anyone on the
+            app; “Friends only” means people you have accepted on the Friends
+            page.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="watchlist-vis">Watchlist (titles you plan to watch)</Label>
+            <Label htmlFor="watchlist-vis">
+              Watchlist (titles you plan to watch)
+            </Label>
             <Select
               value={watchlist}
               onValueChange={(v) => setWatchlist(v as V)}
@@ -95,7 +107,9 @@ export function PrivacySettings({ initial }: PrivacySettingsProps) {
             </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="history-vis">Watched and watching (your activity on your profile)</Label>
+            <Label htmlFor="history-vis">
+              Watched and watching (your activity on your profile)
+            </Label>
             <Select
               value={watchHistory}
               onValueChange={(v) => setWatchHistory(v as V)}

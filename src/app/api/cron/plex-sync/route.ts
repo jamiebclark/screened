@@ -6,7 +6,10 @@ export async function POST(req: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
 
   if (!cronSecret) {
-    return NextResponse.json({ error: "CRON_SECRET not configured" }, { status: 500 });
+    return NextResponse.json(
+      { error: "CRON_SECRET not configured" },
+      { status: 500 },
+    );
   }
 
   const authHeader = req.headers.get("authorization");
@@ -19,14 +22,17 @@ export async function POST(req: NextRequest) {
   });
 
   const results = await Promise.allSettled(
-    connections.map(({ userId }) => syncPlexUser(userId))
+    connections.map(({ userId }) => syncPlexUser(userId)),
   );
 
   const summary = results.map((r, i) => ({
     userId: connections[i].userId,
     ...(r.status === "fulfilled"
       ? { ok: true, ...r.value }
-      : { ok: false, error: r.reason instanceof Error ? r.reason.message : "Unknown error" }),
+      : {
+          ok: false,
+          error: r.reason instanceof Error ? r.reason.message : "Unknown error",
+        }),
   }));
 
   const succeeded = summary.filter((s) => s.ok).length;

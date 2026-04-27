@@ -25,7 +25,8 @@ export default async function AccountSettingsPage() {
     <div className="mx-auto max-w-2xl">
       <h1 className="text-2xl font-bold mb-2">Account</h1>
       <p className="text-muted-foreground mb-8">
-        Update your profile and password. Your display name is shown to others on Screened.
+        Update your profile and password. Your display name is shown to others
+        on Screened.
       </p>
       <AccountSettings
         user={{

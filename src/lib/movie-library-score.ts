@@ -10,7 +10,7 @@ export async function scoreFromEmbeddedLibrary(
   referenceIds: string[],
   attractors: ReferenceItem[],
   repellers: ReferenceItem[],
-  hard: HardFilterInput
+  hard: HardFilterInput,
 ): Promise<ScoredRow[]> {
   const referenceItems = await prisma.mediaItem.findMany({
     where: { id: { in: referenceIds } },
@@ -19,10 +19,16 @@ export async function scoreFromEmbeddedLibrary(
   const embeddingMap = new Map(referenceItems.map((r) => [r.id, r.embedding]));
 
   const attractorEntries = attractors
-    .map((a) => ({ vector: embeddingMap.get(a.mediaItemId) ?? [], weight: a.weight }))
+    .map((a) => ({
+      vector: embeddingMap.get(a.mediaItemId) ?? [],
+      weight: a.weight,
+    }))
     .filter((e) => e.vector.length > 0);
   const repellerEntries = repellers
-    .map((r) => ({ vector: embeddingMap.get(r.mediaItemId) ?? [], weight: r.weight }))
+    .map((r) => ({
+      vector: embeddingMap.get(r.mediaItemId) ?? [],
+      weight: r.weight,
+    }))
     .filter((e) => e.vector.length > 0);
 
   if (attractorEntries.length === 0) {
@@ -30,7 +36,8 @@ export async function scoreFromEmbeddedLibrary(
   }
 
   const attractorVec = weightedAverage(attractorEntries);
-  const repellerVec = repellerEntries.length > 0 ? weightedAverage(repellerEntries) : null;
+  const repellerVec =
+    repellerEntries.length > 0 ? weightedAverage(repellerEntries) : null;
 
   const statusWhere = hard.hideAllLogged ? {} : { status: WatchStatus.WATCHED };
   const loggedStatuses = await prisma.userMediaStatus.findMany({
@@ -47,10 +54,15 @@ export async function scoreFromEmbeddedLibrary(
   const yearFilter: { gte?: number; lte?: number } = {};
   if (hard.minYear != null) yearFilter.gte = hard.minYear;
   if (hard.maxYear != null) yearFilter.lte = hard.maxYear;
-  if (yearFilter.gte != null && yearFilter.lte != null && yearFilter.gte > yearFilter.lte) {
+  if (
+    yearFilter.gte != null &&
+    yearFilter.lte != null &&
+    yearFilter.gte > yearFilter.lte
+  ) {
     [yearFilter.gte, yearFilter.lte] = [yearFilter.lte, yearFilter.gte];
   }
-  const yearWhere = Object.keys(yearFilter).length > 0 ? { year: yearFilter } : {};
+  const yearWhere =
+    Object.keys(yearFilter).length > 0 ? { year: yearFilter } : {};
 
   const candidates = await prisma.mediaItem.findMany({
     where: {
@@ -77,22 +89,39 @@ export async function scoreFromEmbeddedLibrary(
   const requirePeople = (hard.requirePeople ?? []).map((p) => p.toLowerCase());
   const excludePeople = (hard.excludePeople ?? []).map((p) => p.toLowerCase());
 
-  const matchesPerson = (c: { cast: string[]; director: string | null }, name: string) => {
-    const all = [...c.cast, ...(c.director ? [c.director] : [])].map((s) => s.toLowerCase());
+  const matchesPerson = (
+    c: { cast: string[]; director: string | null },
+    name: string,
+  ) => {
+    const all = [...c.cast, ...(c.director ? [c.director] : [])].map((s) =>
+      s.toLowerCase(),
+    );
     return all.some((s) => s.includes(name));
   };
 
   return candidates
     .filter((c) => {
-      if (watchedIds.has(c.id) || vetoSet.has(c.id) || referenceSet.has(c.id)) return false;
-      if (requirePeople.length > 0 && !requirePeople.every((name) => matchesPerson(c, name))) return false;
-      if (excludePeople.length > 0 && excludePeople.some((name) => matchesPerson(c, name))) return false;
-      if (!passesGenreFilters(c.genres, hard.includeGenres, hard.excludeGenres)) return false;
+      if (watchedIds.has(c.id) || vetoSet.has(c.id) || referenceSet.has(c.id))
+        return false;
+      if (
+        requirePeople.length > 0 &&
+        !requirePeople.every((name) => matchesPerson(c, name))
+      )
+        return false;
+      if (
+        excludePeople.length > 0 &&
+        excludePeople.some((name) => matchesPerson(c, name))
+      )
+        return false;
+      if (!passesGenreFilters(c.genres, hard.includeGenres, hard.excludeGenres))
+        return false;
       return true;
     })
     .map((c) => {
       const attractorScore = cosineSimilarity(c.embedding, attractorVec);
-      const repellerScore = repellerVec ? cosineSimilarity(c.embedding, repellerVec) : 0;
+      const repellerScore = repellerVec
+        ? cosineSimilarity(c.embedding, repellerVec)
+        : 0;
       const score = attractorScore - REPELLER_LAMBDA * repellerScore;
       return {
         id: c.id,

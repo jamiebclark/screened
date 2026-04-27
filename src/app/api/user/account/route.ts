@@ -21,13 +21,28 @@ export async function PATCH(req: NextRequest) {
       newPassword?: unknown;
     };
 
-    const nameRaw = typeof body.name === "string" ? body.name.trim() : undefined;
-    const emailRaw = typeof body.email === "string" ? body.email.trim().toLowerCase() : undefined;
-    const currentPassword = typeof body.currentPassword === "string" ? body.currentPassword : undefined;
-    const newPassword = typeof body.newPassword === "string" ? body.newPassword : undefined;
+    const nameRaw =
+      typeof body.name === "string" ? body.name.trim() : undefined;
+    const emailRaw =
+      typeof body.email === "string"
+        ? body.email.trim().toLowerCase()
+        : undefined;
+    const currentPassword =
+      typeof body.currentPassword === "string"
+        ? body.currentPassword
+        : undefined;
+    const newPassword =
+      typeof body.newPassword === "string" ? body.newPassword : undefined;
 
-    if (nameRaw === undefined && emailRaw === undefined && newPassword === undefined) {
-      return NextResponse.json({ error: "No changes provided" }, { status: 400 });
+    if (
+      nameRaw === undefined &&
+      emailRaw === undefined &&
+      newPassword === undefined
+    ) {
+      return NextResponse.json(
+        { error: "No changes provided" },
+        { status: 400 },
+      );
     }
 
     const user = await prisma.user.findUnique({
@@ -45,10 +60,16 @@ export async function PATCH(req: NextRequest) {
 
     if (nameRaw !== undefined) {
       if (!nameRaw) {
-        return NextResponse.json({ error: "Display name cannot be empty" }, { status: 400 });
+        return NextResponse.json(
+          { error: "Display name cannot be empty" },
+          { status: 400 },
+        );
       }
       if (nameRaw.length > 100) {
-        return NextResponse.json({ error: "Display name is too long" }, { status: 400 });
+        return NextResponse.json(
+          { error: "Display name is too long" },
+          { status: 400 },
+        );
       }
       if (nameRaw !== user.name) {
         data.name = nameRaw;
@@ -57,24 +78,38 @@ export async function PATCH(req: NextRequest) {
 
     if (emailRaw !== undefined) {
       if (!emailRaw || !emailRaw.includes("@")) {
-        return NextResponse.json({ error: "A valid email is required" }, { status: 400 });
+        return NextResponse.json(
+          { error: "A valid email is required" },
+          { status: 400 },
+        );
       }
       if (emailRaw !== user.email) {
         if (credentialAccount) {
           if (!currentPassword) {
             return NextResponse.json(
               { error: "Current password is required to change your email" },
-              { status: 400 }
+              { status: 400 },
             );
           }
-          const valid = await bcrypt.compare(currentPassword, user.passwordHash);
+          const valid = await bcrypt.compare(
+            currentPassword,
+            user.passwordHash,
+          );
           if (!valid) {
-            return NextResponse.json({ error: "Current password is incorrect" }, { status: 401 });
+            return NextResponse.json(
+              { error: "Current password is incorrect" },
+              { status: 401 },
+            );
           }
         }
-        const taken = await prisma.user.findUnique({ where: { email: emailRaw } });
+        const taken = await prisma.user.findUnique({
+          where: { email: emailRaw },
+        });
         if (taken) {
-          return NextResponse.json({ error: "That email is already in use" }, { status: 409 });
+          return NextResponse.json(
+            { error: "That email is already in use" },
+            { status: 409 },
+          );
         }
         data.email = emailRaw;
       }
@@ -84,19 +119,22 @@ export async function PATCH(req: NextRequest) {
       if (newPassword.length < 8) {
         return NextResponse.json(
           { error: "New password must be at least 8 characters" },
-          { status: 400 }
+          { status: 400 },
         );
       }
       if (credentialAccount) {
         if (!currentPassword) {
           return NextResponse.json(
             { error: "Current password is required to set a new password" },
-            { status: 400 }
+            { status: 400 },
           );
         }
         const valid = await bcrypt.compare(currentPassword, user.passwordHash);
         if (!valid) {
-          return NextResponse.json({ error: "Current password is incorrect" }, { status: 401 });
+          return NextResponse.json(
+            { error: "Current password is incorrect" },
+            { status: 401 },
+          );
         }
       }
       data.passwordHash = await bcrypt.hash(newPassword, 12);
@@ -118,6 +156,9 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ user: updated });
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }

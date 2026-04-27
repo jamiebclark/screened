@@ -7,7 +7,13 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 interface AccountSettingsProps {
   user: {
@@ -32,7 +38,8 @@ export function AccountSettings({ user: initialUser }: AccountSettingsProps) {
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passwordSaving, setPasswordSaving] = useState(false);
 
-  const emailChanged = email.trim().toLowerCase() !== initialUser.email.toLowerCase();
+  const emailChanged =
+    email.trim().toLowerCase() !== initialUser.email.toLowerCase();
   const profileNeedsPassword =
     initialUser.hasCredentialPassword && emailChanged;
 
@@ -54,7 +61,8 @@ export function AccountSettings({ user: initialUser }: AccountSettingsProps) {
 
     const payload: Record<string, string> = {};
     if (trimmedName !== initialUser.name) payload.name = trimmedName;
-    if (trimmedEmail !== initialUser.email.toLowerCase()) payload.email = trimmedEmail;
+    if (trimmedEmail !== initialUser.email.toLowerCase())
+      payload.email = trimmedEmail;
     if (Object.keys(payload).length === 0) {
       setProfileError("No profile changes to save.");
       return;
@@ -70,7 +78,10 @@ export function AccountSettings({ user: initialUser }: AccountSettingsProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const data = (await res.json()) as { user?: { name: string; email: string }; error?: string };
+      const data = (await res.json()) as {
+        user?: { name: string; email: string };
+        error?: string;
+      };
       if (!res.ok) {
         setProfileError(data.error ?? "Could not update profile.");
         return;
@@ -166,7 +177,9 @@ export function AccountSettings({ user: initialUser }: AccountSettingsProps) {
             </div>
             {profileNeedsPassword && (
               <div className="space-y-2">
-                <Label htmlFor="account-profile-password">Current password</Label>
+                <Label htmlFor="account-profile-password">
+                  Current password
+                </Label>
                 <Input
                   id="account-profile-password"
                   name="currentPassword"
@@ -186,7 +199,9 @@ export function AccountSettings({ user: initialUser }: AccountSettingsProps) {
               </p>
             )}
             <Button type="submit" disabled={profileSaving}>
-              {profileSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {profileSaving && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
               Save profile
             </Button>
           </form>
@@ -206,7 +221,9 @@ export function AccountSettings({ user: initialUser }: AccountSettingsProps) {
           <form onSubmit={savePassword} className="space-y-4">
             {initialUser.hasCredentialPassword && (
               <div className="space-y-2">
-                <Label htmlFor="account-current-password">Current password</Label>
+                <Label htmlFor="account-current-password">
+                  Current password
+                </Label>
                 <Input
                   id="account-current-password"
                   name="currentPassword"
@@ -219,7 +236,9 @@ export function AccountSettings({ user: initialUser }: AccountSettingsProps) {
             )}
             <div className="space-y-2">
               <Label htmlFor="account-new-password">
-                {initialUser.hasCredentialPassword ? "New password" : "Password"}
+                {initialUser.hasCredentialPassword
+                  ? "New password"
+                  : "Password"}
               </Label>
               <Input
                 id="account-new-password"
@@ -231,7 +250,9 @@ export function AccountSettings({ user: initialUser }: AccountSettingsProps) {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="account-confirm-password">Confirm new password</Label>
+              <Label htmlFor="account-confirm-password">
+                Confirm new password
+              </Label>
               <Input
                 id="account-confirm-password"
                 name="confirmPassword"
@@ -247,8 +268,12 @@ export function AccountSettings({ user: initialUser }: AccountSettingsProps) {
               </p>
             )}
             <Button type="submit" disabled={passwordSaving}>
-              {passwordSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {initialUser.hasCredentialPassword ? "Update password" : "Set password"}
+              {passwordSaving && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              {initialUser.hasCredentialPassword
+                ? "Update password"
+                : "Set password"}
             </Button>
           </form>
         </CardContent>

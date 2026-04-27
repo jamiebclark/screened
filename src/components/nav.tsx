@@ -3,7 +3,18 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { Film, Search, ListVideo, User, LogOut, Settings, Menu, X, History, Sparkles } from "lucide-react";
+import {
+  Film,
+  Search,
+  ListVideo,
+  User,
+  LogOut,
+  Settings,
+  Menu,
+  X,
+  History,
+  Sparkles,
+} from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { NotificationMenu } from "@/components/notification-menu";
@@ -40,14 +51,22 @@ export function Nav({ user, initialUnreadNotifications }: NavProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const initials = user.name
-    ? user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
-    : user.email?.[0]?.toUpperCase() ?? "U";
+    ? user.name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)
+    : (user.email?.[0]?.toUpperCase() ?? "U");
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4">
         <div className="flex items-center gap-6">
-          <Link href="/" className="flex items-center gap-2 font-bold text-primary">
+          <Link
+            href="/"
+            className="flex items-center gap-2 font-bold text-primary"
+          >
             <Film className="h-5 w-5" />
             <span className="hidden sm:block tracking-tight">Screened</span>
           </Link>
@@ -55,22 +74,23 @@ export function Nav({ user, initialUnreadNotifications }: NavProps) {
           <nav className="hidden md:flex items-center gap-1">
             {navLinks.map(({ href, label, icon: Icon }) => {
               const active =
-                pathname === href || (href === "/history" && pathname.startsWith("/history"));
+                pathname === href ||
+                (href === "/history" && pathname.startsWith("/history"));
               return (
-              <Link
-                key={href}
-                href={href}
-                className={cn(
-                  "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
-                  active
-                    ? "bg-accent text-foreground"
-                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                )}
-              >
-                <Icon className="h-4 w-4" />
-                {label}
-              </Link>
-            );
+                <Link
+                  key={href}
+                  href={href}
+                  className={cn(
+                    "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+                    active
+                      ? "bg-accent text-foreground"
+                      : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                  )}
+                >
+                  <Icon className="h-4 w-4" />
+                  {label}
+                </Link>
+              );
             })}
           </nav>
         </div>
@@ -81,8 +101,13 @@ export function Nav({ user, initialUnreadNotifications }: NavProps) {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="rounded-full">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={user.image ?? undefined} alt={user.name ?? ""} />
-                  <AvatarFallback className="text-xs">{initials}</AvatarFallback>
+                  <AvatarImage
+                    src={user.image ?? undefined}
+                    alt={user.name ?? ""}
+                  />
+                  <AvatarFallback className="text-xs">
+                    {initials}
+                  </AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
@@ -121,7 +146,11 @@ export function Nav({ user, initialUnreadNotifications }: NavProps) {
             className="md:hidden"
             onClick={() => setMobileOpen(!mobileOpen)}
           >
-            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            {mobileOpen ? (
+              <X className="h-5 w-5" />
+            ) : (
+              <Menu className="h-5 w-5" />
+            )}
           </Button>
         </div>
       </div>
@@ -130,22 +159,23 @@ export function Nav({ user, initialUnreadNotifications }: NavProps) {
         <nav className="border-t border-border md:hidden">
           {navLinks.map(({ href, label, icon: Icon }) => {
             const active =
-              pathname === href || (href === "/history" && pathname.startsWith("/history"));
+              pathname === href ||
+              (href === "/history" && pathname.startsWith("/history"));
             return (
-            <Link
-              key={href}
-              href={href}
-              onClick={() => setMobileOpen(false)}
-              className={cn(
-                "flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors",
-                active
-                  ? "bg-accent text-foreground"
-                  : "text-muted-foreground hover:bg-accent hover:text-foreground"
-              )}
-            >
-              <Icon className="h-4 w-4" />
-              {label}
-            </Link>
+              <Link
+                key={href}
+                href={href}
+                onClick={() => setMobileOpen(false)}
+                className={cn(
+                  "flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors",
+                  active
+                    ? "bg-accent text-foreground"
+                    : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                )}
+              >
+                <Icon className="h-4 w-4" />
+                {label}
+              </Link>
             );
           })}
         </nav>

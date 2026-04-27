@@ -13,8 +13,11 @@ export async function POST(req: NextRequest, { params }: Params) {
   }
 
   const { slug } = await params;
-  const body = await req.json().catch(() => ({})) as { message?: string };
-  const message = typeof body.message === "string" ? body.message.trim().slice(0, 500) : undefined;
+  const body = (await req.json().catch(() => ({}))) as { message?: string };
+  const message =
+    typeof body.message === "string"
+      ? body.message.trim().slice(0, 500)
+      : undefined;
 
   const list = await prisma.list.findUnique({
     where: { slug },
@@ -26,14 +29,20 @@ export async function POST(req: NextRequest, { params }: Params) {
   }
 
   if (list.isPublic) {
-    return NextResponse.json({ error: "Public lists do not require access requests" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Public lists do not require access requests" },
+      { status: 400 },
+    );
   }
 
   const userId = session.user.id;
   const isMember =
     list.ownerId === userId || list.members.some((m) => m.userId === userId);
   if (isMember) {
-    return NextResponse.json({ error: "You already have access" }, { status: 400 });
+    return NextResponse.json(
+      { error: "You already have access" },
+      { status: 400 },
+    );
   }
 
   const existing = await prisma.listAccessRequest.findUnique({
@@ -41,11 +50,17 @@ export async function POST(req: NextRequest, { params }: Params) {
   });
 
   if (existing?.status === ListAccessRequestStatus.PENDING) {
-    return NextResponse.json({ error: "A request is already pending" }, { status: 409 });
+    return NextResponse.json(
+      { error: "A request is already pending" },
+      { status: 409 },
+    );
   }
 
   if (existing?.status === ListAccessRequestStatus.APPROVED) {
-    return NextResponse.json({ error: "Request was already approved" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Request was already approved" },
+      { status: 400 },
+    );
   }
 
   let requestId: string;
@@ -61,7 +76,9 @@ export async function POST(req: NextRequest, { params }: Params) {
           resolvedById: null,
         },
       });
-      await tx.notification.deleteMany({ where: { listAccessRequestId: row.id } });
+      await tx.notification.deleteMany({
+        where: { listAccessRequestId: row.id },
+      });
       return row;
     });
     requestId = updated.id;

@@ -14,7 +14,10 @@ function labelFor(people: Participant[], id: string, youId: string): string {
 }
 
 /** Names for participants who may no longer be in `next` (e.g. removed) or the actor. */
-function rosterForLabels(prev: PickerRoomState, next: PickerRoomState): Participant[] {
+function rosterForLabels(
+  prev: PickerRoomState,
+  next: PickerRoomState,
+): Participant[] {
   const m = new Map<string, Participant>();
   for (const p of next.participants) m.set(p.id, p);
   for (const p of prev.participants) {
@@ -29,7 +32,7 @@ function rosterForLabels(prev: PickerRoomState, next: PickerRoomState): Particip
 export function describePickerStateChange(
   prev: PickerRoomState,
   next: PickerRoomState,
-  { actorId, youId }: { actorId: string; youId: string }
+  { actorId, youId }: { actorId: string; youId: string },
 ): string | null {
   const roster = rosterForLabels(prev, next);
 
@@ -42,7 +45,8 @@ export function describePickerStateChange(
       const e = next.scoringError;
       const short = e.length > 100 ? `${e.slice(0, 97)}…` : e;
       const who = labelFor(roster, actorId, youId);
-      const prefix = who === "You" ? "Your search failed" : `${who}'s search failed`;
+      const prefix =
+        who === "You" ? "Your search failed" : `${who}'s search failed`;
       return `${prefix}: ${short}`;
     }
     if (next.scoringResults) {
@@ -124,16 +128,24 @@ export function describePickerStateChange(
   ) {
     return `${labelFor(roster, actorId, youId)} changed search or library filters.`;
   }
-  if (JSON.stringify(prev.requirePeople) !== JSON.stringify(next.requirePeople)) {
+  if (
+    JSON.stringify(prev.requirePeople) !== JSON.stringify(next.requirePeople)
+  ) {
     return `${labelFor(roster, actorId, youId)} changed required cast/crew.`;
   }
-  if (JSON.stringify(prev.excludePeople) !== JSON.stringify(next.excludePeople)) {
+  if (
+    JSON.stringify(prev.excludePeople) !== JSON.stringify(next.excludePeople)
+  ) {
     return `${labelFor(roster, actorId, youId)} changed excluded cast/crew.`;
   }
-  if (JSON.stringify(prev.includeGenres) !== JSON.stringify(next.includeGenres)) {
+  if (
+    JSON.stringify(prev.includeGenres) !== JSON.stringify(next.includeGenres)
+  ) {
     return `${labelFor(roster, actorId, youId)} changed included genres.`;
   }
-  if (JSON.stringify(prev.excludeGenres) !== JSON.stringify(next.excludeGenres)) {
+  if (
+    JSON.stringify(prev.excludeGenres) !== JSON.stringify(next.excludeGenres)
+  ) {
     return `${labelFor(roster, actorId, youId)} changed excluded genres.`;
   }
   if (prev.filtersOpen !== next.filtersOpen) {

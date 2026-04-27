@@ -16,7 +16,9 @@ test.beforeEach(async ({ page }) => {
 test.describe("Ratings", () => {
   test("rating stars appear when status is watched", async ({ page }) => {
     await page.goto(MOVIE_URL);
-    await expect(page.getByRole("button", { name: /rate \d star/i }).first()).toBeVisible({ timeout: 5000 });
+    await expect(
+      page.getByRole("button", { name: /rate \d star/i }).first(),
+    ).toBeVisible({ timeout: 5000 });
   });
 
   test("click 4-star rating saves and persists", async ({ page }) => {
@@ -34,7 +36,7 @@ test.describe("Ratings", () => {
         (r) =>
           r.url().includes("/api/media/status") &&
           r.request().method() === "POST" &&
-          r.status() === 200
+          r.status() === 200,
       ),
       fourthStar.click(),
     ]);
@@ -42,8 +44,12 @@ test.describe("Ratings", () => {
     // Reload and verify rating persists (stars 1–4 use filled styling)
     await page.reload();
     const fourAfter = page.getByRole("button", { name: "Rate 4 stars" });
-    await expect(fourAfter.locator("svg").first()).toBeVisible({ timeout: 5000 });
-    await expect(fourAfter.locator("svg").first()).toHaveClass(/fill-yellow-400/);
+    await expect(fourAfter.locator("svg").first()).toBeVisible({
+      timeout: 5000,
+    });
+    await expect(fourAfter.locator("svg").first()).toHaveClass(
+      /fill-yellow-400/,
+    );
   });
 
   test("click same star twice unsets rating", async ({ page }) => {
@@ -60,7 +66,9 @@ test.describe("Ratings", () => {
 
     // Rating should be unset — the 3rd star should no longer be filled
     await page.reload();
-    await expect(page.locator("button[aria-label='Rate 3 stars'] svg.fill-yellow-400")).not.toBeVisible({ timeout: 5000 });
+    await expect(
+      page.locator("button[aria-label='Rate 3 stars'] svg.fill-yellow-400"),
+    ).not.toBeVisible({ timeout: 5000 });
   });
 
   test("rating stars not visible when no watch status", async ({ page }) => {
@@ -72,7 +80,9 @@ test.describe("Ratings", () => {
 
     await page.goto(MOVIE_URL);
     // Rating stars should be hidden (only shown when userStatus is set)
-    await expect(page.getByRole("button", { name: /rate \d star/i })).not.toBeVisible();
+    await expect(
+      page.getByRole("button", { name: /rate \d star/i }),
+    ).not.toBeVisible();
   });
 
   test("can rate TV show", async ({ page }) => {
@@ -81,8 +91,12 @@ test.describe("Ratings", () => {
       headers: { "Content-Type": "application/json" },
     });
     await page.goto("/tv/1396");
-    await expect(page.getByRole("button", { name: /rate \d star/i }).first()).toBeVisible({ timeout: 10000 });
+    await expect(
+      page.getByRole("button", { name: /rate \d star/i }).first(),
+    ).toBeVisible({ timeout: 10000 });
     await page.getByRole("button", { name: "Rate 5 stars" }).click();
-    await expect(page.locator("button[aria-label='Rate 5 stars'] svg.fill-yellow-400")).toBeVisible({ timeout: 5000 });
+    await expect(
+      page.locator("button[aria-label='Rate 5 stars'] svg.fill-yellow-400"),
+    ).toBeVisible({ timeout: 5000 });
   });
 });

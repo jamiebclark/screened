@@ -14,7 +14,11 @@ export const metadata: Metadata = {
   description: "Track movies and TV shows with friends",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en" className={plusJakarta.variable} suppressHydrationWarning>
       <body className="min-h-dvh font-sans antialiased">

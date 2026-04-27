@@ -18,14 +18,17 @@ export default async function WatchlistPage() {
 
   const movies = items.filter((i) => i.mediaItem.type === MediaType.MOVIE);
   const radarrToken =
-    movies.length > 0 ? await ensureWatchlistRadarrToken(session!.user.id) : null;
+    movies.length > 0
+      ? await ensureWatchlistRadarrToken(session!.user.id)
+      : null;
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
   const radarrUrl = radarrToken
     ? `${appUrl}/api/user/radarr/watchlist?token=${radarrToken}`
     : null;
 
   const existingKeys = items.map(
-    (i) => `${i.mediaItem.type === MediaType.MOVIE ? "movie" : "tv"}-${i.mediaItem.tmdbId}`
+    (i) =>
+      `${i.mediaItem.type === MediaType.MOVIE ? "movie" : "tv"}-${i.mediaItem.tmdbId}`,
   );
 
   return (
@@ -36,7 +39,9 @@ export default async function WatchlistPage() {
         </div>
         <div>
           <h1 className="text-2xl font-bold">Watchlist</h1>
-          <p className="text-sm text-muted-foreground">{items.length} title{items.length !== 1 ? "s" : ""} saved</p>
+          <p className="text-sm text-muted-foreground">
+            {items.length} title{items.length !== 1 ? "s" : ""} saved
+          </p>
         </div>
       </div>
 
@@ -51,8 +56,8 @@ export default async function WatchlistPage() {
                 Radarr import URL
               </p>
               <p className="text-xs text-muted-foreground mb-2">
-                Add this URL as a &quot;Custom List&quot; in Radarr to auto-import movies from your
-                watchlist.
+                Add this URL as a &quot;Custom List&quot; in Radarr to
+                auto-import movies from your watchlist.
               </p>
               <code
                 className="text-xs bg-muted px-2 py-1 rounded font-mono break-all block"
@@ -79,12 +84,15 @@ export default async function WatchlistPage() {
         <div className="text-center py-20 border border-dashed border-border rounded-xl">
           <Bookmark className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
           <p className="font-medium mb-1">Your watchlist is empty</p>
-          <p className="text-sm text-muted-foreground">Bookmark movies and shows to watch later.</p>
+          <p className="text-sm text-muted-foreground">
+            Bookmark movies and shows to watch later.
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-3">
           {items.map((item) => {
-            const type = item.mediaItem.type === MediaType.MOVIE ? "movie" : "tv";
+            const type =
+              item.mediaItem.type === MediaType.MOVIE ? "movie" : "tv";
             return (
               <div key={item.id} className="relative">
                 <ClearTrackingCornerButton

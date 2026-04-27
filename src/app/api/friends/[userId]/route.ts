@@ -17,7 +17,10 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "Invalid" }, { status: 400 });
   }
 
-  const { userLowId, userHighId } = sortedFriendshipUserIds(session.user.id, otherId);
+  const { userLowId, userHighId } = sortedFriendshipUserIds(
+    session.user.id,
+    otherId,
+  );
   const row = await prisma.friendship.findUnique({
     where: { userLowId_userHighId: { userLowId, userHighId } },
     select: { id: true },

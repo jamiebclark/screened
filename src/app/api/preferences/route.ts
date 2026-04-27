@@ -13,7 +13,13 @@ export async function GET() {
     where: { userId: session.user.id },
     include: {
       mediaItem: {
-        select: { id: true, tmdbId: true, title: true, poster: true, year: true },
+        select: {
+          id: true,
+          tmdbId: true,
+          title: true,
+          poster: true,
+          year: true,
+        },
       },
     },
     orderBy: { createdAt: "desc" },
@@ -57,7 +63,13 @@ export async function POST(req: NextRequest) {
     update: { weight: weight ?? 1.0 },
     include: {
       mediaItem: {
-        select: { id: true, tmdbId: true, title: true, poster: true, year: true },
+        select: {
+          id: true,
+          tmdbId: true,
+          title: true,
+          poster: true,
+          year: true,
+        },
       },
     },
   });

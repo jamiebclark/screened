@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { passesGenreFilters, shouldExcludeByGenres, passesIncludeGenres, matchesGenreToken } from "./genre-filters";
+import {
+  passesGenreFilters,
+  shouldExcludeByGenres,
+  passesIncludeGenres,
+  matchesGenreToken,
+} from "./genre-filters";
 
 describe("matchesGenreToken", () => {
   it("matches TMDB Animation with user token animation", () => {
@@ -17,7 +22,9 @@ describe("shouldExcludeByGenres", () => {
   });
 
   it("excludes when any genre matches a token", () => {
-    expect(shouldExcludeByGenres(["Drama", "Animation"], ["animation"])).toBe(true);
+    expect(shouldExcludeByGenres(["Drama", "Animation"], ["animation"])).toBe(
+      true,
+    );
   });
 
   it("keeps when no overlap", () => {
@@ -38,7 +45,9 @@ describe("passesIncludeGenres", () => {
 
 describe("passesGenreFilters", () => {
   it("applies exclude then include", () => {
-    expect(passesGenreFilters(["Action", "Horror"], ["Action"], ["Horror"])).toBe(false);
+    expect(
+      passesGenreFilters(["Action", "Horror"], ["Action"], ["Horror"]),
+    ).toBe(false);
   });
 
   it("include only", () => {

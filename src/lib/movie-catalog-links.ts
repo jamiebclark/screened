@@ -13,7 +13,10 @@ export function imdbTitleUrl(imdbId: string | null | undefined): string | null {
   return `https://www.imdb.com/title/${id}/`;
 }
 
-export function buildMovieCatalogLinks(tmdbId: number, imdbId: string | null | undefined): TitleCatalogLinks {
+export function buildMovieCatalogLinks(
+  tmdbId: number,
+  imdbId: string | null | undefined,
+): TitleCatalogLinks {
   return {
     tmdbUrl: `https://www.themoviedb.org/movie/${tmdbId}`,
     letterboxdFilmUrl: `https://letterboxd.com/tmdb/${tmdbId}/`,
@@ -21,7 +24,10 @@ export function buildMovieCatalogLinks(tmdbId: number, imdbId: string | null | u
   };
 }
 
-export function buildTvCatalogLinks(tmdbId: number, imdbId: string | null | undefined): TitleCatalogLinks {
+export function buildTvCatalogLinks(
+  tmdbId: number,
+  imdbId: string | null | undefined,
+): TitleCatalogLinks {
   return {
     tmdbUrl: `https://www.themoviedb.org/tv/${tmdbId}`,
     imdbUrl: imdbTitleUrl(imdbId),

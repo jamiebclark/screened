@@ -25,7 +25,8 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const otherId = fr.fromUserId === session.user.id ? fr.toUserId : fr.fromUserId;
+  const otherId =
+    fr.fromUserId === session.user.id ? fr.toUserId : fr.fromUserId;
   await prisma.friendRequest.delete({ where: { id: requestId } });
 
   const state = await getProfileFriendState(session.user.id, otherId);

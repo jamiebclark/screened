@@ -53,11 +53,7 @@ export default async function ListsPage() {
     }),
   ]);
 
-  const ListCard = ({
-    list,
-  }: {
-    list: (typeof myLists)[number];
-  }) => (
+  const ListCard = ({ list }: { list: (typeof myLists)[number] }) => (
     <Link
       href={`/lists/${list.slug}`}
       className="block rounded-xl border border-border bg-card hover:border-primary/50 transition-all duration-200 overflow-hidden group"
@@ -99,10 +95,14 @@ export default async function ListsPage() {
           )}
         </div>
         {list.description && (
-          <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{list.description}</p>
+          <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+            {list.description}
+          </p>
         )}
         <div className="flex items-center gap-2 mt-2">
-          <span className="text-xs text-muted-foreground">{list._count.items} items</span>
+          <span className="text-xs text-muted-foreground">
+            {list._count.items} items
+          </span>
           <span className="text-xs text-muted-foreground">·</span>
           <span className="flex items-center gap-0.5 text-xs text-muted-foreground">
             <Users className="h-3 w-3" />
@@ -126,7 +126,9 @@ export default async function ListsPage() {
       </div>
 
       <section>
-        <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4">My lists</h2>
+        <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4">
+          My lists
+        </h2>
         {myLists.length === 0 ? (
           <div className="text-center py-12 border border-dashed border-border rounded-xl">
             <ListVideo className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
@@ -146,7 +148,9 @@ export default async function ListsPage() {
 
       {publicLists.length > 0 && (
         <section>
-          <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4">Discover</h2>
+          <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4">
+            Discover
+          </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
             {publicLists.map((list) => (
               <ListCard key={list.id} list={list} />

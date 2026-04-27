@@ -16,7 +16,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = await req.json() as { action?: string; pinId?: number; returnPath?: string };
+  const body = (await req.json()) as {
+    action?: string;
+    pinId?: number;
+    returnPath?: string;
+  };
   const { action } = body;
 
   if (action === "create-pin") {
@@ -24,7 +28,8 @@ export async function POST(req: NextRequest) {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
     const allowedReturnPaths = ["/settings/plex", "/onboarding"] as const;
     const raw =
-      typeof body.returnPath === "string" && (allowedReturnPaths as readonly string[]).includes(body.returnPath)
+      typeof body.returnPath === "string" &&
+      (allowedReturnPaths as readonly string[]).includes(body.returnPath)
         ? body.returnPath
         : "/settings/plex";
     const forwardUrl = `${appUrl}${raw}?pinId=${pin.id}`;
@@ -34,7 +39,8 @@ export async function POST(req: NextRequest) {
 
   if (action === "verify-pin") {
     const { pinId } = body;
-    if (!pinId) return NextResponse.json({ error: "pinId required" }, { status: 400 });
+    if (!pinId)
+      return NextResponse.json({ error: "pinId required" }, { status: 400 });
 
     const pin = await checkPlexPin(pinId);
     if (!pin.authToken) {
@@ -67,7 +73,9 @@ export async function POST(req: NextRequest) {
   }
 
   if (action === "unlink") {
-    await prisma.plexConnection.deleteMany({ where: { userId: session.user.id } });
+    await prisma.plexConnection.deleteMany({
+      where: { userId: session.user.id },
+    });
     bumpPlexLibraryIndexCacheGeneration(session.user.id);
     return NextResponse.json({ success: true });
   }

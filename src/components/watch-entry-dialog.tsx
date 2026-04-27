@@ -50,7 +50,11 @@ function dateOnlyToDatetimeLocal(ymd: string): string {
   const m = parseInt(parts[2], 10);
   const d = parseInt(parts[3], 10);
   const probe = new Date(y, m - 1, d);
-  if (probe.getFullYear() !== y || probe.getMonth() !== m - 1 || probe.getDate() !== d) {
+  if (
+    probe.getFullYear() !== y ||
+    probe.getMonth() !== m - 1 ||
+    probe.getDate() !== d
+  ) {
     return toDatetimeLocal(new Date());
   }
   return toDatetimeLocal(new Date(y, m - 1, d, 12, 0, 0, 0));
@@ -67,10 +71,13 @@ export function WatchEntryDialog({
   const isEditing = !!entry;
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
-  const [tagFriends, setTagFriends] = useState<{ id: string; name: string }[]>([]);
+  const [tagFriends, setTagFriends] = useState<{ id: string; name: string }[]>(
+    [],
+  );
   const [taggedIds, setTaggedIds] = useState<Set<string>>(() => new Set());
   const [dateValue, setDateValue] = useState(() => {
-    if (!entry && defaultWatchedAtForNew) return dateOnlyToDatetimeLocal(defaultWatchedAtForNew);
+    if (!entry && defaultWatchedAtForNew)
+      return dateOnlyToDatetimeLocal(defaultWatchedAtForNew);
     return toDatetimeLocal(entry?.watchedAt) || toDatetimeLocal(new Date());
   });
   const [reviewValue, setReviewValue] = useState(entry?.review ?? "");
@@ -80,7 +87,9 @@ export function WatchEntryDialog({
       if (!entry && defaultWatchedAtForNew) {
         setDateValue(dateOnlyToDatetimeLocal(defaultWatchedAtForNew));
       } else {
-        setDateValue(toDatetimeLocal(entry?.watchedAt) || toDatetimeLocal(new Date()));
+        setDateValue(
+          toDatetimeLocal(entry?.watchedAt) || toDatetimeLocal(new Date()),
+        );
       }
       setReviewValue(entry?.review ?? "");
       if (!entry) setTaggedIds(new Set());
@@ -94,7 +103,9 @@ export function WatchEntryDialog({
     (async () => {
       const res = await fetch("/api/friends");
       if (!res.ok || cancelled) return;
-      const data = (await res.json()) as { friends: { id: string; name: string }[] };
+      const data = (await res.json()) as {
+        friends: { id: string; name: string }[];
+      };
       if (!cancelled) setTagFriends(data.friends);
     })();
     return () => {
@@ -104,7 +115,9 @@ export function WatchEntryDialog({
 
   const handleSave = () => {
     startTransition(async () => {
-      const watchedAt = dateValue ? new Date(dateValue).toISOString() : new Date().toISOString();
+      const watchedAt = dateValue
+        ? new Date(dateValue).toISOString()
+        : new Date().toISOString();
       const review = reviewValue.trim() || null;
 
       if (isEditing) {
@@ -114,7 +127,7 @@ export function WatchEntryDialog({
           body: JSON.stringify({ watchedAt, review }),
         });
         if (res.ok) {
-          const updated = await res.json() as WatchEntry;
+          const updated = (await res.json()) as WatchEntry;
           onSave(updated);
           setOpen(false);
         }
@@ -131,7 +144,9 @@ export function WatchEntryDialog({
           }),
         });
         if (res.ok) {
-          const created = (await res.json()) as WatchEntry & { taggedCreatedCount?: number };
+          const created = (await res.json()) as WatchEntry & {
+            taggedCreatedCount?: number;
+          };
           onSave(created);
           if (withUserIds.length > 0) router.refresh();
           setOpen(false);
@@ -157,7 +172,9 @@ export function WatchEntryDialog({
       </DialogTrigger>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit viewing" : "Log a viewing"}</DialogTitle>
+          <DialogTitle>
+            {isEditing ? "Edit viewing" : "Log a viewing"}
+          </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-5 pt-1">
@@ -176,8 +193,9 @@ export function WatchEntryDialog({
             <div className="space-y-2">
               <Label>Also log for</Label>
               <p className="text-xs text-muted-foreground">
-                Creates a watch entry for each friend (same time and review). Skips a friend if they
-                already have a log for that title the same day.
+                Creates a watch entry for each friend (same time and review).
+                Skips a friend if they already have a log for that title the
+                same day.
               </p>
               <ul className="max-h-40 space-y-2 overflow-y-auto rounded-md border border-border p-3">
                 {tagFriends.map((f) => (
@@ -194,7 +212,10 @@ export function WatchEntryDialog({
                         });
                       }}
                     />
-                    <label htmlFor={`tag-friend-${f.id}`} className="text-sm cursor-pointer">
+                    <label
+                      htmlFor={`tag-friend-${f.id}`}
+                      className="text-sm cursor-pointer"
+                    >
                       {f.name}
                     </label>
                   </li>
@@ -204,8 +225,16 @@ export function WatchEntryDialog({
           )}
 
           <div className="space-y-1.5">
-            <Label>Review <span className="text-muted-foreground font-normal">(optional)</span></Label>
-            <div data-color-mode="dark" className="rounded-md overflow-hidden border border-border">
+            <Label>
+              Review{" "}
+              <span className="text-muted-foreground font-normal">
+                (optional)
+              </span>
+            </Label>
+            <div
+              data-color-mode="dark"
+              className="rounded-md overflow-hidden border border-border"
+            >
               <MDEditor
                 value={reviewValue}
                 onChange={(val) => setReviewValue(val ?? "")}
@@ -213,11 +242,17 @@ export function WatchEntryDialog({
                 preview="live"
               />
             </div>
-            <p className="text-xs text-muted-foreground">Supports **bold**, *italic*, lists, links, and more.</p>
+            <p className="text-xs text-muted-foreground">
+              Supports **bold**, *italic*, lists, links, and more.
+            </p>
           </div>
 
           <div className="flex justify-end gap-2 pt-1">
-            <Button variant="ghost" onClick={() => setOpen(false)} disabled={isPending}>
+            <Button
+              variant="ghost"
+              onClick={() => setOpen(false)}
+              disabled={isPending}
+            >
               Cancel
             </Button>
             <Button onClick={handleSave} disabled={isPending}>

@@ -19,14 +19,19 @@ export default async function AboutSettingsPage() {
     <div className="mx-auto max-w-2xl">
       <h1 className="text-2xl font-bold mb-2">About</h1>
       <p className="text-muted-foreground mb-6">
-        Version and release notes come from <code className="text-xs">package.json</code> and{" "}
-        <code className="text-xs">CHANGELOG.md</code> in the repository (updated automatically when
-        a release runs on the default branch).
+        Version and release notes come from{" "}
+        <code className="text-xs">package.json</code> and{" "}
+        <code className="text-xs">CHANGELOG.md</code> in the repository (updated
+        automatically when a release runs on the default branch).
       </p>
 
       <section className="mb-8 rounded-lg border border-border bg-card p-4">
-        <h2 className="text-sm font-medium text-muted-foreground">Current version</h2>
-        <p className="mt-1 text-lg font-semibold tabular-nums">v{APP_VERSION}</p>
+        <h2 className="text-sm font-medium text-muted-foreground">
+          Current version
+        </h2>
+        <p className="mt-1 text-lg font-semibold tabular-nums">
+          v{APP_VERSION}
+        </p>
       </section>
 
       {latestSection ? (
@@ -35,7 +40,10 @@ export default async function AboutSettingsPage() {
             Latest release
           </h2>
           <div className="rounded-lg border border-border bg-card p-4">
-            <MarkdownContent content={latestSection} className="text-foreground" />
+            <MarkdownContent
+              content={latestSection}
+              className="text-foreground"
+            />
           </div>
         </section>
       ) : null}

@@ -4,7 +4,13 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -13,7 +19,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import type { WatchHistoryResetScope, WatchImportCounts } from "@/lib/watch-history-scopes";
+import type {
+  WatchHistoryResetScope,
+  WatchImportCounts,
+} from "@/lib/watch-history-scopes";
 import { PLEX_EPISODES_SCOPE } from "@/lib/watch-history-scopes";
 
 interface Row {
@@ -31,7 +40,8 @@ function buildRows(counts: WatchImportCounts): Row[] {
       integration: "Plex",
       library: "Movies",
       count: counts.plexMovie,
-      resetHint: "Removes movie watch entries synced from Plex. Re-sync Plex to import them again.",
+      resetHint:
+        "Removes movie watch entries synced from Plex. Re-sync Plex to import them again.",
     },
     {
       scope: "plex_tv",
@@ -46,7 +56,8 @@ function buildRows(counts: WatchImportCounts): Row[] {
       integration: "Letterboxd",
       library: "Diary (movies)",
       count: counts.letterboxd,
-      resetHint: "Removes watch entries imported from your Letterboxd RSS diary.",
+      resetHint:
+        "Removes watch entries imported from your Letterboxd RSS diary.",
     },
     {
       scope: "manual_movie",
@@ -85,10 +96,13 @@ interface WatchHistorySettingsProps {
   initialCounts: WatchImportCounts;
 }
 
-export function WatchHistorySettings({ initialCounts }: WatchHistorySettingsProps) {
+export function WatchHistorySettings({
+  initialCounts,
+}: WatchHistorySettingsProps) {
   const router = useRouter();
   const [counts, setCounts] = useState(initialCounts);
-  const [pendingScope, setPendingScope] = useState<WatchHistoryResetScope | null>(null);
+  const [pendingScope, setPendingScope] =
+    useState<WatchHistoryResetScope | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -124,7 +138,9 @@ export function WatchHistorySettings({ initialCounts }: WatchHistorySettingsProp
   };
 
   const rows = buildRows(counts);
-  const pendingRow = pendingScope ? rows.find((r) => r.scope === pendingScope) : null;
+  const pendingRow = pendingScope
+    ? rows.find((r) => r.scope === pendingScope)
+    : null;
   const episodeDialogOpen = pendingScope === PLEX_EPISODES_SCOPE;
 
   return (
@@ -133,9 +149,10 @@ export function WatchHistorySettings({ initialCounts }: WatchHistorySettingsProp
         <CardHeader>
           <CardTitle>Watch history by source</CardTitle>
           <CardDescription>
-            Your <span className="text-foreground">Watch History</span> page lists title-level entries. Counts reflect
-            how many entries came from each integration. Clearing a row only removes those history lines — it does not
-            disconnect Plex or Letterboxd.
+            Your <span className="text-foreground">Watch History</span> page
+            lists title-level entries. Counts reflect how many entries came from
+            each integration. Clearing a row only removes those history lines —
+            it does not disconnect Plex or Letterboxd.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -156,10 +173,17 @@ export function WatchHistorySettings({ initialCounts }: WatchHistorySettingsProp
               </thead>
               <tbody>
                 {rows.map((row) => (
-                  <tr key={row.scope} className="border-b border-border last:border-0">
+                  <tr
+                    key={row.scope}
+                    className="border-b border-border last:border-0"
+                  >
                     <td className="px-3 py-2.5">{row.integration}</td>
-                    <td className="px-3 py-2.5 text-muted-foreground">{row.library}</td>
-                    <td className="px-3 py-2.5 text-right tabular-nums">{row.count}</td>
+                    <td className="px-3 py-2.5 text-muted-foreground">
+                      {row.library}
+                    </td>
+                    <td className="px-3 py-2.5 text-right tabular-nums">
+                      {row.count}
+                    </td>
                     <td className="px-3 py-2.5 text-right">
                       <Button
                         type="button"
@@ -185,14 +209,16 @@ export function WatchHistorySettings({ initialCounts }: WatchHistorySettingsProp
         <CardHeader>
           <CardTitle>TV episode progress (Plex)</CardTitle>
           <CardDescription>
-            Plex sync stores which episodes you have watched. This is separate from the show-level list on Watch
-            History.
+            Plex sync stores which episodes you have watched. This is separate
+            from the show-level list on Watch History.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-muted-foreground">
-            <span className="font-medium text-foreground tabular-nums">{counts.plexEpisodes}</span> watched episode
-            records
+            <span className="font-medium text-foreground tabular-nums">
+              {counts.plexEpisodes}
+            </span>{" "}
+            watched episode records
           </p>
           <Button
             type="button"
@@ -208,7 +234,10 @@ export function WatchHistorySettings({ initialCounts }: WatchHistorySettingsProp
         </CardContent>
       </Card>
 
-      <Dialog open={!!pendingScope && !episodeDialogOpen} onOpenChange={(o) => !o && setPendingScope(null)}>
+      <Dialog
+        open={!!pendingScope && !episodeDialogOpen}
+        onOpenChange={(o) => !o && setPendingScope(null)}
+      >
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Clear this watch history?</DialogTitle>
@@ -216,7 +245,10 @@ export function WatchHistorySettings({ initialCounts }: WatchHistorySettingsProp
               <div className="space-y-2 text-sm text-muted-foreground">
                 <p>
                   This removes{" "}
-                  <span className="font-medium text-foreground tabular-nums">{pendingRow?.count ?? 0}</span> entr
+                  <span className="font-medium text-foreground tabular-nums">
+                    {pendingRow?.count ?? 0}
+                  </span>{" "}
+                  entr
                   {(pendingRow?.count ?? 0) !== 1 ? "ies" : "y"} from{" "}
                   <span className="text-foreground">
                     {pendingRow?.integration} · {pendingRow?.library}
@@ -228,22 +260,42 @@ export function WatchHistorySettings({ initialCounts }: WatchHistorySettingsProp
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-0">
-            <Button type="button" variant="outline" onClick={() => setPendingScope(null)} disabled={isPending}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setPendingScope(null)}
+              disabled={isPending}
+            >
               Cancel
             </Button>
             <Button
               type="button"
               variant="destructive"
-              disabled={isPending || !pendingScope || pendingScope === PLEX_EPISODES_SCOPE}
-              onClick={() => pendingScope && pendingScope !== PLEX_EPISODES_SCOPE && runReset(pendingScope)}
+              disabled={
+                isPending ||
+                !pendingScope ||
+                pendingScope === PLEX_EPISODES_SCOPE
+              }
+              onClick={() =>
+                pendingScope &&
+                pendingScope !== PLEX_EPISODES_SCOPE &&
+                runReset(pendingScope)
+              }
             >
-              {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Clear entries"}
+              {isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "Clear entries"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <Dialog open={episodeDialogOpen} onOpenChange={(o) => !o && setPendingScope(null)}>
+      <Dialog
+        open={episodeDialogOpen}
+        onOpenChange={(o) => !o && setPendingScope(null)}
+      >
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Clear all TV episode progress?</DialogTitle>
@@ -251,15 +303,26 @@ export function WatchHistorySettings({ initialCounts }: WatchHistorySettingsProp
               <div className="space-y-2 text-sm text-muted-foreground">
                 <p>
                   This deletes{" "}
-                  <span className="font-medium text-foreground tabular-nums">{counts.plexEpisodes}</span> episode
-                  records synced from Plex. Your Watch History entries are not removed by this action.
+                  <span className="font-medium text-foreground tabular-nums">
+                    {counts.plexEpisodes}
+                  </span>{" "}
+                  episode records synced from Plex. Your Watch History entries
+                  are not removed by this action.
                 </p>
-                <p>Run a Plex sync again to rebuild episode progress from your server.</p>
+                <p>
+                  Run a Plex sync again to rebuild episode progress from your
+                  server.
+                </p>
               </div>
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-0">
-            <Button type="button" variant="outline" onClick={() => setPendingScope(null)} disabled={isPending}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setPendingScope(null)}
+              disabled={isPending}
+            >
               Cancel
             </Button>
             <Button
@@ -268,7 +331,11 @@ export function WatchHistorySettings({ initialCounts }: WatchHistorySettingsProp
               disabled={isPending}
               onClick={() => runReset(PLEX_EPISODES_SCOPE)}
             >
-              {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Clear episode progress"}
+              {isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "Clear episode progress"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -29,7 +29,8 @@ export function slugify(text: string): string {
 }
 
 export function generateToken(length = 32): string {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  const chars =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   let result = "";
   for (let i = 0; i < length; i++) {
     result += chars.charAt(Math.floor(Math.random() * chars.length));
@@ -39,7 +40,14 @@ export function generateToken(length = 32): string {
 
 export function tmdbImageUrl(
   path: string | null | undefined,
-  size: "w92" | "w154" | "w185" | "w342" | "w500" | "w780" | "original" = "w500"
+  size:
+    | "w92"
+    | "w154"
+    | "w185"
+    | "w342"
+    | "w500"
+    | "w780"
+    | "original" = "w500",
 ): string | null {
   if (!path) return null;
   return `https://image.tmdb.org/t/p/${size}${path}`;

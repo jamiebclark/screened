@@ -1,6 +1,14 @@
 "use client";
 
-import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo, useTransition } from "react";
+import {
+  useState,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useCallback,
+  useMemo,
+  useTransition,
+} from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -30,9 +38,17 @@ import { cn } from "@/lib/utils";
 import { WatchStatusButton } from "@/components/watch-status-button";
 import { AddToListDialog } from "@/components/add-to-list-dialog";
 import { RatingStars } from "@/components/rating-stars";
-import { usePickerRoomSync, ensureCurrentUserInRoom } from "./use-picker-room-sync";
+import {
+  usePickerRoomSync,
+  ensureCurrentUserInRoom,
+} from "./use-picker-room-sync";
 import { useRouter } from "next/navigation";
-import { withScoringDefaults, type PickerRoomState, type ReferenceMovieJson, type ScoredMovieJson } from "@/lib/picker-room-state";
+import {
+  withScoringDefaults,
+  type PickerRoomState,
+  type ReferenceMovieJson,
+  type ScoredMovieJson,
+} from "@/lib/picker-room-state";
 import { filterTmdbMovieGenres } from "@/lib/tmdb-movie-genres";
 import { describePickerStateChange } from "@/lib/picker-activity-line";
 import { Link2, Share2 } from "lucide-react";
@@ -111,7 +127,10 @@ function MovieSearchInput({
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
         setOpen(false);
       }
     };
@@ -120,11 +139,17 @@ function MovieSearchInput({
   }, []);
 
   const search = useCallback(async (q: string) => {
-    if (!q.trim()) { setResults([]); setOpen(false); return; }
+    if (!q.trim()) {
+      setResults([]);
+      setOpen(false);
+      return;
+    }
     setLoading(true);
     try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(q)}&type=movie`);
-      const data = await res.json() as { results: SearchResult[] };
+      const res = await fetch(
+        `/api/search?q=${encodeURIComponent(q)}&type=movie`,
+      );
+      const data = (await res.json()) as { results: SearchResult[] };
       setResults(data.results ?? []);
       setOpen(true);
     } catch {
@@ -152,7 +177,7 @@ function MovieSearchInput({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ tmdbId: result.tmdbId, type: result.type }),
       });
-      const data = await res.json() as {
+      const data = (await res.json()) as {
         id: string;
         tmdbId: number;
         title: string;
@@ -210,11 +235,17 @@ function MovieSearchInput({
                   "flex w-full items-center gap-3 px-3 py-2 text-left text-sm transition-colors",
                   alreadyAdded
                     ? "cursor-not-allowed opacity-50"
-                    : "hover:bg-accent cursor-pointer"
+                    : "hover:bg-accent cursor-pointer",
                 )}
               >
                 {r.poster ? (
-                  <Image src={r.poster} alt={r.title} width={32} height={48} className="rounded object-cover shrink-0" />
+                  <Image
+                    src={r.poster}
+                    alt={r.title}
+                    width={32}
+                    height={48}
+                    className="rounded object-cover shrink-0"
+                  />
                 ) : (
                   <div className="w-8 h-12 rounded bg-muted shrink-0 flex items-center justify-center">
                     <Film className="h-4 w-4 text-muted-foreground" />
@@ -222,9 +253,15 @@ function MovieSearchInput({
                 )}
                 <div className="min-w-0">
                   <p className="font-medium truncate">{r.title}</p>
-                  {r.year && <p className="text-xs text-muted-foreground">{r.year}</p>}
+                  {r.year && (
+                    <p className="text-xs text-muted-foreground">{r.year}</p>
+                  )}
                 </div>
-                {alreadyAdded && <span className="ml-auto text-xs text-muted-foreground shrink-0">Added</span>}
+                {alreadyAdded && (
+                  <span className="ml-auto text-xs text-muted-foreground shrink-0">
+                    Added
+                  </span>
+                )}
               </button>
             );
           })}
@@ -275,12 +312,19 @@ function ReferenceMovieCard({
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <p className="text-sm font-medium truncate">{movie.title}</p>
-            {movie.year && <p className="text-xs text-muted-foreground">{movie.year}</p>}
+            {movie.year && (
+              <p className="text-xs text-muted-foreground">{movie.year}</p>
+            )}
             {!movie.hasEmbedding && (
-              <p className="text-xs text-amber-500 mt-0.5">No embedding — add OPENAI_API_KEY</p>
+              <p className="text-xs text-amber-500 mt-0.5">
+                No embedding — add OPENAI_API_KEY
+              </p>
             )}
           </div>
-          <button onClick={onRemove} className="shrink-0 text-muted-foreground hover:text-foreground transition-colors mt-0.5">
+          <button
+            onClick={onRemove}
+            className="shrink-0 text-muted-foreground hover:text-foreground transition-colors mt-0.5"
+          >
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -294,7 +338,7 @@ function ReferenceMovieCard({
                 "rounded px-2 py-0.5 text-xs transition-colors border",
                 movie.weight === w.value
                   ? "bg-primary text-primary-foreground border-primary"
-                  : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
+                  : "border-border text-muted-foreground hover:border-foreground hover:text-foreground",
               )}
             >
               {w.label}
@@ -309,7 +353,7 @@ function ReferenceMovieCard({
             "mt-2 flex items-center gap-1 text-xs transition-colors",
             movie.saved
               ? "text-primary"
-              : "text-muted-foreground hover:text-foreground"
+              : "text-muted-foreground hover:text-foreground",
           )}
         >
           {saving ? (
@@ -339,7 +383,9 @@ function PickerScoredMovieActions({
   initialRating: number | null;
   onInvalidatePickerStatuses: () => void;
 }) {
-  const [trackedStatus, setTrackedStatus] = useState<PickerWatchStatus | null>(initialStatus);
+  const [trackedStatus, setTrackedStatus] = useState<PickerWatchStatus | null>(
+    initialStatus,
+  );
 
   useEffect(() => {
     setTrackedStatus(initialStatus);
@@ -387,10 +433,15 @@ function ScoredMovieCard({
   movie: ScoredMovie;
   rank: number;
   onDismiss?: (movie: ScoredMovie) => void;
-  pickerMediaStatus: { status: PickerWatchStatus; rating: number | null } | undefined;
+  pickerMediaStatus:
+    | { status: PickerWatchStatus; rating: number | null }
+    | undefined;
   onPickerStatusesInvalidate: () => void;
 }) {
-  const scorePercent = Math.max(0, Math.min(100, ((movie.score + 1) / 2) * 100));
+  const scorePercent = Math.max(
+    0,
+    Math.min(100, ((movie.score + 1) / 2) * 100),
+  );
 
   return (
     <Card className="overflow-hidden">
@@ -415,8 +466,13 @@ function ScoredMovieCard({
           <div className="flex items-start justify-between gap-2">
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-muted-foreground">#{rank}</span>
-                <Link href={`/movies/${movie.tmdbId}`} className="font-semibold hover:underline">
+                <span className="text-xs font-bold text-muted-foreground">
+                  #{rank}
+                </span>
+                <Link
+                  href={`/movies/${movie.tmdbId}`}
+                  className="font-semibold hover:underline"
+                >
                   {movie.title}
                 </Link>
               </div>
@@ -451,7 +507,9 @@ function ScoredMovieCard({
               )}
               <div className="flex items-center gap-1 justify-end">
                 <Star className="h-3 w-3 text-yellow-500" />
-                <span className="text-sm font-semibold">{(movie.attractorScore * 100).toFixed(0)}%</span>
+                <span className="text-sm font-semibold">
+                  {(movie.attractorScore * 100).toFixed(0)}%
+                </span>
               </div>
               <p className="text-xs text-muted-foreground">match</p>
             </div>
@@ -468,7 +526,11 @@ function ScoredMovieCard({
           {movie.genres.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-2">
               {movie.genres.slice(0, 4).map((g) => (
-                <Badge key={g} variant="secondary" className="text-xs px-1.5 py-0">
+                <Badge
+                  key={g}
+                  variant="secondary"
+                  className="text-xs px-1.5 py-0"
+                >
                   {g}
                 </Badge>
               ))}
@@ -483,7 +545,9 @@ function ScoredMovieCard({
           )}
 
           {movie.overview && (
-            <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">{movie.overview}</p>
+            <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">
+              {movie.overview}
+            </p>
           )}
 
           <PickerScoredMovieActions
@@ -551,7 +615,10 @@ function ParticipantSearch({
     });
     fetch(`/api/users/search?q=${encodeURIComponent(debouncedQuery)}`)
       .then((r) => r.json() as Promise<SearchUser[]>)
-      .then((data) => { setResults(data); setOpen(data.length > 0); })
+      .then((data) => {
+        setResults(data);
+        setOpen(data.length > 0);
+      })
       .catch(() => setResults([]))
       .finally(() => setSearching(false));
   }, [debouncedQuery, startUserSearchTransition]);
@@ -566,7 +633,12 @@ function ParticipantSearch({
 
   const handleSelect = (user: SearchUser) => {
     if (!participantIds.has(user.id)) {
-      onAdd({ id: user.id, name: user.name, email: user.email, avatarUrl: user.avatarUrl });
+      onAdd({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        avatarUrl: user.avatarUrl,
+      });
     }
     setQuery("");
     setResults([]);
@@ -574,8 +646,14 @@ function ParticipantSearch({
   };
 
   const initials = (name: string | null, email: string | null) =>
-    name ? name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
-          : (email?.[0]?.toUpperCase() ?? "U");
+    name
+      ? name
+          .split(" ")
+          .map((n) => n[0])
+          .join("")
+          .toUpperCase()
+          .slice(0, 2)
+      : (email?.[0]?.toUpperCase() ?? "U");
 
   return (
     <div className="space-y-3">
@@ -590,7 +668,7 @@ function ParticipantSearch({
                 "flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm",
                 isCurrentUser
                   ? "border-primary/40 bg-primary/10 text-primary"
-                  : "border-border bg-muted/40"
+                  : "border-border bg-muted/40",
               )}
             >
               <Avatar className="h-5 w-5">
@@ -638,10 +716,15 @@ function ParticipantSearch({
                 <button
                   key={user.id}
                   disabled={alreadyAdded}
-                  onMouseDown={(e) => { e.preventDefault(); handleSelect(user); }}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    handleSelect(user);
+                  }}
                   className={cn(
                     "flex w-full items-center gap-2.5 px-3 py-2 text-sm text-left transition-colors",
-                    alreadyAdded ? "opacity-50 cursor-not-allowed" : "hover:bg-accent cursor-pointer"
+                    alreadyAdded
+                      ? "opacity-50 cursor-not-allowed"
+                      : "hover:bg-accent cursor-pointer",
                   )}
                 >
                   <Avatar className="h-6 w-6 shrink-0">
@@ -650,14 +733,20 @@ function ParticipantSearch({
                     </AvatarFallback>
                   </Avatar>
                   <div className="min-w-0">
-                    <p className="truncate font-medium">{user.name ?? user.email}</p>
+                    <p className="truncate font-medium">
+                      {user.name ?? user.email}
+                    </p>
                     {user.plexConnection?.plexUsername && (
                       <p className="truncate text-xs text-muted-foreground">
                         @{user.plexConnection.plexUsername}
                       </p>
                     )}
                   </div>
-                  {alreadyAdded && <span className="ml-auto text-xs text-muted-foreground shrink-0">Added</span>}
+                  {alreadyAdded && (
+                    <span className="ml-auto text-xs text-muted-foreground shrink-0">
+                      Added
+                    </span>
+                  )}
                 </button>
               );
             })}
@@ -670,7 +759,12 @@ function ParticipantSearch({
 
 // ─── PersonTagInput (TMDB people search) ────────────────────────────────────
 
-type PersonResult = { id: number; name: string; role: string | null; profile: string | null };
+type PersonResult = {
+  id: number;
+  name: string;
+  role: string | null;
+  profile: string | null;
+};
 
 function PersonTagInput({
   values,
@@ -692,7 +786,10 @@ function PersonTagInput({
 
   useEffect(() => {
     const onDoc = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
         setOpen(false);
       }
     };
@@ -700,27 +797,32 @@ function PersonTagInput({
     return () => document.removeEventListener("mousedown", onDoc);
   }, []);
 
-  const search = useCallback(async (q: string) => {
-    if (q.trim().length < 2) {
-      setResults([]);
-      setOpen(false);
-      return;
-    }
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/search/person?q=${encodeURIComponent(q.trim())}`);
-      const data = (await res.json()) as { results?: PersonResult[] };
-      const list = (data.results ?? []).filter(
-        (p) => !values.some((v) => v.toLowerCase() === p.name.toLowerCase())
-      );
-      setResults(list);
-      setOpen(list.length > 0);
-    } catch {
-      setResults([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [values]);
+  const search = useCallback(
+    async (q: string) => {
+      if (q.trim().length < 2) {
+        setResults([]);
+        setOpen(false);
+        return;
+      }
+      setLoading(true);
+      try {
+        const res = await fetch(
+          `/api/search/person?q=${encodeURIComponent(q.trim())}`,
+        );
+        const data = (await res.json()) as { results?: PersonResult[] };
+        const list = (data.results ?? []).filter(
+          (p) => !values.some((v) => v.toLowerCase() === p.name.toLowerCase()),
+        );
+        setResults(list);
+        setOpen(list.length > 0);
+      } catch {
+        setResults([]);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [values],
+  );
 
   const addName = (name: string) => {
     const t = name.trim();
@@ -820,7 +922,11 @@ function PersonTagInput({
                 )}
                 <div className="min-w-0">
                   <p className="font-medium truncate">{p.name}</p>
-                  {p.role && <p className="text-xs text-muted-foreground truncate">{p.role}</p>}
+                  {p.role && (
+                    <p className="text-xs text-muted-foreground truncate">
+                      {p.role}
+                    </p>
+                  )}
                 </div>
               </button>
             ))}
@@ -834,11 +940,15 @@ function PersonTagInput({
               key={name}
               className={cn(
                 "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium",
-                colorClass
+                colorClass,
               )}
             >
               {name}
-              <button type="button" onClick={() => remove(name)} className="hover:opacity-70 transition-opacity">
+              <button
+                type="button"
+                onClick={() => remove(name)}
+                className="hover:opacity-70 transition-opacity"
+              >
                 <X className="h-3 w-3" />
               </button>
             </span>
@@ -869,13 +979,19 @@ function GenreTagInput({
   const containerRef = useRef<HTMLDivElement>(null);
   const suggestions = useMemo(() => filterTmdbMovieGenres(query, 10), [query]);
   const availableSuggestions = useMemo(
-    () => suggestions.filter((s: string) => !values.some((v) => v.toLowerCase() === s.toLowerCase())),
-    [suggestions, values]
+    () =>
+      suggestions.filter(
+        (s: string) => !values.some((v) => v.toLowerCase() === s.toLowerCase()),
+      ),
+    [suggestions, values],
   );
 
   useEffect(() => {
     const onDoc = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
         setOpen(false);
       }
     };
@@ -907,7 +1023,9 @@ function GenreTagInput({
 
   return (
     <div className="space-y-2">
-      {hint && <p className="text-[11px] text-muted-foreground leading-snug">{hint}</p>}
+      {hint && (
+        <p className="text-[11px] text-muted-foreground leading-snug">{hint}</p>
+      )}
       <div ref={containerRef} className="relative space-y-2">
         <div className="flex gap-2">
           <div className="relative flex-1 min-w-0">
@@ -966,11 +1084,15 @@ function GenreTagInput({
                 key={name}
                 className={cn(
                   "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium",
-                  colorClass
+                  colorClass,
                 )}
               >
                 {name}
-                <button type="button" onClick={() => remove(name)} className="hover:opacity-70 transition-opacity">
+                <button
+                  type="button"
+                  onClick={() => remove(name)}
+                  className="hover:opacity-70 transition-opacity"
+                >
                   <X className="h-3 w-3" />
                 </button>
               </span>
@@ -984,33 +1106,56 @@ function GenreTagInput({
 
 // ─── Main PickSession Component ───────────────────────────────────────────────
 
-export function PickSession({ currentUser, roomId, initialRoomState, hasPlexLinked }: PickSessionProps) {
+export function PickSession({
+  currentUser,
+  roomId,
+  initialRoomState,
+  hasPlexLinked,
+}: PickSessionProps) {
   const [roomState, setRoomState] = useState<PickerRoomState>(() =>
-    ensureCurrentUserInRoom(withScoringDefaults(initialRoomState), currentUser)
+    ensureCurrentUserInRoom(withScoringDefaults(initialRoomState), currentUser),
   );
   /** True after we have ever had a scored list in this session (survives temporary null while re-running). */
   const [hasCompletedListRun, setHasCompletedListRun] = useState(
     () =>
-      ensureCurrentUserInRoom(withScoringDefaults(initialRoomState), currentUser).scoringResults !== null
+      ensureCurrentUserInRoom(
+        withScoringDefaults(initialRoomState),
+        currentUser,
+      ).scoringResults !== null,
   );
   const [startingRoom, setStartingRoom] = useState(false);
-  const [tabId] = useState(() => globalThis.crypto?.randomUUID() ?? `t-${Date.now()}`);
-  const [activityLines, setActivityLines] = useState<Array<{ id: string; text: string; at: number }>>([]);
+  const [tabId] = useState(
+    () => globalThis.crypto?.randomUUID() ?? `t-${Date.now()}`,
+  );
+  const [activityLines, setActivityLines] = useState<
+    Array<{ id: string; text: string; at: number }>
+  >([]);
   const appendActivity = useCallback((line: string) => {
     setActivityLines((lines) =>
       [
-        { id: globalThis.crypto?.randomUUID() ?? `a-${Date.now()}`, text: line, at: Date.now() },
+        {
+          id: globalThis.crypto?.randomUUID() ?? `a-${Date.now()}`,
+          text: line,
+          at: Date.now(),
+        },
         ...lines,
-      ].slice(0, 30)
+      ].slice(0, 30),
     );
   }, []);
   const onRemotePickerActivity = useCallback(
-    (prev: PickerRoomState, next: PickerRoomState, { sourceUserId }: { sourceUserId: string; sourceTabId: string }) => {
+    (
+      prev: PickerRoomState,
+      next: PickerRoomState,
+      { sourceUserId }: { sourceUserId: string; sourceTabId: string },
+    ) => {
       if (!sourceUserId) return;
-      const line = describePickerStateChange(prev, next, { actorId: sourceUserId, youId: currentUser.id });
+      const line = describePickerStateChange(prev, next, {
+        actorId: sourceUserId,
+        youId: currentUser.id,
+      });
       if (line) appendActivity(line);
     },
-    [appendActivity, currentUser.id]
+    [appendActivity, currentUser.id],
   );
   const [emptyScoreHint, setEmptyScoreHint] = useState<string | null>(null);
   const router = useRouter();
@@ -1059,7 +1204,9 @@ export function PickSession({ currentUser, roomId, initialRoomState, hasPlexLink
   useEffect(() => {
     if (participants.length === 1 && !hasPlexLinked) {
       queueMicrotask(() => {
-        setRoomState((p) => (p.plexLibraryOnly ? { ...p, plexLibraryOnly: false } : p));
+        setRoomState((p) =>
+          p.plexLibraryOnly ? { ...p, plexLibraryOnly: false } : p,
+        );
       });
     }
   }, [hasPlexLinked, participants.length]);
@@ -1114,7 +1261,9 @@ export function PickSession({ currentUser, roomId, initialRoomState, hasPlexLink
 
   const scoringTmdbIdsKey = useMemo(() => {
     if (scoringResults === null || scoringResults.length === 0) return "";
-    return [...new Set(scoringResults.map((m) => m.tmdbId))].sort((a, b) => a - b).join(",");
+    return [...new Set(scoringResults.map((m) => m.tmdbId))]
+      .sort((a, b) => a - b)
+      .join(",");
   }, [scoringResults]);
 
   const invalidatePickerStatuses = useCallback(() => {
@@ -1130,14 +1279,23 @@ export function PickSession({ currentUser, roomId, initialRoomState, hasPlexLink
     const ids = scoringTmdbIdsKey.split(",").map((s) => parseInt(s, 10));
     void (async () => {
       try {
-        const res = await fetch(`/api/media/status?tmdbIds=${encodeURIComponent(ids.join(","))}&type=movie`, {
-          signal: ac.signal,
-        });
+        const res = await fetch(
+          `/api/media/status?tmdbIds=${encodeURIComponent(ids.join(","))}&type=movie`,
+          {
+            signal: ac.signal,
+          },
+        );
         if (!res.ok || ac.signal.aborted) return;
         const data = (await res.json()) as {
-          statuses?: Record<string, { status: PickerWatchStatus; rating: number | null }>;
+          statuses?: Record<
+            string,
+            { status: PickerWatchStatus; rating: number | null }
+          >;
         };
-        const next: Record<number, { status: PickerWatchStatus; rating: number | null }> = {};
+        const next: Record<
+          number,
+          { status: PickerWatchStatus; rating: number | null }
+        > = {};
         for (const [k, v] of Object.entries(data.statuses ?? {})) {
           next[Number(k)] = v;
         }
@@ -1150,8 +1308,15 @@ export function PickSession({ currentUser, roomId, initialRoomState, hasPlexLink
   }, [scoringTmdbIdsKey, pickerStatusesNonce]);
 
   useEffect(() => {
-    if (visibleScoringResults !== null && visibleScoringResults.length > 0 && !scoringInProgress) {
-      setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+    if (
+      visibleScoringResults !== null &&
+      visibleScoringResults.length > 0 &&
+      !scoringInProgress
+    ) {
+      setTimeout(
+        () => resultsRef.current?.scrollIntoView({ behavior: "smooth" }),
+        100,
+      );
     }
   }, [visibleScoringResults, scoringInProgress]);
 
@@ -1160,26 +1325,39 @@ export function PickSession({ currentUser, roomId, initialRoomState, hasPlexLink
 
   const addParticipant = (user: User) => {
     setRoomState((prev) =>
-      prev.participants.some((p) => p.id === user.id) ? prev : { ...prev, participants: [...prev.participants, user] }
+      prev.participants.some((p) => p.id === user.id)
+        ? prev
+        : { ...prev, participants: [...prev.participants, user] },
     );
   };
 
   const removeParticipant = (id: string) => {
     if (id === currentUser.id) return;
-    setRoomState((prev) => ({ ...prev, participants: prev.participants.filter((p) => p.id !== id) }));
+    setRoomState((prev) => ({
+      ...prev,
+      participants: prev.participants.filter((p) => p.id !== id),
+    }));
   };
 
-  const updateWeight = (pool: "attractor" | "repeller", mediaItemId: string, weight: number) => {
+  const updateWeight = (
+    pool: "attractor" | "repeller",
+    mediaItemId: string,
+    weight: number,
+  ) => {
     setRoomState((prev) => {
       if (pool === "attractor") {
         return {
           ...prev,
-          attractors: prev.attractors.map((m) => (m.mediaItemId === mediaItemId ? { ...m, weight } : m)),
+          attractors: prev.attractors.map((m) =>
+            m.mediaItemId === mediaItemId ? { ...m, weight } : m,
+          ),
         };
       }
       return {
         ...prev,
-        repellers: prev.repellers.map((m) => (m.mediaItemId === mediaItemId ? { ...m, weight } : m)),
+        repellers: prev.repellers.map((m) =>
+          m.mediaItemId === mediaItemId ? { ...m, weight } : m,
+        ),
       };
     });
   };
@@ -1187,7 +1365,12 @@ export function PickSession({ currentUser, roomId, initialRoomState, hasPlexLink
   const remove = (pool: "attractor" | "repeller", mediaItemId: string) => {
     setRoomState((prev) => {
       if (pool === "attractor") {
-        return { ...prev, attractors: prev.attractors.filter((m) => m.mediaItemId !== mediaItemId) };
+        return {
+          ...prev,
+          attractors: prev.attractors.filter(
+            (m) => m.mediaItemId !== mediaItemId,
+          ),
+        };
       }
       return {
         ...prev,
@@ -1213,19 +1396,30 @@ export function PickSession({ currentUser, roomId, initialRoomState, hasPlexLink
       const hasRep = prev.repellers.some((r) => r.mediaItemId === movie.id);
       return {
         ...prev,
-        vetoIds: prev.vetoIds.includes(movie.id) ? prev.vetoIds : [...prev.vetoIds, movie.id],
+        vetoIds: prev.vetoIds.includes(movie.id)
+          ? prev.vetoIds
+          : [...prev.vetoIds, movie.id],
         repellers: hasRep ? prev.repellers : [...prev.repellers, nextRef],
       };
     });
   };
 
-  const toggleSave = async (pool: "attractor" | "repeller", movie: ReferenceMovie) => {
+  const toggleSave = async (
+    pool: "attractor" | "repeller",
+    movie: ReferenceMovie,
+  ) => {
     const type = pool === "attractor" ? "ATTRACTOR" : "REPELLER";
 
     if (movie.saved) {
       const res = await fetch("/api/preferences");
-      const prefs = await res.json() as Array<{ id: string; mediaItemId: string; type: string }>;
-      const pref = prefs.find((p) => p.mediaItemId === movie.mediaItemId && p.type === type);
+      const prefs = (await res.json()) as Array<{
+        id: string;
+        mediaItemId: string;
+        type: string;
+      }>;
+      const pref = prefs.find(
+        (p) => p.mediaItemId === movie.mediaItemId && p.type === type,
+      );
       if (pref) {
         await fetch(`/api/preferences?id=${pref.id}`, { method: "DELETE" });
       }
@@ -1233,30 +1427,42 @@ export function PickSession({ currentUser, roomId, initialRoomState, hasPlexLink
         if (pool === "attractor") {
           return {
             ...prev,
-            attractors: prev.attractors.map((m) => (m.mediaItemId === movie.mediaItemId ? { ...m, saved: false } : m)),
+            attractors: prev.attractors.map((m) =>
+              m.mediaItemId === movie.mediaItemId ? { ...m, saved: false } : m,
+            ),
           };
         }
         return {
           ...prev,
-          repellers: prev.repellers.map((m) => (m.mediaItemId === movie.mediaItemId ? { ...m, saved: false } : m)),
+          repellers: prev.repellers.map((m) =>
+            m.mediaItemId === movie.mediaItemId ? { ...m, saved: false } : m,
+          ),
         };
       });
     } else {
       await fetch("/api/preferences", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mediaItemId: movie.mediaItemId, type, weight: movie.weight }),
+        body: JSON.stringify({
+          mediaItemId: movie.mediaItemId,
+          type,
+          weight: movie.weight,
+        }),
       });
       setRoomState((prev) => {
         if (pool === "attractor") {
           return {
             ...prev,
-            attractors: prev.attractors.map((m) => (m.mediaItemId === movie.mediaItemId ? { ...m, saved: true } : m)),
+            attractors: prev.attractors.map((m) =>
+              m.mediaItemId === movie.mediaItemId ? { ...m, saved: true } : m,
+            ),
           };
         }
         return {
           ...prev,
-          repellers: prev.repellers.map((m) => (m.mediaItemId === movie.mediaItemId ? { ...m, saved: true } : m)),
+          repellers: prev.repellers.map((m) =>
+            m.mediaItemId === movie.mediaItemId ? { ...m, saved: true } : m,
+          ),
         };
       });
     }
@@ -1282,7 +1488,10 @@ export function PickSession({ currentUser, roomId, initialRoomState, hasPlexLink
         scoringResults: null,
       };
       patchIfRoom(next);
-      const line = describePickerStateChange(prev, next, { actorId: currentUser.id, youId: currentUser.id });
+      const line = describePickerStateChange(prev, next, {
+        actorId: currentUser.id,
+        youId: currentUser.id,
+      });
       if (line) queueMicrotask(() => appendActivity(line));
       return next;
     });
@@ -1294,8 +1503,14 @@ export function PickSession({ currentUser, roomId, initialRoomState, hasPlexLink
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           participantIds: participantIdList,
-          attractors: attractors.map((a) => ({ mediaItemId: a.mediaItemId, weight: a.weight })),
-          repellers: repellers.map((r) => ({ mediaItemId: r.mediaItemId, weight: r.weight })),
+          attractors: attractors.map((a) => ({
+            mediaItemId: a.mediaItemId,
+            weight: a.weight,
+          })),
+          repellers: repellers.map((r) => ({
+            mediaItemId: r.mediaItemId,
+            weight: r.weight,
+          })),
           hardFilters: {
             minYear: parseOptionalYear(minYear),
             maxYear: parseOptionalYear(maxYear),
@@ -1311,7 +1526,11 @@ export function PickSession({ currentUser, roomId, initialRoomState, hasPlexLink
         }),
       });
 
-      const data = await res.json() as { results?: ScoredMovie[]; error?: string; message?: string };
+      const data = (await res.json()) as {
+        results?: ScoredMovie[];
+        error?: string;
+        message?: string;
+      };
       if (!res.ok) {
         setEmptyScoreHint(null);
         setRoomState((prev) => {
@@ -1322,7 +1541,10 @@ export function PickSession({ currentUser, roomId, initialRoomState, hasPlexLink
             scoringResults: null,
           };
           patchIfRoom(next);
-          const line = describePickerStateChange(prev, next, { actorId: currentUser.id, youId: currentUser.id });
+          const line = describePickerStateChange(prev, next, {
+            actorId: currentUser.id,
+            youId: currentUser.id,
+          });
           if (line) queueMicrotask(() => appendActivity(line));
           return next;
         });
@@ -1341,7 +1563,10 @@ export function PickSession({ currentUser, roomId, initialRoomState, hasPlexLink
             scoringResults: list,
           };
           patchIfRoom(next);
-          const line = describePickerStateChange(prev, next, { actorId: currentUser.id, youId: currentUser.id });
+          const line = describePickerStateChange(prev, next, {
+            actorId: currentUser.id,
+            youId: currentUser.id,
+          });
           if (line) queueMicrotask(() => appendActivity(line));
           return next;
         });
@@ -1356,7 +1581,10 @@ export function PickSession({ currentUser, roomId, initialRoomState, hasPlexLink
           scoringResults: null,
         };
         patchIfRoom(next);
-        const line = describePickerStateChange(prev, next, { actorId: currentUser.id, youId: currentUser.id });
+        const line = describePickerStateChange(prev, next, {
+          actorId: currentUser.id,
+          youId: currentUser.id,
+        });
         if (line) queueMicrotask(() => appendActivity(line));
         return next;
       });
@@ -1393,11 +1621,17 @@ export function PickSession({ currentUser, roomId, initialRoomState, hasPlexLink
         {roomId ? (
           <>
             <p className="text-xs text-muted-foreground max-w-xl">
-              Live sync: your criteria and the last ranked list from this link are shared with
-              everyone here. If the live stream is unavailable,
+              Live sync: your criteria and the last ranked list from this link
+              are shared with everyone here. If the live stream is unavailable,
               updates fall back to polling about every 2.5s.
             </p>
-            <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={copyShareLink}>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="shrink-0"
+              onClick={copyShareLink}
+            >
               <Link2 className="h-4 w-4" />
               Copy link
             </Button>
@@ -1405,8 +1639,8 @@ export function PickSession({ currentUser, roomId, initialRoomState, hasPlexLink
         ) : (
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3 w-full sm:justify-between">
             <p className="text-xs text-muted-foreground max-w-xl">
-              Share one screen: start a room and send the link so everyone can edit together in real
-              time.
+              Share one screen: start a room and send the link so everyone can
+              edit together in real time.
             </p>
             <Button
               type="button"
@@ -1449,12 +1683,17 @@ export function PickSession({ currentUser, roomId, initialRoomState, hasPlexLink
                   <div className="h-2 w-2 rounded-full bg-green-500" />
                   <CardTitle className="text-base">Like these</CardTitle>
                 </div>
-                <p className="text-xs text-muted-foreground">Films that capture the mood you&apos;re after tonight</p>
+                <p className="text-xs text-muted-foreground">
+                  Films that capture the mood you&apos;re after tonight
+                </p>
               </CardHeader>
               <CardContent className="space-y-3">
                 <MovieSearchInput
                   onAdd={(movie) =>
-                    setRoomState((prev) => ({ ...prev, attractors: [...prev.attractors, movie] }))
+                    setRoomState((prev) => ({
+                      ...prev,
+                      attractors: [...prev.attractors, movie],
+                    }))
                   }
                   placeholder="Search for a film..."
                   existingIds={new Set([...attractorIds, ...repellerIds])}
@@ -1465,14 +1704,18 @@ export function PickSession({ currentUser, roomId, initialRoomState, hasPlexLink
                       key={m.mediaItemId}
                       movie={m}
                       onRemove={() => remove("attractor", m.mediaItemId)}
-                      onWeightChange={(w) => updateWeight("attractor", m.mediaItemId, w)}
+                      onWeightChange={(w) =>
+                        updateWeight("attractor", m.mediaItemId, w)
+                      }
                       onSaveToggle={() => toggleSave("attractor", m)}
                     />
                   ))}
                   {attractors.length === 0 && (
                     <div className="rounded-lg border border-dashed border-border p-4 text-center">
                       <Plus className="h-5 w-5 text-muted-foreground mx-auto mb-1" />
-                      <p className="text-xs text-muted-foreground">Add at least one film to match against</p>
+                      <p className="text-xs text-muted-foreground">
+                        Add at least one film to match against
+                      </p>
                     </div>
                   )}
                 </div>
@@ -1492,9 +1735,11 @@ export function PickSession({ currentUser, roomId, initialRoomState, hasPlexLink
                       ))}
                     </div>
                     <p className="text-[10px] text-muted-foreground leading-snug">
-                      For reference only. &quot;Must include&quot; / &quot;Exclude genres&quot; in Hard filters apply to the ranked
-                      suggestions—they are not filled in from this list, and your picks steer similarity via embeddings, not
-                      via these tags.
+                      For reference only. &quot;Must include&quot; /
+                      &quot;Exclude genres&quot; in Hard filters apply to the
+                      ranked suggestions—they are not filled in from this list,
+                      and your picks steer similarity via embeddings, not via
+                      these tags.
                     </p>
                   </div>
                 )}
@@ -1507,12 +1752,17 @@ export function PickSession({ currentUser, roomId, initialRoomState, hasPlexLink
                   <div className="h-2 w-2 rounded-full bg-red-500" />
                   <CardTitle className="text-base">Not like these</CardTitle>
                 </div>
-                <p className="text-xs text-muted-foreground">Too intense, too slow, or not tonight</p>
+                <p className="text-xs text-muted-foreground">
+                  Too intense, too slow, or not tonight
+                </p>
               </CardHeader>
               <CardContent className="space-y-3">
                 <MovieSearchInput
                   onAdd={(movie) =>
-                    setRoomState((prev) => ({ ...prev, repellers: [...prev.repellers, movie] }))
+                    setRoomState((prev) => ({
+                      ...prev,
+                      repellers: [...prev.repellers, movie],
+                    }))
                   }
                   placeholder="Search for a film..."
                   existingIds={new Set([...attractorIds, ...repellerIds])}
@@ -1523,14 +1773,18 @@ export function PickSession({ currentUser, roomId, initialRoomState, hasPlexLink
                       key={m.mediaItemId}
                       movie={m}
                       onRemove={() => remove("repeller", m.mediaItemId)}
-                      onWeightChange={(w) => updateWeight("repeller", m.mediaItemId, w)}
+                      onWeightChange={(w) =>
+                        updateWeight("repeller", m.mediaItemId, w)
+                      }
                       onSaveToggle={() => toggleSave("repeller", m)}
                     />
                   ))}
                   {repellers.length === 0 && (
                     <div className="rounded-lg border border-dashed border-border p-3 text-center">
                       <X className="h-4 w-4 text-muted-foreground mx-auto mb-1" />
-                      <p className="text-xs text-muted-foreground">Add vibes to steer away from, or use ✕ on a suggestion</p>
+                      <p className="text-xs text-muted-foreground">
+                        Add vibes to steer away from, or use ✕ on a suggestion
+                      </p>
                     </div>
                   )}
                 </div>
@@ -1541,20 +1795,30 @@ export function PickSession({ currentUser, roomId, initialRoomState, hasPlexLink
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-base">Hard filters</CardTitle>
-              <p className="text-xs text-muted-foreground">Optional bounds for year, runtime, cast, and genres</p>
+              <p className="text-xs text-muted-foreground">
+                Optional bounds for year, runtime, cast, and genres
+              </p>
             </CardHeader>
             <CardContent>
               <div className="space-y-5">
                 <div className="space-y-2.5 rounded-lg border border-border/80 bg-muted/20 p-3">
-                  <p className="text-[11px] font-medium text-muted-foreground">Watchlist &amp; library</p>
+                  <p className="text-[11px] font-medium text-muted-foreground">
+                    Watchlist &amp; library
+                  </p>
                   <div className="flex items-center gap-2.5">
                     <Checkbox
                       id="hide-logged"
                       checked={hideAllLogged}
-                      onCheckedChange={(v) => setRoomState((p) => ({ ...p, hideAllLogged: !!v }))}
+                      onCheckedChange={(v) =>
+                        setRoomState((p) => ({ ...p, hideAllLogged: !!v }))
+                      }
                     />
-                    <label htmlFor="hide-logged" className="text-xs font-medium cursor-pointer select-none">
-                      Hide films participants have already logged (watchlist, watching, dropped)
+                    <label
+                      htmlFor="hide-logged"
+                      className="text-xs font-medium cursor-pointer select-none"
+                    >
+                      Hide films participants have already logged (watchlist,
+                      watching, dropped)
                     </label>
                   </div>
                   <div className="flex items-start gap-2.5">
@@ -1562,7 +1826,9 @@ export function PickSession({ currentUser, roomId, initialRoomState, hasPlexLink
                       id="plex-library-only"
                       disabled={plexFilterDisabled}
                       checked={!plexFilterDisabled && plexLibraryOnly}
-                      onCheckedChange={(v) => setRoomState((p) => ({ ...p, plexLibraryOnly: !!v }))}
+                      onCheckedChange={(v) =>
+                        setRoomState((p) => ({ ...p, plexLibraryOnly: !!v }))
+                      }
                       className="mt-0.5"
                     />
                     <div className="min-w-0 space-y-0.5">
@@ -1570,7 +1836,7 @@ export function PickSession({ currentUser, roomId, initialRoomState, hasPlexLink
                         htmlFor="plex-library-only"
                         className={cn(
                           "text-xs font-medium select-none",
-                          !plexFilterDisabled && "cursor-pointer"
+                          !plexFilterDisabled && "cursor-pointer",
                         )}
                       >
                         {plexSolo
@@ -1591,8 +1857,8 @@ export function PickSession({ currentUser, roomId, initialRoomState, hasPlexLink
                       )}
                       {!plexSolo && (
                         <p className="text-[11px] text-muted-foreground leading-snug">
-                          Only people who have linked Plex are included. Those without a link do not
-                          restrict the set.
+                          Only people who have linked Plex are included. Those
+                          without a link do not restrict the set.
                         </p>
                       )}
                     </div>
@@ -1619,10 +1885,18 @@ export function PickSession({ currentUser, roomId, initialRoomState, hasPlexLink
                         placeholder="?"
                         aria-label="From year (optional)"
                         value={minYear}
-                        onChange={(e) => setRoomState((p) => ({ ...p, minYear: e.target.value }))}
+                        onChange={(e) =>
+                          setRoomState((p) => ({
+                            ...p,
+                            minYear: e.target.value,
+                          }))
+                        }
                         className="h-9 w-[3.5rem] shrink-0 border-0 bg-transparent px-1.5 text-center text-sm tabular-nums shadow-none focus-visible:ring-0"
                       />
-                      <span className="shrink-0 select-none text-muted-foreground" aria-hidden>
+                      <span
+                        className="shrink-0 select-none text-muted-foreground"
+                        aria-hidden
+                      >
                         –
                       </span>
                       <Input
@@ -1633,18 +1907,30 @@ export function PickSession({ currentUser, roomId, initialRoomState, hasPlexLink
                         placeholder="?"
                         aria-label="To year (optional)"
                         value={maxYear}
-                        onChange={(e) => setRoomState((p) => ({ ...p, maxYear: e.target.value }))}
+                        onChange={(e) =>
+                          setRoomState((p) => ({
+                            ...p,
+                            maxYear: e.target.value,
+                          }))
+                        }
                         className="h-9 w-[3.5rem] shrink-0 border-0 bg-transparent px-1.5 text-center text-sm tabular-nums shadow-none focus-visible:ring-0"
                       />
                     </div>
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-muted-foreground">Max runtime (minutes)</label>
+                    <label className="text-xs font-medium text-muted-foreground">
+                      Max runtime (minutes)
+                    </label>
                     <Input
                       type="number"
                       placeholder="e.g. 120"
                       value={maxRuntime}
-                      onChange={(e) => setRoomState((p) => ({ ...p, maxRuntime: e.target.value }))}
+                      onChange={(e) =>
+                        setRoomState((p) => ({
+                          ...p,
+                          maxRuntime: e.target.value,
+                        }))
+                      }
                       min={1}
                     />
                   </div>
@@ -1653,11 +1939,15 @@ export function PickSession({ currentUser, roomId, initialRoomState, hasPlexLink
                 <div className="space-y-1.5">
                   <div className="flex items-center gap-1.5 mb-1">
                     <UserCheck className="h-3.5 w-3.5 text-green-500" />
-                    <label className="text-xs font-medium text-muted-foreground">Must include actor or director</label>
+                    <label className="text-xs font-medium text-muted-foreground">
+                      Must include actor or director
+                    </label>
                   </div>
                   <PersonTagInput
                     values={requirePeople}
-                    onChange={(values) => setRoomState((p) => ({ ...p, requirePeople: values }))}
+                    onChange={(values) =>
+                      setRoomState((p) => ({ ...p, requirePeople: values }))
+                    }
                     placeholder="Search for an actor or director…"
                     colorClass="bg-green-500/15 text-green-700 dark:text-green-400"
                   />
@@ -1666,11 +1956,15 @@ export function PickSession({ currentUser, roomId, initialRoomState, hasPlexLink
                 <div className="space-y-1.5">
                   <div className="flex items-center gap-1.5 mb-1">
                     <UserX className="h-3.5 w-3.5 text-red-500" />
-                    <label className="text-xs font-medium text-muted-foreground">Exclude actor or director</label>
+                    <label className="text-xs font-medium text-muted-foreground">
+                      Exclude actor or director
+                    </label>
                   </div>
                   <PersonTagInput
                     values={excludePeople}
-                    onChange={(values) => setRoomState((p) => ({ ...p, excludePeople: values }))}
+                    onChange={(values) =>
+                      setRoomState((p) => ({ ...p, excludePeople: values }))
+                    }
                     placeholder="Search for an actor or director…"
                     colorClass="bg-red-500/15 text-red-700 dark:text-red-400"
                   />
@@ -1679,11 +1973,15 @@ export function PickSession({ currentUser, roomId, initialRoomState, hasPlexLink
                 <div className="space-y-1.5">
                   <div className="flex items-center gap-1.5 mb-1">
                     <Tag className="h-3.5 w-3.5 text-emerald-500" />
-                    <label className="text-xs font-medium text-muted-foreground">Must include a genre</label>
+                    <label className="text-xs font-medium text-muted-foreground">
+                      Must include a genre
+                    </label>
                   </div>
                   <GenreTagInput
                     values={includeGenres}
-                    onChange={(values) => setRoomState((p) => ({ ...p, includeGenres: values }))}
+                    onChange={(values) =>
+                      setRoomState((p) => ({ ...p, includeGenres: values }))
+                    }
                     placeholder="Type or pick a genre…"
                     colorClass="bg-emerald-500/15 text-emerald-800 dark:text-emerald-300"
                     hint='Applies to ranked suggestions only (not an extra vote from your "Like these" films). Choose from the TMDB list or type to filter it. A suggested film must match at least one tag (OR).'
@@ -1693,11 +1991,15 @@ export function PickSession({ currentUser, roomId, initialRoomState, hasPlexLink
                 <div className="space-y-1.5">
                   <div className="flex items-center gap-1.5 mb-1">
                     <Tag className="h-3.5 w-3.5 text-orange-500" />
-                    <label className="text-xs font-medium text-muted-foreground">Exclude genres</label>
+                    <label className="text-xs font-medium text-muted-foreground">
+                      Exclude genres
+                    </label>
                   </div>
                   <GenreTagInput
                     values={excludeGenres}
-                    onChange={(values) => setRoomState((p) => ({ ...p, excludeGenres: values }))}
+                    onChange={(values) =>
+                      setRoomState((p) => ({ ...p, excludeGenres: values }))
+                    }
                     placeholder="Type or pick a genre…"
                     colorClass="bg-orange-500/15 text-orange-800 dark:text-orange-300"
                     hint='Applies to suggestions only. Suggested titles with any matching genre are removed. Typing "horr" still matches Horror when you add a custom tag.'
@@ -1717,7 +2019,9 @@ export function PickSession({ currentUser, roomId, initialRoomState, hasPlexLink
               {scoringInProgress ? (
                 <>
                   <Loader2 className="h-5 w-5 animate-spin" />
-                  {hasCompletedListRun ? "Refining matches..." : "Finding recommendations..."}
+                  {hasCompletedListRun
+                    ? "Refining matches..."
+                    : "Finding recommendations..."}
                 </>
               ) : (
                 <>
@@ -1761,15 +2065,18 @@ export function PickSession({ currentUser, roomId, initialRoomState, hasPlexLink
                 <h2 className="text-lg font-semibold">
                   {scoringResults.length === 0
                     ? "No matches found"
-                    : visibleScoringResults === null || visibleScoringResults.length === 0
+                    : visibleScoringResults === null ||
+                        visibleScoringResults.length === 0
                       ? "No suggestions left in this list"
                       : `${visibleScoringResults.length} match${visibleScoringResults.length === 1 ? "" : "es"}`}
                 </h2>
-                {visibleScoringResults !== null && visibleScoringResults.length > 0 && (
-                  <p className="text-xs text-muted-foreground">
-                    Similar &amp; recommended titles, ranked by your likes and not-likes
-                  </p>
-                )}
+                {visibleScoringResults !== null &&
+                  visibleScoringResults.length > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      Similar &amp; recommended titles, ranked by your likes and
+                      not-likes
+                    </p>
+                  )}
               </div>
 
               {scoringResults.length === 0 ? (
@@ -1782,13 +2089,15 @@ export function PickSession({ currentUser, roomId, initialRoomState, hasPlexLink
                     </p>
                   </CardContent>
                 </Card>
-              ) : visibleScoringResults === null || visibleScoringResults.length === 0 ? (
+              ) : visibleScoringResults === null ||
+                visibleScoringResults.length === 0 ? (
                 <Card>
                   <CardContent className="py-10 text-center">
                     <X className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
                     <p className="text-muted-foreground text-sm max-w-sm mx-auto">
-                      Every suggestion from this run is marked not for tonight. Run the search again with
-                      the button above, or remove titles from Not like these to bring them back into play.
+                      Every suggestion from this run is marked not for tonight.
+                      Run the search again with the button above, or remove
+                      titles from Not like these to bring them back into play.
                     </p>
                   </CardContent>
                 </Card>
@@ -1818,8 +2127,9 @@ export function PickSession({ currentUser, roomId, initialRoomState, hasPlexLink
                 <CardTitle className="text-base">Session</CardTitle>
               </div>
               <p className="text-xs text-muted-foreground">
-                Who ran a search, changed criteria, or edited the list—newest first. Others appear when the room is
-                shared; your own runs also show as &quot;You&quot; on this device.
+                Who ran a search, changed criteria, or edited the list—newest
+                first. Others appear when the room is shared; your own runs also
+                show as &quot;You&quot; on this device.
               </p>
             </CardHeader>
             <CardContent

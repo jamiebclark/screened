@@ -14,7 +14,15 @@ export function utcDayStart(d: Date): Date {
 /** Start of the next UTC calendar day after `d` (exclusive upper bound for range queries). */
 export function utcDayEndExclusive(d: Date): Date {
   return new Date(
-    Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + 1, 0, 0, 0, 0),
+    Date.UTC(
+      d.getUTCFullYear(),
+      d.getUTCMonth(),
+      d.getUTCDate() + 1,
+      0,
+      0,
+      0,
+      0,
+    ),
   );
 }
 

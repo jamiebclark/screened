@@ -11,7 +11,9 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   const { q, type, watchedDate: watchedDateRaw } = await searchParams;
   const query = q?.trim();
   const watchedDate = parseDateOnlyIso(watchedDateRaw);
-  const hrefSearch = watchedDate ? `watchedDate=${encodeURIComponent(watchedDate)}` : null;
+  const hrefSearch = watchedDate
+    ? `watchedDate=${encodeURIComponent(watchedDate)}`
+    : null;
 
   let results: Awaited<ReturnType<typeof searchMulti>>["results"] = [];
 
@@ -38,7 +40,9 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
               className="flex h-10 w-full rounded-md border border-input bg-transparent pl-9 pr-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
               autoFocus
             />
-            {watchedDate && <input type="hidden" name="watchedDate" value={watchedDate} />}
+            {watchedDate && (
+              <input type="hidden" name="watchedDate" value={watchedDate} />
+            )}
           </div>
           <button
             type="submit"
@@ -76,21 +80,27 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       {!query ? (
         <div className="text-center py-16">
           <Film className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-          <p className="text-muted-foreground">Search for movies and TV shows above</p>
+          <p className="text-muted-foreground">
+            Search for movies and TV shows above
+          </p>
         </div>
       ) : results.length === 0 ? (
         <div className="text-center py-16">
-          <p className="text-muted-foreground">No results found for &quot;{query}&quot;</p>
+          <p className="text-muted-foreground">
+            No results found for &quot;{query}&quot;
+          </p>
         </div>
       ) : (
         <div>
           {watchedDate && (
             <p className="text-sm text-muted-foreground mb-3">
-              Watch date {watchedDate} will be suggested when you log a viewing from a title.
+              Watch date {watchedDate} will be suggested when you log a viewing
+              from a title.
             </p>
           )}
           <p className="text-sm text-muted-foreground mb-4">
-            {results.length} result{results.length !== 1 ? "s" : ""} for &quot;{query}&quot;
+            {results.length} result{results.length !== 1 ? "s" : ""} for &quot;
+            {query}&quot;
           </p>
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-4">
             {results.map((item) => (
@@ -104,8 +114,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                   item.release_date
                     ? new Date(item.release_date).getFullYear()
                     : item.first_air_date
-                    ? new Date(item.first_air_date).getFullYear()
-                    : null
+                      ? new Date(item.first_air_date).getFullYear()
+                      : null
                 }
                 hrefSearch={hrefSearch}
               />

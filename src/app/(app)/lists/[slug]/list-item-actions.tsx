@@ -16,7 +16,9 @@ export function ListItemActions({ itemId, slug }: ListItemActionsProps) {
   const handleDelete = () => {
     startTransition(async () => {
       try {
-        const res = await fetch(`/api/lists/${slug}/items?itemId=${itemId}`, { method: "DELETE" });
+        const res = await fetch(`/api/lists/${slug}/items?itemId=${itemId}`, {
+          method: "DELETE",
+        });
         if (res.ok) {
           router.refresh();
         }

@@ -2,7 +2,10 @@
 
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { MediaCornerRemoveButton, type MediaCornerPosition } from "@/components/media-corner-remove-button";
+import {
+  MediaCornerRemoveButton,
+  type MediaCornerPosition,
+} from "@/components/media-corner-remove-button";
 
 interface ClearTrackingCornerButtonProps {
   tmdbId: number;

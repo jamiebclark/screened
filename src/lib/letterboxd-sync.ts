@@ -67,7 +67,14 @@ function parseDiaryEntries(xml: string): DiaryEntry[] {
     const linkRaw = extractTag(block, "link");
     const activityUrl = normalizeLetterboxdActivityUrl(linkRaw);
 
-    entries.push({ filmTitle, filmYear, watchedDate, rating, tmdbMovieId, activityUrl });
+    entries.push({
+      filmTitle,
+      filmYear,
+      watchedDate,
+      rating,
+      tmdbMovieId,
+      activityUrl,
+    });
   }
 
   return entries;
@@ -76,7 +83,10 @@ function parseDiaryEntries(xml: string): DiaryEntry[] {
 async function resolveToTmdb(entry: DiaryEntry): Promise<number | null> {
   if (entry.tmdbMovieId) return entry.tmdbMovieId;
   try {
-    const results = await searchMovie(entry.filmTitle, entry.filmYear ?? undefined);
+    const results = await searchMovie(
+      entry.filmTitle,
+      entry.filmYear ?? undefined,
+    );
     if (results.results.length > 0) return results.results[0].id;
     if (entry.filmYear) {
       const fallback = await searchMovie(entry.filmTitle);
@@ -102,7 +112,9 @@ async function ensureMediaItem(tmdbId: number) {
       title: movie.title,
       poster: movie.poster_path,
       backdrop: movie.backdrop_path,
-      year: movie.release_date ? new Date(movie.release_date).getFullYear() : null,
+      year: movie.release_date
+        ? new Date(movie.release_date).getFullYear()
+        : null,
       overview: movie.overview,
       genres: movie.genres.map((g) => g.name),
       runtime: movie.runtime,
@@ -110,8 +122,12 @@ async function ensureMediaItem(tmdbId: number) {
   });
 }
 
-export async function syncLetterboxdUser(userId: string): Promise<LetterboxdSyncResult> {
-  const connection = await prisma.letterboxdConnection.findUnique({ where: { userId } });
+export async function syncLetterboxdUser(
+  userId: string,
+): Promise<LetterboxdSyncResult> {
+  const connection = await prisma.letterboxdConnection.findUnique({
+    where: { userId },
+  });
   if (!connection) throw new Error("Letterboxd not connected");
 
   const xml = await fetchRss(connection.letterboxdUsername);
@@ -128,13 +144,18 @@ export async function syncLetterboxdUser(userId: string): Promise<LetterboxdSync
       batch.map(async (entry) => {
         try {
           const tmdbId = await resolveToTmdb(entry);
-          if (!tmdbId) { skipped++; return; }
+          if (!tmdbId) {
+            skipped++;
+            return;
+          }
 
           const mediaItem = await ensureMediaItem(tmdbId);
           const watchedAt = entry.watchedDate ?? new Date();
 
           const userMedia = await prisma.userMediaStatus.upsert({
-            where: { userId_mediaItemId: { userId, mediaItemId: mediaItem.id } },
+            where: {
+              userId_mediaItemId: { userId, mediaItemId: mediaItem.id },
+            },
             update: {
               status: WatchStatus.WATCHED,
               ...(entry.rating !== null ? { rating: entry.rating } : {}),
@@ -170,7 +191,9 @@ export async function syncLetterboxdUser(userId: string): Promise<LetterboxdSync
               watchedAt,
               rating: entry.rating,
               source: WatchEntrySource.LETTERBOXD,
-              ...(entry.activityUrl ? { letterboxdActivityUrl: entry.activityUrl } : {}),
+              ...(entry.activityUrl
+                ? { letterboxdActivityUrl: entry.activityUrl }
+                : {}),
             },
           });
 
@@ -178,7 +201,7 @@ export async function syncLetterboxdUser(userId: string): Promise<LetterboxdSync
         } catch {
           skipped++;
         }
-      })
+      }),
     );
   }
 

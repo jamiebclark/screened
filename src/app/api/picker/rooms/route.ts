@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { defaultPickerState, isPickerState, type PickerRoomState } from "@/lib/picker-room-state";
+import {
+  defaultPickerState,
+  isPickerState,
+  type PickerRoomState,
+} from "@/lib/picker-room-state";
 
 export async function POST(req: NextRequest) {
   const session = await auth();
@@ -36,5 +40,9 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  return NextResponse.json({ id: room.id, version: room.version, state: merged });
+  return NextResponse.json({
+    id: room.id,
+    version: room.version,
+    state: merged,
+  });
 }

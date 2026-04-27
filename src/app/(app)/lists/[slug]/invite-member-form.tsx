@@ -194,7 +194,10 @@ export function InviteMemberForm({ slug }: InviteMemberFormProps) {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
-            <label className="text-sm font-medium leading-none" htmlFor="user-search">
+            <label
+              className="text-sm font-medium leading-none"
+              htmlFor="user-search"
+            >
               Search by name, username, or email
             </label>
 

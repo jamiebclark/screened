@@ -26,8 +26,8 @@ export default async function OnboardingPage() {
       <div className="mb-8">
         <h1 className="text-2xl font-bold">Welcome to Screened</h1>
         <p className="text-muted-foreground mt-1">
-          Connect Plex and Letterboxd to import watch history, or skip and do this later in
-          settings.
+          Connect Plex and Letterboxd to import watch history, or skip and do
+          this later in settings.
         </p>
       </div>
 

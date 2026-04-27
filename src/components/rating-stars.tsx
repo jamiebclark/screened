@@ -14,7 +14,14 @@ interface RatingStarsProps {
   size?: "sm" | "md" | "lg";
 }
 
-export function RatingStars({ tmdbId, type, currentRating, onRatingChange, readonly = false, size = "md" }: RatingStarsProps) {
+export function RatingStars({
+  tmdbId,
+  type,
+  currentRating,
+  onRatingChange,
+  readonly = false,
+  size = "md",
+}: RatingStarsProps) {
   const router = useRouter();
   const [rating, setRating] = useState<number | null>(currentRating);
   const [hover, setHover] = useState<number | null>(null);
@@ -61,7 +68,10 @@ export function RatingStars({ tmdbId, type, currentRating, onRatingChange, reado
           onClick={() => handleClick(value)}
           onMouseEnter={() => !readonly && setHover(value)}
           onMouseLeave={() => !readonly && setHover(null)}
-          className={cn("transition-colors", !readonly && "cursor-pointer hover:scale-110")}
+          className={cn(
+            "transition-colors",
+            !readonly && "cursor-pointer hover:scale-110",
+          )}
           aria-label={`Rate ${value} star${value !== 1 ? "s" : ""}`}
         >
           <Star
@@ -69,7 +79,7 @@ export function RatingStars({ tmdbId, type, currentRating, onRatingChange, reado
               sizes[size],
               displayValue >= value
                 ? "fill-yellow-400 text-yellow-400"
-                : "text-muted-foreground"
+                : "text-muted-foreground",
             )}
           />
         </button>
