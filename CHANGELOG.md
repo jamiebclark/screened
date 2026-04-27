@@ -1,3 +1,15 @@
+## [1.12.0](https://github.com/jamiebclark/screened/compare/v1.11.0...v1.12.0) (2026-04-27)
+
+### Features
+
+* **pick:** add score fingerprint and filter attribution to room state ([c18128f](https://github.com/jamiebclark/screened/commit/c18128f5734c07eb6ac10da2d0283bd5de5eb8b1))
+* **pick:** hydrate score fingerprint on room load and sync ([29d0f27](https://github.com/jamiebclark/screened/commit/29d0f2711d749f3e95a9e5508768b08fdf0255c9))
+* **pick:** picker filters layout, refine hint, attribution, session log ([2cf047c](https://github.com/jamiebclark/screened/commit/2cf047c594b3415fa03e06d1920a6f2db1335b8b))
+
+### Bug Fixes
+
+* **pick:** prefer veto copy when dismissing a ranked result ([b17a7d1](https://github.com/jamiebclark/screened/commit/b17a7d15bae9282d8bc2711994816f7cf513959b))
+
 ## [1.11.0](https://github.com/jamiebclark/screened/compare/v1.10.1...v1.11.0) (2026-04-27)
 
 ### Features
