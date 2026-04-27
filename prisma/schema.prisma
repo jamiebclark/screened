@@ -174,9 +174,11 @@ model MediaItem {
 
 /// Cached OMDb "Ratings" (RT, Metacritic, IMDb, etc.) keyed by IMDb title id. Optional feature when OMDB_API_KEY is set.
 model OmdbRatingCache {
-  imdbId    String   @id
-  ratings   Json
-  fetchedAt DateTime
+  imdbId              String   @id
+  ratings             Json
+  /// From OMDb with tomatoes=true; used for the RT score link.
+  rottenTomatoesUrl   String?
+  fetchedAt           DateTime
 }
 
 model UserMediaStatus {
@@ -221,6 +223,10 @@ model EpisodeStatus {
   seasonNumber  Int
   episodeNumber Int
   watchedAt     DateTime  @default(now())
+  /// False = unchecked in the UI; watchedAt is kept so re-checking restores the prior watch time.
+  isWatched     Boolean   @default(true)
+  /// Optional markdown review for this episode (TV title page “Log” on the episode row).
+  review        String?
 
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   mediaItem MediaItem @relation(fields: [mediaItemId], references: [id], onDelete: Cascade)
