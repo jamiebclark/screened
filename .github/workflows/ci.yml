@@ -40,6 +40,9 @@ jobs:
 
       - run: yarn install --frozen-lockfile --ignore-engines
 
+      - name: Prettier (format check)
+        run: yarn format:check
+
       - name: Apply migrations (same as production entrypoint)
         run: yarn prisma migrate deploy
 

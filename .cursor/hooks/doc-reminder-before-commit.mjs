@@ -11,7 +11,11 @@ const out = (obj) => {
   process.exit(0);
 };
 
-if (["0", "off", "false", "no"].includes(String(process.env.CURSOR_DOC_HOOK ?? "").toLowerCase())) {
+if (
+  ["0", "off", "false", "no"].includes(
+    String(process.env.CURSOR_DOC_HOOK ?? "").toLowerCase(),
+  )
+) {
   out({ permission: "allow" });
 }
 
@@ -40,7 +44,8 @@ const strict = ["1", "true", "yes", "on"].includes(
 if (strict) {
   out({
     permission: "ask",
-    user_message: "Doc drift check: confirm README / AGENTS / .cursor rules are still accurate, then continue.",
+    user_message:
+      "Doc drift check: confirm README / AGENTS / .cursor rules are still accurate, then continue.",
     agent_message: text,
   });
 }

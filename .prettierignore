@@ -1,0 +1,15 @@
+node_modules
+.next
+out
+build
+coverage
+playwright-report
+test-results
+src/generated
+*.tsbuildinfo
+next-env.d.ts
+yarn.lock
+package-lock.json
+pnpm-lock.yaml
+CHANGELOG.md
+prisma/migrations/**/*.sql

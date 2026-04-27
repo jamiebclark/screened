@@ -1,6 +1,6 @@
 /**
  * Local parity with `.github/workflows/ci.yml`:
- * migrate deploy → ensure shadow DB exists → migrate diff → generate → build.
+ * format check → migrate deploy → ensure shadow DB exists → migrate diff → generate → test → build.
  *
  * Requires DATABASE_URL (e.g. from `.env`). If SHADOW_DATABASE_URL is unset,
  * uses same host/user as DATABASE_URL with database name `prisma_shadow_ci`.
@@ -45,9 +45,12 @@ function adminConnectionString(databaseUrl) {
 
 function shadowDbNameFromUrl(shadowUrl) {
   const m = shadowUrl.match(/\/([^/?]+)(\?|$)/);
-  if (!m) throw new Error("Could not parse database name from SHADOW_DATABASE_URL");
+  if (!m)
+    throw new Error("Could not parse database name from SHADOW_DATABASE_URL");
   return m[1];
 }
+
+run("yarn", ["format:check"]);
 
 loadDotEnv();
 
@@ -60,7 +63,7 @@ if (!databaseUrl) {
 if (!process.env.SHADOW_DATABASE_URL) {
   process.env.SHADOW_DATABASE_URL = databaseUrl.replace(
     /\/([^/?]+)(\?|$)/,
-    "/prisma_shadow_ci$2"
+    "/prisma_shadow_ci$2",
   );
 }
 
@@ -76,7 +79,7 @@ await client.connect();
 try {
   const { rows } = await client.query(
     "SELECT 1 FROM pg_database WHERE datname = $1",
-    [shadowDbName]
+    [shadowDbName],
   );
   if (rows.length === 0) {
     await client.query(`CREATE DATABASE ${shadowDbName}`);
@@ -100,7 +103,8 @@ run("yarn", [
 run("yarn", ["db:generate"]);
 run("yarn", ["test"]);
 run("yarn", ["build"], {
-  AUTH_SECRET: process.env.AUTH_SECRET ?? "ci-build-placeholder-min-32-chars-long!!",
+  AUTH_SECRET:
+    process.env.AUTH_SECRET ?? "ci-build-placeholder-min-32-chars-long!!",
   NEXTAUTH_URL: process.env.NEXTAUTH_URL ?? "http://localhost:3000",
   TMDB_API_KEY: process.env.TMDB_API_KEY ?? "00000000000000000000000000000000",
 });

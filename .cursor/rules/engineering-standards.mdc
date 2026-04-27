@@ -1,0 +1,32 @@
+---
+description: API route handlers, security, secrets, and testing expectations
+alwaysApply: true
+---
+
+# Engineering standards (API, security, testing)
+
+## Route handlers (`src/app/api/**/route.ts`)
+
+- Use `NextResponse.json` with explicit **HTTP status codes**. Prefer **4xx** for client mistakes (`400`, `401`, `403`, `404`); use **5xx** only for unexpected server failures.
+- Error bodies: JSON with an **`error`** string (optional **`details`** for validation). Follow existing routes such as `src/app/api/lists/route.ts`.
+- **Authenticate** before reading or mutating user-owned data; return **401** when there is no session unless the route is intentionally public.
+- **Validate** bodies and query parameters; reject invalid input with **400** and a clear `error` message.
+- Do not expose raw exception messages or stack traces in JSON responses for production paths; log on the server and return a generic message for **500** when appropriate.
+
+## Security and secrets
+
+- Keep secrets **server-only**: `process.env`, API keys, `DATABASE_URL`, `AUTH_SECRET`, tokens — use only in Server Components, Route Handlers, server `lib/**`, `auth.ts`, and scripts. Never put secrets in env vars prefixed with **`NEXT_PUBLIC_`**.
+- Do **not** log passwords, session tokens, full cookies, or raw `Authorization` headers.
+- For **cron** or **admin** routes, verify a shared secret (e.g. `CRON_SECRET`) or session role **before** doing work.
+- Treat user-supplied input as untrusted; use Prisma’s API (parameterized queries), not string-concatenated SQL.
+
+## Testing
+
+- **Vitest (`yarn test`):** Add or update tests for non-trivial or regression-prone **pure logic** in `src/lib/**` (parsers, validators, helpers).
+- **Playwright (`yarn test:e2e`):** Extend specs for critical **user journeys** when behavior changes (auth, pick, lists, watch status); reuse helpers under `e2e/`.
+- When an **API contract** changes (status code or JSON shape), update **callers** and any tests that assert on the response.
+- Before claiming work is complete, run **`yarn ci:check`** when Postgres is available (matches CI). Run **`yarn lint`** on touched files and fix new issues.
+
+## Loading, empty, and error UI
+
+Follow **`docs/ui-ux-standards.md`** (including loading / empty / error patterns). Reuse existing components and section-level patterns instead of one-off markup.

@@ -28,11 +28,11 @@ Living reference for page layout, typography, and component patterns so detail p
 
 ## Inspirations (non-prescriptive)
 
-| Source      | What we like |
-|------------|----------------|
+| Source     | What we like                                                                       |
+| ---------- | ---------------------------------------------------------------------------------- |
 | Letterboxd | Film poster prominence, light UI chrome, long-form log space without visual noise. |
-| Netflix    | Big backdrop, one decision path, horizontal density where lists repeat. |
-| TMDB/IMDb  | Factual, link-out reference row—keep that row calm and scannable. |
+| Netflix    | Big backdrop, one decision path, horizontal density where lists repeat.            |
+| TMDB/IMDb  | Factual, link-out reference row—keep that row calm and scannable.                  |
 
 ## Title pages (movie & TV)
 
@@ -43,5 +43,11 @@ Living reference for page layout, typography, and component patterns so detail p
 ## Where this is applied
 
 - **Movie & TV detail** — “External links” is a **plain section** (no outer card). **Your lists** (movies, when any) and **Plex** sit in **`TitleSiteContext`**; **Watch history** uses the same column tokens below.
+
+## Loading, empty, and error states
+
+- **Loading** — Prefer route-level `loading.tsx` or section-level skeletons that mirror the final layout (avoid a generic spinner-only page when the screen has a known structure). Keep skeleton density calm; match **Letterboxd-style** lightness.
+- **Empty** — Short, human copy; one primary action when it makes sense (e.g. link to search or settings). Use the same typography as section body text (`text-sm` / `text-muted-foreground` as appropriate), not a different visual language than the rest of the app.
+- **Error** — User-safe message plus optional retry; do not expose stack traces or internal exception text. Reuse shared alert/toast patterns already on the screen type (e.g. `Alert` for inline, toast for async actions).
 
 Update this doc when a new page type establishes a better pattern, so we can migrate old screens incrementally.
