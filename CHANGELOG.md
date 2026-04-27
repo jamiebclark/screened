@@ -1,3 +1,13 @@
+## [1.13.0](https://github.com/jamiebclark/screened/compare/v1.12.0...v1.13.0) (2026-04-27)
+
+### Features
+
+* **detail:** add 'You might also like' related titles section ([5e5a556](https://github.com/jamiebclark/screened/commit/5e5a55647a84da25b283d4465bc65461fad99b8f))
+* **onboarding:** surface Picker feature in onboarding and login page ([3dd89f1](https://github.com/jamiebclark/screened/commit/3dd89f1760153da1cf8ba0fc07317f5b1d2bd48a))
+* **toast:** add Radix-based toast system and wire Toaster into app layout ([258a69a](https://github.com/jamiebclark/screened/commit/258a69a6851a489af04f25d57bc8466a5eab9336))
+* **ux:** actionable CTAs on empty tracking and history pages ([c4e6eb9](https://github.com/jamiebclark/screened/commit/c4e6eb9f1acf5b4848ebb5e54fa465c452934ceb))
+* **ux:** add route-level loading.tsx skeletons for poster-grid pages ([da22e37](https://github.com/jamiebclark/screened/commit/da22e3738e3aa5b96c7b158701bff85289828a2d))
+
 ## [1.12.0](https://github.com/jamiebclark/screened/compare/v1.11.0...v1.12.0) (2026-04-27)
 
 ### Features
