@@ -5,10 +5,12 @@ import {
   useEffect,
   useLayoutEffect,
   useRef,
+  useState,
   type Dispatch,
   type SetStateAction,
 } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "@/hooks/use-toast";
 import {
   withScoringDefaults,
   type PickerRoomState,
@@ -66,6 +68,7 @@ export function usePickerRoomSync(
   const pushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const esRef = useRef<EventSource | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [isPollFallback, setIsPollFallback] = useState(false);
 
   const applyRemote = useCallback(
     (
@@ -138,6 +141,7 @@ export function usePickerRoomSync(
     });
     const startPoll = () => {
       if (pollRef.current) return;
+      setIsPollFallback(true);
       try {
         es.close();
       } catch {
@@ -193,6 +197,11 @@ export function usePickerRoomSync(
             version: number;
           };
           lastPushedJson.current = stableStringify(data.state);
+        } else {
+          toast({
+            variant: "destructive",
+            description: "Could not sync your changes to the room. Others may not see them.",
+          });
         }
       })();
     }, 400);
@@ -200,6 +209,8 @@ export function usePickerRoomSync(
       if (pushTimer.current) clearTimeout(pushTimer.current);
     };
   }, [roomId, state, tabId]);
+
+  return { isPollFallback };
 }
 
 /**
