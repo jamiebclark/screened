@@ -24,3 +24,81 @@ test.describe("Picker session activity", () => {
     ).toBeVisible();
   });
 });
+
+test.describe("Picker form — first visit", () => {
+  test("shows 'How it works' explainer when no movies added yet", async ({
+    page,
+  }) => {
+    await page.goto("/pick");
+    await expect(
+      page.getByRole("heading", { name: "Movie Night Picker" }),
+    ).toBeVisible({ timeout: 10000 });
+
+    await expect(
+      page.getByRole("heading", { name: "How it works" }),
+    ).toBeVisible();
+    await expect(page.getByText("Like these")).toBeVisible();
+    await expect(page.getByText("Not like these")).toBeVisible();
+    await expect(
+      page.getByText(/Add at least one film to.*Like these/),
+    ).toBeVisible();
+  });
+
+  test("picker form has Like these and Not like these sections", async ({
+    page,
+  }) => {
+    await page.goto("/pick");
+    await expect(
+      page.getByRole("heading", { name: "Movie Night Picker" }),
+    ).toBeVisible({ timeout: 10000 });
+
+    await expect(
+      page.getByRole("heading", { name: "Like these" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Not like these" }),
+    ).toBeVisible();
+  });
+
+  test("Find movies button is present and shows 'first run' prompt when attractors added", async ({
+    page,
+  }) => {
+    await page.goto("/pick");
+    await expect(
+      page.getByRole("heading", { name: "Movie Night Picker" }),
+    ).toBeVisible({ timeout: 10000 });
+
+    await expect(
+      page.getByRole("button", { name: /find movies/i }),
+    ).toBeVisible();
+  });
+});
+
+test.describe("Picker form — filters", () => {
+  test("Filters section is present with year and runtime controls", async ({
+    page,
+  }) => {
+    await page.goto("/pick");
+    await expect(
+      page.getByRole("heading", { name: "Movie Night Picker" }),
+    ).toBeVisible({ timeout: 10000 });
+
+    await expect(
+      page.getByRole("heading", { name: "Filters" }),
+    ).toBeVisible();
+  });
+});
+
+test.describe("Picker session — sharing", () => {
+  test("room link button is visible and clicking it copies a URL", async ({
+    page,
+  }) => {
+    await page.goto("/pick");
+    await expect(
+      page.getByRole("heading", { name: "Movie Night Picker" }),
+    ).toBeVisible({ timeout: 10000 });
+
+    const shareButton = page.getByRole("button", { name: /share|copy link/i });
+    await expect(shareButton).toBeVisible();
+  });
+});

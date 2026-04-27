@@ -27,13 +27,13 @@ const MAX_TMDB_CANDIDATES = 200;
 const MAX_TO_EMBED = 48;
 const RESULTS = 30;
 
-function yearFromTmdbDate(release: string | null | undefined): number | null {
+export function yearFromTmdbDate(release: string | null | undefined): number | null {
   if (!release) return null;
   const y = new Date(release).getFullYear();
   return Number.isFinite(y) ? y : null;
 }
 
-function yearInRange(
+export function yearInRange(
   y: number | null,
   minY: number | undefined,
   maxY: number | undefined,
@@ -44,7 +44,7 @@ function yearInRange(
   return true;
 }
 
-function matchesPerson(
+export function matchesPerson(
   cast: string[],
   director: string | null,
   name: string,
