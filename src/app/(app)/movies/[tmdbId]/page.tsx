@@ -1,5 +1,5 @@
 import { auth } from "@/lib/auth";
-import { getMovie, tmdbImage } from "@/lib/tmdb";
+import { getMovie, getMovieSimilar, tmdbImage } from "@/lib/tmdb";
 import { prisma } from "@/lib/prisma";
 import Image from "next/image";
 import { notFound } from "next/navigation";
@@ -25,6 +25,7 @@ import { Star, Calendar, Clock } from "lucide-react";
 import { MediaType } from "@/generated/prisma";
 import { parseDateOnlyIso } from "@/lib/history-calendar";
 import { fetchTitleWatchHistoryForViewer } from "@/lib/watch-history-queries";
+import { MediaCard } from "@/components/media-card";
 
 type Params = {
   params: Promise<{ tmdbId: string }>;
@@ -47,7 +48,7 @@ export default async function MoviePage({ params, searchParams }: Params) {
 
   const session = await auth();
 
-  const [movie, userStatus, titleWatchHistory] = await Promise.all([
+  const [movie, userStatus, titleWatchHistory, similar] = await Promise.all([
     getMovie(tmdbId).catch(() => null),
     session?.user?.id
       ? prisma.userMediaStatus
@@ -66,6 +67,9 @@ export default async function MoviePage({ params, searchParams }: Params) {
           MediaType.MOVIE,
         ).catch(() => [])
       : [],
+    getMovieSimilar(tmdbId)
+      .then((r) => r.results.filter((m) => m.poster_path).slice(0, 10))
+      .catch(() => []),
   ]);
 
   if (!movie) notFound();
@@ -242,6 +246,29 @@ export default async function MoviePage({ params, searchParams }: Params) {
             )}
           </div>
         </div>
+
+        {similar.length > 0 && (
+          <section className="mt-12 space-y-4">
+            <h2 className="text-lg font-semibold">You might also like</h2>
+            <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-10 gap-3">
+              {similar.map((item) => (
+                <MediaCard
+                  key={item.id}
+                  tmdbId={item.id}
+                  type="movie"
+                  title={item.title ?? item.name ?? ""}
+                  poster={item.poster_path}
+                  year={
+                    item.release_date
+                      ? new Date(item.release_date).getFullYear()
+                      : null
+                  }
+                  compact
+                />
+              ))}
+            </div>
+          </section>
+        )}
       </div>
     </div>
   );

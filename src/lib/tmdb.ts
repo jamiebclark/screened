@@ -243,6 +243,19 @@ export async function getMovieSimilar(
   };
 }
 
+export async function getTvSimilar(
+  tmdbId: number,
+  page = 1,
+): Promise<TmdbMovieListPage> {
+  const res = await tmdbFetch<TmdbMovieListPage>(`/tv/${tmdbId}/similar`, {
+    page: String(page),
+  });
+  return {
+    ...res,
+    results: res.results.map((r) => ({ ...r, media_type: "tv" as const })),
+  };
+}
+
 interface TmdbCreditsResponse {
   cast: { id: number; name: string; order: number }[];
   crew: { id: number; name: string; job: string }[];

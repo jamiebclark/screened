@@ -1,5 +1,5 @@
 import { auth } from "@/lib/auth";
-import { getTvShow, getTvSeason, tmdbImage } from "@/lib/tmdb";
+import { getTvShow, getTvSeason, getTvSimilar, tmdbImage } from "@/lib/tmdb";
 import { prisma } from "@/lib/prisma";
 import Image from "next/image";
 import { notFound } from "next/navigation";
@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Star, Calendar, Tv } from "lucide-react";
 import { MediaType } from "@/generated/prisma";
+import { MediaCard } from "@/components/media-card";
 type Params = {
   params: Promise<{ tmdbId: string }>;
 };
@@ -35,7 +36,7 @@ export default async function TvPage({ params }: Params) {
 
   const session = await auth();
 
-  const [show, userStatus] = await Promise.all([
+  const [show, userStatus, similar] = await Promise.all([
     getTvShow(tmdbId).catch(() => null),
     session?.user?.id
       ? prisma.userMediaStatus
@@ -47,6 +48,9 @@ export default async function TvPage({ params }: Params) {
           })
           .catch(() => null)
       : null,
+    getTvSimilar(tmdbId)
+      .then((r) => r.results.filter((m) => m.poster_path).slice(0, 10))
+      .catch(() => []),
   ]);
 
   if (!show) notFound();
@@ -247,6 +251,29 @@ export default async function TvPage({ params }: Params) {
             </TabsContent>
           </Tabs>
         </div>
+
+        {similar.length > 0 && (
+          <section className="mt-12 space-y-4">
+            <h2 className="text-lg font-semibold">You might also like</h2>
+            <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-10 gap-3">
+              {similar.map((item) => (
+                <MediaCard
+                  key={item.id}
+                  tmdbId={item.id}
+                  type="tv"
+                  title={item.name ?? item.title ?? ""}
+                  poster={item.poster_path}
+                  year={
+                    item.first_air_date
+                      ? new Date(item.first_air_date).getFullYear()
+                      : null
+                  }
+                  compact
+                />
+              ))}
+            </div>
+          </section>
+        )}
       </div>
     </div>
   );

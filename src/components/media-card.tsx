@@ -121,7 +121,7 @@ export function MediaCard({
             {year && (
               <span className="text-xs text-muted-foreground">{year}</span>
             )}
-            <Badge variant="outline" className="text-[10px] px-1 py-0">
+            <Badge variant="outline" className="text-2xs px-1 py-0">
               {type === "movie" ? "Movie" : "TV"}
             </Badge>
           </div>
