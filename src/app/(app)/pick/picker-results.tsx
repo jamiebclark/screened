@@ -182,7 +182,7 @@ function ScoredMovieCard({
               className="rounded object-cover hover:opacity-80 transition-opacity"
             />
           ) : (
-            <div className="w-[72px] h-[108px] rounded bg-muted flex items-center justify-center">
+            <div className="w-18 h-27 rounded bg-muted flex items-center justify-center">
               <Film className="h-6 w-6 text-muted-foreground" />
             </div>
           )}

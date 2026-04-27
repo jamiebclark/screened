@@ -27,6 +27,8 @@
   --color-status-watching: var(--status-watching);
   --color-status-watchlist: var(--status-watchlist);
   --color-status-dropped: var(--status-dropped);
+
+  --font-size-2xs: 0.625rem; /* 10px — micro-labels in dense UI */
 }
 
 :root {

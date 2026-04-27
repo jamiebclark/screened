@@ -361,7 +361,7 @@ function ReferenceMovieCard({
               </p>
             )}
             {addedByLabel ? (
-              <p className="text-[10px] text-muted-foreground mt-0.5">
+              <p className="text-2xs text-muted-foreground mt-0.5">
                 {addedByLabel}
               </p>
             ) : null}
@@ -514,7 +514,7 @@ export function ParticipantSearch({
               )}
             >
               <Avatar className="h-5 w-5">
-                <AvatarFallback className="text-[10px]">
+                <AvatarFallback className="text-2xs">
                   {initials(user.name, user.email)}
                 </AvatarFallback>
               </Avatar>
@@ -569,7 +569,7 @@ export function ParticipantSearch({
                   )}
                 >
                   <Avatar className="h-6 w-6 shrink-0">
-                    <AvatarFallback className="text-[10px]">
+                    <AvatarFallback className="text-2xs">
                       {initials(user.name, user.email)}
                     </AvatarFallback>
                   </Avatar>
@@ -795,7 +795,7 @@ function PersonTagInput({
                   </button>
                 </span>
                 {byLine ? (
-                  <span className="text-[10px] font-normal text-muted-foreground leading-tight mt-0.5 pl-0.5">
+                  <span className="text-2xs font-normal text-muted-foreground leading-tight mt-0.5 pl-0.5">
                     {byLine}
                   </span>
                 ) : null}
@@ -878,7 +878,7 @@ function GenreTagInput({
   return (
     <div className="space-y-2">
       {hint && (
-        <p className="text-[11px] text-muted-foreground leading-snug">{hint}</p>
+        <p className="text-xs text-muted-foreground leading-snug">{hint}</p>
       )}
       <div ref={containerRef} className="relative space-y-2">
         <div className="flex gap-2">
@@ -955,7 +955,7 @@ function GenreTagInput({
                     </button>
                   </span>
                   {byLine ? (
-                    <span className="text-[10px] font-normal text-muted-foreground leading-tight mt-0.5 pl-0.5">
+                    <span className="text-2xs font-normal text-muted-foreground leading-tight mt-0.5 pl-0.5">
                       {byLine}
                     </span>
                   ) : null}
@@ -1155,20 +1155,20 @@ export function PickerForm({
               </div>
               {aggregatedAttractorGenres.length > 0 && (
                 <div className="rounded-lg border border-border/60 bg-muted/15 px-3 py-2.5 space-y-1.5">
-                  <p className="text-[11px] font-medium text-muted-foreground">
+                  <p className="text-xs font-medium text-muted-foreground">
                     Genres across your &quot;Like these&quot; picks
                   </p>
                   <div className="flex flex-wrap gap-1">
                     {aggregatedAttractorGenres.map((g) => (
                       <span
                         key={g}
-                        className="rounded border border-border/70 bg-background/50 px-1.5 py-0.5 text-[10px] text-muted-foreground"
+                        className="rounded border border-border/70 bg-background/50 px-1.5 py-0.5 text-2xs text-muted-foreground"
                       >
                         {g}
                       </span>
                     ))}
                   </div>
-                  <p className="text-[10px] text-muted-foreground leading-snug">
+                  <p className="text-2xs text-muted-foreground leading-snug">
                     For reference only. &quot;Must include&quot; / &quot;Exclude
                     genres&quot; under Genres below apply to the ranked
                     suggestions—they are not filled in from this list, and the
@@ -1268,7 +1268,7 @@ export function PickerForm({
                       },
                     }))
                   }
-                  className="h-9 w-[3.5rem] shrink-0 border-0 bg-transparent px-1.5 text-center text-sm tabular-nums shadow-none focus-visible:ring-0"
+                  className="h-9 w-14 shrink-0 border-0 bg-transparent px-1.5 text-center text-sm tabular-nums shadow-none focus-visible:ring-0"
                 />
                 <span
                   className="shrink-0 select-none text-muted-foreground"
@@ -1294,11 +1294,11 @@ export function PickerForm({
                       },
                     }))
                   }
-                  className="h-9 w-[3.5rem] shrink-0 border-0 bg-transparent px-1.5 text-center text-sm tabular-nums shadow-none focus-visible:ring-0"
+                  className="h-9 w-14 shrink-0 border-0 bg-transparent px-1.5 text-center text-sm tabular-nums shadow-none focus-visible:ring-0"
                 />
               </div>
               {(filterFieldEditors.minYear || filterFieldEditors.maxYear) && (
-                <p className="text-[10px] text-muted-foreground flex flex-wrap gap-x-3 gap-y-0.5">
+                <p className="text-2xs text-muted-foreground flex flex-wrap gap-x-3 gap-y-0.5">
                   {filterFieldEditors.minYear ? (
                     <span>
                       From: {participantLabel(filterFieldEditors.minYear)}
@@ -1459,7 +1459,7 @@ export function PickerForm({
                 className="max-w-xs"
               />
               {filterFieldEditors.maxRuntime ? (
-                <p className="text-[10px] text-muted-foreground">
+                <p className="text-2xs text-muted-foreground">
                   Last set by{" "}
                   {participantLabel(filterFieldEditors.maxRuntime)}
                 </p>
@@ -1495,7 +1495,7 @@ export function PickerForm({
                 </label>
               </div>
               {filterFieldEditors.hideAllLogged ? (
-                <p className="text-[10px] text-muted-foreground pl-7">
+                <p className="text-2xs text-muted-foreground pl-7">
                   Last toggled by{" "}
                   {participantLabel(filterFieldEditors.hideAllLogged)}
                 </p>
@@ -1530,7 +1530,7 @@ export function PickerForm({
                       : "Only suggest titles in all linked participants' Plex (intersection)"}
                   </label>
                   {plexSolo && !hasPlexLinked && (
-                    <p className="text-[11px] text-muted-foreground leading-snug">
+                    <p className="text-xs text-muted-foreground leading-snug">
                       <Link
                         prefetch={false}
                         href="/settings/plex"
@@ -1542,7 +1542,7 @@ export function PickerForm({
                     </p>
                   )}
                   {!plexSolo && (
-                    <p className="text-[11px] text-muted-foreground leading-snug">
+                    <p className="text-xs text-muted-foreground leading-snug">
                       Only people who have linked Plex are included. Those
                       without a link do not restrict the set.
                     </p>
@@ -1550,7 +1550,7 @@ export function PickerForm({
                 </div>
               </div>
               {filterFieldEditors.plexLibraryOnly ? (
-                <p className="text-[10px] text-muted-foreground pl-7">
+                <p className="text-2xs text-muted-foreground pl-7">
                   Last toggled by{" "}
                   {participantLabel(filterFieldEditors.plexLibraryOnly)}
                 </p>

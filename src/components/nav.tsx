@@ -83,7 +83,7 @@ export function Nav({ user, initialUnreadNotifications }: NavProps) {
                   className={cn(
                     "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
                     active
-                      ? "bg-accent text-foreground"
+                      ? "bg-primary/10 text-primary"
                       : "text-muted-foreground hover:bg-accent hover:text-foreground",
                   )}
                 >
@@ -169,7 +169,7 @@ export function Nav({ user, initialUnreadNotifications }: NavProps) {
                 className={cn(
                   "flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors",
                   active
-                    ? "bg-accent text-foreground"
+                    ? "bg-primary/10 text-primary"
                     : "text-muted-foreground hover:bg-accent hover:text-foreground",
                 )}
               >
