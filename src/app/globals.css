@@ -22,6 +22,11 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+
+  --color-status-watched: var(--status-watched);
+  --color-status-watching: var(--status-watching);
+  --color-status-watchlist: var(--status-watchlist);
+  --color-status-dropped: var(--status-dropped);
 }
 
 :root {
@@ -44,6 +49,11 @@
   --border: #27272f;
   --input: #27272f;
   --ring: #e11d48;
+
+  --status-watched: #4ade80;
+  --status-watching: #facc15;
+  --status-watchlist: #60a5fa;
+  --status-dropped: #a0a0ab;
 }
 
 * {

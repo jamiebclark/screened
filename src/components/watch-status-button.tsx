@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, Clock, Bookmark, X, ChevronDown, Check } from "lucide-react";
+import { Eye, Clock, Bookmark, X, ChevronDown, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -29,10 +29,10 @@ const statusConfig: Record<
     color: string;
   }
 > = {
-  WATCHED: { label: "Watched", icon: Eye, color: "text-green-400" },
-  WATCHING: { label: "Watching", icon: Clock, color: "text-yellow-400" },
-  WATCHLIST: { label: "Watchlist", icon: Bookmark, color: "text-blue-400" },
-  DROPPED: { label: "Dropped", icon: X, color: "text-muted-foreground" },
+  WATCHED: { label: "Watched", icon: Eye, color: "text-status-watched" },
+  WATCHING: { label: "Watching", icon: Clock, color: "text-status-watching" },
+  WATCHLIST: { label: "Watchlist", icon: Bookmark, color: "text-status-watchlist" },
+  DROPPED: { label: "Dropped", icon: X, color: "text-status-dropped" },
 };
 
 /** Remount when server-sourced status changes so local state stays aligned without a prop-sync effect. */
@@ -82,7 +82,9 @@ function WatchStatusButtonInner({
           className={cn("gap-1.5", current?.color)}
           disabled={isPending}
         >
-          {current ? (
+          {isPending ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : current ? (
             <>
               <current.icon className="h-4 w-4" />
               {current.label}
@@ -93,7 +95,7 @@ function WatchStatusButtonInner({
               Track
             </>
           )}
-          <ChevronDown className="h-3 w-3 opacity-60" />
+          {!isPending && <ChevronDown className="h-3 w-3 opacity-60" />}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">

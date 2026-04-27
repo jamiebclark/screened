@@ -88,19 +88,19 @@ export default async function HomePage() {
     WATCHED: {
       icon: Eye,
       label: "Watched",
-      color: "text-green-400",
+      color: "text-status-watched",
       href: "/history",
     },
     WATCHING: {
       icon: Clock,
       label: "Watching",
-      color: "text-yellow-400",
+      color: "text-status-watching",
       href: "/watching",
     },
     WATCHLIST: {
       icon: Bookmark,
       label: "Watchlist",
-      color: "text-blue-400",
+      color: "text-status-watchlist",
       href: "/watchlist",
     },
     DROPPED: {

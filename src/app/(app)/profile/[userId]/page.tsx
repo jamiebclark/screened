@@ -267,19 +267,19 @@ export default async function ProfilePage({ params }: Params) {
               label: "Watched",
               value: watchedStatDisplay,
               icon: Eye,
-              color: "text-green-400",
+              color: "text-status-watched",
             },
             {
               label: "Watching",
               value: watchingStatDisplay,
               icon: Clock,
-              color: "text-yellow-400",
+              color: "text-status-watching",
             },
             {
               label: "Watchlist",
               value: listStatDisplay,
               icon: Bookmark,
-              color: "text-blue-400",
+              color: "text-status-watchlist",
             },
             {
               label: "Avg rating",

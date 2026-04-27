@@ -23,13 +23,13 @@ interface MediaCardProps {
 }
 
 const statusIcons = {
-  WATCHED: { icon: Eye, label: "Watched", color: "text-green-400" },
-  WATCHING: { icon: Clock, label: "Watching", color: "text-yellow-400" },
-  WATCHLIST: { icon: Bookmark, label: "Watchlist", color: "text-blue-400" },
+  WATCHED: { icon: Eye, label: "Watched", color: "text-status-watched" },
+  WATCHING: { icon: Clock, label: "Watching", color: "text-status-watching" },
+  WATCHLIST: { icon: Bookmark, label: "Watchlist", color: "text-status-watchlist" },
   DROPPED: {
     icon: TvMinimal,
     label: "Dropped",
-    color: "text-muted-foreground",
+    color: "text-status-dropped",
   },
 };
 

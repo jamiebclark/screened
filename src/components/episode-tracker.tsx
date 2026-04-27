@@ -316,7 +316,7 @@ export function EpisodeTracker({
                 size="sm"
                 className={cn(
                   "h-7 px-2 text-xs shrink-0",
-                  allWatched && "text-green-400",
+                  allWatched && "text-status-watched",
                 )}
                 onClick={(e) => {
                   e.stopPropagation();
