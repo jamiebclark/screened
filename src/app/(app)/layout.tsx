@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Nav } from "@/components/nav";
+import { SiteFooter } from "@/components/site-footer";
 import { prisma } from "@/lib/prisma";
 
 export default async function AppLayout({
@@ -48,8 +49,9 @@ export default async function AppLayout({
         user={session.user}
         initialUnreadNotifications={unreadNotifications}
       />
-      <main className="min-h-0 w-full min-w-0 flex-1 overflow-y-auto overflow-x-hidden">
-        {children}
+      <main className="flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden">
+        <div className="w-full flex-1">{children}</div>
+        <SiteFooter />
       </main>
     </div>
   );

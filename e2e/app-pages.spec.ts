@@ -93,9 +93,45 @@ test.describe("Picker & settings (smoke)", () => {
     await expect(page.getByRole("heading", { name: "Profile" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Password" })).toBeVisible();
   });
+
+  test("about overview loads", async ({ page }) => {
+    await page.goto("/about");
+    await expect(
+      page.getByRole("heading", { level: 1, name: "About Screened" }),
+    ).toBeVisible({ timeout: 8000 });
+    await expect(
+      page.getByRole("navigation", { name: "Footer" }),
+    ).toBeVisible();
+  });
+
+  test("about version page loads", async ({ page }) => {
+    await page.goto("/about/version");
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Version" }),
+    ).toBeVisible({ timeout: 8000 });
+  });
+
+  test("legacy settings about URL redirects to version", async ({ page }) => {
+    await page.goto("/settings/about");
+    await expect(page).toHaveURL(/\/about\/version$/);
+  });
 });
 
 test.describe("Nav", () => {
+  test("footer links appear on home", async ({ page }) => {
+    await page.goto("/");
+    const footer = page.getByRole("navigation", { name: "Footer" });
+    await expect(footer).toBeVisible();
+    await expect(
+      footer.getByRole("link", { name: "Screened", exact: true }),
+    ).toHaveAttribute("href", "/");
+    await expect(footer.getByRole("link", { name: "About" })).toBeVisible();
+    await expect(footer.getByRole("link", { name: "Version" })).toBeVisible();
+    await expect(
+      page.locator("footer").getByText(/©\s*\d{4}\s*Screened/),
+    ).toBeVisible();
+  });
+
   test("picker link in header", async ({ page }) => {
     await page.goto("/");
     await page.getByRole("link", { name: "Picker" }).click();

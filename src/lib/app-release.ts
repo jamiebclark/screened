@@ -31,23 +31,52 @@ export function parseGithubRepoBaseFromChangelog(
   return m ? m[0] : null;
 }
 
-export async function getLatestChangelogSection(): Promise<string | null> {
+async function readRootChangelog(): Promise<string | null> {
   try {
     const path = join(process.cwd(), "CHANGELOG.md");
-    const text = await readFile(path, "utf8");
-    return parseFirstChangelogReleaseSection(text);
+    return await readFile(path, "utf8");
   } catch {
     return null;
   }
 }
 
+export async function getLatestChangelogSection(): Promise<string | null> {
+  const text = await readRootChangelog();
+  return text ? parseFirstChangelogReleaseSection(text) : null;
+}
+
 export async function getChangelogFileUrlFromRepo(): Promise<string | null> {
-  try {
-    const path = join(process.cwd(), "CHANGELOG.md");
-    const text = await readFile(path, "utf8");
-    const base = parseGithubRepoBaseFromChangelog(text);
-    return base ? `${base}/blob/main/CHANGELOG.md` : null;
-  } catch {
-    return null;
-  }
+  const text = await readRootChangelog();
+  if (!text) return null;
+  const base = parseGithubRepoBaseFromChangelog(text);
+  return base ? `${base}/blob/main/CHANGELOG.md` : null;
+}
+
+/** Latest release markdown + changelog file URL in one disk read. */
+export async function getLatestReleaseAndChangelogUrl(): Promise<{
+  latestSection: string | null;
+  changelogUrl: string | null;
+}> {
+  const text = await readRootChangelog();
+  if (!text) return { latestSection: null, changelogUrl: null };
+  const base = parseGithubRepoBaseFromChangelog(text);
+  return {
+    latestSection: parseFirstChangelogReleaseSection(text),
+    changelogUrl: base ? `${base}/blob/main/CHANGELOG.md` : null,
+  };
+}
+
+/** README and UI standards doc on GitHub when the repo URL appears in CHANGELOG.md. */
+export async function getRepoDocumentationLinks(): Promise<{
+  readmeUrl: string | null;
+  uiUxUrl: string | null;
+}> {
+  const text = await readRootChangelog();
+  if (!text) return { readmeUrl: null, uiUxUrl: null };
+  const base = parseGithubRepoBaseFromChangelog(text);
+  if (!base) return { readmeUrl: null, uiUxUrl: null };
+  return {
+    readmeUrl: `${base}/blob/main/README.md`,
+    uiUxUrl: `${base}/blob/main/docs/ui-ux-standards.md`,
+  };
 }
