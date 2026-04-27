@@ -49,6 +49,10 @@ import {
   type ReferenceMovieJson,
   type ScoredMovieJson,
 } from "@/lib/picker-room-state";
+import {
+  computePickerScoreFingerprint,
+  hydratePickerFingerprintIfNeeded,
+} from "@/lib/picker-score-fingerprint";
 import { filterTmdbMovieGenres } from "@/lib/tmdb-movie-genres";
 import { describePickerStateChange } from "@/lib/picker-activity-line";
 import { Link2, Share2 } from "lucide-react";
@@ -72,6 +76,7 @@ export interface ReferenceMovie {
   saved: boolean;
   hasEmbedding: boolean;
   genres: string[];
+  addedByUserId?: string;
 }
 
 interface SearchResult {
@@ -104,6 +109,38 @@ function parseOptionalYear(s: string): number | undefined {
   if (!s.trim()) return undefined;
   const n = parseInt(s, 10);
   return Number.isFinite(n) ? n : undefined;
+}
+
+function applyFilterListChange(
+  p: PickerRoomState,
+  listKey:
+    | "requirePeople"
+    | "excludePeople"
+    | "includeGenres"
+    | "excludeGenres",
+  values: string[],
+  actorId: string,
+): PickerRoomState {
+  const prevList = p[listKey];
+  const prevMap: Record<string, string> = {
+    ...(p.filterAttribution?.[listKey] ?? {}),
+  };
+  const prevSet = new Set(prevList);
+  const nextSet = new Set(values);
+  for (const v of prevList) {
+    if (!nextSet.has(v)) delete prevMap[v];
+  }
+  for (const v of values) {
+    if (!prevSet.has(v)) prevMap[v] = actorId;
+  }
+  return {
+    ...p,
+    [listKey]: values,
+    filterAttribution: {
+      ...p.filterAttribution,
+      [listKey]: prevMap,
+    },
+  };
 }
 
 // ─── MovieSearchInput ─────────────────────────────────────────────────────────
@@ -278,11 +315,14 @@ function ReferenceMovieCard({
   onRemove,
   onWeightChange,
   onSaveToggle,
+  addedByLabel,
 }: {
   movie: ReferenceMovie;
   onRemove: () => void;
   onWeightChange: (weight: number) => void;
   onSaveToggle: () => void;
+  /** Short label, e.g. "Added by Pat" */
+  addedByLabel?: string | null;
 }) {
   const [saving, setSaving] = useState(false);
 
@@ -320,6 +360,11 @@ function ReferenceMovieCard({
                 No embedding — add OPENAI_API_KEY
               </p>
             )}
+            {addedByLabel ? (
+              <p className="text-[10px] text-muted-foreground mt-0.5">
+                {addedByLabel}
+              </p>
+            ) : null}
           </div>
           <button
             onClick={onRemove}
@@ -792,11 +837,15 @@ function PersonTagInput({
   onChange,
   placeholder,
   colorClass,
+  valueAddedBy,
+  formatAddedBy,
 }: {
   values: string[];
   onChange: (values: string[]) => void;
   placeholder: string;
   colorClass: string;
+  valueAddedBy?: Record<string, string>;
+  formatAddedBy?: (userId: string) => string;
 }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<PersonResult[]>([]);
@@ -956,24 +1005,35 @@ function PersonTagInput({
       </div>
       {values.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
-          {values.map((name) => (
-            <span
-              key={name}
-              className={cn(
-                "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium",
-                colorClass,
-              )}
-            >
-              {name}
-              <button
-                type="button"
-                onClick={() => remove(name)}
-                className="hover:opacity-70 transition-opacity"
+          {values.map((name) => {
+            const by = valueAddedBy?.[name];
+            const byLine = by && formatAddedBy ? formatAddedBy(by) : null;
+            return (
+              <span
+                key={name}
+                className={cn(
+                  "inline-flex flex-col rounded-full px-2.5 py-1 text-xs font-medium",
+                  colorClass,
+                )}
               >
-                <X className="h-3 w-3" />
-              </button>
-            </span>
-          ))}
+                <span className="inline-flex items-center gap-1">
+                  {name}
+                  <button
+                    type="button"
+                    onClick={() => remove(name)}
+                    className="hover:opacity-70 transition-opacity"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+                {byLine ? (
+                  <span className="text-[10px] font-normal text-muted-foreground leading-tight mt-0.5 pl-0.5">
+                    {byLine}
+                  </span>
+                ) : null}
+              </span>
+            );
+          })}
         </div>
       )}
     </div>
@@ -988,12 +1048,16 @@ function GenreTagInput({
   placeholder,
   colorClass,
   hint,
+  valueAddedBy,
+  formatAddedBy,
 }: {
   values: string[];
   onChange: (values: string[]) => void;
   placeholder: string;
   colorClass: string;
   hint?: string;
+  valueAddedBy?: Record<string, string>;
+  formatAddedBy?: (userId: string) => string;
 }) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
@@ -1100,24 +1164,35 @@ function GenreTagInput({
         </div>
         {values.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
-            {values.map((name) => (
-              <span
-                key={name}
-                className={cn(
-                  "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium",
-                  colorClass,
-                )}
-              >
-                {name}
-                <button
-                  type="button"
-                  onClick={() => remove(name)}
-                  className="hover:opacity-70 transition-opacity"
+            {values.map((name) => {
+              const by = valueAddedBy?.[name];
+              const byLine = by && formatAddedBy ? formatAddedBy(by) : null;
+              return (
+                <span
+                  key={name}
+                  className={cn(
+                    "inline-flex flex-col rounded-full px-2.5 py-1 text-xs font-medium",
+                    colorClass,
+                  )}
                 >
-                  <X className="h-3 w-3" />
-                </button>
-              </span>
-            ))}
+                  <span className="inline-flex items-center gap-1">
+                    {name}
+                    <button
+                      type="button"
+                      onClick={() => remove(name)}
+                      className="hover:opacity-70 transition-opacity"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                  {byLine ? (
+                    <span className="text-[10px] font-normal text-muted-foreground leading-tight mt-0.5 pl-0.5">
+                      {byLine}
+                    </span>
+                  ) : null}
+                </span>
+              );
+            })}
           </div>
         )}
       </div>
@@ -1134,13 +1209,16 @@ export function PickSession({
   hasPlexLinked,
 }: PickSessionProps) {
   const [roomState, setRoomState] = useState<PickerRoomState>(() =>
-    ensureCurrentUserInRoom(withScoringDefaults(initialRoomState), currentUser),
+    ensureCurrentUserInRoom(
+      hydratePickerFingerprintIfNeeded(withScoringDefaults(initialRoomState)),
+      currentUser,
+    ),
   );
   /** True after we have ever had a scored list in this session (survives temporary null while re-running). */
   const [hasCompletedListRun, setHasCompletedListRun] = useState(
     () =>
       ensureCurrentUserInRoom(
-        withScoringDefaults(initialRoomState),
+        hydratePickerFingerprintIfNeeded(withScoringDefaults(initialRoomState)),
         currentUser,
       ).scoringResults !== null,
   );
@@ -1220,7 +1298,37 @@ export function PickSession({
     scoringInProgress,
     scoringError,
     scoringResults,
+    lastScoreFingerprint,
+    filterAttribution: filterAttribution = {},
+    filterFieldEditors: filterFieldEditors = {},
   } = roomState;
+
+  const participantLabel = useCallback(
+    (userId: string) => {
+      if (userId === currentUser.id) return "You";
+      const p = participants.find((x) => x.id === userId);
+      const n = p?.name?.trim();
+      if (n) return n;
+      if (p?.email) return p.email.split("@")[0] ?? p.email;
+      return "Someone";
+    },
+    [participants, currentUser.id],
+  );
+
+  const addedByChipLine = useCallback(
+    (userId: string) => `Added by ${participantLabel(userId)}`,
+    [participantLabel],
+  );
+
+  const currentScoreFingerprint = computePickerScoreFingerprint(roomState);
+  const criteriaDirty =
+    scoringResults != null &&
+    scoringResults.length > 0 &&
+    !scoringInProgress &&
+    lastScoreFingerprint != null &&
+    currentScoreFingerprint !== lastScoreFingerprint;
+
+  const prevScoringInProgressRef = useRef(scoringInProgress);
 
   useEffect(() => {
     if (participants.length === 1 && !hasPlexLinked) {
@@ -1331,17 +1439,20 @@ export function PickSession({
   }, [scoringTmdbIdsKey, pickerStatusesNonce]);
 
   useEffect(() => {
+    const wasInProgress = prevScoringInProgressRef.current;
+    prevScoringInProgressRef.current = scoringInProgress;
     if (
+      wasInProgress &&
+      !scoringInProgress &&
       visibleScoringResults !== null &&
-      visibleScoringResults.length > 0 &&
-      !scoringInProgress
+      visibleScoringResults.length > 0
     ) {
       setTimeout(
         () => resultsRef.current?.scrollIntoView({ behavior: "smooth" }),
         100,
       );
     }
-  }, [visibleScoringResults, scoringInProgress]);
+  }, [scoringInProgress, visibleScoringResults]);
 
   const attractorIds = new Set(attractors.map((a) => String(a.tmdbId)));
   const repellerIds = new Set(repellers.map((r) => String(r.tmdbId)));
@@ -1415,15 +1526,22 @@ export function PickSession({
         saved: false,
         hasEmbedding: true,
         genres: movie.genres,
+        addedByUserId: currentUser.id,
       };
       const hasRep = prev.repellers.some((r) => r.mediaItemId === movie.id);
-      return {
+      const next: PickerRoomState = {
         ...prev,
         vetoIds: prev.vetoIds.includes(movie.id)
           ? prev.vetoIds
           : [...prev.vetoIds, movie.id],
         repellers: hasRep ? prev.repellers : [...prev.repellers, nextRef],
       };
+      const line = describePickerStateChange(prev, next, {
+        actorId: currentUser.id,
+        youId: currentUser.id,
+      });
+      if (line) queueMicrotask(() => appendActivity(line));
+      return next;
     });
   };
 
@@ -1584,6 +1702,12 @@ export function PickSession({
             scoringInProgress: false,
             scoringError: null,
             scoringResults: list,
+            lastScoreFingerprint: computePickerScoreFingerprint({
+              ...prev,
+              scoringInProgress: false,
+              scoringError: null,
+              scoringResults: list,
+            }),
           };
           patchIfRoom(next);
           const line = describePickerStateChange(prev, next, {
@@ -1699,141 +1823,387 @@ export function PickSession({
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_18.5rem] xl:grid-cols-[1fr_20rem] items-start">
         <div className="min-w-0 space-y-6">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:items-start">
-            <Card className="min-w-0">
-              <CardHeader className="pb-3">
-                <div className="flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-full bg-green-500" />
-                  <CardTitle className="text-base">Like these</CardTitle>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Films that capture the mood you&apos;re after tonight
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <MovieSearchInput
-                  onAdd={(movie) =>
-                    setRoomState((prev) => ({
-                      ...prev,
-                      attractors: [...prev.attractors, movie],
-                    }))
-                  }
-                  placeholder="Search for a film..."
-                  existingIds={new Set([...attractorIds, ...repellerIds])}
-                />
-                <div className="space-y-2">
-                  {attractors.map((m) => (
-                    <ReferenceMovieCard
-                      key={m.mediaItemId}
-                      movie={m}
-                      onRemove={() => remove("attractor", m.mediaItemId)}
-                      onWeightChange={(w) =>
-                        updateWeight("attractor", m.mediaItemId, w)
-                      }
-                      onSaveToggle={() => toggleSave("attractor", m)}
-                    />
-                  ))}
-                  {attractors.length === 0 && (
-                    <div className="rounded-lg border border-dashed border-border p-4 text-center">
-                      <Plus className="h-5 w-5 text-muted-foreground mx-auto mb-1" />
-                      <p className="text-xs text-muted-foreground">
-                        Add at least one film to match against
-                      </p>
-                    </div>
-                  )}
-                </div>
-                {aggregatedAttractorGenres.length > 0 && (
-                  <div className="rounded-lg border border-border/60 bg-muted/15 px-3 py-2.5 space-y-1.5">
-                    <p className="text-[11px] font-medium text-muted-foreground">
-                      Genres across your &quot;Like these&quot; picks
-                    </p>
-                    <div className="flex flex-wrap gap-1">
-                      {aggregatedAttractorGenres.map((g) => (
-                        <span
-                          key={g}
-                          className="rounded border border-border/70 bg-background/50 px-1.5 py-0.5 text-[10px] text-muted-foreground"
-                        >
-                          {g}
-                        </span>
-                      ))}
-                    </div>
-                    <p className="text-[10px] text-muted-foreground leading-snug">
-                      For reference only. &quot;Must include&quot; /
-                      &quot;Exclude genres&quot; in Hard filters apply to the
-                      ranked suggestions—they are not filled in from this list,
-                      and your picks steer similarity via embeddings, not via
-                      these tags.
-                    </p>
+          <section className="space-y-3">
+            <h3 className="text-base font-semibold tracking-tight">Movies</h3>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:items-start">
+              <Card className="min-w-0">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-green-500" />
+                    <CardTitle className="text-base">Like these</CardTitle>
                   </div>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card className="min-w-0">
-              <CardHeader className="pb-3">
-                <div className="flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-full bg-red-500" />
-                  <CardTitle className="text-base">Not like these</CardTitle>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Too intense, too slow, or not tonight
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <MovieSearchInput
-                  onAdd={(movie) =>
-                    setRoomState((prev) => ({
-                      ...prev,
-                      repellers: [...prev.repellers, movie],
-                    }))
-                  }
-                  placeholder="Search for a film..."
-                  existingIds={new Set([...attractorIds, ...repellerIds])}
-                />
-                <div className="space-y-2">
-                  {repellers.map((m) => (
-                    <ReferenceMovieCard
-                      key={m.mediaItemId}
-                      movie={m}
-                      onRemove={() => remove("repeller", m.mediaItemId)}
-                      onWeightChange={(w) =>
-                        updateWeight("repeller", m.mediaItemId, w)
-                      }
-                      onSaveToggle={() => toggleSave("repeller", m)}
-                    />
-                  ))}
-                  {repellers.length === 0 && (
-                    <div className="rounded-lg border border-dashed border-border p-3 text-center">
-                      <X className="h-4 w-4 text-muted-foreground mx-auto mb-1" />
-                      <p className="text-xs text-muted-foreground">
-                        Add vibes to steer away from, or use ✕ on a suggestion
+                  <p className="text-xs text-muted-foreground">
+                    Films that capture the mood you&apos;re after tonight
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <MovieSearchInput
+                    onAdd={(movie) =>
+                      setRoomState((prev) => ({
+                        ...prev,
+                        attractors: [
+                          ...prev.attractors,
+                          { ...movie, addedByUserId: currentUserId },
+                        ],
+                      }))
+                    }
+                    placeholder="Search for a film..."
+                    existingIds={new Set([...attractorIds, ...repellerIds])}
+                  />
+                  <div className="space-y-2">
+                    {attractors.map((m) => (
+                      <ReferenceMovieCard
+                        key={m.mediaItemId}
+                        movie={m}
+                        onRemove={() => remove("attractor", m.mediaItemId)}
+                        onWeightChange={(w) =>
+                          updateWeight("attractor", m.mediaItemId, w)
+                        }
+                        onSaveToggle={() => toggleSave("attractor", m)}
+                        addedByLabel={
+                          m.addedByUserId
+                            ? addedByChipLine(m.addedByUserId)
+                            : null
+                        }
+                      />
+                    ))}
+                    {attractors.length === 0 && (
+                      <div className="rounded-lg border border-dashed border-border p-4 text-center">
+                        <Plus className="h-5 w-5 text-muted-foreground mx-auto mb-1" />
+                        <p className="text-xs text-muted-foreground">
+                          Add at least one film to match against
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                  {aggregatedAttractorGenres.length > 0 && (
+                    <div className="rounded-lg border border-border/60 bg-muted/15 px-3 py-2.5 space-y-1.5">
+                      <p className="text-[11px] font-medium text-muted-foreground">
+                        Genres across your &quot;Like these&quot; picks
+                      </p>
+                      <div className="flex flex-wrap gap-1">
+                        {aggregatedAttractorGenres.map((g) => (
+                          <span
+                            key={g}
+                            className="rounded border border-border/70 bg-background/50 px-1.5 py-0.5 text-[10px] text-muted-foreground"
+                          >
+                            {g}
+                          </span>
+                        ))}
+                      </div>
+                      <p className="text-[10px] text-muted-foreground leading-snug">
+                        For reference only. &quot;Must include&quot; /
+                        &quot;Exclude genres&quot; under Genres below apply to
+                        the ranked suggestions—they are not filled in from this
+                        list, and your picks steer similarity via embeddings,
+                        not via these tags.
                       </p>
                     </div>
                   )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+                </CardContent>
+              </Card>
+
+              <Card className="min-w-0">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-red-500" />
+                    <CardTitle className="text-base">Not like these</CardTitle>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Too intense, too slow, or not tonight
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <MovieSearchInput
+                    onAdd={(movie) =>
+                      setRoomState((prev) => ({
+                        ...prev,
+                        repellers: [
+                          ...prev.repellers,
+                          { ...movie, addedByUserId: currentUserId },
+                        ],
+                      }))
+                    }
+                    placeholder="Search for a film..."
+                    existingIds={new Set([...attractorIds, ...repellerIds])}
+                  />
+                  <div className="space-y-2">
+                    {repellers.map((m) => (
+                      <ReferenceMovieCard
+                        key={m.mediaItemId}
+                        movie={m}
+                        onRemove={() => remove("repeller", m.mediaItemId)}
+                        onWeightChange={(w) =>
+                          updateWeight("repeller", m.mediaItemId, w)
+                        }
+                        onSaveToggle={() => toggleSave("repeller", m)}
+                        addedByLabel={
+                          m.addedByUserId
+                            ? addedByChipLine(m.addedByUserId)
+                            : null
+                        }
+                      />
+                    ))}
+                    {repellers.length === 0 && (
+                      <div className="rounded-lg border border-dashed border-border p-3 text-center">
+                        <X className="h-4 w-4 text-muted-foreground mx-auto mb-1" />
+                        <p className="text-xs text-muted-foreground">
+                          Add vibes to steer away from, or use ✕ on a suggestion
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </section>
 
           <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Hard filters</CardTitle>
-              <p className="text-xs text-muted-foreground">
-                Optional bounds for year, runtime, cast, and genres
-              </p>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-5">
-                <div className="space-y-2.5 rounded-lg border border-border/80 bg-muted/20 p-3">
-                  <p className="text-[11px] font-medium text-muted-foreground">
-                    Watchlist &amp; library
+            <CardContent className="pt-6 pb-6">
+              <div className="space-y-6">
+                <section className="space-y-2">
+                  <h3 className="text-base font-semibold tracking-tight">
+                    Years
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    Release year range (optional)
                   </p>
+                  <div
+                    role="group"
+                    aria-label="Release year range"
+                    className="flex h-9 w-fit max-w-full shrink-0 items-center gap-1.5 rounded-md border border-input bg-background px-2.5 text-sm shadow-sm transition-colors focus-within:ring-1 focus-within:ring-ring"
+                  >
+                    <Input
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="off"
+                      maxLength={4}
+                      placeholder="?"
+                      aria-label="From year (optional)"
+                      value={minYear}
+                      onChange={(e) =>
+                        setRoomState((p) => ({
+                          ...p,
+                          minYear: e.target.value,
+                          filterFieldEditors: {
+                            ...p.filterFieldEditors,
+                            minYear: currentUserId,
+                          },
+                        }))
+                      }
+                      className="h-9 w-[3.5rem] shrink-0 border-0 bg-transparent px-1.5 text-center text-sm tabular-nums shadow-none focus-visible:ring-0"
+                    />
+                    <span
+                      className="shrink-0 select-none text-muted-foreground"
+                      aria-hidden
+                    >
+                      –
+                    </span>
+                    <Input
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="off"
+                      maxLength={4}
+                      placeholder="?"
+                      aria-label="To year (optional)"
+                      value={maxYear}
+                      onChange={(e) =>
+                        setRoomState((p) => ({
+                          ...p,
+                          maxYear: e.target.value,
+                          filterFieldEditors: {
+                            ...p.filterFieldEditors,
+                            maxYear: currentUserId,
+                          },
+                        }))
+                      }
+                      className="h-9 w-[3.5rem] shrink-0 border-0 bg-transparent px-1.5 text-center text-sm tabular-nums shadow-none focus-visible:ring-0"
+                    />
+                  </div>
+                  {(filterFieldEditors.minYear ||
+                    filterFieldEditors.maxYear) && (
+                    <p className="text-[10px] text-muted-foreground flex flex-wrap gap-x-3 gap-y-0.5">
+                      {filterFieldEditors.minYear ? (
+                        <span>
+                          From: {participantLabel(filterFieldEditors.minYear)}
+                        </span>
+                      ) : null}
+                      {filterFieldEditors.maxYear ? (
+                        <span>
+                          To: {participantLabel(filterFieldEditors.maxYear)}
+                        </span>
+                      ) : null}
+                    </p>
+                  )}
+                </section>
+
+                <section className="space-y-3">
+                  <h3 className="text-base font-semibold tracking-tight">
+                    Actor / director
+                  </h3>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
+                    <div className="space-y-1.5 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <UserCheck className="h-3.5 w-3.5 shrink-0 text-green-500" />
+                        <span className="text-xs font-medium text-muted-foreground">
+                          Include
+                        </span>
+                      </div>
+                      <PersonTagInput
+                        values={requirePeople}
+                        onChange={(values) =>
+                          setRoomState((p) =>
+                            applyFilterListChange(
+                              p,
+                              "requirePeople",
+                              values,
+                              currentUserId,
+                            ),
+                          )
+                        }
+                        placeholder="Search for an actor or director…"
+                        colorClass="bg-green-500/15 text-green-700 dark:text-green-400"
+                        valueAddedBy={filterAttribution.requirePeople}
+                        formatAddedBy={addedByChipLine}
+                      />
+                    </div>
+                    <div className="space-y-1.5 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <UserX className="h-3.5 w-3.5 shrink-0 text-red-500" />
+                        <span className="text-xs font-medium text-muted-foreground">
+                          Exclude
+                        </span>
+                      </div>
+                      <PersonTagInput
+                        values={excludePeople}
+                        onChange={(values) =>
+                          setRoomState((p) =>
+                            applyFilterListChange(
+                              p,
+                              "excludePeople",
+                              values,
+                              currentUserId,
+                            ),
+                          )
+                        }
+                        placeholder="Search for an actor or director…"
+                        colorClass="bg-red-500/15 text-red-700 dark:text-red-400"
+                        valueAddedBy={filterAttribution.excludePeople}
+                        formatAddedBy={addedByChipLine}
+                      />
+                    </div>
+                  </div>
+                </section>
+
+                <section className="space-y-3">
+                  <h3 className="text-base font-semibold tracking-tight">
+                    Genres
+                  </h3>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
+                    <div className="space-y-1.5 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <Tag className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
+                        <span className="text-xs font-medium text-muted-foreground">
+                          Include
+                        </span>
+                      </div>
+                      <GenreTagInput
+                        values={includeGenres}
+                        onChange={(values) =>
+                          setRoomState((p) =>
+                            applyFilterListChange(
+                              p,
+                              "includeGenres",
+                              values,
+                              currentUserId,
+                            ),
+                          )
+                        }
+                        placeholder="Type or pick a genre…"
+                        colorClass="bg-emerald-500/15 text-emerald-800 dark:text-emerald-300"
+                        hint='Applies to ranked suggestions only (not an extra vote from your "Like these" films). Choose from the TMDB list or type to filter it. A suggested film must match at least one tag (OR).'
+                        valueAddedBy={filterAttribution.includeGenres}
+                        formatAddedBy={addedByChipLine}
+                      />
+                    </div>
+                    <div className="space-y-1.5 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <Tag className="h-3.5 w-3.5 shrink-0 text-orange-500" />
+                        <span className="text-xs font-medium text-muted-foreground">
+                          Exclude
+                        </span>
+                      </div>
+                      <GenreTagInput
+                        values={excludeGenres}
+                        onChange={(values) =>
+                          setRoomState((p) =>
+                            applyFilterListChange(
+                              p,
+                              "excludeGenres",
+                              values,
+                              currentUserId,
+                            ),
+                          )
+                        }
+                        placeholder="Type or pick a genre…"
+                        colorClass="bg-orange-500/15 text-orange-800 dark:text-orange-300"
+                        hint='Applies to suggestions only. Suggested titles with any matching genre are removed. Typing "horr" still matches Horror when you add a custom tag.'
+                        valueAddedBy={filterAttribution.excludeGenres}
+                        formatAddedBy={addedByChipLine}
+                      />
+                    </div>
+                  </div>
+                </section>
+
+                <section className="space-y-2">
+                  <h3 className="text-base font-semibold tracking-tight">
+                    Runtime
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    Max length in minutes (optional)
+                  </p>
+                  <Input
+                    type="number"
+                    placeholder="e.g. 120"
+                    value={maxRuntime}
+                    onChange={(e) =>
+                      setRoomState((p) => ({
+                        ...p,
+                        maxRuntime: e.target.value,
+                        filterFieldEditors: {
+                          ...p.filterFieldEditors,
+                          maxRuntime: currentUserId,
+                        },
+                      }))
+                    }
+                    min={1}
+                    className="max-w-xs"
+                  />
+                  {filterFieldEditors.maxRuntime ? (
+                    <p className="text-[10px] text-muted-foreground">
+                      Last set by{" "}
+                      {participantLabel(filterFieldEditors.maxRuntime)}
+                    </p>
+                  ) : null}
+                </section>
+
+                <section className="space-y-2.5 rounded-lg border border-border/80 bg-muted/20 p-3">
+                  <h3 className="text-base font-semibold tracking-tight">
+                    Library &amp; watchlist
+                  </h3>
                   <div className="flex items-center gap-2.5">
                     <Checkbox
                       id="hide-logged"
                       checked={hideAllLogged}
                       onCheckedChange={(v) =>
-                        setRoomState((p) => ({ ...p, hideAllLogged: !!v }))
+                        setRoomState((p) => ({
+                          ...p,
+                          hideAllLogged: !!v,
+                          filterFieldEditors: {
+                            ...p.filterFieldEditors,
+                            hideAllLogged: currentUserId,
+                          },
+                        }))
                       }
                     />
                     <label
@@ -1844,13 +2214,26 @@ export function PickSession({
                       watching, dropped)
                     </label>
                   </div>
+                  {filterFieldEditors.hideAllLogged ? (
+                    <p className="text-[10px] text-muted-foreground pl-7">
+                      Last toggled by{" "}
+                      {participantLabel(filterFieldEditors.hideAllLogged)}
+                    </p>
+                  ) : null}
                   <div className="flex items-start gap-2.5">
                     <Checkbox
                       id="plex-library-only"
                       disabled={plexFilterDisabled}
                       checked={!plexFilterDisabled && plexLibraryOnly}
                       onCheckedChange={(v) =>
-                        setRoomState((p) => ({ ...p, plexLibraryOnly: !!v }))
+                        setRoomState((p) => ({
+                          ...p,
+                          plexLibraryOnly: !!v,
+                          filterFieldEditors: {
+                            ...p.filterFieldEditors,
+                            plexLibraryOnly: currentUserId,
+                          },
+                        }))
                       }
                       className="mt-0.5"
                     />
@@ -1886,158 +2269,33 @@ export function PickSession({
                       )}
                     </div>
                   </div>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label
-                      className="text-xs font-medium text-muted-foreground"
-                      id="pick-year-range-label"
-                    >
-                      Release year
-                    </label>
-                    <div
-                      role="group"
-                      aria-labelledby="pick-year-range-label"
-                      className="flex h-9 w-fit max-w-full shrink-0 items-center gap-1.5 rounded-md border border-input bg-background px-2.5 text-sm shadow-sm transition-colors focus-within:ring-1 focus-within:ring-ring"
-                    >
-                      <Input
-                        type="text"
-                        inputMode="numeric"
-                        autoComplete="off"
-                        maxLength={4}
-                        placeholder="?"
-                        aria-label="From year (optional)"
-                        value={minYear}
-                        onChange={(e) =>
-                          setRoomState((p) => ({
-                            ...p,
-                            minYear: e.target.value,
-                          }))
-                        }
-                        className="h-9 w-[3.5rem] shrink-0 border-0 bg-transparent px-1.5 text-center text-sm tabular-nums shadow-none focus-visible:ring-0"
-                      />
-                      <span
-                        className="shrink-0 select-none text-muted-foreground"
-                        aria-hidden
-                      >
-                        –
-                      </span>
-                      <Input
-                        type="text"
-                        inputMode="numeric"
-                        autoComplete="off"
-                        maxLength={4}
-                        placeholder="?"
-                        aria-label="To year (optional)"
-                        value={maxYear}
-                        onChange={(e) =>
-                          setRoomState((p) => ({
-                            ...p,
-                            maxYear: e.target.value,
-                          }))
-                        }
-                        className="h-9 w-[3.5rem] shrink-0 border-0 bg-transparent px-1.5 text-center text-sm tabular-nums shadow-none focus-visible:ring-0"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-muted-foreground">
-                      Max runtime (minutes)
-                    </label>
-                    <Input
-                      type="number"
-                      placeholder="e.g. 120"
-                      value={maxRuntime}
-                      onChange={(e) =>
-                        setRoomState((p) => ({
-                          ...p,
-                          maxRuntime: e.target.value,
-                        }))
-                      }
-                      min={1}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <UserCheck className="h-3.5 w-3.5 text-green-500" />
-                    <label className="text-xs font-medium text-muted-foreground">
-                      Must include actor or director
-                    </label>
-                  </div>
-                  <PersonTagInput
-                    values={requirePeople}
-                    onChange={(values) =>
-                      setRoomState((p) => ({ ...p, requirePeople: values }))
-                    }
-                    placeholder="Search for an actor or director…"
-                    colorClass="bg-green-500/15 text-green-700 dark:text-green-400"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <UserX className="h-3.5 w-3.5 text-red-500" />
-                    <label className="text-xs font-medium text-muted-foreground">
-                      Exclude actor or director
-                    </label>
-                  </div>
-                  <PersonTagInput
-                    values={excludePeople}
-                    onChange={(values) =>
-                      setRoomState((p) => ({ ...p, excludePeople: values }))
-                    }
-                    placeholder="Search for an actor or director…"
-                    colorClass="bg-red-500/15 text-red-700 dark:text-red-400"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <Tag className="h-3.5 w-3.5 text-emerald-500" />
-                    <label className="text-xs font-medium text-muted-foreground">
-                      Must include a genre
-                    </label>
-                  </div>
-                  <GenreTagInput
-                    values={includeGenres}
-                    onChange={(values) =>
-                      setRoomState((p) => ({ ...p, includeGenres: values }))
-                    }
-                    placeholder="Type or pick a genre…"
-                    colorClass="bg-emerald-500/15 text-emerald-800 dark:text-emerald-300"
-                    hint='Applies to ranked suggestions only (not an extra vote from your "Like these" films). Choose from the TMDB list or type to filter it. A suggested film must match at least one tag (OR).'
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <Tag className="h-3.5 w-3.5 text-orange-500" />
-                    <label className="text-xs font-medium text-muted-foreground">
-                      Exclude genres
-                    </label>
-                  </div>
-                  <GenreTagInput
-                    values={excludeGenres}
-                    onChange={(values) =>
-                      setRoomState((p) => ({ ...p, excludeGenres: values }))
-                    }
-                    placeholder="Type or pick a genre…"
-                    colorClass="bg-orange-500/15 text-orange-800 dark:text-orange-300"
-                    hint='Applies to suggestions only. Suggested titles with any matching genre are removed. Typing "horr" still matches Horror when you add a custom tag.'
-                  />
-                </div>
+                  {filterFieldEditors.plexLibraryOnly ? (
+                    <p className="text-[10px] text-muted-foreground pl-7">
+                      Last toggled by{" "}
+                      {participantLabel(filterFieldEditors.plexLibraryOnly)}
+                    </p>
+                  ) : null}
+                </section>
               </div>
             </CardContent>
           </Card>
 
-          <div className="flex justify-center">
+          <div className="flex flex-col items-center gap-2">
             <Button
               size="lg"
               onClick={findMovies}
               disabled={!canScore || scoringInProgress}
-              className="px-12 gap-2"
+              title={
+                criteriaDirty
+                  ? "Search criteria changed — run again to refresh the ranked list."
+                  : undefined
+              }
+              className={cn(
+                "px-12 gap-2",
+                criteriaDirty &&
+                  !scoringInProgress &&
+                  "ring-2 ring-amber-500/90 ring-offset-2 ring-offset-background shadow-md",
+              )}
             >
               {scoringInProgress ? (
                 <>
@@ -2050,9 +2308,20 @@ export function PickSession({
                 <>
                   <Sparkles className="h-5 w-5" />
                   {hasCompletedListRun ? "Refine list" : "Find movies"}
+                  {criteriaDirty ? (
+                    <span className="ml-1 text-xs font-normal text-amber-100">
+                      · update needed
+                    </span>
+                  ) : null}
                 </>
               )}
             </Button>
+            {criteriaDirty && !scoringInProgress ? (
+              <p className="text-center text-xs text-amber-600 dark:text-amber-500 max-w-sm">
+                Your picks or filters changed since this list was built. Run
+                search again to refresh results for everyone in the room.
+              </p>
+            ) : null}
           </div>
 
           {!canScore && (
