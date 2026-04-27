@@ -17,8 +17,13 @@ import { MediaType, WatchStatus } from "@/generated/prisma";
 import type { HardFilterInput, ReferenceItem, ScoredRow } from "./score-types";
 import { passesGenreFilters } from "./genre-filters";
 
+// Repeller penalty weight: score = attractorSim − LAMBDA × repellerSim.
+// 0.7 lets a strong attractor match outrank a mild repeller hit; raising above 1.0
+// would make any repeller overlap dominate the ranking.
 const REPELLER_LAMBDA = 0.7;
 const MAX_TMDB_CANDIDATES = 200;
+// Embedding generation is the API bottleneck — cap per-run to stay under rate limits
+// and keep p50 latency acceptable. Doubled when a wide candidate pool is needed.
 const MAX_TO_EMBED = 48;
 const RESULTS = 30;
 

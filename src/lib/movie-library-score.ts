@@ -4,6 +4,7 @@ import { MediaType, WatchStatus } from "@/generated/prisma";
 import type { ScoredRow, HardFilterInput, ReferenceItem } from "./score-types";
 import { passesGenreFilters } from "./genre-filters";
 
+// Repeller penalty weight (same tuning as movie-discovery-score): score = attractor − LAMBDA × repeller.
 const REPELLER_LAMBDA = 0.7;
 
 export async function scoreFromEmbeddedLibrary(
