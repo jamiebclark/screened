@@ -14,7 +14,7 @@ import {
 } from "@/lib/history-calendar";
 import {
   fetchMyWatchDaysInMonth,
-  fetchMyWatchEntriesInRange,
+  fetchMyWatchHistoryInRange,
 } from "@/lib/watch-history-queries";
 
 function formatTime(date: Date): string {
@@ -50,7 +50,7 @@ export default async function HistoryMonthPage({ params }: Params) {
   const session = await auth();
   const { start, end } = localMonthRange(year, month);
   const [entries, daysWithEntries] = await Promise.all([
-    fetchMyWatchEntriesInRange(session!.user.id, start, end),
+    fetchMyWatchHistoryInRange(session!.user.id, start, end),
     fetchMyWatchDaysInMonth(session!.user.id, start, end),
   ]);
 

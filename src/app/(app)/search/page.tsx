@@ -1,6 +1,11 @@
+import { auth } from "@/lib/auth";
 import { searchMulti } from "@/lib/tmdb";
 import { MediaCard } from "@/components/media-card";
 import { parseDateOnlyIso } from "@/lib/history-calendar";
+import {
+  getUserTmdbMediaStateByRef,
+  tmdbRefKey,
+} from "@/lib/tmdb-user-media-state";
 import { Search, Film } from "lucide-react";
 
 interface SearchPageProps {
@@ -15,6 +20,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     ? `watchedDate=${encodeURIComponent(watchedDate)}`
     : null;
 
+  const session = await auth();
+
   let results: Awaited<ReturnType<typeof searchMulti>>["results"] = [];
 
   if (query) {
@@ -25,6 +32,17 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       return r.media_type === "movie" || r.media_type === "tv";
     });
   }
+
+  const tmdbUserStateByKey =
+    results.length > 0 && session?.user?.id
+      ? await getUserTmdbMediaStateByRef(
+          session.user.id,
+          results.map((r) => ({
+            tmdbId: r.id,
+            type: r.media_type as "movie" | "tv",
+          })),
+        )
+      : new Map();
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
@@ -103,23 +121,30 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             {query}&quot;
           </p>
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-4">
-            {results.map((item) => (
-              <MediaCard
-                key={`${item.media_type}-${item.id}`}
-                tmdbId={item.id}
-                type={item.media_type}
-                title={item.title ?? item.name ?? ""}
-                poster={item.poster_path}
-                year={
-                  item.release_date
-                    ? new Date(item.release_date).getFullYear()
-                    : item.first_air_date
-                      ? new Date(item.first_air_date).getFullYear()
-                      : null
-                }
-                hrefSearch={hrefSearch}
-              />
-            ))}
+            {results.map((item) => {
+              const st = tmdbUserStateByKey.get(
+                tmdbRefKey(item.media_type, item.id),
+              );
+              return (
+                <MediaCard
+                  key={`${item.media_type}-${item.id}`}
+                  tmdbId={item.id}
+                  type={item.media_type}
+                  title={item.title ?? item.name ?? ""}
+                  poster={item.poster_path}
+                  year={
+                    item.release_date
+                      ? new Date(item.release_date).getFullYear()
+                      : item.first_air_date
+                        ? new Date(item.first_air_date).getFullYear()
+                        : null
+                  }
+                  status={st?.status ?? null}
+                  onList={st?.onList ?? false}
+                  hrefSearch={hrefSearch}
+                />
+              );
+            })}
           </div>
         </div>
       )}

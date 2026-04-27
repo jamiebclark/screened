@@ -39,18 +39,21 @@ export interface PlexWatchedItem {
   title: string;
   type: "movie" | "episode" | "show";
   viewCount: number;
-  lastViewedAt: number | null;
+  lastViewedAt: number | string | null;
   guid: string;
   Guid?: { id: string }[];
 }
 
 export interface PlexWatchedEpisode {
   ratingKey: string;
-  parentIndex: number;
-  index: number;
+  /** Season number; may be string in some PMS JSON responses. */
+  parentIndex?: number | string | null;
+  /** Episode index within season; may be string in some PMS JSON responses. */
+  index?: number | string | null;
   grandparentRatingKey: string;
   grandparentTitle: string;
-  lastViewedAt: number | null;
+  /** Unix seconds when Plex last reported a view (number or numeric string in some JSON). */
+  lastViewedAt: number | string | null;
   viewCount: number;
 }
 
@@ -323,12 +326,26 @@ export async function getPlexWatchedEpisodes(
   serverUrl: string,
   token: string,
 ): Promise<PlexWatchedEpisode[]> {
-  const url = `${serverUrl}/library/all?type=4&viewCount>=1&X-Plex-Token=${token}`;
-  const res = await plexServerFetch(url);
-  const data = (await res.json()) as {
-    MediaContainer?: { Metadata?: PlexWatchedEpisode[] };
-  };
-  return data?.MediaContainer?.Metadata ?? [];
+  const all: PlexWatchedEpisode[] = [];
+  let start = 0;
+  const tok = encodeURIComponent(token);
+  for (;;) {
+    const url = `${serverUrl}/library/all?type=4&viewCount>=1&X-Plex-Token=${tok}&X-Plex-Container-Start=${start}&X-Plex-Container-Size=${PLEX_PAGE_SIZE}`;
+    const res = await plexServerFetch(url);
+    const data = (await res.json()) as {
+      MediaContainer?: {
+        Metadata?: PlexWatchedEpisode[];
+        totalSize?: number;
+        size?: number;
+      };
+    };
+    const items = data?.MediaContainer?.Metadata ?? [];
+    const total = data?.MediaContainer?.totalSize ?? start + items.length;
+    all.push(...items);
+    start += items.length;
+    if (start >= total || items.length === 0) break;
+  }
+  return all;
 }
 
 export async function getPlexItemMetadata(

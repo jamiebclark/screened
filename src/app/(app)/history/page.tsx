@@ -1,8 +1,8 @@
 import { auth } from "@/lib/auth";
 import Link from "next/link";
-import { prisma } from "@/lib/prisma";
 import { Eye } from "lucide-react";
 import { HistoryWatchEntryRow } from "@/components/history-watch-entry-row";
+import { fetchMyWatchHistoryRecent } from "@/lib/watch-history-queries";
 import {
   historyDayPath,
   historyMonthPath,
@@ -40,12 +40,7 @@ function formatTime(date: Date): string {
 export default async function HistoryPage() {
   const session = await auth();
 
-  const watched = await prisma.watchEntry.findMany({
-    where: { userId: session!.user.id },
-    include: { mediaItem: true },
-    orderBy: { watchedAt: "desc" },
-    take: 200,
-  });
+  const watched = await fetchMyWatchHistoryRecent(session!.user.id, 200);
 
   const groups: { label: string; date: Date; items: typeof watched }[] = [];
 
@@ -72,7 +67,7 @@ export default async function HistoryPage() {
           <div>
             <h1 className="text-2xl font-bold">Watch History</h1>
             <p className="text-sm text-muted-foreground">
-              {watched.length} watch entr{watched.length !== 1 ? "ies" : "y"}
+              {watched.length} viewing{watched.length !== 1 ? "s" : ""}
             </p>
           </div>
         </div>
@@ -101,7 +96,8 @@ export default async function HistoryPage() {
           <Eye className="h-12 w-12 mx-auto mb-3 opacity-30" />
           <p className="font-medium">No watch history yet</p>
           <p className="text-sm mt-1">
-            Mark something as watched or sync your Plex history to get started.
+            Log a viewing, watch TV episodes (including via Plex sync), or sync
+            Plex movies to get started.
           </p>
         </div>
       ) : (

@@ -18,8 +18,8 @@ import {
   toDateOnlyIso,
 } from "@/lib/history-calendar";
 import {
-  fetchFriendsWatchEntriesInRange,
-  fetchMyWatchEntriesInRange,
+  fetchFriendsWatchHistoryInRange,
+  fetchMyWatchHistoryInRange,
 } from "@/lib/watch-history-queries";
 
 function formatTime(date: Date): string {
@@ -66,8 +66,8 @@ export default async function HistoryDayPage({ params }: Params) {
   const session = await auth();
   const { start, end } = localDayRange(year, month, day);
   const [myEntries, friendEntries] = await Promise.all([
-    fetchMyWatchEntriesInRange(session!.user.id, start, end),
-    fetchFriendsWatchEntriesInRange(session!.user.id, start, end),
+    fetchMyWatchHistoryInRange(session!.user.id, start, end),
+    fetchFriendsWatchHistoryInRange(session!.user.id, start, end),
   ]);
 
   const dateIso = toDateOnlyIso(year, month, day);

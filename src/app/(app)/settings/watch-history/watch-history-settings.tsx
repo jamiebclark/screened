@@ -49,7 +49,7 @@ function buildRows(counts: WatchImportCounts): Row[] {
       library: "TV shows",
       count: counts.plexTv,
       resetHint:
-        "Removes TV show-level history entries attributed to Plex (if any). Episode checkmarks are managed separately below.",
+        "Show-level Plex diary lines (WatchEntry) are not created for TV; episode watches appear on Watch History from episode sync. This count is almost always 0. Clear episode rows via “TV episode progress” below.",
     },
     {
       scope: "letterboxd",
@@ -219,6 +219,16 @@ export function WatchHistorySettings({
               {counts.plexEpisodes}
             </span>{" "}
             watched episode records
+            {counts.plexShowsWithEpisodeProgress > 0 ? (
+              <>
+                {" "}
+                across{" "}
+                <span className="font-medium text-foreground tabular-nums">
+                  {counts.plexShowsWithEpisodeProgress}
+                </span>{" "}
+                TV titles
+              </>
+            ) : null}
           </p>
           <Button
             type="button"

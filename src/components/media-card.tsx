@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Star, Eye, Clock, Bookmark, TvMinimal } from "lucide-react";
+import { Star, Eye, Clock, Bookmark, TvMinimal, List } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn, tmdbImageUrl } from "@/lib/utils";
 
@@ -14,6 +14,8 @@ interface MediaCardProps {
   year: number | null;
   rating?: number | null;
   status?: "WATCHLIST" | "WATCHING" | "WATCHED" | "DROPPED" | null;
+  /** Shown when the title is on a list you belong to; can appear alongside `status`. */
+  onList?: boolean;
   className?: string;
   compact?: boolean;
   /** Appended as query string, e.g. `watchedDate=2026-04-26`. */
@@ -39,6 +41,7 @@ export function MediaCard({
   year,
   rating,
   status,
+  onList = false,
   className,
   compact = false,
   hrefSearch = null,
@@ -47,6 +50,7 @@ export function MediaCard({
   const href = hrefSearch ? `${base}?${hrefSearch}` : base;
   const imageUrl = tmdbImageUrl(poster, "w342");
   const statusInfo = status ? statusIcons[status] : null;
+  const showListBadge = onList;
 
   return (
     <Link href={href} className={cn("group relative block", className)}>
@@ -74,13 +78,24 @@ export function MediaCard({
 
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
 
-        {statusInfo && (
-          <div className="absolute top-2 right-2">
-            <div
-              className={cn("rounded-full bg-black/70 p-1", statusInfo.color)}
-            >
-              <statusInfo.icon className="h-3.5 w-3.5" />
-            </div>
+        {(statusInfo || showListBadge) && (
+          <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
+            {statusInfo && (
+              <div
+                className={cn("rounded-full bg-black/70 p-1", statusInfo.color)}
+                title={statusInfo.label}
+              >
+                <statusInfo.icon className="h-3.5 w-3.5" />
+              </div>
+            )}
+            {showListBadge && (
+              <div
+                className="rounded-full bg-black/70 p-1 text-amber-400"
+                title="On a list"
+              >
+                <List className="h-3.5 w-3.5" />
+              </div>
+            )}
           </div>
         )}
 

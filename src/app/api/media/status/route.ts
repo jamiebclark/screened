@@ -216,7 +216,11 @@ export async function POST(req: NextRequest) {
     let watchedAtForLog: Date = new Date();
     if (mediaItem.type === MediaType.TV) {
       const lastEpisode = await prisma.episodeStatus.aggregate({
-        where: { userId: session.user.id, mediaItemId: mediaItem.id },
+        where: {
+          userId: session.user.id,
+          mediaItemId: mediaItem.id,
+          isWatched: true,
+        },
         _max: { watchedAt: true },
       });
       if (lastEpisode._max.watchedAt) {

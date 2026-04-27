@@ -6,12 +6,14 @@ import {
   getPlexItemMetadata,
   extractTmdbIdFromGuid,
 } from "@/lib/plex";
+import { watchedAtFromPlexLastViewed } from "@/lib/plex-metadata-utils";
 import { getMovie, getTvShow } from "@/lib/tmdb";
 import {
   findMergeCandidateWatchEntry,
   mergePlexIntoWatchEntryIfUnknown,
 } from "@/lib/watch-entry-merge";
 import { MediaType, WatchEntrySource, WatchStatus } from "@/generated/prisma";
+import { normalizePlexEpisodeSeasonAndIndex } from "@/lib/plex-episode-utils";
 
 export interface PlexSyncResult {
   synced: number;
@@ -87,9 +89,7 @@ export async function syncPlexUser(userId: string): Promise<PlexSyncResult> {
       }
     }
 
-    const watchedAt = item.lastViewedAt
-      ? new Date(item.lastViewedAt * 1000)
-      : new Date();
+    const watchedAt = watchedAtFromPlexLastViewed(item.lastViewedAt);
 
     const upserted = await prisma.userMediaStatus.upsert({
       where: { userId_mediaItemId: { userId, mediaItemId: mediaItem.id } },
@@ -192,21 +192,45 @@ export async function syncPlexUser(userId: string): Promise<PlexSyncResult> {
       }
 
       const validEpisodes = showEpisodes.filter(
-        (ep) => ep.parentIndex != null && ep.index != null,
+        (ep) =>
+          normalizePlexEpisodeSeasonAndIndex(
+            ep as unknown as Record<string, unknown>,
+          ) !== null,
       );
 
-      await prisma.episodeStatus.createMany({
-        data: validEpisodes.map((ep) => ({
-          userId,
-          mediaItemId: mediaItem!.id,
-          seasonNumber: ep.parentIndex,
-          episodeNumber: ep.index,
-          watchedAt: ep.lastViewedAt
-            ? new Date(ep.lastViewedAt * 1000)
-            : new Date(),
-        })),
-        skipDuplicates: true,
-      });
+      if (validEpisodes.length === 0) {
+        episodesSkipped += showEpisodes.length;
+        continue;
+      }
+
+      for (const ep of validEpisodes) {
+        const coords = normalizePlexEpisodeSeasonAndIndex(
+          ep as unknown as Record<string, unknown>,
+        )!;
+        const watchedAt = watchedAtFromPlexLastViewed(ep.lastViewedAt);
+        await prisma.episodeStatus.upsert({
+          where: {
+            userId_mediaItemId_seasonNumber_episodeNumber: {
+              userId,
+              mediaItemId: mediaItem!.id,
+              seasonNumber: coords.seasonNumber,
+              episodeNumber: coords.episodeNumber,
+            },
+          },
+          create: {
+            userId,
+            mediaItemId: mediaItem!.id,
+            seasonNumber: coords.seasonNumber,
+            episodeNumber: coords.episodeNumber,
+            watchedAt,
+            isWatched: true,
+          },
+          update: {
+            watchedAt,
+            isWatched: true,
+          },
+        });
+      }
 
       const existingStatus = await prisma.userMediaStatus.findUnique({
         where: { userId_mediaItemId: { userId, mediaItemId: mediaItem.id } },

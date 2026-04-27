@@ -1,8 +1,19 @@
 import { prisma } from "@/lib/prisma";
+import { imdbTitleUrl } from "@/lib/movie-catalog-links";
+import { metacriticTitlePathUrl } from "@/lib/metacritic-url";
 
 export type OmdbRatingEntry = {
   source: string;
   value: string;
+};
+
+export type OmdbRatingsBlock = {
+  ratings: OmdbRatingEntry[];
+  /**
+   * From OMDb `tomatoURL` when `tomatoes=true` is used. Omitted or wrong in some API responses;
+   * {@link buildOmdbSourceHref} falls back to a Rotten Tomatoes search for the display title.
+   */
+  rottenTomatoesUrl: string | null;
 };
 
 const OMDB_BASE = "https://www.omdbapi.com/";
@@ -34,10 +45,23 @@ function parseCachedRatings(json: unknown): OmdbRatingEntry[] {
     .filter((x): x is OmdbRatingEntry => x !== null);
 }
 
+function normalizeHttpUrl(raw: string | undefined | null): string | null {
+  if (!raw || typeof raw !== "string") return null;
+  const t = raw.trim();
+  if (!t.startsWith("http://") && !t.startsWith("https://")) return null;
+  try {
+    return new URL(t).toString();
+  } catch {
+    return null;
+  }
+}
+
 type OmdbApiResponse = {
   Response?: string;
   Error?: string;
   Ratings?: { Source: string; Value: string }[];
+  /** Present when `tomatoes=true` is accepted by the API */
+  tomatoURL?: string;
 };
 
 async function fetchOmdbByImdbId(
@@ -48,6 +72,7 @@ async function fetchOmdbByImdbId(
   url.searchParams.set("apikey", apiKey);
   url.searchParams.set("i", imdbId);
   url.searchParams.set("r", "json");
+  url.searchParams.set("tomatoes", "true");
 
   const res = await fetch(url.toString(), { next: { revalidate: 0 } });
   if (!res.ok) return null;
@@ -60,7 +85,7 @@ async function fetchOmdbByImdbId(
  */
 export async function getCachedOmdbRatings(
   imdbId: string | null | undefined,
-): Promise<OmdbRatingEntry[] | null> {
+): Promise<OmdbRatingsBlock | null> {
   if (!imdbId || !imdbId.startsWith("tt")) return null;
 
   const apiKey = getApiKey();
@@ -76,7 +101,10 @@ export async function getCachedOmdbRatings(
       : null;
 
   if (fresh && fresh.length > 0) {
-    return fresh;
+    return {
+      ratings: fresh,
+      rottenTomatoesUrl: row?.rottenTomatoesUrl ?? null,
+    };
   }
 
   let remote: OmdbApiResponse | null = null;
@@ -85,6 +113,8 @@ export async function getCachedOmdbRatings(
   } catch {
     remote = null;
   }
+
+  const fromTomato = normalizeHttpUrl(remote?.tomatoURL) ?? null;
 
   if (
     remote?.Response === "True" &&
@@ -101,24 +131,69 @@ export async function getCachedOmdbRatings(
           create: {
             imdbId,
             ratings: remote.Ratings as object[],
+            rottenTomatoesUrl: fromTomato,
             fetchedAt: new Date(),
           },
           update: {
             ratings: remote.Ratings as object[],
+            rottenTomatoesUrl: fromTomato,
             fetchedAt: new Date(),
           },
         })
         .catch(() => {
           // ignore persist errors; still return fresh remote data
         });
-      return list;
+      return { ratings: list, rottenTomatoesUrl: fromTomato };
     }
   }
 
   if (row) {
     const stale = parseCachedRatings(row.ratings);
-    if (stale.length > 0) return stale;
+    if (stale.length > 0) {
+      return {
+        ratings: stale,
+        rottenTomatoesUrl: row.rottenTomatoesUrl ?? null,
+      };
+    }
   }
 
+  return null;
+}
+
+type HrefContext = {
+  imdbId: string | null;
+  linkTitle: string;
+  mediaType: "movie" | "tv";
+  rottenTomatoesUrl: string | null;
+};
+
+/**
+ * OMDb does not provide URLs in the `Ratings` array. We use `tomatoURL` when available,
+ * {@link imdbTitleUrl} for the IMDb line, a slugified Metacritic path, and RT search as fallback.
+ */
+export function buildOmdbSourceHref(
+  source: string,
+  ctx: HrefContext,
+): string | null {
+  if (source === "Internet Movie Database") {
+    return imdbTitleUrl(ctx.imdbId);
+  }
+  if (source === "Rotten Tomatoes") {
+    if (ctx.rottenTomatoesUrl) {
+      return ctx.rottenTomatoesUrl;
+    }
+    if (ctx.linkTitle.trim()) {
+      return `https://www.rottentomatoes.com/search?search=${encodeURIComponent(
+        ctx.linkTitle.trim(),
+      )}`;
+    }
+    return null;
+  }
+  if (source === "Metacritic") {
+    if (ctx.linkTitle.trim()) {
+      return metacriticTitlePathUrl(ctx.linkTitle.trim(), ctx.mediaType);
+    }
+    return null;
+  }
   return null;
 }

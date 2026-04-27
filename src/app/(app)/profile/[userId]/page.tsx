@@ -116,7 +116,7 @@ export default async function ProfilePage({ params }: Params) {
     canSeeHistory
       ? prisma.episodeStatus.groupBy({
           by: ["mediaItemId"],
-          where: { userId },
+          where: { userId, isWatched: true },
           _max: { watchedAt: true },
         })
       : Promise.resolve(

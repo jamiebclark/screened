@@ -81,14 +81,15 @@ test.describe("Episode Tracker", () => {
       timeout: 5000,
     });
 
-    // Click to unwatch — wait for DELETE response
+    // Unmark requires confirmation (row click no longer toggles off)
+    await secondEpRow.getByRole("button", { name: "Unmark" }).click();
     await Promise.all([
       page.waitForResponse(
         (r) =>
           r.url().includes(`/api/media/${TV_TMDB_ID}/episodes`) &&
           r.request().method() === "DELETE",
       ),
-      secondEpRow.click(),
+      page.getByRole("dialog").getByRole("button", { name: "Unmark" }).click(),
     ]);
 
     // Ep 2 should now be unwatched (green circle gone)

@@ -15,6 +15,8 @@ export type HistoryRowEntry = {
     poster: string | null;
     year: number | null;
   };
+  seasonNumber?: number;
+  episodeNumber?: number;
 };
 
 export function HistoryWatchEntryRow({
@@ -30,6 +32,12 @@ export function HistoryWatchEntryRow({
       : `/tv/${entry.mediaItem.tmdbId}`;
   const poster = tmdbImageUrl(entry.mediaItem.poster, "w92");
   const isMovie = entry.mediaItem.type === MediaType.MOVIE;
+  const epLabel =
+    !isMovie && entry.seasonNumber != null && entry.episodeNumber != null ? (
+      <span className="text-xs text-muted-foreground tabular-nums">
+        S{entry.seasonNumber}E{entry.episodeNumber}
+      </span>
+    ) : null;
 
   return (
     <Link
@@ -60,10 +68,11 @@ export function HistoryWatchEntryRow({
         <p className="font-medium truncate group-hover:text-primary transition-colors">
           {entry.mediaItem.title}
         </p>
-        <div className="flex items-center gap-2 mt-0.5">
+        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
           <Badge variant="outline" className="text-xs px-1.5 py-0">
-            {isMovie ? "Movie" : "TV"}
+            {isMovie ? "Movie" : epLabel ? "Episode" : "TV"}
           </Badge>
+          {epLabel}
           {entry.mediaItem.year != null && (
             <span className="text-xs text-muted-foreground">
               {entry.mediaItem.year}

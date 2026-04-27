@@ -73,6 +73,7 @@ export async function getWatchImportCounts(
     unknownMovie,
     unknownTv,
     plexEpisodes,
+    episodeTitleGroups,
   ] = await Promise.all([
     prisma.watchEntry.count({ where: watchEntryWhere(userId, "plex_movie") }),
     prisma.watchEntry.count({ where: watchEntryWhere(userId, "plex_tv") }),
@@ -83,7 +84,11 @@ export async function getWatchImportCounts(
       where: watchEntryWhere(userId, "unknown_movie"),
     }),
     prisma.watchEntry.count({ where: watchEntryWhere(userId, "unknown_tv") }),
-    prisma.episodeStatus.count({ where: { userId } }),
+    prisma.episodeStatus.count({ where: { userId, isWatched: true } }),
+    prisma.episodeStatus.groupBy({
+      by: ["mediaItemId"],
+      where: { userId, isWatched: true },
+    }),
   ]);
 
   return {
@@ -95,6 +100,7 @@ export async function getWatchImportCounts(
     unknownMovie,
     unknownTv,
     plexEpisodes,
+    plexShowsWithEpisodeProgress: episodeTitleGroups.length,
   };
 }
 

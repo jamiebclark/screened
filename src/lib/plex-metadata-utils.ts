@@ -1,3 +1,21 @@
+/**
+ * Converts Plex `lastViewedAt` (Unix seconds, often a number; sometimes a numeric string in JSON)
+ * into a `Date` for stored watch times. Missing or invalid values use `fallbackNow` so first-time
+ * imports do not fabricate a historical date.
+ */
+export function watchedAtFromPlexLastViewed(
+  lastViewedAt: unknown,
+  fallbackNow: Date = new Date(),
+): Date {
+  if (lastViewedAt == null) return fallbackNow;
+  const sec =
+    typeof lastViewedAt === "string"
+      ? Number(lastViewedAt)
+      : Number(lastViewedAt);
+  if (!Number.isFinite(sec) || sec <= 0) return fallbackNow;
+  return new Date(sec * 1000);
+}
+
 export function extractTmdbIdFromGuid(
   guids: { id: string }[] | undefined,
 ): number | null {

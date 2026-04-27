@@ -1,10 +1,14 @@
-import type { OmdbRatingEntry } from "@/lib/omdb";
+import type { OmdbRatingsBlock } from "@/lib/omdb";
+import { buildOmdbSourceHref } from "@/lib/omdb";
 import type { SimpleIcon } from "simple-icons";
 import { siImdb, siMetacritic, siRottentomatoes } from "simple-icons";
 import { SimpleBrandIcon } from "@/components/simple-brand-icon";
 
 type Props = {
-  ratings: OmdbRatingEntry[] | null;
+  omdb: OmdbRatingsBlock | null;
+  imdbId: string | null;
+  linkTitle: string;
+  mediaType: "movie" | "tv";
 };
 
 function omdbSourceIcon(source: string): SimpleIcon | null {
@@ -32,12 +36,27 @@ function formatOmdbValue(source: string, value: string): string {
   return v;
 }
 
+const externalLinkClass =
+  "inline-flex items-center gap-1 rounded-sm text-muted-foreground transition-colors hover:text-foreground hover:underline underline-offset-2";
+
 /**
- * OMDb-sourced scores (RT, Metacritic, IMDb) as flex siblings — use inside the same row as year / TMDB.
+ * OMDb-sourced scores as flex siblings — use inside the same row as year / TMDB.
  * Renders nothing when empty. Wrapper uses `display: contents` so items align with the parent flex.
  */
-export function AggregatedRatingsLine({ ratings }: Props) {
-  if (!ratings?.length) return null;
+export function AggregatedRatingsLine({
+  omdb,
+  imdbId,
+  linkTitle,
+  mediaType,
+}: Props) {
+  if (!omdb?.ratings?.length) return null;
+
+  const hrefCtx = {
+    imdbId,
+    linkTitle,
+    mediaType,
+    rottenTomatoesUrl: omdb.rottenTomatoesUrl,
+  };
 
   return (
     <span
@@ -45,22 +64,44 @@ export function AggregatedRatingsLine({ ratings }: Props) {
       data-testid="omdb-aggregated-ratings"
       role="presentation"
     >
-      {ratings.map((r, i) => {
+      {omdb.ratings.map((r, i) => {
         const display = formatOmdbValue(r.source, r.value);
         const icon = omdbSourceIcon(r.source);
         const aria = `${r.source} ${display}`;
+        const href = buildOmdbSourceHref(r.source, hrefCtx);
 
         if (icon) {
+          const inner = (
+            <>
+              <SimpleBrandIcon icon={icon} className="text-muted-foreground" />
+              <span aria-hidden className="tabular-nums">
+                {display}
+              </span>
+            </>
+          );
+
+          if (href) {
+            return (
+              <a
+                key={`${r.source}-${i}`}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={externalLinkClass}
+                aria-label={`${aria} (opens in new tab)`}
+              >
+                {inner}
+              </a>
+            );
+          }
+
           return (
             <span
               key={`${r.source}-${i}`}
               className="flex items-center gap-1"
               aria-label={aria}
             >
-              <SimpleBrandIcon icon={icon} className="text-muted-foreground" />
-              <span aria-hidden className="tabular-nums">
-                {display}
-              </span>
+              {inner}
             </span>
           );
         }

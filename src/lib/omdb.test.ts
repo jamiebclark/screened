@@ -37,3 +37,30 @@ describe("getCachedOmdbRatings", () => {
     await expect(getCachedOmdbRatings("nm0000123")).resolves.toBeNull();
   });
 });
+
+describe("buildOmdbSourceHref", () => {
+  it("builds IMDb, RT search, and Metacritic paths", async () => {
+    const { buildOmdbSourceHref } = await import("./omdb");
+    const base = {
+      imdbId: "tt1375666",
+      linkTitle: "Inception",
+      mediaType: "movie" as const,
+      rottenTomatoesUrl: null,
+    };
+    expect(buildOmdbSourceHref("Internet Movie Database", base)).toBe(
+      "https://www.imdb.com/title/tt1375666/",
+    );
+    expect(buildOmdbSourceHref("Rotten Tomatoes", base)).toBe(
+      "https://www.rottentomatoes.com/search?search=Inception",
+    );
+    expect(buildOmdbSourceHref("Metacritic", base)).toBe(
+      "https://www.metacritic.com/movie/inception/",
+    );
+    expect(
+      buildOmdbSourceHref("Rotten Tomatoes", {
+        ...base,
+        rottenTomatoesUrl: "https://www.rottentomatoes.com/m/inception",
+      }),
+    ).toBe("https://www.rottentomatoes.com/m/inception");
+  });
+});

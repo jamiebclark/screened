@@ -9,7 +9,7 @@ import {
   localYearRange,
   parseYearSegment,
 } from "@/lib/history-calendar";
-import { fetchMyWatchEntriesInRange } from "@/lib/watch-history-queries";
+import { fetchMyWatchHistoryInRange } from "@/lib/watch-history-queries";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -32,7 +32,7 @@ export default async function HistoryYearPage({ params }: Params) {
 
   const session = await auth();
   const { start, end } = localYearRange(year);
-  const entries = await fetchMyWatchEntriesInRange(
+  const entries = await fetchMyWatchHistoryInRange(
     session!.user.id,
     start,
     end,

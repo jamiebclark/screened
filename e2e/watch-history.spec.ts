@@ -73,14 +73,20 @@ test.describe("Watch history", () => {
     ).not.toBeVisible();
   });
 
-  test("watch history heading on TV when watched", async ({ page }) => {
+  test("TV show logs viewings per episode under Episodes", async ({
+    page,
+  }) => {
     await page.request.post("/api/media/status", {
       data: { tmdbId: TV_TMDB, type: "tv", status: "WATCHED" },
       headers: { "Content-Type": "application/json" },
     });
     await page.goto(`/tv/${TV_TMDB}`);
+    await expect(page.getByRole("tab", { name: "Episodes" })).toBeVisible({
+      timeout: 10000,
+    });
+    await expect(page.getByText("Pilot")).toBeVisible({ timeout: 5000 });
     await expect(
-      page.getByRole("heading", { name: /watch history/i }),
-    ).toBeVisible({ timeout: 10000 });
+      page.getByRole("button", { name: /^Log$/ }).first(),
+    ).toBeVisible();
   });
 });

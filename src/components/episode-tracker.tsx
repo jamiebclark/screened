@@ -1,10 +1,20 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Check, ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { EpisodeLogDialog } from "@/components/episode-log-dialog";
 
 interface Episode {
   episode_number: number;
@@ -20,43 +30,113 @@ interface Season {
   episodes: Episode[];
 }
 
+export type EpisodeStatusRowInput = {
+  seasonNumber: number;
+  episodeNumber: number;
+  watchedAt: string;
+  isWatched: boolean;
+  review: string | null;
+};
+
+type EpisodeRowState = {
+  isWatched: boolean;
+  watchedAt: string | null;
+  review: string | null;
+};
+
+function buildEpisodeStatusMap(
+  rows: EpisodeStatusRowInput[],
+): Map<string, EpisodeRowState> {
+  const m = new Map<string, EpisodeRowState>();
+  for (const r of rows) {
+    m.set(`${r.seasonNumber}x${r.episodeNumber}`, {
+      isWatched: r.isWatched,
+      watchedAt: r.watchedAt,
+      review: r.review,
+    });
+  }
+  return m;
+}
+
+function formatWatchedLine(iso: string): string {
+  try {
+    return new Intl.DateTimeFormat(undefined, {
+      dateStyle: "medium",
+      timeStyle: "short",
+    }).format(new Date(iso));
+  } catch {
+    return "";
+  }
+}
+
 interface EpisodeTrackerProps {
   tmdbId: number;
   seasons: Season[];
-  watchedEpisodes: { seasonNumber: number; episodeNumber: number }[];
+  episodeStatuses: EpisodeStatusRowInput[];
 }
 
 export function EpisodeTracker({
   tmdbId,
   seasons,
-  watchedEpisodes,
+  episodeStatuses,
 }: EpisodeTrackerProps) {
-  const [watched, setWatched] = useState(
-    new Set(watchedEpisodes.map((e) => `${e.seasonNumber}x${e.episodeNumber}`)),
+  const router = useRouter();
+  const statusMap = useMemo(
+    () => buildEpisodeStatusMap(episodeStatuses),
+    [episodeStatuses],
   );
   const [expanded, setExpanded] = useState<number | null>(
     seasons[0]?.season_number ?? null,
   );
   const [isPending, startTransition] = useTransition();
+  const [pendingEpisodeUnwatch, setPendingEpisodeUnwatch] = useState<{
+    seasonNumber: number;
+    episodeNumber: number;
+  } | null>(null);
+  const [pendingSeasonUnwatch, setPendingSeasonUnwatch] =
+    useState<Season | null>(null);
 
-  const toggleEpisode = (seasonNumber: number, episodeNumber: number) => {
-    const key = `${seasonNumber}x${episodeNumber}`;
-    const isWatched = watched.has(key);
+  const getRow = (
+    seasonNumber: number,
+    episodeNumber: number,
+  ): EpisodeRowState => {
+    return (
+      statusMap.get(`${seasonNumber}x${episodeNumber}`) ?? {
+        isWatched: false,
+        watchedAt: null,
+        review: null,
+      }
+    );
+  };
 
+  const markEpisodeWatched = (seasonNumber: number, episodeNumber: number) => {
     startTransition(async () => {
       try {
         const res = await fetch(`/api/media/${tmdbId}/episodes`, {
-          method: isWatched ? "DELETE" : "POST",
+          method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ seasonNumber, episodeNumber }),
         });
         if (res.ok) {
-          setWatched((prev) => {
-            const next = new Set(prev);
-            if (isWatched) next.delete(key);
-            else next.add(key);
-            return next;
-          });
+          router.refresh();
+        }
+      } catch {
+        // ignore
+      }
+    });
+  };
+
+  const runEpisodeUnwatch = (seasonNumber: number, episodeNumber: number) => {
+    startTransition(async () => {
+      try {
+        const res = await fetch(`/api/media/${tmdbId}/episodes`, {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ seasonNumber, episodeNumber }),
+        });
+        if (res.ok) {
+          setPendingEpisodeUnwatch(null);
+          router.refresh();
         }
       } catch {
         // ignore
@@ -71,26 +151,36 @@ export function EpisodeTracker({
         episodeNumber: e.episode_number,
       }));
 
-      const allWatched = episodes.every((e) =>
-        watched.has(`${e.seasonNumber}x${e.episodeNumber}`),
-      );
-
       try {
         const res = await fetch(`/api/media/${tmdbId}/episodes`, {
-          method: allWatched ? "DELETE" : "POST",
+          method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ episodes }),
         });
         if (res.ok) {
-          setWatched((prev) => {
-            const next = new Set(prev);
-            episodes.forEach(({ seasonNumber, episodeNumber }) => {
-              const key = `${seasonNumber}x${episodeNumber}`;
-              if (allWatched) next.delete(key);
-              else next.add(key);
-            });
-            return next;
-          });
+          router.refresh();
+        }
+      } catch {
+        // ignore
+      }
+    });
+  };
+
+  const runSeasonUnwatch = (season: Season) => {
+    const episodes = season.episodes.map((e) => ({
+      seasonNumber: season.season_number,
+      episodeNumber: e.episode_number,
+    }));
+    startTransition(async () => {
+      try {
+        const res = await fetch(`/api/media/${tmdbId}/episodes`, {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ episodes }),
+        });
+        if (res.ok) {
+          setPendingSeasonUnwatch(null);
+          router.refresh();
         }
       } catch {
         // ignore
@@ -102,10 +192,90 @@ export function EpisodeTracker({
 
   return (
     <div className="space-y-2">
+      <p className="text-sm text-muted-foreground">
+        Tap an episode number to mark watched. Use{" "}
+        <span className="text-foreground">Unmark</span> to remove it from your
+        progress without losing the last watched time.
+      </p>
+
+      <Dialog
+        open={!!pendingEpisodeUnwatch}
+        onOpenChange={(o) => !o && setPendingEpisodeUnwatch(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Unmark this episode?</DialogTitle>
+            <DialogDescription>
+              It will no longer count toward your progress. If you mark it
+              watched again, the previous date is kept unless you change it in
+              Log.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              onClick={() => setPendingEpisodeUnwatch(null)}
+              disabled={isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={isPending}
+              onClick={() => {
+                if (!pendingEpisodeUnwatch) return;
+                runEpisodeUnwatch(
+                  pendingEpisodeUnwatch.seasonNumber,
+                  pendingEpisodeUnwatch.episodeNumber,
+                );
+              }}
+            >
+              Unmark
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={!!pendingSeasonUnwatch}
+        onOpenChange={(o) => !o && setPendingSeasonUnwatch(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              Unmark all episodes in {pendingSeasonUnwatch?.name}?
+            </DialogTitle>
+            <DialogDescription>
+              None of them will count as watched until you mark them again.
+              Previous watch times are preserved.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              onClick={() => setPendingSeasonUnwatch(null)}
+              disabled={isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={isPending}
+              onClick={() => {
+                if (!pendingSeasonUnwatch) return;
+                runSeasonUnwatch(pendingSeasonUnwatch);
+              }}
+            >
+              Unmark season
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {filteredSeasons.map((season) => {
         const isExpanded = expanded === season.season_number;
-        const seasonWatched = season.episodes.filter((e) =>
-          watched.has(`${season.season_number}x${e.episode_number}`),
+        const seasonWatched = season.episodes.filter(
+          (e) => getRow(season.season_number, e.episode_number).isWatched,
         ).length;
         const progress =
           season.episode_count > 0
@@ -150,7 +320,11 @@ export function EpisodeTracker({
                 )}
                 onClick={(e) => {
                   e.stopPropagation();
-                  markSeasonWatched(season);
+                  if (allWatched) {
+                    setPendingSeasonUnwatch(season);
+                  } else {
+                    markSeasonWatched(season);
+                  }
                 }}
                 disabled={isPending}
               >
@@ -162,34 +336,64 @@ export function EpisodeTracker({
             {isExpanded && (
               <div className="border-t border-border divide-y divide-border">
                 {season.episodes.map((episode) => {
-                  const key = `${season.season_number}x${episode.episode_number}`;
-                  const isWatched = watched.has(key);
+                  const row = getRow(
+                    season.season_number,
+                    episode.episode_number,
+                  );
+                  const isWatched = row.isWatched;
+                  const watchedLabel =
+                    row.watchedAt != null
+                      ? formatWatchedLine(row.watchedAt)
+                      : null;
                   return (
                     <div
                       key={episode.episode_number}
                       className={cn(
-                        "flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors",
+                        "flex items-start gap-3 px-4 py-2.5 transition-colors",
                         isWatched ? "bg-green-500/5" : "hover:bg-accent/30",
+                        !isWatched && "cursor-pointer",
                       )}
-                      onClick={() =>
-                        toggleEpisode(
-                          season.season_number,
-                          episode.episode_number,
-                        )
-                      }
+                      onClick={() => {
+                        if (!isWatched) {
+                          markEpisodeWatched(
+                            season.season_number,
+                            episode.episode_number,
+                          );
+                        }
+                      }}
                     >
-                      <div
-                        className={cn(
-                          "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-xs",
-                          isWatched
-                            ? "border-green-500 bg-green-500 text-white"
-                            : "border-border text-muted-foreground",
-                        )}
-                      >
+                      <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
                         {isWatched ? (
-                          <Check className="h-3 w-3" />
+                          <div
+                            className="flex h-6 items-center gap-1.5 rounded-full border border-green-600/35 bg-green-500/10 pl-2 pr-1.5 text-xs font-medium tabular-nums text-green-800 dark:text-green-300"
+                            aria-label={`Episode ${episode.episode_number}, watched`}
+                          >
+                            <span>{episode.episode_number}</span>
+                            <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-green-500 text-white">
+                              <Check
+                                className="h-2.5 w-2.5"
+                                strokeWidth={2.5}
+                                aria-hidden
+                              />
+                            </span>
+                          </div>
                         ) : (
-                          episode.episode_number
+                          <button
+                            type="button"
+                            className={cn(
+                              "flex h-6 min-w-[1.5rem] items-center justify-center rounded-full border border-border px-2 text-xs font-medium tabular-nums text-muted-foreground hover:bg-accent",
+                            )}
+                            aria-label={`Mark episode ${episode.episode_number} watched`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              markEpisodeWatched(
+                                season.season_number,
+                                episode.episode_number,
+                              );
+                            }}
+                          >
+                            {episode.episode_number}
+                          </button>
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -206,6 +410,45 @@ export function EpisodeTracker({
                             {new Date(episode.air_date).getFullYear()}
                             {episode.runtime ? ` · ${episode.runtime}m` : ""}
                           </p>
+                        )}
+                        {isWatched && watchedLabel && (
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            Watched {watchedLabel}
+                            {row.review ? " · has note" : ""}
+                          </p>
+                        )}
+                        {!isWatched && watchedLabel && (
+                          <p className="text-xs text-amber-600/90 dark:text-amber-400/90 mt-0.5">
+                            Last watched {watchedLabel} (unmarked)
+                          </p>
+                        )}
+                      </div>
+                      <div
+                        className="flex flex-col sm:flex-row items-stretch sm:items-center gap-1.5 shrink-0"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <EpisodeLogDialog
+                          tmdbId={tmdbId}
+                          seasonNumber={season.season_number}
+                          episodeNumber={episode.episode_number}
+                          episodeTitle={episode.name}
+                          initialWatchedAt={row.watchedAt}
+                          initialReview={row.review}
+                        />
+                        {isWatched && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 text-xs text-muted-foreground"
+                            onClick={() =>
+                              setPendingEpisodeUnwatch({
+                                seasonNumber: season.season_number,
+                                episodeNumber: episode.episode_number,
+                              })
+                            }
+                          >
+                            Unmark
+                          </Button>
                         )}
                       </div>
                     </div>

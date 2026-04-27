@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   WatchEntryDialog,
   type WatchEntry,
@@ -27,6 +28,8 @@ export type TitlePageWatchEntryClient = {
   rating: number | null;
   letterboxdActivityUrl: string | null;
   user: { id: string; name: string; avatarUrl: string | null } | null;
+  seasonNumber?: number;
+  episodeNumber?: number;
 };
 
 interface WatchHistoryProps {
@@ -69,16 +72,37 @@ function EntryCard({
   onDelete: (id: string) => void;
   prefillLogDate: string | null;
 }) {
+  const router = useRouter();
   const [expanded, setExpanded] = useState(true);
   const [isDeleting, startDelete] = useTransition();
   const isOwn = entry.isViewer;
+  const isEpisodeRow =
+    type === "tv" && entry.seasonNumber != null && entry.episodeNumber != null;
 
   const handleDelete = () => {
     startDelete(async () => {
+      if (isEpisodeRow) {
+        const res = await fetch(`/api/media/${tmdbId}/episodes`, {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            seasonNumber: entry.seasonNumber,
+            episodeNumber: entry.episodeNumber,
+          }),
+        });
+        if (res.ok) {
+          onDelete(entry.id);
+          router.refresh();
+        }
+        return;
+      }
       const res = await fetch(`/api/media/entries/${entry.id}`, {
         method: "DELETE",
       });
-      if (res.ok) onDelete(entry.id);
+      if (res.ok) {
+        onDelete(entry.id);
+        router.refresh();
+      }
     });
   };
 
@@ -93,6 +117,12 @@ function EntryCard({
     letterboxdActivityUrl: entry.letterboxdActivityUrl,
   };
 
+  const epBadge = isEpisodeRow ? (
+    <span className="text-xs font-medium text-muted-foreground tabular-nums shrink-0">
+      S{entry.seasonNumber}E{entry.episodeNumber}
+    </span>
+  ) : null;
+
   return (
     <div className="rounded-lg border border-border bg-card p-4 space-y-3">
       <div
@@ -103,13 +133,16 @@ function EntryCard({
       >
         {isOwn ? (
           <div className="flex w-full min-w-0 flex-wrap items-center justify-between gap-x-2 gap-y-1">
-            <Link
-              href={dayHref}
-              className="flex min-w-0 items-center gap-1.5 text-sm font-medium hover:text-primary underline-offset-4 hover:underline"
-            >
-              <CalendarCheck className="h-4 w-4 shrink-0 text-muted-foreground" />
-              {formatDate(entry.watchedAt)}
-            </Link>
+            <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+              <Link
+                href={dayHref}
+                className="flex min-w-0 items-center gap-1.5 text-sm font-medium hover:text-primary underline-offset-4 hover:underline"
+              >
+                <CalendarCheck className="h-4 w-4 shrink-0 text-muted-foreground" />
+                {formatDate(entry.watchedAt)}
+              </Link>
+              {epBadge}
+            </div>
             <div className="flex shrink-0 items-center gap-1">
               {entry.letterboxdActivityUrl && (
                 <Button variant="ghost" size="icon" className="h-7 w-7" asChild>
@@ -138,20 +171,24 @@ function EntryCard({
                   )}
                 </Button>
               )}
-              <WatchEntryDialog
-                tmdbId={tmdbId}
-                type={type}
-                entry={forDialog}
-                onSave={onUpdate}
-                defaultWatchedAtForNew={prefillLogDate}
-              />
+              {!isEpisodeRow && (
+                <WatchEntryDialog
+                  tmdbId={tmdbId}
+                  type={type}
+                  entry={forDialog}
+                  onSave={onUpdate}
+                  defaultWatchedAtForNew={prefillLogDate}
+                />
+              )}
               <Button
                 variant="ghost"
                 size="icon"
                 className="h-7 w-7 text-destructive hover:text-destructive"
                 onClick={handleDelete}
                 disabled={isDeleting}
-                aria-label="Delete viewing"
+                aria-label={
+                  isEpisodeRow ? "Remove episode watch" : "Delete viewing"
+                }
               >
                 <Trash2 className="h-3.5 w-3.5" />
               </Button>
@@ -184,9 +221,12 @@ function EntryCard({
                     {entry.user?.name}
                   </Link>
                 </div>
-                <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                  <CalendarCheck className="h-3.5 w-3.5 shrink-0" />
-                  {formatDate(entry.watchedAt)}
+                <p className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm text-muted-foreground">
+                  <span className="flex items-center gap-1.5">
+                    <CalendarCheck className="h-3.5 w-3.5 shrink-0" />
+                    {formatDate(entry.watchedAt)}
+                  </span>
+                  {epBadge}
                 </p>
               </div>
             </div>
@@ -258,6 +298,7 @@ export function WatchHistory({
   hasStatus,
   prefillLogDate = null,
 }: WatchHistoryProps) {
+  const router = useRouter();
   const [entries, setEntries] =
     useState<TitlePageWatchEntryClient[]>(initialEntries);
 
@@ -279,6 +320,7 @@ export function WatchHistory({
       }
       return [row, ...prev];
     });
+    router.refresh();
   };
 
   const handleDelete = (id: string) => {

@@ -6,7 +6,6 @@ import { notFound } from "next/navigation";
 import { WatchStatusButton } from "@/components/watch-status-button";
 import { RatingStars } from "@/components/rating-stars";
 import { AddToListDialog } from "@/components/add-to-list-dialog";
-import { WatchHistory } from "@/components/watch-history";
 import { TitleCatalogLinks } from "@/components/movie-site-context-panel";
 import { TitlePageTopNav } from "@/components/title-page-top-nav";
 import { TitlePageMobilePoster } from "@/components/title-page-mobile-poster";
@@ -18,12 +17,8 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Star, Calendar, Tv } from "lucide-react";
 import { MediaType } from "@/generated/prisma";
-import { parseDateOnlyIso } from "@/lib/history-calendar";
-import { fetchTitleWatchHistoryForViewer } from "@/lib/watch-history-queries";
-
 type Params = {
   params: Promise<{ tmdbId: string }>;
-  searchParams: Promise<{ watchedDate?: string }>;
 };
 
 export async function generateMetadata({ params }: Params) {
@@ -32,17 +27,15 @@ export async function generateMetadata({ params }: Params) {
   return { title: show ? `${show.name} | Screened` : "Screened" };
 }
 
-export default async function TvPage({ params, searchParams }: Params) {
+export default async function TvPage({ params }: Params) {
   const { tmdbId: tmdbIdStr } = await params;
-  const sp = await searchParams;
-  const prefillLogDate = parseDateOnlyIso(sp.watchedDate);
   const tmdbId = parseInt(tmdbIdStr);
 
   if (isNaN(tmdbId)) notFound();
 
   const session = await auth();
 
-  const [show, userStatus, titleWatchHistory] = await Promise.all([
+  const [show, userStatus] = await Promise.all([
     getTvShow(tmdbId).catch(() => null),
     session?.user?.id
       ? prisma.userMediaStatus
@@ -54,24 +47,15 @@ export default async function TvPage({ params, searchParams }: Params) {
           })
           .catch(() => null)
       : null,
-    session?.user?.id
-      ? fetchTitleWatchHistoryForViewer(
-          session.user.id,
-          tmdbId,
-          MediaType.TV,
-        ).catch(() => [])
-      : [],
   ]);
 
   if (!show) notFound();
 
-  const omdbRatings = await getCachedOmdbRatings(
-    show.external_ids?.imdb_id ?? null,
-  );
+  const omdb = await getCachedOmdbRatings(show.external_ids?.imdb_id ?? null);
 
   const realSeasons = show.seasons.filter((s) => s.season_number > 0);
 
-  const [seasonDetails, watchedEpisodes] = await Promise.all([
+  const [seasonDetails, episodeStatuses] = await Promise.all([
     Promise.all(
       realSeasons.slice(0, 5).map((s) =>
         getTvSeason(tmdbId, s.season_number).catch(() => ({
@@ -87,7 +71,13 @@ export default async function TvPage({ params, searchParams }: Params) {
               userId: session.user.id,
               mediaItem: { tmdbId, type: MediaType.TV },
             },
-            select: { seasonNumber: true, episodeNumber: true },
+            select: {
+              seasonNumber: true,
+              episodeNumber: true,
+              watchedAt: true,
+              isWatched: true,
+              review: true,
+            },
           })
           .catch(() => [])
       : [],
@@ -179,7 +169,12 @@ export default async function TvPage({ params, searchParams }: Params) {
                       {show.vote_average.toFixed(1)}
                     </span>
                   )}
-                  <AggregatedRatingsLine ratings={omdbRatings} />
+                  <AggregatedRatingsLine
+                    omdb={omdb}
+                    imdbId={show.external_ids?.imdb_id ?? null}
+                    linkTitle={show.name}
+                    mediaType="tv"
+                  />
                 </div>
 
                 <div className="flex flex-wrap items-center gap-3 mb-4 sm:mb-6">
@@ -218,27 +213,6 @@ export default async function TvPage({ params, searchParams }: Params) {
                 )}
               </div>
             </div>
-
-            {session?.user && (
-              <WatchHistory
-                key={titleWatchHistory.map((e) => e.id).join() || "no-entries"}
-                tmdbId={tmdbId}
-                type="tv"
-                viewerUserId={session.user.id}
-                initialEntries={titleWatchHistory.map((e) => ({
-                  id: e.id,
-                  userId: e.userId,
-                  isViewer: e.isViewer,
-                  watchedAt: e.watchedAt.toISOString(),
-                  review: e.review,
-                  rating: e.rating,
-                  letterboxdActivityUrl: e.letterboxdActivityUrl,
-                  user: e.user,
-                }))}
-                hasStatus={!!userStatus}
-                prefillLogDate={prefillLogDate}
-              />
-            )}
           </div>
         </div>
 
@@ -257,7 +231,13 @@ export default async function TvPage({ params, searchParams }: Params) {
                     episode_count: s.episode_count,
                     episodes: "episodes" in s ? s.episodes : [],
                   }))}
-                  watchedEpisodes={watchedEpisodes}
+                  episodeStatuses={episodeStatuses.map((e) => ({
+                    seasonNumber: e.seasonNumber,
+                    episodeNumber: e.episodeNumber,
+                    watchedAt: e.watchedAt.toISOString(),
+                    isWatched: e.isWatched,
+                    review: e.review,
+                  }))}
                 />
               ) : (
                 <p className="text-muted-foreground text-sm">

@@ -25,6 +25,8 @@ export interface WatchImportCounts {
   unknownMovie: number;
   unknownTv: number;
   plexEpisodes: number;
+  /** Distinct TV titles that have at least one stored episode watch (Plex sync). */
+  plexShowsWithEpisodeProgress: number;
 }
 
 export function isWatchHistoryResetScope(

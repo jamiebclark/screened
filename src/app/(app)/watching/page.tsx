@@ -26,7 +26,7 @@ export default async function WatchingPage() {
     }),
     prisma.episodeStatus.groupBy({
       by: ["mediaItemId"],
-      where: { userId },
+      where: { userId, isWatched: true },
       _max: { watchedAt: true },
     }),
   ]);

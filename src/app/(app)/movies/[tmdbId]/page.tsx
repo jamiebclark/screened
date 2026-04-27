@@ -70,7 +70,7 @@ export default async function MoviePage({ params, searchParams }: Params) {
 
   if (!movie) notFound();
 
-  const omdbRatings = await getCachedOmdbRatings(movie.imdb_id);
+  const omdb = await getCachedOmdbRatings(movie.imdb_id);
 
   const backdropUrl = tmdbImage(movie.backdrop_path, "w1280");
   const posterUrl = tmdbImage(movie.poster_path, "w500");
@@ -164,7 +164,12 @@ export default async function MoviePage({ params, searchParams }: Params) {
                       </span>
                     </span>
                   )}
-                  <AggregatedRatingsLine ratings={omdbRatings} />
+                  <AggregatedRatingsLine
+                    omdb={omdb}
+                    imdbId={movie.imdb_id}
+                    linkTitle={movie.title}
+                    mediaType="movie"
+                  />
                 </div>
 
                 <div className="flex flex-wrap items-center gap-3 mb-4 sm:mb-6">
