@@ -1,8 +1,10 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import Link from "next/link";
 import { MediaCard } from "@/components/media-card";
 import { ClearTrackingCornerButton } from "@/components/clear-tracking-corner-button";
 import { EditableListSearchAdd } from "@/components/editable-list-search-add";
+import { Button } from "@/components/ui/button";
 import {
   buildLastWatchedMsByMediaItemId,
   sortByLastWatchedDesc,
@@ -42,7 +44,7 @@ export default async function WatchingPage() {
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 space-y-6">
       <div className="flex items-center gap-3">
-        <div className="rounded-full bg-muted p-2 text-yellow-400">
+        <div className="rounded-full bg-muted p-2 text-status-watching">
           <Clock className="h-5 w-5" />
         </div>
         <div>
@@ -56,12 +58,15 @@ export default async function WatchingPage() {
       <EditableListSearchAdd variant="watching" existingKeys={existingKeys} />
 
       {items.length === 0 ? (
-        <div className="text-center py-20 border border-dashed border-border rounded-xl">
+        <div className="text-center py-20 border border-dashed border-border rounded-xl max-w-sm mx-auto">
           <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
           <p className="font-medium mb-1">Nothing in progress</p>
-          <p className="text-sm text-muted-foreground">
-            Mark something as watching to see it here.
+          <p className="text-sm text-muted-foreground mb-5">
+            Search for something to start watching.
           </p>
+          <Button size="sm" asChild>
+            <Link href="/search">Search titles</Link>
+          </Button>
         </div>
       ) : (
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-3">

@@ -1070,8 +1070,35 @@ export function PickerForm({
     });
   };
 
+  const isFirstVisit = attractors.length === 0 && repellers.length === 0;
+
   return (
     <div className="space-y-6">
+      {isFirstVisit && (
+        <div className="rounded-xl border border-border bg-muted/30 p-5 space-y-3">
+          <h3 className="text-base font-semibold">How it works</h3>
+          <div className="grid gap-3 sm:grid-cols-2 text-sm text-muted-foreground">
+            <div className="flex gap-3">
+              <div className="h-2 w-2 rounded-full bg-green-500 shrink-0 mt-1.5" />
+              <div>
+                <p className="font-medium text-foreground">Like these</p>
+                <p>Add films that capture the mood you&apos;re after. The picker finds titles with similar vibes, themes, and style.</p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <div className="h-2 w-2 rounded-full bg-red-500 shrink-0 mt-1.5" />
+              <div>
+                <p className="font-medium text-foreground">Not like these</p>
+                <p>Add films you want to steer away from. Each one pushes matching titles down the ranked list.</p>
+              </div>
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Add at least one film to &quot;Like these&quot;, then click &quot;Find movies&quot; to get a ranked list of suggestions.
+          </p>
+        </div>
+      )}
+
       <section className="space-y-3">
         <h3 className="text-base font-semibold tracking-tight">Movies</h3>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:items-start">

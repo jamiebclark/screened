@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import Link from "next/link";
 import { Eye } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { HistoryWatchEntryRow } from "@/components/history-watch-entry-row";
 import { fetchMyWatchHistoryRecent } from "@/lib/watch-history-queries";
 import {
@@ -92,13 +93,21 @@ export default async function HistoryPage() {
       </div>
 
       {watched.length === 0 ? (
-        <div className="text-center py-16 text-muted-foreground">
+        <div className="text-center py-16 text-muted-foreground max-w-sm mx-auto">
           <Eye className="h-12 w-12 mx-auto mb-3 opacity-30" />
-          <p className="font-medium">No watch history yet</p>
-          <p className="text-sm mt-1">
-            Log a viewing, watch TV episodes (including via Plex sync), or sync
-            Plex movies to get started.
+          <p className="font-medium text-foreground">No watch history yet</p>
+          <p className="text-sm mt-2 leading-relaxed">
+            Connect Plex or import from Letterboxd to pull in your existing
+            history, or log a viewing manually on any movie or TV page.
           </p>
+          <div className="flex flex-col sm:flex-row gap-2 justify-center mt-5">
+            <Button variant="default" size="sm" asChild>
+              <Link href="/settings/plex">Connect Plex</Link>
+            </Button>
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/settings/letterboxd">Import Letterboxd</Link>
+            </Button>
+          </div>
         </div>
       ) : (
         <div className="space-y-8">

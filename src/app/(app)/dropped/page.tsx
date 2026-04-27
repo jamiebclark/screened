@@ -1,7 +1,9 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import Link from "next/link";
 import { MediaCard } from "@/components/media-card";
 import { EditableListSearchAdd } from "@/components/editable-list-search-add";
+import { Button } from "@/components/ui/button";
 import { TvMinimal } from "lucide-react";
 import { MediaType } from "@/generated/prisma";
 
@@ -36,12 +38,16 @@ export default async function DroppedPage() {
       <EditableListSearchAdd variant="dropped" existingKeys={existingKeys} />
 
       {items.length === 0 ? (
-        <div className="text-center py-20 border border-dashed border-border rounded-xl">
+        <div className="text-center py-20 border border-dashed border-border rounded-xl max-w-sm mx-auto">
           <TvMinimal className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
           <p className="font-medium mb-1">Nothing dropped</p>
-          <p className="text-sm text-muted-foreground">
-            Titles you gave up on will appear here.
+          <p className="text-sm text-muted-foreground mb-5">
+            Titles you gave up on will appear here. Search to find something
+            new.
           </p>
+          <Button size="sm" asChild>
+            <Link href="/search">Search titles</Link>
+          </Button>
         </div>
       ) : (
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-3">

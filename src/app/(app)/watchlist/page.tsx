@@ -1,8 +1,10 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import Link from "next/link";
 import { MediaCard } from "@/components/media-card";
 import { EditableListSearchAdd } from "@/components/editable-list-search-add";
-import { Bookmark, Film, ExternalLink } from "lucide-react";
+import { Bookmark, Film, ExternalLink, Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { MediaType } from "@/generated/prisma";
 import { ensureWatchlistRadarrToken } from "@/lib/ensure-watchlist-radarr-token";
 import { ClearTrackingCornerButton } from "@/components/clear-tracking-corner-button";
@@ -34,7 +36,7 @@ export default async function WatchlistPage() {
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 space-y-6">
       <div className="flex items-center gap-3">
-        <div className="rounded-full bg-muted p-2 text-blue-400">
+        <div className="rounded-full bg-muted p-2 text-status-watchlist">
           <Bookmark className="h-5 w-5" />
         </div>
         <div>
@@ -81,12 +83,18 @@ export default async function WatchlistPage() {
       )}
 
       {items.length === 0 ? (
-        <div className="text-center py-20 border border-dashed border-border rounded-xl">
+        <div className="text-center py-20 border border-dashed border-border rounded-xl max-w-sm mx-auto">
           <Bookmark className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
           <p className="font-medium mb-1">Your watchlist is empty</p>
-          <p className="text-sm text-muted-foreground">
-            Bookmark movies and shows to watch later.
+          <p className="text-sm text-muted-foreground mb-5">
+            Search for a movie or show to get started.
           </p>
+          <Button size="sm" asChild>
+            <Link href="/search">
+              <Search className="h-4 w-4" />
+              Search titles
+            </Link>
+          </Button>
         </div>
       ) : (
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-3">
