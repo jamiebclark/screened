@@ -1,3 +1,15 @@
+## [1.11.0](https://github.com/jamiebclark/screened/compare/v1.10.1...v1.11.0) (2026-04-27)
+
+### Features
+
+* **about:** add site footer and /about routes ([f9b360e](https://github.com/jamiebclark/screened/commit/f9b360e34eb88f2eaf928b2fdbfbb30196a189b6))
+* signup invites, omdb ratings, and app updates ([a84988e](https://github.com/jamiebclark/screened/commit/a84988e0d3c5c3022e49c187faf2d55383c86cb9))
+* tv episode logging, merged watch history, and rating links ([e095348](https://github.com/jamiebclark/screened/commit/e09534831daad355771f27a33b0594d4932e5e67))
+
+### Bug Fixes
+
+* **lint:** satisfy eslint and enforce lint in ci ([3dc48df](https://github.com/jamiebclark/screened/commit/3dc48df0052408c06b87f5f6eb4354eee75380fd))
+
 ## [1.10.1](https://github.com/jamiebclark/screened/compare/v1.10.0...v1.10.1) (2026-04-26)
 
 ### Bug Fixes
