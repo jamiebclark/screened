@@ -13,6 +13,7 @@ import {
   withScoringDefaults,
   type PickerRoomState,
 } from "@/lib/picker-room-state";
+import { hydratePickerFingerprintIfNeeded } from "@/lib/picker-score-fingerprint";
 
 const POLL_MS = 2500;
 
@@ -75,7 +76,9 @@ export function usePickerRoomSync(
     ) => {
       if (sourceTabId && sourceTabId === tabId) return;
       setState((prev) => {
-        const incoming = withScoringDefaults(next);
+        const incoming = hydratePickerFingerprintIfNeeded(
+          withScoringDefaults(next),
+        );
         const merged = ensureCurrentUserInRoom(incoming, currentUser);
         lastPushedJson.current = stableStringify(merged);
         if (sourceUserId && onRemoteAppliedRef.current) {

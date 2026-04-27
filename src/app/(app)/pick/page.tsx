@@ -7,6 +7,7 @@ import {
   withScoringDefaults,
   type PickerRoomState,
 } from "@/lib/picker-room-state";
+import { hydratePickerFingerprintIfNeeded } from "@/lib/picker-score-fingerprint";
 import { redirect } from "next/navigation";
 
 export const metadata = { title: "Movie Night Picker | Screened" };
@@ -86,12 +87,14 @@ export default async function PickPage({ searchParams }: PageProps) {
   if (roomRow && isPickerState(roomRow.state)) {
     const st = withScoringDefaults(roomRow.state);
     if (!st.participants.some((p) => p.id === currentUser!.id)) {
-      initialRoomState = withScoringDefaults({
-        ...st,
-        participants: [currentUser!, ...st.participants],
-      });
+      initialRoomState = hydratePickerFingerprintIfNeeded(
+        withScoringDefaults({
+          ...st,
+          participants: [currentUser!, ...st.participants],
+        }),
+      );
     } else {
-      initialRoomState = st;
+      initialRoomState = hydratePickerFingerprintIfNeeded(st);
     }
   } else {
     const base = defaultPickerState(currentUser!);
