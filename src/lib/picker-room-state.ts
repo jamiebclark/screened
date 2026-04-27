@@ -10,6 +10,25 @@ export type ReferenceMovieJson = {
   hasEmbedding: boolean;
   /** TMDB genre names for this title (from our MediaItem / embed). */
   genres: string[];
+  /** Participant who added this reference (shared rooms). */
+  addedByUserId?: string;
+};
+
+/** Who added each filter chip (key = exact string in the parallel *People / *Genres array). */
+export type PickerFilterAttribution = {
+  requirePeople?: Record<string, string>;
+  excludePeople?: Record<string, string>;
+  includeGenres?: Record<string, string>;
+  excludeGenres?: Record<string, string>;
+};
+
+/** Last editor (user id) for scalar filter fields. */
+export type PickerFilterFieldEditors = {
+  minYear?: string;
+  maxYear?: string;
+  maxRuntime?: string;
+  plexLibraryOnly?: string;
+  hideAllLogged?: string;
 };
 
 export type ScoredMovieJson = {
@@ -55,6 +74,10 @@ export type PickerRoomState = {
   scoringInProgress: boolean;
   scoringError: string | null;
   scoringResults: ScoredMovieJson[] | null;
+  /** Fingerprint of scoring inputs after the last successful `/api/session/score` in this room. */
+  lastScoreFingerprint?: string | null;
+  filterAttribution?: PickerFilterAttribution;
+  filterFieldEditors?: PickerFilterFieldEditors;
 };
 
 export function defaultPickerState(currentUser: {
@@ -81,6 +104,9 @@ export function defaultPickerState(currentUser: {
     scoringInProgress: false,
     scoringError: null,
     scoringResults: null,
+    lastScoreFingerprint: null,
+    filterAttribution: {},
+    filterFieldEditors: {},
   };
 }
 
@@ -138,6 +164,15 @@ export function isPickerState(x: unknown): x is PickerRoomState {
   ) {
     return false;
   }
+  if (o.lastScoreFingerprint !== undefined && o.lastScoreFingerprint !== null) {
+    if (typeof o.lastScoreFingerprint !== "string") return false;
+  }
+  if (o.filterAttribution !== undefined && o.filterAttribution !== null) {
+    if (typeof o.filterAttribution !== "object") return false;
+  }
+  if (o.filterFieldEditors !== undefined && o.filterFieldEditors !== null) {
+    if (typeof o.filterFieldEditors !== "object") return false;
+  }
   return true;
 }
 
@@ -163,5 +198,11 @@ export function withScoringDefaults(s: PickerRoomState): PickerRoomState {
     scoringError: rest.scoringError ?? null,
     scoringResults:
       rest.scoringResults !== undefined ? rest.scoringResults : null,
+    lastScoreFingerprint:
+      rest.lastScoreFingerprint !== undefined
+        ? rest.lastScoreFingerprint
+        : null,
+    filterAttribution: rest.filterAttribution ?? {},
+    filterFieldEditors: rest.filterFieldEditors ?? {},
   };
 }
