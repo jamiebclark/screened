@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Nav } from "@/components/nav";
 import { SiteFooter } from "@/components/site-footer";
+import { Toaster } from "@/components/toaster";
 import { prisma } from "@/lib/prisma";
 
 export default async function AppLayout({
@@ -53,6 +54,7 @@ export default async function AppLayout({
         <div className="w-full flex-1">{children}</div>
         <SiteFooter />
       </main>
+      <Toaster />
     </div>
   );
 }
