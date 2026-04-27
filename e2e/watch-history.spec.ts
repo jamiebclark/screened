@@ -73,9 +73,7 @@ test.describe("Watch history", () => {
     ).not.toBeVisible();
   });
 
-  test("TV show logs viewings per episode under Episodes", async ({
-    page,
-  }) => {
+  test("TV show logs viewings per episode under Episodes", async ({ page }) => {
     await page.request.post("/api/media/status", {
       data: { tmdbId: TV_TMDB, type: "tv", status: "WATCHED" },
       headers: { "Content-Type": "application/json" },
