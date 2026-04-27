@@ -75,6 +75,9 @@ function base(over: Partial<PickerRoomState> = {}): PickerRoomState {
     scoringInProgress: false,
     scoringError: null,
     scoringResults: null,
+    lastScoreFingerprint: null,
+    filterAttribution: {},
+    filterFieldEditors: {},
     ...over,
   };
 }
@@ -256,6 +259,15 @@ describe("describePickerStateChange", () => {
   it("veto: new veto id", () => {
     const prev = base({ vetoIds: [] });
     const next = { ...prev, vetoIds: ["v1"] };
+    expect(
+      describePickerStateChange(prev, next, { actorId: "p1", youId: "p1" }),
+    ).toBe("You moved a result to Not like these.");
+  });
+
+  it("veto + repeller add (dismiss from results) prefers veto line", () => {
+    const r = ref({ mediaItemId: "v1", title: "Nope" });
+    const prev = base({ vetoIds: [], repellers: [] });
+    const next = { ...prev, vetoIds: ["v1"], repellers: [r] };
     expect(
       describePickerStateChange(prev, next, { actorId: "p1", youId: "p1" }),
     ).toBe("You moved a result to Not like these.");

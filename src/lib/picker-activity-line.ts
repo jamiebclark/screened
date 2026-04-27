@@ -93,6 +93,14 @@ export function describePickerStateChange(
     }
   }
 
+  // New vetoes (dismiss from ranked results) before repeller-add, so we don’t imply a manual “Not like these” add.
+  const vPrev = new Set(prev.vetoIds);
+  const vNext = new Set(next.vetoIds);
+  for (const id of vNext) {
+    if (vPrev.has(id)) continue;
+    return `${labelFor(roster, actorId, youId)} moved a result to Not like these.`;
+  }
+
   const rPrev = new Map(prev.repellers.map((m) => [m.mediaItemId, m]));
   const rNext = new Map(next.repellers.map((m) => [m.mediaItemId, m]));
   for (const m of next.repellers) {
@@ -106,13 +114,7 @@ export function describePickerStateChange(
     }
   }
 
-  // 4) Veto (dismiss from results)
-  const vPrev = new Set(prev.vetoIds);
-  const vNext = new Set(next.vetoIds);
-  for (const id of vNext) {
-    if (vPrev.has(id)) continue;
-    return `${labelFor(roster, actorId, youId)} moved a result to Not like these.`;
-  }
+  // Veto cleared (e.g. removed from not-for-tonight / repellers) without a repeller row change handled above
   for (const id of vPrev) {
     if (vNext.has(id)) continue;
     return `${labelFor(roster, actorId, youId)} took a title off the not-for-tonight list.`;
