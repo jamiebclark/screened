@@ -4,7 +4,7 @@ import { useState, FormEvent, Suspense } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Film, Loader2 } from "lucide-react";
+import { Film, Loader2, Eye, Sparkles, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -131,6 +131,33 @@ export default function LoginPage() {
             <span className="text-2xl font-bold tracking-tight">Screened</span>
           </div>
           <p className="text-muted-foreground text-sm">Track movies together</p>
+        </div>
+
+        <div className="grid grid-cols-3 gap-3 text-center">
+          <div className="flex flex-col items-center gap-1.5">
+            <div className="rounded-full bg-muted p-2">
+              <Eye className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <p className="text-xs text-muted-foreground leading-tight">
+              Track what you&apos;ve watched
+            </p>
+          </div>
+          <div className="flex flex-col items-center gap-1.5">
+            <div className="rounded-full bg-muted p-2">
+              <Sparkles className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <p className="text-xs text-muted-foreground leading-tight">
+              Discover what to watch next
+            </p>
+          </div>
+          <div className="flex flex-col items-center gap-1.5">
+            <div className="rounded-full bg-muted p-2">
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <p className="text-xs text-muted-foreground leading-tight">
+              Pick movies with friends
+            </p>
+          </div>
         </div>
 
         <Suspense
