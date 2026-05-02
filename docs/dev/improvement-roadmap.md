@@ -122,22 +122,22 @@ The social graph (friends, profiles, notifications) exists but is passive — th
 Picker rooms are ephemeral JSON blobs. Great for a one-off session but useless as a recurring ritual — there's no history, no shortlisting, and no way to resolve a tie other than arguing. This session gives the picker memory and a lightweight democratic mechanic.
 
 ### Room persistence
-- [ ] Schema: add `PickerSession` model — stores completed room snapshot (roomId, participants, attractors used, final ranked results JSON, createdAt, pickedTmdbId nullable)
-- [ ] Migration + `yarn db:generate`
-- [ ] "End session & save" action on picker room — writes a `PickerSession` row; marks the room archived
-- [ ] `/pick/history` route — list of past sessions (date, participants, what was picked); owner-only view
-- [ ] `PickerSessionCard` component — compact summary: participant avatars, top-3 results, "picked" badge if a winner was recorded
+- [x] Schema: add `PickerSession` model — stores completed room snapshot (roomId, participants, attractors used, final ranked results JSON, createdAt, pickedTmdbId nullable)
+- [x] Migration + `yarn db:generate` — migration file written; requires `DATABASE_URL` to apply
+- [x] "End session & save" action on picker room — writes a `PickerSession` row; "Save session" button in session header
+- [x] `/pick/history` route — list of past sessions (date, participants, what was picked); owner-only view
+- [x] `PickerSessionCard` component — compact summary: participant avatars, top-3 poster strip, trophy + picked title if winner was recorded
 
 ### Shortlist voting
-- [ ] "Move to shortlist" action on `ScoredMovieCard` — adds tmdbId to a `shortlist` array in room state (alongside existing `vetoIds`)
-- [ ] Shortlist panel — separate tab/section in picker results showing shortlisted titles; each participant can cast one vote per shortlisted title
-- [ ] Vote state in `PickerRoom` JSON: `votes: { [userId]: tmdbId }` — PATCH room to record vote; SSE broadcast to all participants
-- [ ] Visual vote tally on shortlisted cards — "3/4 votes" indicator; unanimous choice auto-highlighted
-- [ ] "Record as picked" button on winning title — writes `pickedTmdbId` to `PickerSession`
+- [x] "Move to shortlist" action on `ScoredMovieCard` — bookmark button adds tmdbId to `shortlist` array in room state
+- [x] Shortlist panel — inline panel in picker results showing shortlisted titles with vote tallies
+- [x] Vote state in `PickerRoom` JSON: `votes: { [userId]: tmdbId }` — PATCH room records vote; SSE broadcasts to all participants
+- [x] Visual vote tally on shortlisted cards — "N/M votes" indicator; unanimous choice auto-highlighted with trophy icon
+- [x] "Record as picked" button on unanimous title — writes `pickedTmdbId` to `PickerSession`
 
 ### Recurring rooms
-- [ ] "Save room preferences" option — save current participants and attractor seeds as a named preset; reload on next session creation
-- [ ] Preset selector on `/pick` room creation form
+- [x] "Save room preferences" option — inline preset form captures name and saves participants + attractors
+- [x] Preset selector on `/pick` room creation form — load/delete presets card shown on the pick page
 
 ---
 
