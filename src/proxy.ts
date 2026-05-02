@@ -14,9 +14,11 @@ export default auth((req) => {
     req.nextUrl.pathname.startsWith("/register");
   const isApiAuth = req.nextUrl.pathname.startsWith("/api/auth");
   const isPlexAuthEndpoint = req.nextUrl.pathname === "/api/plex/auth";
+  const isDiscordInteractionsEndpoint =
+    req.nextUrl.pathname === "/api/discord/interactions";
   const isRadarrEndpoint = req.nextUrl.pathname.includes("/radarr");
 
-  if (isApiAuth || isPlexAuthEndpoint || isRadarrEndpoint) {
+  if (isApiAuth || isPlexAuthEndpoint || isDiscordInteractionsEndpoint || isRadarrEndpoint) {
     return nextWithPathname(req);
   }
 
