@@ -14,6 +14,7 @@ import {
 } from "@/lib/tmdb";
 import { buildEmbeddingText, generateEmbedding } from "@/lib/embeddings";
 import { ensureWatchlistRadarrToken } from "@/lib/ensure-watchlist-radarr-token";
+import { submitOverseerrRequest } from "@/lib/overseerr";
 import { MediaType, WatchEntrySource, WatchStatus } from "@/generated/prisma";
 
 async function enrichAndEmbed(
@@ -209,6 +210,26 @@ export async function POST(req: NextRequest) {
     result.status === WatchStatus.WATCHLIST
   ) {
     await ensureWatchlistRadarrToken(session.user.id);
+  }
+
+  if (
+    result.status === WatchStatus.WATCHLIST &&
+    previous?.status !== WatchStatus.WATCHLIST
+  ) {
+    after(async () => {
+      const overseerrConn = await prisma.overseerrConnection.findUnique({
+        where: { userId: session.user.id },
+        select: { serverUrl: true, apiKey: true },
+      });
+      if (overseerrConn) {
+        await submitOverseerrRequest(
+          overseerrConn.serverUrl,
+          overseerrConn.apiKey,
+          mediaItem.type === MediaType.MOVIE ? "movie" : "tv",
+          mediaItem.tmdbId,
+        ).catch((err) => console.error("[overseerr] request failed:", err));
+      }
+    });
   }
 
   if (
