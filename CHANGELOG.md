@@ -1,3 +1,9 @@
+## [1.15.1](https://github.com/jamiebclark/screened/compare/v1.15.0...v1.15.1) (2026-05-02)
+
+### Performance Improvements
+
+* **docker:** replace full node_modules copy with targeted prisma install ([5db8f3a](https://github.com/jamiebclark/screened/commit/5db8f3a9beb4fada53c5c5cb71bf57212230f7d3))
+
 ## [1.15.0](https://github.com/jamiebclark/screened/compare/v1.14.3...v1.15.0) (2026-05-02)
 
 ### Features
