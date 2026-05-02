@@ -12,9 +12,13 @@ import {
   Star,
   X,
   Info,
+  Bookmark,
+  BookmarkCheck,
+  Trophy,
+  ThumbsUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { WatchStatusButton } from "@/components/watch-status-button";
@@ -153,12 +157,16 @@ function ScoredMovieCard({
   movie,
   rank,
   onDismiss,
+  onToggleShortlist,
+  isShortlisted,
   pickerMediaStatus,
   onPickerStatusesInvalidate,
 }: {
   movie: ScoredMovieJson;
   rank: number;
   onDismiss?: (movie: ScoredMovieJson) => void;
+  onToggleShortlist?: (tmdbId: number) => void;
+  isShortlisted?: boolean;
   pickerMediaStatus:
     | { status: PickerWatchStatus; rating: number | null }
     | undefined;
@@ -220,17 +228,47 @@ function ScoredMovieCard({
             </div>
 
             <div className="flex flex-col items-end gap-1 shrink-0">
-              {onDismiss && (
-                <button
-                  type="button"
-                  onClick={() => onDismiss(movie)}
-                  className="text-muted-foreground hover:text-foreground transition-colors p-0.5 rounded"
-                  title="Not for tonight — add to Not like and hide from this list"
-                  aria-label={`Remove ${movie.title} from recommendations`}
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              )}
+              <div className="flex items-center gap-1">
+                {onToggleShortlist && (
+                  <button
+                    type="button"
+                    onClick={() => onToggleShortlist(movie.tmdbId)}
+                    className={cn(
+                      "p-0.5 rounded transition-colors",
+                      isShortlisted
+                        ? "text-primary"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                    title={
+                      isShortlisted
+                        ? "Remove from shortlist"
+                        : "Add to shortlist"
+                    }
+                    aria-label={
+                      isShortlisted
+                        ? `Remove ${movie.title} from shortlist`
+                        : `Add ${movie.title} to shortlist`
+                    }
+                  >
+                    {isShortlisted ? (
+                      <BookmarkCheck className="h-4 w-4" />
+                    ) : (
+                      <Bookmark className="h-4 w-4" />
+                    )}
+                  </button>
+                )}
+                {onDismiss && (
+                  <button
+                    type="button"
+                    onClick={() => onDismiss(movie)}
+                    className="text-muted-foreground hover:text-foreground transition-colors p-0.5 rounded"
+                    title="Not for tonight — add to Not like and hide from this list"
+                    aria-label={`Remove ${movie.title} from recommendations`}
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
               <ScoreBreakdown movie={movie} />
             </div>
           </div>
@@ -283,6 +321,150 @@ function ScoredMovieCard({
   );
 }
 
+// ─── Shortlist panel ──────────────────────────────────────────────────────────
+
+function ShortlistPanel({
+  shortlist,
+  scoringResults,
+  votes,
+  currentUserId,
+  participantCount,
+  onToggleShortlist,
+  onVote,
+  onRecordPick,
+  savingPick,
+}: {
+  shortlist: number[];
+  scoringResults: ScoredMovieJson[] | null;
+  votes: Record<string, number>;
+  currentUserId: string;
+  participantCount: number;
+  onToggleShortlist: (tmdbId: number) => void;
+  onVote: (tmdbId: number) => void;
+  onRecordPick: (tmdbId: number) => Promise<void>;
+  savingPick: boolean;
+}) {
+  if (shortlist.length === 0) return null;
+
+  const resultMap = new Map(scoringResults?.map((m) => [m.tmdbId, m]) ?? []);
+  const shortlisted = shortlist
+    .map((id) => resultMap.get(id))
+    .filter((m): m is ScoredMovieJson => m !== undefined);
+
+  if (shortlisted.length === 0) return null;
+
+  const myVote = votes[currentUserId];
+  const totalVoters = participantCount;
+
+  return (
+    <Card className="border-primary/30 bg-primary/5">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base flex items-center gap-2">
+          <Bookmark className="h-4 w-4 text-primary" />
+          Shortlist
+          <span className="text-sm font-normal text-muted-foreground">
+            {shortlisted.length} title{shortlisted.length === 1 ? "" : "s"}
+          </span>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {shortlisted.map((movie) => {
+          const voteCount = Object.values(votes).filter(
+            (v) => v === movie.tmdbId,
+          ).length;
+          const isUnanimous = voteCount === totalVoters && totalVoters > 0;
+          const hasMyVote = myVote === movie.tmdbId;
+
+          return (
+            <div
+              key={movie.tmdbId}
+              className={cn(
+                "flex items-center gap-3 rounded-lg p-3 border transition-colors",
+                isUnanimous
+                  ? "border-yellow-500/50 bg-yellow-500/10"
+                  : "border-border bg-card",
+              )}
+            >
+              <Link href={`/movies/${movie.tmdbId}`} className="shrink-0">
+                {movie.poster ? (
+                  <Image
+                    src={`https://image.tmdb.org/t/p/w92${movie.poster}`}
+                    alt={movie.title}
+                    width={40}
+                    height={60}
+                    className="rounded object-cover"
+                  />
+                ) : (
+                  <div className="w-10 h-15 rounded bg-muted flex items-center justify-center">
+                    <Film className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                )}
+              </Link>
+
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5">
+                  {isUnanimous && (
+                    <Trophy className="h-3.5 w-3.5 text-yellow-500 shrink-0" />
+                  )}
+                  <Link
+                    href={`/movies/${movie.tmdbId}`}
+                    className="font-medium text-sm hover:underline truncate"
+                  >
+                    {movie.title}
+                  </Link>
+                </div>
+                {movie.year && (
+                  <p className="text-xs text-muted-foreground">{movie.year}</p>
+                )}
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {voteCount}/{totalVoters} vote{totalVoters === 1 ? "" : "s"}
+                </p>
+              </div>
+
+              <div className="flex flex-col items-end gap-1.5 shrink-0">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={hasMyVote ? "default" : "outline"}
+                  className="h-7 gap-1 text-xs"
+                  onClick={() => onVote(movie.tmdbId)}
+                >
+                  <ThumbsUp className="h-3 w-3" />
+                  {hasMyVote ? "Voted" : "Vote"}
+                </Button>
+                {isUnanimous && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-7 gap-1 text-xs border-yellow-500/50 text-yellow-600 hover:bg-yellow-500/10"
+                    onClick={() => onRecordPick(movie.tmdbId)}
+                    disabled={savingPick}
+                  >
+                    {savingPick ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <Trophy className="h-3 w-3" />
+                    )}
+                    Record pick
+                  </Button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => onToggleShortlist(movie.tmdbId)}
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </CardContent>
+    </Card>
+  );
+}
+
 // ─── PickerResults ────────────────────────────────────────────────────────────
 
 interface PickerResultsProps {
@@ -301,10 +483,18 @@ interface PickerResultsProps {
     number,
     { status: PickerWatchStatus; rating: number | null }
   >;
+  shortlist: number[];
+  votes: Record<string, number>;
+  currentUserId: string;
+  participantCount: number;
+  savingPick: boolean;
   onFindMovies: () => Promise<void>;
   onDismiss: (movie: ScoredMovieJson) => void;
   onUndoDismiss: (movieId: string) => void;
   onPickerStatusesInvalidate: () => void;
+  onToggleShortlist: (tmdbId: number) => void;
+  onVote: (tmdbId: number) => void;
+  onRecordPick: (tmdbId: number) => Promise<void>;
 }
 
 export function PickerResults({
@@ -318,10 +508,18 @@ export function PickerResults({
   criteriaDirty,
   firstRunReady,
   pickerStatusByTmdb,
+  shortlist,
+  votes,
+  currentUserId,
+  participantCount,
+  savingPick,
   onFindMovies,
   onDismiss,
   onUndoDismiss,
   onPickerStatusesInvalidate,
+  onToggleShortlist,
+  onVote,
+  onRecordPick,
 }: PickerResultsProps) {
   const resultsRef = useRef<HTMLDivElement>(null);
   const prevScoringInProgressRef = useRef(scoringInProgress);
@@ -359,6 +557,8 @@ export function PickerResults({
       ),
     });
   };
+
+  const shortlistSet = new Set(shortlist);
 
   return (
     <div className="space-y-4">
@@ -426,8 +626,8 @@ export function PickerResults({
             <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-2" />
             <p className="text-sm text-muted-foreground">
               {hasCompletedListRun
-                ? "Updating your matches… everyone in this room will see the list when it’s ready."
-                : "Pulling similar and recommended titles, then ranking with your picks… everyone in this room will see the list when it’s ready."}
+                ? "Updating your matches… everyone in this room will see the list when it's ready."
+                : "Pulling similar and recommended titles, then ranking with your picks… everyone in this room will see the list when it's ready."}
             </p>
           </CardContent>
         </Card>
@@ -441,6 +641,18 @@ export function PickerResults({
 
       {scoringResults !== null && (
         <div ref={resultsRef} className="space-y-4">
+          <ShortlistPanel
+            shortlist={shortlist}
+            scoringResults={scoringResults}
+            votes={votes}
+            currentUserId={currentUserId}
+            participantCount={participantCount}
+            onToggleShortlist={onToggleShortlist}
+            onVote={onVote}
+            onRecordPick={onRecordPick}
+            savingPick={savingPick}
+          />
+
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">
               {scoringResults.length === 0
@@ -489,6 +701,8 @@ export function PickerResults({
                   movie={movie}
                   rank={i + 1}
                   onDismiss={handleDismiss}
+                  onToggleShortlist={onToggleShortlist}
+                  isShortlisted={shortlistSet.has(movie.tmdbId)}
                   pickerMediaStatus={pickerStatusByTmdb[movie.tmdbId]}
                   onPickerStatusesInvalidate={onPickerStatusesInvalidate}
                 />

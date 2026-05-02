@@ -120,6 +120,40 @@ export function describePickerStateChange(
     return `${labelFor(roster, actorId, youId)} took a title off the not-for-tonight list.`;
   }
 
+  // 4) Shortlist and votes
+  const slPrev = new Set(prev.shortlist ?? []);
+  const slNext = new Set(next.shortlist ?? []);
+  for (const id of slNext) {
+    if (!slPrev.has(id)) {
+      const movie = next.scoringResults?.find((m) => m.tmdbId === id);
+      return movie
+        ? `${labelFor(roster, actorId, youId)} shortlisted "${movie.title}".`
+        : `${labelFor(roster, actorId, youId)} shortlisted a title.`;
+    }
+  }
+  for (const id of slPrev) {
+    if (!slNext.has(id)) {
+      const movie = prev.scoringResults?.find((m) => m.tmdbId === id);
+      return movie
+        ? `${labelFor(roster, actorId, youId)} removed "${movie.title}" from the shortlist.`
+        : `${labelFor(roster, actorId, youId)} removed a title from the shortlist.`;
+    }
+  }
+
+  const votesPrev = prev.votes ?? {};
+  const votesNext = next.votes ?? {};
+  const myVotePrev = votesPrev[actorId];
+  const myVoteNext = votesNext[actorId];
+  if (myVoteNext !== myVotePrev) {
+    if (myVoteNext !== undefined) {
+      const movie = next.scoringResults?.find((m) => m.tmdbId === myVoteNext);
+      return movie
+        ? `${labelFor(roster, actorId, youId)} voted for "${movie.title}".`
+        : `${labelFor(roster, actorId, youId)} cast a vote.`;
+    }
+    return `${labelFor(roster, actorId, youId)} cleared their vote.`;
+  }
+
   // 5) Search filters
   if (
     prev.minYear !== next.minYear ||
