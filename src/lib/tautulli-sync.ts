@@ -43,7 +43,7 @@ export async function syncTautulliUser(
   let skipped = 0;
 
   for (const record of movieHistory) {
-    const tmdbId = extractTmdbIdFromTautulliGuids(record.guids);
+    const tmdbId = extractTmdbIdFromTautulliGuids(record.guids ?? []);
     if (!tmdbId) {
       skipped++;
       continue;

@@ -35,8 +35,9 @@ function parseGuidString(guid: string | { id: string }): string {
 }
 
 export function extractTmdbIdFromTautulliGuids(
-  guids: Array<string | { id: string }>,
+  guids: Array<string | { id: string }> | null | undefined,
 ): number | null {
+  if (!guids) return null;
   for (const guid of guids) {
     const match = parseGuidString(guid).match(/^tmdb:\/\/(\d+)$/);
     if (match) return parseInt(match[1]!, 10);
@@ -94,10 +95,10 @@ export async function getTautulliHistory(
     const body = (await res.json()) as TautulliResponse<TautulliHistoryData>;
     if (body.response?.result !== "success") break;
 
-    const records = body.response.data.data ?? [];
+    const records = body.response.data?.data ?? [];
     all.push(...records.filter((r) => r.watched_status === 1));
 
-    if (all.length >= body.response.data.recordsFiltered) break;
+    if (all.length >= (body.response.data?.recordsFiltered ?? 0)) break;
     if (records.length < pageSize) break;
   }
 
