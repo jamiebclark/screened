@@ -19,7 +19,8 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "ci:check": "node scripts/ci-check.mjs",
-    "discord:register-commands": "node scripts/discord-register-commands.mjs"
+    "discord:register-commands": "node scripts/discord-register-commands.mjs",
+    "prepare": "husky"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.2",
@@ -66,16 +67,21 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitest/coverage-v8": "2.1.9",
     "conventional-changelog-conventionalcommits": "^9.3.1",
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
     "prettier": "^3.8.3",
     "prisma": "^7.8.0",
     "semantic-release": "^25.0.3",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "vitest": "2.1.9",
-    "@vitest/coverage-v8": "2.1.9"
+    "vitest": "2.1.9"
   },
-  "packageManager": "yarn@1.22.21+sha1.1959a18351b811cdeedbd484a8f86c3cc3bbaf72"
+  "packageManager": "yarn@1.22.21+sha1.1959a18351b811cdeedbd484a8f86c3cc3bbaf72",
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,json,css,md}": "prettier --write"
+  }
 }
