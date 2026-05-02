@@ -95,6 +95,72 @@ Current state at completion: 20 test files, 145 unit tests passing.
 
 ---
 
+## Session 6 — Social Activity Feed
+
+The social graph (friends, profiles, notifications) exists but is passive — there's no way to see what friends are watching without visiting each profile individually. This session makes the social layer useful as a day-to-day surface.
+
+### Activity feed page (`/activity`)
+- [x] New `/activity` route — chronological feed of friend activity: watches logged, titles added to shared lists
+- [x] `ActivityEvent` query in `src/lib/activity-feed.ts` — union query across `WatchEntry` and `ListItem` rows filtered to the current user's friends
+- [x] Feed item components: `WatchedActivityItem`, `ListAddActivityItem` — poster thumbnail, friend avatar, relative timestamp
+- [x] Empty state — "Find friends" CTA linking to `/settings/friends`
+- [x] `loading.tsx` skeleton for the feed
+
+### Notifications enhancements
+- [x] Notify user when a friend watches a title that's on their own watchlist — new `FRIEND_WATCHED_YOUR_WATCHLIST` notification type
+- [x] Notification bell badge in nav — unread count dot (already present; new type wired in)
+- [x] Mark-all-read action on notifications dropdown
+
+### Profile pages
+- [x] Show "Recent activity" section on `/profile/[userId]` — last 5 watches with dates, respecting `ProfileContentVisibility` settings
+- [x] Show mutual friends count on profile ("`N` mutual friends")
+
+---
+
+## Session 7 — Picker Persistence & Voting
+
+Picker rooms are ephemeral JSON blobs. Great for a one-off session but useless as a recurring ritual — there's no history, no shortlisting, and no way to resolve a tie other than arguing. This session gives the picker memory and a lightweight democratic mechanic.
+
+### Room persistence
+- [ ] Schema: add `PickerSession` model — stores completed room snapshot (roomId, participants, attractors used, final ranked results JSON, createdAt, pickedTmdbId nullable)
+- [ ] Migration + `yarn db:generate`
+- [ ] "End session & save" action on picker room — writes a `PickerSession` row; marks the room archived
+- [ ] `/pick/history` route — list of past sessions (date, participants, what was picked); owner-only view
+- [ ] `PickerSessionCard` component — compact summary: participant avatars, top-3 results, "picked" badge if a winner was recorded
+
+### Shortlist voting
+- [ ] "Move to shortlist" action on `ScoredMovieCard` — adds tmdbId to a `shortlist` array in room state (alongside existing `vetoIds`)
+- [ ] Shortlist panel — separate tab/section in picker results showing shortlisted titles; each participant can cast one vote per shortlisted title
+- [ ] Vote state in `PickerRoom` JSON: `votes: { [userId]: tmdbId }` — PATCH room to record vote; SSE broadcast to all participants
+- [ ] Visual vote tally on shortlisted cards — "3/4 votes" indicator; unanimous choice auto-highlighted
+- [ ] "Record as picked" button on winning title — writes `pickedTmdbId` to `PickerSession`
+
+### Recurring rooms
+- [ ] "Save room preferences" option — save current participants and attractor seeds as a named preset; reload on next session creation
+- [ ] Preset selector on `/pick` room creation form
+
+---
+
+## Session 8 — TV "Continue Watching" Experience
+
+Episode tracking is elite UX on the title page but invisible everywhere else. Titles sit in WATCHING status with no nudge toward the next episode. This session surfaces in-progress TV on the home page and makes forward-progress the default.
+
+### Home page
+- [ ] "Continue watching" section on `/` — TV titles in WATCHING status, sorted by most recently watched episode; shows next unwatched episode number (S01E04 style)
+- [ ] `ContinueWatchingCard` — landscape crop of backdrop, show title, next episode label, quick "Mark watched" inline button that logs the episode and advances the pointer
+- [ ] `loading.tsx` skeleton for the section; hide section entirely if no in-progress titles
+
+### TV title page
+- [ ] "Next episode" prompt at the top of the episode tracker — sticky banner showing S__E__ with a one-click "Mark watched" button; disappears when all episodes are caught up or show is WATCHED
+- [ ] Season progress bar on each season accordion header — `N / M episodes watched` with a filled progress bar; color-coded with `text-status-watching` token
+- [ ] "Mark season complete" bulk action on season header (already have episode bulk actions; add season-level shortcut)
+
+### Watchlist / watching pages
+- [ ] Show "N episodes behind" label on TV cards in the `/watching` grid — derived from `EpisodeStatus` rows vs. total TMDB episode count
+- [ ] Sort option: "By progress" — surfaces most-behind shows first
+
+---
+
 ## Audit notes (reference)
 
 **Strengths identified:**
