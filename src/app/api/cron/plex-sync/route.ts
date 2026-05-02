@@ -21,6 +21,10 @@ export async function POST(req: NextRequest) {
     select: { userId: true },
   });
 
+  console.log(
+    `[cron/plex-sync] ${new Date().toISOString()} Starting sync for ${connections.length} user(s).`,
+  );
+
   const results = await Promise.allSettled(
     connections.map(({ userId }) => syncPlexUser(userId)),
   );
