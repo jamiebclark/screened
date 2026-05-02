@@ -8,10 +8,13 @@ import {
   useCallback,
   useMemo,
 } from "react";
-import { Loader2, Link2, Share2, Radio, WifiOff } from "lucide-react";
+import { Loader2, Link2, Share2, Radio, WifiOff, Save, History, Bookmark, Trash2 } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { toast } from "@/hooks/use-toast";
 import {
   usePickerRoomSync,
   ensureCurrentUserInRoom,
@@ -42,12 +45,21 @@ interface User {
   avatarUrl: string | null;
 }
 
+export interface PickerPreset {
+  id: string;
+  name: string;
+  /** Full participant snapshots stored in the participantIds JSON column. */
+  participantIds: unknown;
+  attractors: unknown;
+}
+
 export interface PickSessionProps {
   currentUser: User;
   roomId: string | null;
   initialRoomState: PickerRoomState;
   /** Current user has linked Plex (Plex server filter is available). */
   hasPlexLinked: boolean;
+  presets: PickerPreset[];
 }
 
 type PickerWatchStatus = "WATCHLIST" | "WATCHING" | "WATCHED" | "DROPPED";
@@ -59,6 +71,7 @@ export function PickSession({
   roomId,
   initialRoomState,
   hasPlexLinked,
+  presets,
 }: PickSessionProps) {
   const [roomState, setRoomState] = useState<PickerRoomState>(() =>
     ensureCurrentUserInRoom(
@@ -86,6 +99,12 @@ export function PickSession({
     Record<number, { status: PickerWatchStatus; rating: number | null }>
   >({});
   const [pickerStatusesNonce, setPickerStatusesNonce] = useState(0);
+  const [savingPick, setSavingPick] = useState(false);
+  const [savingSession, setSavingSession] = useState(false);
+  const [savingPreset, setSavingPreset] = useState(false);
+  const [presetName, setPresetName] = useState("");
+  const [showPresetForm, setShowPresetForm] = useState(false);
+  const [localPresets, setLocalPresets] = useState(presets);
 
   const router = useRouter();
   const roomStateRef = useRef(roomState);
@@ -548,6 +567,125 @@ export function PickSession({
     }
   };
 
+  // ─── Shortlist & voting ──────────────────────────────────────────────────────
+
+  const toggleShortlist = (tmdbId: number) => {
+    setRoomState((prev) => {
+      const list = prev.shortlist ?? [];
+      const next = list.includes(tmdbId)
+        ? list.filter((id) => id !== tmdbId)
+        : [...list, tmdbId];
+      return { ...prev, shortlist: next };
+    });
+  };
+
+  const castVote = (tmdbId: number) => {
+    setRoomState((prev) => {
+      const prevVotes = prev.votes ?? {};
+      const alreadyVoted = prevVotes[currentUser.id] === tmdbId;
+      const next = { ...prevVotes };
+      if (alreadyVoted) {
+        delete next[currentUser.id];
+      } else {
+        next[currentUser.id] = tmdbId;
+      }
+      return { ...prev, votes: next };
+    });
+  };
+
+  const recordPick = async (tmdbId: number) => {
+    if (!scoringResults) return;
+    setSavingPick(true);
+    try {
+      const res = await fetch("/api/picker/sessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          roomId: roomId ?? undefined,
+          participants,
+          attractors,
+          results: scoringResults.slice(0, 20),
+          pickedTmdbId: tmdbId,
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to save session");
+      const picked = scoringResults.find((m) => m.tmdbId === tmdbId);
+      toast({ description: `"${picked?.title ?? "Pick"}" recorded as tonight's pick.` });
+    } catch {
+      toast({ description: "Failed to save pick. Please try again.", variant: "destructive" });
+    } finally {
+      setSavingPick(false);
+    }
+  };
+
+  const saveSession = async () => {
+    if (!scoringResults) return;
+    setSavingSession(true);
+    try {
+      const res = await fetch("/api/picker/sessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          roomId: roomId ?? undefined,
+          participants,
+          attractors,
+          results: scoringResults.slice(0, 20),
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to save session");
+      toast({ description: "Session saved to your pick history." });
+    } catch {
+      toast({ description: "Failed to save session. Please try again.", variant: "destructive" });
+    } finally {
+      setSavingSession(false);
+    }
+  };
+
+  // ─── Presets ─────────────────────────────────────────────────────────────────
+
+  const savePreset = async () => {
+    const name = presetName.trim();
+    if (!name) return;
+    setSavingPreset(true);
+    try {
+      const res = await fetch("/api/picker/presets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, participants, attractors }),
+      });
+      if (!res.ok) throw new Error();
+      const data = (await res.json()) as { preset: PickerPreset };
+      setLocalPresets((p) => [data.preset, ...p]);
+      setPresetName("");
+      setShowPresetForm(false);
+      toast({ description: `Preset "${name}" saved.` });
+    } catch {
+      toast({ description: "Failed to save preset.", variant: "destructive" });
+    } finally {
+      setSavingPreset(false);
+    }
+  };
+
+  const applyPreset = (preset: PickerPreset) => {
+    type Snapshot = { id: string; name: string | null; email: string | null; avatarUrl: string | null };
+    const presetParticipants = (preset.participantIds as Snapshot[]) ?? [];
+    const presetAttractors = (preset.attractors as ReferenceMovieJson[]) ?? [];
+    setRoomState((prev) => ({
+      ...prev,
+      participants: [
+        currentUser,
+        ...presetParticipants.filter((p) => p.id !== currentUser.id),
+      ],
+      attractors: presetAttractors,
+    }));
+    toast({ description: `Loaded preset "${preset.name}".` });
+  };
+
+  const deletePreset = async (id: string) => {
+    await fetch(`/api/picker/presets/${id}`, { method: "DELETE" });
+    setLocalPresets((p) => p.filter((preset) => preset.id !== id));
+  };
+
   const canScore = participants.length > 0 && attractors.length > 0;
   const currentUserId = currentUser.id;
 
@@ -586,16 +724,44 @@ export function PickSession({
                 room.
               </p>
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="shrink-0"
-              onClick={copyShareLink}
-            >
-              <Link2 className="h-4 w-4" />
-              Copy link
-            </Button>
+            <div className="flex items-center gap-2 shrink-0">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                asChild
+              >
+                <Link href="/pick/history">
+                  <History className="h-4 w-4" />
+                  History
+                </Link>
+              </Button>
+              {scoringResults !== null && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={saveSession}
+                  disabled={savingSession}
+                >
+                  {savingSession ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="h-4 w-4" />
+                  )}
+                  Save session
+                </Button>
+              )}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={copyShareLink}
+              >
+                <Link2 className="h-4 w-4" />
+                Copy link
+              </Button>
+            </div>
           </>
         ) : (
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3 w-full sm:justify-between">
@@ -603,20 +769,32 @@ export function PickSession({
               Share one screen: start a room and send the link so everyone can
               edit together in real time.
             </p>
-            <Button
-              type="button"
-              size="sm"
-              className="shrink-0"
-              onClick={startSharedSession}
-              disabled={startingRoom}
-            >
-              {startingRoom ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Share2 className="h-4 w-4" />
-              )}
-              Start shared session
-            </Button>
+            <div className="flex items-center gap-2 shrink-0">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                asChild
+              >
+                <Link href="/pick/history">
+                  <History className="h-4 w-4" />
+                  History
+                </Link>
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={startSharedSession}
+                disabled={startingRoom}
+              >
+                {startingRoom ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Share2 className="h-4 w-4" />
+                )}
+                Start shared session
+              </Button>
+            </div>
           </div>
         )}
       </div>
@@ -635,6 +813,120 @@ export function PickSession({
           />
         </CardContent>
       </Card>
+
+      {/* Presets */}
+      {(localPresets.length > 0 || attractors.length > 0) && (
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base">Saved presets</CardTitle>
+              {!showPresetForm && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 gap-1 text-xs"
+                  onClick={() => setShowPresetForm(true)}
+                  disabled={attractors.length === 0}
+                  title={
+                    attractors.length === 0
+                      ? "Add attractors before saving a preset"
+                      : "Save current participants and attractors as a preset"
+                  }
+                >
+                  <Bookmark className="h-3.5 w-3.5" />
+                  Save as preset
+                </Button>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {showPresetForm && (
+              <div className="flex items-center gap-2">
+                <Input
+                  placeholder="Preset name…"
+                  value={presetName}
+                  onChange={(e) => setPresetName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") void savePreset();
+                    if (e.key === "Escape") { setShowPresetForm(false); setPresetName(""); }
+                  }}
+                  className="h-8 text-sm"
+                  autoFocus
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  className="h-8 shrink-0"
+                  onClick={savePreset}
+                  disabled={savingPreset || !presetName.trim()}
+                >
+                  {savingPreset ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    "Save"
+                  )}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 shrink-0"
+                  onClick={() => { setShowPresetForm(false); setPresetName(""); }}
+                >
+                  Cancel
+                </Button>
+              </div>
+            )}
+            {localPresets.length === 0 ? (
+              <p className="text-xs text-muted-foreground">
+                Save your current setup to quickly reload it next time.
+              </p>
+            ) : (
+              <div className="space-y-1">
+                {localPresets.map((preset) => {
+                  type AttrJson = { title: string };
+                  const presetAttractors = (preset.attractors as AttrJson[]) ?? [];
+                  return (
+                    <div
+                      key={preset.id}
+                      className="flex items-center justify-between gap-2 rounded-md px-2 py-1.5 hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate">{preset.name}</p>
+                        {presetAttractors.length > 0 && (
+                          <p className="text-xs text-muted-foreground truncate">
+                            {presetAttractors.map((a) => a.title).join(", ")}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-7 text-xs"
+                          onClick={() => applyPreset(preset)}
+                        >
+                          Load
+                        </Button>
+                        <button
+                          type="button"
+                          className="text-muted-foreground hover:text-destructive transition-colors p-1 rounded"
+                          onClick={() => void deletePreset(preset.id)}
+                          aria-label={`Delete preset ${preset.name}`}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Main content grid */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_18.5rem] xl:grid-cols-[1fr_20rem] items-start">
@@ -659,10 +951,18 @@ export function PickSession({
             criteriaDirty={criteriaDirty}
             firstRunReady={firstRunReady}
             pickerStatusByTmdb={pickerStatusByTmdb}
+            shortlist={roomState.shortlist ?? []}
+            votes={roomState.votes ?? {}}
+            currentUserId={currentUser.id}
+            participantCount={participants.length}
+            savingPick={savingPick}
             onFindMovies={findMovies}
             onDismiss={dismissResult}
             onUndoDismiss={undoDismiss}
             onPickerStatusesInvalidate={invalidatePickerStatuses}
+            onToggleShortlist={toggleShortlist}
+            onVote={castVote}
+            onRecordPick={recordPick}
           />
         </div>
 
