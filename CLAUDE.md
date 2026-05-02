@@ -37,9 +37,19 @@ Before pushing: run `yarn ci:check` (needs `DATABASE_URL` in `.env` pointing at 
 
 **Data layer:** `src/lib/` holds all business logic — integrations (`plex.ts`, `letterboxd-sync.ts`, `tmdb.ts`), Picker scoring, watch history queries, auth config (`auth.ts`), and the Prisma singleton (`prisma.ts`). Generated Prisma client lives in `src/generated/prisma/` (never edit; regenerate with `yarn db:generate`).
 
+**Shared components:** `src/components/` contains reusable client components (dialogs, rating stars, media cards, nav, notification menu, etc.). App-route-specific components live alongside their route files.
+
 **RSC + client mutations pattern:** Server Components render data server-side. `"use client"` components mutate via `fetch` to `/api/...` Route Handlers, then call `router.refresh()` to re-hydrate Server Components on the same route after a successful mutation. Exceptions: skip `router.refresh()` if the UI is entirely client-state-driven, or if the next step is `router.push()` to another route. See examples in `letterboxd-import-dialog.tsx`, `watch-status-button.tsx`, `invite-member-form.tsx`.
 
 **Auth:** `src/lib/auth.ts` — two providers: email/password (bcrypt) and Plex OAuth. All API routes verify the session with `await auth()` and return 401 before touching data. Cron/admin routes additionally verify `CRON_SECRET` or session role.
+
+**Third-party account linking:** External accounts use dedicated connection models (`PlexConnection`, `LetterboxdConnection`) with a `userId` unique FK. Link/unlink flows live under `/api/<service>/link`. This is the pattern to follow when adding new account connections (e.g. Discord).
+
+**Client-safe enum mirrors:** Prisma-generated enums live in `src/generated/prisma/` and cannot be imported in `"use client"` components. `src/lib/notification-types.ts` re-exports the enums as plain `const` objects + types. Follow this pattern when adding new enums that need client-side use.
+
+**In-app notification system:** `Notification` model stores typed events (see `NotificationType` enum). `src/lib/watch-notifications.ts` creates notifications after manual watch events (not bulk syncs). `GET /api/notifications` serves unread counts and recent items. New notification-triggering events should follow the same pattern: write to `Notification` in the lib layer, not in the route handler.
+
+**Optional features pattern:** Features gated by env vars (`OPENAI_API_KEY`, `OMDB_API_KEY`) check `process.env.*` at call time and degrade gracefully when absent — no crash, no UI exposure. Follow this pattern for any new optional integration: check presence in the lib module, surface capability flags to the UI only when needed.
 
 **Key Prisma models:**
 - `UserMediaStatus` — user's tracking status (WATCHLIST/WATCHING/WATCHED/DROPPED) + rating for a title
@@ -111,3 +121,17 @@ Follow `docs/ui-ux-standards.md` for any visible changes. Key rules:
 ## Documentation to keep in sync
 
 When adding features, env vars, or changing Docker/cron behavior, update `README.md` and `.env.example`. `CHANGELOG.md` is managed by semantic-release — do not edit manually.
+
+## Authoritative rule sources
+
+These `.cursor/rules/` files contain full detail behind the summaries above — read them when a situation isn't covered here:
+
+- `prisma-migrations.mdc` — complete Prisma migration strategy and agent checklist
+- `conventional-commits.mdc` — commit splitting rules, ordering, and edge cases
+- `next-rsc-router-refresh.mdc` — full RSC/router.refresh() decision tree with examples
+- `engineering-standards.mdc` — API route patterns, security, and testing expectations
+
+<!-- SPECKIT START -->
+For additional context about technologies to be used, project structure,
+shell commands, and other important information, read the current plan
+<!-- SPECKIT END -->
