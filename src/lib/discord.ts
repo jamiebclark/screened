@@ -70,6 +70,7 @@ export async function notifyWatched(
     : `**${opts.userName}** watched ${titleLine}`;
   const path = opts.type === "movie" ? "movies" : "tv";
   const embed: DiscordEmbed = {
+    title: titleLine,
     description,
     color: COLOR.watched,
     url: `${opts.appUrl}/${path}/${opts.tmdbId}`,
@@ -99,6 +100,7 @@ export async function notifyListItemAdded(
 ): Promise<void> {
   const titleLine = opts.year ? `${opts.title} (${opts.year})` : opts.title;
   const embed: DiscordEmbed = {
+    title: opts.listName,
     description: `**${opts.userName}** added ${titleLine} to **${opts.listName}**`,
     color: COLOR.added,
     url: `${opts.appUrl}/lists/${opts.listSlug}`,
