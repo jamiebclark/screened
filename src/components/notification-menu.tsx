@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Bell, Check, Loader2, X } from "lucide-react";
+import { Bell, Check, CheckCheck, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -20,6 +21,12 @@ import {
 } from "@/lib/notification-types";
 import { cn } from "@/lib/utils";
 
+function posterUrl(path: string | null | undefined) {
+  if (!path) return null;
+  if (path.startsWith("http")) return path;
+  return `https://image.tmdb.org/t/p/w92${path}`;
+}
+
 type NotificationItem = {
   id: string;
   type: NotifType;
@@ -34,6 +41,16 @@ type NotificationItem = {
   friendRequest: {
     id: string;
     fromUser: { id: string; name: string; avatarUrl: string | null };
+  } | null;
+  watchEntry: {
+    id: string;
+    watcher: { id: string; name: string; avatarUrl: string | null };
+    mediaItem: {
+      tmdbId: number;
+      type: "MOVIE" | "TV";
+      title: string;
+      poster: string | null;
+    };
   } | null;
 };
 
@@ -52,6 +69,7 @@ export function NotificationMenu({
   const [data, setData] = useState<NotificationsResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [actingId, setActingId] = useState<string | null>(null);
+  const [markingAllRead, setMarkingAllRead] = useState(false);
 
   const load = useCallback(async () => {
     await Promise.resolve();
@@ -82,6 +100,18 @@ export function NotificationMenu({
   }, [open, load]);
 
   const unread = data?.unreadCount ?? initialUnreadCount;
+
+  const markAllRead = async () => {
+    setMarkingAllRead(true);
+    try {
+      const res = await fetch("/api/notifications", { method: "PATCH" });
+      if (!res.ok) return;
+      await load();
+      router.refresh();
+    } finally {
+      setMarkingAllRead(false);
+    }
+  };
 
   const respond = async (requestId: string, action: "approve" | "deny") => {
     setActingId(requestId);
@@ -117,9 +147,7 @@ export function NotificationMenu({
       } else {
         const res = await fetch(
           `/api/friends/requests/${encodeURIComponent(requestId)}`,
-          {
-            method: "DELETE",
-          },
+          { method: "DELETE" },
         );
         if (!res.ok) return;
       }
@@ -153,8 +181,27 @@ export function NotificationMenu({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-80 p-0 overflow-hidden">
-        <div className="px-3 py-2 border-b border-border">
+        <div className="px-3 py-2 border-b border-border flex items-center justify-between">
           <p className="text-sm font-medium">Notifications</p>
+          {unread > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+              disabled={markingAllRead}
+              onClick={(e) => {
+                e.preventDefault();
+                void markAllRead();
+              }}
+            >
+              {markingAllRead ? (
+                <Loader2 className="h-3 w-3 animate-spin mr-1" />
+              ) : (
+                <CheckCheck className="h-3 w-3 mr-1" />
+              )}
+              Mark all read
+            </Button>
+          )}
         </div>
         <div className="max-h-80 overflow-y-auto">
           {loading && items.length === 0 ? (
@@ -197,6 +244,10 @@ export function NotificationMenu({
                         respondFriend(n.friendRequest!.id, "decline")
                       }
                     />
+                  ) : n.type ===
+                      NotificationType.FRIEND_WATCHED_YOUR_WATCHLIST &&
+                    n.watchEntry ? (
+                    <FriendWatchedRow n={n} />
                   ) : (
                     <span className="text-muted-foreground">Notification</span>
                   )}
@@ -207,6 +258,59 @@ export function NotificationMenu({
         </div>
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+}
+
+function FriendWatchedRow({ n }: { n: NotificationItem }) {
+  const we = n.watchEntry!;
+  const href =
+    we.mediaItem.type === "MOVIE"
+      ? `/movies/${we.mediaItem.tmdbId}`
+      : `/tv/${we.mediaItem.tmdbId}`;
+  const poster = posterUrl(we.mediaItem.poster);
+  const watcherInitials = we.watcher.name
+    .split(" ")
+    .map((s) => s[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+
+  return (
+    <div className="flex gap-2 items-start">
+      <Link href={`/profile/${we.watcher.id}`} className="shrink-0">
+        <Avatar className="h-8 w-8">
+          <AvatarImage src={we.watcher.avatarUrl ?? undefined} />
+          <AvatarFallback className="text-[10px]">{watcherInitials}</AvatarFallback>
+        </Avatar>
+      </Link>
+      <div className="min-w-0 flex-1">
+        <p className="text-xs text-muted-foreground leading-tight">
+          <Link
+            href={`/profile/${we.watcher.id}`}
+            className="font-medium text-foreground hover:underline"
+          >
+            {we.watcher.name}
+          </Link>{" "}
+          watched{" "}
+          <Link href={href} className="font-medium text-foreground hover:underline">
+            {we.mediaItem.title}
+          </Link>{" "}
+          which is on your watchlist
+        </p>
+      </div>
+      {poster && (
+        <Link href={href} className="shrink-0">
+          <Image
+            src={poster}
+            alt={we.mediaItem.title}
+            width={28}
+            height={42}
+            className="rounded object-cover"
+            unoptimized
+          />
+        </Link>
+      )}
+    </div>
   );
 }
 

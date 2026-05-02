@@ -14,6 +14,7 @@ import {
   X,
   History,
   Sparkles,
+  Users,
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -44,6 +45,7 @@ const navLinks = [
   { href: "/pick", label: "Picker", icon: Sparkles },
   { href: "/history", label: "History", icon: History },
   { href: "/lists", label: "Lists", icon: ListVideo },
+  { href: "/activity", label: "Activity", icon: Users },
 ];
 
 export function Nav({ user, initialUnreadNotifications }: NavProps) {
@@ -75,7 +77,7 @@ export function Nav({ user, initialUnreadNotifications }: NavProps) {
             {navLinks.map(({ href, label, icon: Icon }) => {
               const active =
                 pathname === href ||
-                (href === "/history" && pathname.startsWith("/history"));
+                (href !== "/" && pathname.startsWith(href));
               return (
                 <Link
                   key={href}
