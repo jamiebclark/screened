@@ -64,12 +64,12 @@
     "@semantic-release/npm": "^13.1.5",
     "@tailwindcss/postcss": "^4",
     "@types/bcryptjs": "^3.0.0",
-    "@types/node": "^20",
+    "@types/node": "^25",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@vitest/coverage-v8": "2.1.9",
+    "@vitest/coverage-v8": "4.1.5",
     "conventional-changelog-conventionalcommits": "^9.3.1",
-    "eslint": "^9",
+    "eslint": "^10",
     "eslint-config-next": "16.2.4",
     "husky": "^9.1.7",
     "lint-staged": "^16.4.0",
@@ -77,8 +77,8 @@
     "prisma": "^7.8.0",
     "semantic-release": "^25.0.3",
     "tailwindcss": "^4",
-    "typescript": "^5",
-    "vitest": "2.1.9"
+    "typescript": "^6",
+    "vitest": "4.1.5"
   },
   "packageManager": "yarn@1.22.21+sha1.1959a18351b811cdeedbd484a8f86c3cc3bbaf72",
   "lint-staged": {
