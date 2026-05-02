@@ -18,6 +18,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Star, Calendar, Tv } from "lucide-react";
 import { MediaType } from "@/generated/prisma";
 import { MediaCard } from "@/components/media-card";
+import { Suspense } from "react";
+import { TitleListsSection } from "@/components/title-lists-section";
 type Params = {
   params: Promise<{ tmdbId: string }>;
 };
@@ -251,6 +253,14 @@ export default async function TvPage({ params }: Params) {
             </TabsContent>
           </Tabs>
         </div>
+
+        <Suspense fallback={null}>
+          <TitleListsSection
+            tmdbId={tmdbId}
+            mediaType="tv"
+            userId={session?.user?.id ?? null}
+          />
+        </Suspense>
 
         {similar.length > 0 && (
           <section className="mt-12 space-y-4">

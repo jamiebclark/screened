@@ -26,6 +26,7 @@ import { MediaType } from "@/generated/prisma";
 import { parseDateOnlyIso } from "@/lib/history-calendar";
 import { fetchTitleWatchHistoryForViewer } from "@/lib/watch-history-queries";
 import { MediaCard } from "@/components/media-card";
+import { TitleListsSection } from "@/components/title-lists-section";
 
 type Params = {
   params: Promise<{ tmdbId: string }>;
@@ -246,6 +247,14 @@ export default async function MoviePage({ params, searchParams }: Params) {
             )}
           </div>
         </div>
+
+        <Suspense fallback={null}>
+          <TitleListsSection
+            tmdbId={tmdbId}
+            mediaType="movie"
+            userId={session?.user?.id ?? null}
+          />
+        </Suspense>
 
         {similar.length > 0 && (
           <section className="mt-12 space-y-4">

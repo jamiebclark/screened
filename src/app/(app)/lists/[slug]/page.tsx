@@ -145,9 +145,6 @@ export default async function ListPage({ params }: Params) {
     }
   }
 
-  const allMovies = list.items.filter(
-    (i) => i.mediaItem.type === MediaType.MOVIE,
-  );
   const movies = unwatchedItems.filter(
     (i) => i.mediaItem.type === MediaType.MOVIE,
   );
