@@ -20,6 +20,8 @@ const groups = [
     items: [
       { href: "/settings/plex", label: "Plex" },
       { href: "/settings/letterboxd", label: "Letterboxd" },
+      { href: "/settings/tautulli", label: "Tautulli" },
+      { href: "/settings/discord", label: "Discord" },
     ],
   },
 ] as const;

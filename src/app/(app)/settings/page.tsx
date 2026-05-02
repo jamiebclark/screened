@@ -1,5 +1,6 @@
 import Link from "next/link";
 import {
+  Activity,
   ArrowRight,
   Lock,
   Sparkles,
@@ -7,12 +8,14 @@ import {
   UserPlus,
   Users,
 } from "lucide-react";
+import { siDiscord, siLetterboxd, siPlex } from "simple-icons";
 import {
   Card,
   CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { SimpleBrandIcon } from "@/components/simple-brand-icon";
 import { auth } from "@/lib/auth";
 import { isSiteAdminEmail } from "@/lib/signup-invites";
 
@@ -47,7 +50,10 @@ export default async function SettingsPage() {
                 <Card className="transition-colors hover:bg-accent/50">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <div>
-                      <CardTitle className="text-base">Plex</CardTitle>
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <SimpleBrandIcon icon={siPlex} />
+                        Plex
+                      </CardTitle>
                       <CardDescription>
                         Sync watch history from your Plex server.
                       </CardDescription>
@@ -66,7 +72,10 @@ export default async function SettingsPage() {
                 <Card className="transition-colors hover:bg-accent/50">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <div>
-                      <CardTitle className="text-base">Letterboxd</CardTitle>
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <SimpleBrandIcon icon={siLetterboxd} />
+                        Letterboxd
+                      </CardTitle>
                       <CardDescription>
                         Import your public diary and ratings from Letterboxd.
                       </CardDescription>
@@ -85,7 +94,10 @@ export default async function SettingsPage() {
                 <Card className="transition-colors hover:bg-accent/50">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <div>
-                      <CardTitle className="text-base">Tautulli</CardTitle>
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Activity className="h-4 w-4 shrink-0" />
+                        Tautulli
+                      </CardTitle>
                       <CardDescription>
                         Richer Plex session history with precise timestamps.
                       </CardDescription>
@@ -104,7 +116,10 @@ export default async function SettingsPage() {
                 <Card className="transition-colors hover:bg-accent/50">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <div>
-                      <CardTitle className="text-base">Discord</CardTitle>
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <SimpleBrandIcon icon={siDiscord} />
+                        Discord
+                      </CardTitle>
                       <CardDescription>
                         Channel notifications and slash commands.
                       </CardDescription>
