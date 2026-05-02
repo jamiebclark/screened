@@ -86,11 +86,12 @@ export async function getJellyfinHistory(
     if (!res.ok) break;
 
     const body = (await res.json()) as JellyfinItemsResponse;
-    if (totalCount === null) totalCount = body.TotalRecordCount;
+    if (totalCount === null) totalCount = body.TotalRecordCount ?? 0;
 
-    all.push(...body.Items);
-    startIndex += body.Items.length;
-    if (body.Items.length < pageSize) break;
+    const items = body.Items ?? [];
+    all.push(...items);
+    startIndex += items.length;
+    if (items.length < pageSize) break;
   }
 
   return all;
