@@ -281,25 +281,99 @@ export async function getPlexLibraryMovieTmdbToRatingKey(
   return byTmdb;
 }
 
+async function readPlexLibraryCacheFromDB(
+  userId: string,
+  machineIdentifier: string,
+): Promise<{ map: Map<number, string>; cachedAt: Date } | null> {
+  const conn = await prisma.plexConnection.findUnique({
+    where: { userId },
+    select: { libraryCache: true, libraryCachedAt: true, plexServerId: true },
+  });
+  if (!conn?.libraryCache || !conn.libraryCachedAt) return null;
+  // Invalidate if the user has switched to a different Plex server
+  if (conn.plexServerId && conn.plexServerId !== machineIdentifier) return null;
+  const entries = conn.libraryCache as Array<[number, string]>;
+  return { map: new Map(entries), cachedAt: conn.libraryCachedAt };
+}
+
+async function writePlexLibraryCacheToDB(
+  userId: string,
+  map: Map<number, string>,
+): Promise<void> {
+  await prisma.plexConnection.update({
+    where: { userId },
+    data: { libraryCache: [...map.entries()], libraryCachedAt: new Date() },
+  });
+}
+
+function scheduleBackgroundLibraryRefresh(
+  userId: string,
+  ctx: PlexServerContext,
+  cacheKey: string,
+): void {
+  if (plexLibraryIndexInflight.has(cacheKey)) return;
+  const promise = getPlexLibraryMovieTmdbToRatingKey(ctx.serverUrl, ctx.token)
+    .then(async (map) => {
+      plexLibraryIndexCache.set(cacheKey, {
+        map,
+        expiresAt: Date.now() + PLEX_LIBRARY_INDEX_TTL_MS,
+      });
+      await writePlexLibraryCacheToDB(userId, map).catch((e) =>
+        console.error("[plex] background library cache write failed:", e),
+      );
+      return map;
+    })
+    .catch((e) => {
+      console.error("[plex] background library refresh failed:", e);
+      return new Map<number, string>();
+    })
+    .finally(() => {
+      plexLibraryIndexInflight.delete(cacheKey);
+    });
+  plexLibraryIndexInflight.set(cacheKey, promise);
+}
+
 async function getPlexLibraryMovieIndexCached(
   userId: string,
   ctx: PlexServerContext,
 ): Promise<Map<number, string>> {
   const cacheKey = plexLibraryIndexCacheKey(userId, ctx.machineIdentifier);
   const now = Date.now();
+
+  // 1. In-memory hit — fastest path
   const hit = plexLibraryIndexCache.get(cacheKey);
   if (hit && hit.expiresAt > now) {
     return hit.map;
   }
 
+  // 2. DB cache hit — return immediately, refresh in background if stale
+  const dbCache = await readPlexLibraryCacheFromDB(
+    userId,
+    ctx.machineIdentifier,
+  );
+  if (dbCache) {
+    plexLibraryIndexCache.set(cacheKey, {
+      map: dbCache.map,
+      expiresAt: now + PLEX_LIBRARY_INDEX_TTL_MS,
+    });
+    if (now - dbCache.cachedAt.getTime() > PLEX_LIBRARY_INDEX_TTL_MS) {
+      scheduleBackgroundLibraryRefresh(userId, ctx, cacheKey);
+    }
+    return dbCache.map;
+  }
+
+  // 3. Cold start — block until we have data, then persist to DB
   let pending = plexLibraryIndexInflight.get(cacheKey);
   if (!pending) {
     pending = getPlexLibraryMovieTmdbToRatingKey(ctx.serverUrl, ctx.token)
-      .then((map) => {
+      .then(async (map) => {
         plexLibraryIndexCache.set(cacheKey, {
           map,
           expiresAt: Date.now() + PLEX_LIBRARY_INDEX_TTL_MS,
         });
+        await writePlexLibraryCacheToDB(userId, map).catch((e) =>
+          console.error("[plex] library cache write failed:", e),
+        );
         return map;
       })
       .finally(() => {
