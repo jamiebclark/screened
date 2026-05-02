@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { after } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { areFriends } from "@/lib/friendship";
 import { findMergeCandidateWatchEntry } from "@/lib/watch-entry-merge";
+import { notifyFriendsOfWatch } from "@/lib/watch-notifications";
 import { MediaType, WatchEntrySource, WatchStatus } from "@/generated/prisma";
 
 type Params = { params: Promise<{ tmdbId: string }> };
@@ -165,6 +167,10 @@ export async function POST(req: NextRequest, { params }: Params) {
 
       return { entry: main, taggedCreatedCount };
     },
+  );
+
+  after(() =>
+    notifyFriendsOfWatch(session.user.id, mediaItem.id, entry.id),
   );
 
   return NextResponse.json(

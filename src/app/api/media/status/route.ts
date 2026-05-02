@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { after } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { notifyFriendsOfWatch } from "@/lib/watch-notifications";
 import {
   getMovie,
   getTvShow,
@@ -227,7 +228,7 @@ export async function POST(req: NextRequest) {
         watchedAtForLog = lastEpisode._max.watchedAt;
       }
     }
-    await prisma.watchEntry.create({
+    const entry = await prisma.watchEntry.create({
       data: {
         userId: session.user.id,
         mediaItemId: mediaItem.id,
@@ -236,6 +237,9 @@ export async function POST(req: NextRequest) {
         source: WatchEntrySource.MANUAL,
       },
     });
+    after(() =>
+      notifyFriendsOfWatch(session.user.id, mediaItem.id, entry.id),
+    );
   }
 
   return NextResponse.json(result);

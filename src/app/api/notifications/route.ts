@@ -29,6 +29,19 @@ export async function GET() {
             fromUser: { select: { id: true, name: true, avatarUrl: true } },
           },
         },
+        watchEntry: {
+          include: {
+            user: { select: { id: true, name: true, avatarUrl: true } },
+            mediaItem: {
+              select: {
+                tmdbId: true,
+                type: true,
+                title: true,
+                poster: true,
+              },
+            },
+          },
+        },
       },
     }),
     prisma.notification.count({
@@ -57,6 +70,27 @@ export async function GET() {
             fromUser: n.friendRequest.fromUser,
           }
         : null,
+      watchEntry: n.watchEntry
+        ? {
+            id: n.watchEntry.id,
+            watcher: n.watchEntry.user,
+            mediaItem: n.watchEntry.mediaItem,
+          }
+        : null,
     })),
   });
+}
+
+export async function PATCH() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  await prisma.notification.updateMany({
+    where: { userId: session.user.id, readAt: null },
+    data: { readAt: new Date() },
+  });
+
+  return NextResponse.json({ success: true });
 }
