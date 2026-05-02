@@ -25,6 +25,7 @@ export function DiscordWebhookForm({
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [selectedChannelId, setSelectedChannelId] = useState("");
   const [selectedChannelName, setSelectedChannelName] = useState("");
+  const [selectedGuildId, setSelectedGuildId] = useState("");
   const [selectedGuildName, setSelectedGuildName] = useState("");
   const [actionError, setActionError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -49,6 +50,7 @@ export function DiscordWebhookForm({
     const [guildId, channelId] = e.target.value.split("|");
     const group = groups.find((g) => g.guildId === guildId);
     const channel = group?.channels.find((c) => c.id === channelId);
+    setSelectedGuildId(guildId ?? "");
     setSelectedChannelId(channelId ?? "");
     setSelectedChannelName(channel ? `#${channel.name}` : "");
     setSelectedGuildName(group?.guildName ?? "");
@@ -92,7 +94,7 @@ export function DiscordWebhookForm({
   };
 
   return (
-    <div className="rounded-lg border border-border bg-card p-4 mb-8">
+    <div className="rounded-lg border border-border bg-card p-4">
       <p className="text-sm font-medium mb-1 flex items-center gap-1.5">
         <MessageSquare className="h-4 w-4 text-primary" />
         Discord notifications
@@ -132,7 +134,7 @@ export function DiscordWebhookForm({
             <select
               value={
                 selectedChannelId
-                  ? `${selectedGuildName}|${selectedChannelId}`
+                  ? `${selectedGuildId}|${selectedChannelId}`
                   : ""
               }
               onChange={handleSelect}
