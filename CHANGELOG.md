@@ -1,3 +1,9 @@
+## [1.14.2](https://github.com/jamiebclark/screened/compare/v1.14.1...v1.14.2) (2026-05-02)
+
+### Bug Fixes
+
+* **discord:** bypass auth middleware for interactions endpoint ([9f538fe](https://github.com/jamiebclark/screened/commit/9f538fe9df92303bcd55a8bd83cbcba00eed6f12))
+
 ## [1.14.1](https://github.com/jamiebclark/screened/compare/v1.14.0...v1.14.1) (2026-05-02)
 
 ### Bug Fixes
