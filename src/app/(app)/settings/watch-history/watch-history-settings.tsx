@@ -68,6 +68,38 @@ function buildRows(counts: WatchImportCounts): Row[] {
         "Removes show-level Tautulli diary lines. Episode progress is shared with Plex and cleared separately.",
     },
     {
+      scope: "jellyfin_movie",
+      integration: "Jellyfin",
+      library: "Movies",
+      count: counts.jellyfinMovie,
+      resetHint:
+        "Removes movie watch entries synced from Jellyfin. Re-sync Jellyfin to import them again.",
+    },
+    {
+      scope: "jellyfin_tv",
+      integration: "Jellyfin",
+      library: "TV shows",
+      count: counts.jellyfinTv,
+      resetHint:
+        "Removes show-level Jellyfin diary lines. Episode progress is shared and cleared separately.",
+    },
+    {
+      scope: "trakt_movie",
+      integration: "Trakt",
+      library: "Movies",
+      count: counts.traktMovie,
+      resetHint:
+        "Removes movie watch entries imported from Trakt. Re-sync Trakt to import them again.",
+    },
+    {
+      scope: "trakt_tv",
+      integration: "Trakt",
+      library: "TV shows",
+      count: counts.traktTv,
+      resetHint:
+        "Removes show-level Trakt diary lines. Episode progress is shared and cleared separately.",
+    },
+    {
       scope: "letterboxd",
       integration: "Letterboxd",
       library: "Diary (movies)",
