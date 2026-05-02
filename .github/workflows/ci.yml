@@ -7,8 +7,33 @@ on:
       - main
 
 jobs:
-  build:
-    name: Migrate, schema check, build
+  lint:
+    name: Lint, format & typecheck
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: yarn
+
+      - run: yarn install --frozen-lockfile --ignore-engines
+
+      - name: Prettier (format check)
+        run: yarn format:check
+
+      - name: ESLint
+        run: yarn lint
+
+      - run: yarn db:generate
+
+      - name: TypeScript type check
+        run: yarn tsc --noEmit
+
+  test-build:
+    name: Migrate, test & build
     runs-on: ubuntu-latest
 
     services:
@@ -40,19 +65,17 @@ jobs:
 
       - run: yarn install --frozen-lockfile --ignore-engines
 
-      - name: Prettier (format check)
-        run: yarn format:check
-
-      - name: ESLint
-        run: yarn lint
-
       - name: Apply migrations (same as production entrypoint)
         run: yarn prisma migrate deploy
 
-      # Prisma migrate diff needs SHADOW_DATABASE_URL to point at an existing DB on the server.
-      # The Postgres service only creates POSTGRES_DB (screened_ci); create the shadow DB explicitly.
+      - name: Cache apt packages
+        uses: actions/cache@v4
+        with:
+          path: /var/cache/apt/archives
+          key: apt-postgresql-client-${{ runner.os }}
+
       - name: Install PostgreSQL client
-        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+        run: sudo apt-get install -y --no-install-recommends postgresql-client
 
       - name: Create Prisma shadow database
         env:
@@ -66,16 +89,12 @@ jobs:
 
       - run: yarn db:generate
 
-      - name: TypeScript type check
-        run: yarn tsc --noEmit
-
       - name: Unit tests (Vitest)
         run: yarn test
 
       - name: Build Next.js app
         run: yarn build
         env:
-          # Same DB as migrate steps (Prisma / RSC may touch DB during build).
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/screened_ci
           SHADOW_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/prisma_shadow_ci
           AUTH_SECRET: ci-build-placeholder-min-32-chars-long!!
