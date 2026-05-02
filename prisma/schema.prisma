@@ -34,6 +34,8 @@ enum WatchEntrySource {
   PLEX
   TAUTULLI
   LETTERBOXD
+  JELLYFIN
+  TRAKT
   MANUAL
   UNKNOWN
 }
@@ -79,6 +81,9 @@ model User {
   plexConnection        PlexConnection?
   letterboxdConnection  LetterboxdConnection?
   tautulliConnection    TautulliConnection?
+  jellyfinConnection    JellyfinConnection?
+  traktConnection       TraktConnection?
+  overseerrConnection   OverseerrConnection?
   discordConnection     DiscordConnection?
   mediaStatuses         UserMediaStatus[]
   watchEntries          WatchEntry[]
@@ -164,6 +169,45 @@ model TautulliConnection {
   lastSyncedAt     DateTime?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model JellyfinConnection {
+  id               String    @id @default(cuid())
+  userId           String    @unique
+  serverUrl        String
+  apiKey           String
+  jellyfinUserId   String
+  jellyfinUsername String
+  lastSyncedAt     DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model TraktConnection {
+  id           String    @id @default(cuid())
+  userId       String    @unique
+  traktUsername String
+  accessToken  String
+  refreshToken String
+  expiresAt    DateTime
+  lastSyncedAt DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model OverseerrConnection {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  serverUrl String
+  apiKey    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
