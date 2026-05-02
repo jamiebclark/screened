@@ -1,3 +1,19 @@
+## [1.18.0](https://github.com/jamiebclark/screened/compare/v1.17.0...v1.18.0) (2026-05-02)
+
+### Features
+
+* **jellyfin,trakt,overseerr:** add API routes and cron endpoints ([72a479b](https://github.com/jamiebclark/screened/commit/72a479ba18357fb83c9572f915cd8e08edf323ce))
+* **jellyfin,trakt,overseerr:** add integration lib and sync logic ([b020c1d](https://github.com/jamiebclark/screened/commit/b020c1dd85e8f1ff63dd8e6e8de0def26afec867))
+* **schema:** add JellyfinConnection, TraktConnection, OverseerrConnection models ([a1c20cf](https://github.com/jamiebclark/screened/commit/a1c20cfaabf7ba65af05c81ea8daa49e4dd061a5))
+* **settings:** add brand icons to integration cards and nav ([d992510](https://github.com/jamiebclark/screened/commit/d992510baa63c4a0453cee4d7da0d92edd47dca1))
+* **settings:** add Jellyfin, Trakt, and Overseerr settings pages ([2f54874](https://github.com/jamiebclark/screened/commit/2f54874ef4c6ceda35ad43244c04a68d322011b3))
+* **streaming:** show watch provider availability on movie and TV pages ([c823817](https://github.com/jamiebclark/screened/commit/c823817df55eab39a8cff0d2b8228cee32d98cd6))
+* **watch-history:** extend scopes and import counts for Jellyfin and Trakt ([a8e83ba](https://github.com/jamiebclark/screened/commit/a8e83bad996a794d2229b550331bd4fdf99ecee6))
+
+### Bug Fixes
+
+* **about:** source GitHub repo URL from package.json instead of CHANGELOG.md ([0ab75d8](https://github.com/jamiebclark/screened/commit/0ab75d834d8e943a0b66d02d05716779e5e3955c))
+
 ## [1.17.0](https://github.com/jamiebclark/screened/compare/v1.16.0...v1.17.0) (2026-05-02)
 
 ### Features
