@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { after } from "next/server";
+import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notifyListItemAdded } from "@/lib/discord";
@@ -102,6 +103,8 @@ export async function POST(req: NextRequest, { params }: Params) {
     data: { updatedAt: new Date() },
   });
 
+  revalidatePath(`/lists/${slug}`);
+
   after(async () => {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
     const listWithWebhook = await prisma.list.findUnique({
@@ -154,5 +157,6 @@ export async function DELETE(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   await prisma.listItem.delete({ where: { id: itemId } });
+  revalidatePath(`/lists/${slug}`);
   return NextResponse.json({ success: true });
 }
