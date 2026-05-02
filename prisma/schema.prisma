@@ -85,7 +85,9 @@ model User {
   listItems       ListItem[]
   sessions        Session[]
   preferences     UserPreference[]
-  pickerRooms     PickerRoom[] @relation("PickerRoomOwner")
+  pickerRooms     PickerRoom[]        @relation("PickerRoomOwner")
+  pickerSessions  PickerSession[]     @relation("PickerSessionOwner")
+  pickerPresets   PickerRoomPreset[]  @relation("PickerRoomPresetOwner")
   accessRequestsMade     ListAccessRequest[] @relation("AccessRequestRequester")
   accessRequestsResolved ListAccessRequest[] @relation("AccessRequestResolver")
   notifications          Notification[]
@@ -303,7 +305,42 @@ model PickerRoom {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  createdBy User @relation("PickerRoomOwner", fields: [createdById], references: [id], onDelete: Cascade)
+  createdBy User           @relation("PickerRoomOwner", fields: [createdById], references: [id], onDelete: Cascade)
+  sessions  PickerSession[]
+}
+
+/// Saved snapshot of a completed picker room session.
+model PickerSession {
+  id           String   @id @default(cuid())
+  createdById  String
+  roomId       String?
+  /// Participant snapshots: { id, name, avatarUrl }[]
+  participants Json
+  /// Attractor seeds used for scoring: ReferenceMovieJson[]
+  attractors   Json
+  /// Top scored results at time of save: ScoredMovieJson[]
+  results      Json
+  /// TMDB id of the title recorded as "picked", if any
+  pickedTmdbId Int?
+  createdAt    DateTime @default(now())
+
+  createdBy User        @relation("PickerSessionOwner", fields: [createdById], references: [id], onDelete: Cascade)
+  room      PickerRoom? @relation(fields: [roomId], references: [id], onDelete: SetNull)
+}
+
+/// Named preset: saved participants + attractor seeds for quick room creation.
+model PickerRoomPreset {
+  id           String   @id @default(cuid())
+  createdById  String
+  name         String
+  /// User IDs of participants to pre-populate: string[]
+  participantIds Json
+  /// Seed attractors: ReferenceMovieJson[]
+  attractors   Json
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  createdBy User @relation("PickerRoomPresetOwner", fields: [createdById], references: [id], onDelete: Cascade)
 }
 
 model ListAccessRequest {
