@@ -5,6 +5,19 @@ import packageJson from "../../package.json";
 /** Semver from package.json (updated by semantic-release on each release). */
 export const APP_VERSION: string = packageJson.version;
 
+/** Base GitHub repo URL from package.json `repository.url`, or null if absent. */
+function getRepoBaseUrl(): string | null {
+  const url =
+    typeof packageJson.repository === "object"
+      ? packageJson.repository.url
+      : typeof packageJson.repository === "string"
+        ? packageJson.repository
+        : null;
+  if (!url) return null;
+  const m = url.match(/https:\/\/github\.com\/[^/]+\/[^/.]+/);
+  return m ? m[0] : null;
+}
+
 /**
  * The first `## ...` block in root CHANGELOG.md (semantic-release format):
  * from the first release heading through the line before the next `##` heading.
@@ -23,7 +36,10 @@ export function parseFirstChangelogReleaseSection(
   return t.slice(0, next).trim();
 }
 
-/** First `https://github.com/owner/repo` in the changelog (used for a “full changelog” link). */
+/**
+ * First `https://github.com/owner/repo` in the changelog text.
+ * Still used by tests and changelog-section parsing; repo links now come from package.json.
+ */
 export function parseGithubRepoBaseFromChangelog(
   changelog: string,
 ): string | null {
@@ -46,9 +62,7 @@ export async function getLatestChangelogSection(): Promise<string | null> {
 }
 
 export async function getChangelogFileUrlFromRepo(): Promise<string | null> {
-  const text = await readRootChangelog();
-  if (!text) return null;
-  const base = parseGithubRepoBaseFromChangelog(text);
+  const base = getRepoBaseUrl();
   return base ? `${base}/blob/main/CHANGELOG.md` : null;
 }
 
@@ -58,22 +72,19 @@ export async function getLatestReleaseAndChangelogUrl(): Promise<{
   changelogUrl: string | null;
 }> {
   const text = await readRootChangelog();
-  if (!text) return { latestSection: null, changelogUrl: null };
-  const base = parseGithubRepoBaseFromChangelog(text);
+  const base = getRepoBaseUrl();
   return {
-    latestSection: parseFirstChangelogReleaseSection(text),
+    latestSection: text ? parseFirstChangelogReleaseSection(text) : null,
     changelogUrl: base ? `${base}/blob/main/CHANGELOG.md` : null,
   };
 }
 
-/** README and UI standards doc on GitHub when the repo URL appears in CHANGELOG.md. */
+/** README and UI standards doc on GitHub, sourced from package.json `repository`. */
 export async function getRepoDocumentationLinks(): Promise<{
   readmeUrl: string | null;
   uiUxUrl: string | null;
 }> {
-  const text = await readRootChangelog();
-  if (!text) return { readmeUrl: null, uiUxUrl: null };
-  const base = parseGithubRepoBaseFromChangelog(text);
+  const base = getRepoBaseUrl();
   if (!base) return { readmeUrl: null, uiUxUrl: null };
   return {
     readmeUrl: `${base}/blob/main/README.md`,

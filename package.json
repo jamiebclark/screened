@@ -2,6 +2,10 @@
   "name": "screened",
   "version": "1.17.0",
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jamiebclark/screened"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
