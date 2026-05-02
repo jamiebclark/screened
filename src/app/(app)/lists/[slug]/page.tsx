@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { notFound, redirect } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { Globe, Lock, Users, Film, Tv, ExternalLink } from "lucide-react";
+import { Globe, Lock, Users, Film, Tv, Download, UserPlus } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { tmdbImageUrl } from "@/lib/utils";
 import { InviteMemberForm } from "./invite-member-form";
@@ -12,6 +12,7 @@ import { ListItemActions } from "./list-item-actions";
 import { DiscordWebhookForm } from "./discord-webhook-form";
 import { LetterboxdImportDialog } from "@/components/letterboxd-import-dialog";
 import { EditableListSearchAdd } from "@/components/editable-list-search-add";
+import { CopyButton } from "@/components/copy-button";
 import { discordFeatures } from "@/lib/discord";
 import { MediaType, WatchStatus } from "@/generated/prisma";
 
@@ -116,8 +117,11 @@ export default async function ListPage({ params }: Params) {
       `${i.mediaItem.type === MediaType.MOVIE ? "movie" : "tv"}-${i.mediaItem.tmdbId}`,
   );
 
+  const hasSidebar = isMember || isOwner;
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start gap-4 mb-8">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
@@ -162,164 +166,178 @@ export default async function ListPage({ params }: Params) {
             )}
           </div>
         </div>
+      </div>
 
-        {isMember && (
-          <div className="flex gap-2 shrink-0">
-            <LetterboxdImportDialog slug={slug} />
-            {isOwner && <InviteMemberForm slug={slug} />}
+      {/* Two-column layout */}
+      <div className="flex flex-col lg:flex-row gap-8 items-start">
+        {/* Main content */}
+        <div className="flex-1 min-w-0">
+          {isMember && (
+            <EditableListSearchAdd
+              variant="list"
+              listSlug={slug}
+              existingKeys={existingListKeys}
+            />
+          )}
+
+          {/* Items grid */}
+          {list.items.length === 0 ? (
+            <div className="text-center py-16 border border-dashed border-border rounded-xl">
+              <Film className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+              <p className="text-muted-foreground">No items yet</p>
+            </div>
+          ) : (
+            <div className="space-y-8">
+              {movies.length > 0 && (
+                <section>
+                  <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4 flex items-center gap-1.5">
+                    <Film className="h-4 w-4" />
+                    Movies ({movies.length})
+                  </h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {movies.map((item) => (
+                      <ListItemCard
+                        key={item.id}
+                        item={item}
+                        slug={slug}
+                        canDelete={isMember || isOwner}
+                        isOwner={isOwner}
+                        currentUserId={userId}
+                      />
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {tvShows.length > 0 && (
+                <section>
+                  <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4 flex items-center gap-1.5">
+                    <Tv className="h-4 w-4" />
+                    TV Shows ({tvShows.length})
+                  </h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {tvShows.map((item) => (
+                      <ListItemCard
+                        key={item.id}
+                        item={item}
+                        slug={slug}
+                        canDelete={isMember || isOwner}
+                        isOwner={isOwner}
+                        currentUserId={userId}
+                      />
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {userId && (watchedMovies.length > 0 || watchedTv.length > 0) && (
+                <section>
+                  <h2 className="text-sm font-semibold text-foreground border-b border-border pb-2 mb-4">
+                    Watched ({watchedItems.length})
+                  </h2>
+                  <div className="space-y-8">
+                    {watchedMovies.length > 0 && (
+                      <div>
+                        <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4 flex items-center gap-1.5">
+                          <Film className="h-4 w-4" />
+                          Movies ({watchedMovies.length})
+                        </h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                          {watchedMovies.map((item) => (
+                            <ListItemCard
+                              key={item.id}
+                              item={item}
+                              slug={slug}
+                              canDelete={isMember || isOwner}
+                              isOwner={isOwner}
+                              currentUserId={userId}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {watchedTv.length > 0 && (
+                      <div>
+                        <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4 flex items-center gap-1.5">
+                          <Tv className="h-4 w-4" />
+                          TV Shows ({watchedTv.length})
+                        </h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                          {watchedTv.map((item) => (
+                            <ListItemCard
+                              key={item.id}
+                              item={item}
+                              slug={slug}
+                              canDelete={isMember || isOwner}
+                              isOwner={isOwner}
+                              currentUserId={userId}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </section>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Sidebar — integrations */}
+        {hasSidebar && (
+          <div className="lg:w-72 shrink-0 space-y-4">
+            {isOwner && (
+              <div className="rounded-lg border border-border bg-card p-4">
+                <p className="text-sm font-medium mb-1 flex items-center gap-1.5">
+                  <UserPlus className="h-4 w-4 text-primary" />
+                  Members
+                </p>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Invite collaborators to this list.
+                </p>
+                <InviteMemberForm slug={slug} />
+              </div>
+            )}
+            {isMember && (
+              <div className="rounded-lg border border-border bg-card p-4">
+                <p className="text-sm font-medium mb-1 flex items-center gap-1.5">
+                  <Download className="h-4 w-4 text-primary" />
+                  Letterboxd
+                </p>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Import films from your Letterboxd watchlist.
+                </p>
+                <LetterboxdImportDialog slug={slug} />
+              </div>
+            )}
+            {isOwner && discordFeatures().bot && (
+              <DiscordWebhookForm
+                slug={slug}
+                connectedChannelName={list.discordChannelName}
+                connectedGuildName={list.discordGuildName}
+              />
+            )}
+            {(isMember || isOwner) && (
+              <div className="rounded-lg border border-border bg-card p-4">
+                <p className="text-sm font-medium mb-1 flex items-center gap-1.5">
+                  <Film className="h-4 w-4 text-primary" />
+                  Radarr import URL
+                </p>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Add this URL as a &quot;Custom List&quot; in Radarr to
+                  auto-import movies from this list.
+                </p>
+                <div className="flex items-center gap-2">
+                  <code className="text-xs bg-muted px-2 py-1 rounded font-mono break-all block flex-1 min-w-0">
+                    {radarrUrl}
+                  </code>
+                  <CopyButton text={radarrUrl} />
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
-
-      {isMember && (
-        <EditableListSearchAdd
-          variant="list"
-          listSlug={slug}
-          existingKeys={existingListKeys}
-        />
-      )}
-
-      {/* Radarr URL */}
-      {(isMember || isOwner) && allMovies.length > 0 && (
-        <div className="rounded-lg border border-border bg-card p-4 mb-8">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-sm font-medium mb-1 flex items-center gap-1.5">
-                <Film className="h-4 w-4 text-primary" />
-                Radarr import URL
-              </p>
-              <p className="text-xs text-muted-foreground mb-2">
-                Add this URL as a &quot;Custom List&quot; in Radarr to
-                auto-import movies from this list.
-              </p>
-              <code className="text-xs bg-muted px-2 py-1 rounded font-mono break-all block">
-                {radarrUrl}
-              </code>
-            </div>
-            <div className="flex gap-2 shrink-0">
-              <a
-                href={radarrUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center h-9 w-9 rounded-md border border-input bg-transparent hover:bg-accent transition-colors"
-              >
-                <ExternalLink className="h-3.5 w-3.5" />
-              </a>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Discord webhook */}
-      {isOwner && discordFeatures().bot && (
-        <DiscordWebhookForm
-          slug={slug}
-          connectedChannelName={list.discordChannelName}
-          connectedGuildName={list.discordGuildName}
-        />
-      )}
-
-      {/* Items grid */}
-      {list.items.length === 0 ? (
-        <div className="text-center py-16 border border-dashed border-border rounded-xl">
-          <Film className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-          <p className="text-muted-foreground">No items yet</p>
-        </div>
-      ) : (
-        <div className="space-y-8">
-          {movies.length > 0 && (
-            <section>
-              <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4 flex items-center gap-1.5">
-                <Film className="h-4 w-4" />
-                Movies ({movies.length})
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {movies.map((item) => (
-                  <ListItemCard
-                    key={item.id}
-                    item={item}
-                    slug={slug}
-                    canDelete={isMember || isOwner}
-                    isOwner={isOwner}
-                    currentUserId={userId}
-                  />
-                ))}
-              </div>
-            </section>
-          )}
-
-          {tvShows.length > 0 && (
-            <section>
-              <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4 flex items-center gap-1.5">
-                <Tv className="h-4 w-4" />
-                TV Shows ({tvShows.length})
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {tvShows.map((item) => (
-                  <ListItemCard
-                    key={item.id}
-                    item={item}
-                    slug={slug}
-                    canDelete={isMember || isOwner}
-                    isOwner={isOwner}
-                    currentUserId={userId}
-                  />
-                ))}
-              </div>
-            </section>
-          )}
-
-          {userId && (watchedMovies.length > 0 || watchedTv.length > 0) && (
-            <section>
-              <h2 className="text-sm font-semibold text-foreground border-b border-border pb-2 mb-4">
-                Watched ({watchedItems.length})
-              </h2>
-              <div className="space-y-8">
-                {watchedMovies.length > 0 && (
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4 flex items-center gap-1.5">
-                      <Film className="h-4 w-4" />
-                      Movies ({watchedMovies.length})
-                    </h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                      {watchedMovies.map((item) => (
-                        <ListItemCard
-                          key={item.id}
-                          item={item}
-                          slug={slug}
-                          canDelete={isMember || isOwner}
-                          isOwner={isOwner}
-                          currentUserId={userId}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {watchedTv.length > 0 && (
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4 flex items-center gap-1.5">
-                      <Tv className="h-4 w-4" />
-                      TV Shows ({watchedTv.length})
-                    </h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                      {watchedTv.map((item) => (
-                        <ListItemCard
-                          key={item.id}
-                          item={item}
-                          slug={slug}
-                          canDelete={isMember || isOwner}
-                          isOwner={isOwner}
-                          currentUserId={userId}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </section>
-          )}
-        </div>
-      )}
     </div>
   );
 }

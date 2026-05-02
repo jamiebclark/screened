@@ -146,9 +146,8 @@ export function EditableListSearchAdd(props: EditableListSearchAddProps) {
   };
 
   return (
-    <div className="rounded-lg border border-border bg-card p-4 mb-6">
-      <p className="text-sm font-medium mb-3">Search and add</p>
-      <div ref={containerRef} className="relative max-w-xl">
+    <div className="mb-6">
+      <div ref={containerRef} className="relative">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
