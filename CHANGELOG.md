@@ -1,3 +1,9 @@
+## [1.14.1](https://github.com/jamiebclark/screened/compare/v1.14.0...v1.14.1) (2026-05-02)
+
+### Bug Fixes
+
+* **lint:** remove unused NextRequest param from no-body route handlers ([1fe6040](https://github.com/jamiebclark/screened/commit/1fe60402aaa3e9bcb3fd0701a250769f9ffcac54))
+
 ## [1.14.0](https://github.com/jamiebclark/screened/compare/v1.13.0...v1.14.0) (2026-05-02)
 
 ### Features
