@@ -1,9 +1,15 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   pickClosestByWatchedTime,
   utcDayEndExclusive,
   utcDayStart,
 } from "@/lib/watch-entry-merge";
+import { WatchEntrySource } from "@/generated/prisma";
+
+const mockUpdate = vi.hoisted(() => vi.fn().mockResolvedValue({}));
+vi.mock("@/lib/prisma", () => ({
+  prisma: { watchEntry: { update: mockUpdate } },
+}));
 
 describe("utc day bounds (UTC calendar date)", () => {
   it("builds the UTC day for an afternoon instant", () => {
@@ -30,5 +36,56 @@ describe("pickClosestByWatchedTime", () => {
     expect(pickClosestByWatchedTime([morning, evening], candidate)).toBe(
       evening,
     );
+  });
+});
+
+describe("mergeTautulliIntoWatchEntry", () => {
+  it("upgrades an UNKNOWN entry to TAUTULLI", async () => {
+    const { mergeTautulliIntoWatchEntry } =
+      await import("@/lib/watch-entry-merge");
+    await mergeTautulliIntoWatchEntry({
+      id: "e1",
+      source: WatchEntrySource.UNKNOWN,
+    });
+    expect(mockUpdate).toHaveBeenCalledWith({
+      where: { id: "e1" },
+      data: { source: WatchEntrySource.TAUTULLI },
+    });
+  });
+
+  it("upgrades a PLEX entry to TAUTULLI", async () => {
+    mockUpdate.mockClear();
+    const { mergeTautulliIntoWatchEntry } =
+      await import("@/lib/watch-entry-merge");
+    await mergeTautulliIntoWatchEntry({
+      id: "e2",
+      source: WatchEntrySource.PLEX,
+    });
+    expect(mockUpdate).toHaveBeenCalledWith({
+      where: { id: "e2" },
+      data: { source: WatchEntrySource.TAUTULLI },
+    });
+  });
+
+  it("does not overwrite a MANUAL entry", async () => {
+    mockUpdate.mockClear();
+    const { mergeTautulliIntoWatchEntry } =
+      await import("@/lib/watch-entry-merge");
+    await mergeTautulliIntoWatchEntry({
+      id: "e3",
+      source: WatchEntrySource.MANUAL,
+    });
+    expect(mockUpdate).not.toHaveBeenCalled();
+  });
+
+  it("does not overwrite a LETTERBOXD entry", async () => {
+    mockUpdate.mockClear();
+    const { mergeTautulliIntoWatchEntry } =
+      await import("@/lib/watch-entry-merge");
+    await mergeTautulliIntoWatchEntry({
+      id: "e4",
+      source: WatchEntrySource.LETTERBOXD,
+    });
+    expect(mockUpdate).not.toHaveBeenCalled();
   });
 });
