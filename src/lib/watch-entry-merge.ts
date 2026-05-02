@@ -141,3 +141,31 @@ export async function mergeTautulliIntoWatchEntry(
     data: { source: WatchEntrySource.TAUTULLI },
   });
 }
+
+/**
+ * When Jellyfin reports a play for the same title/time window, upgrade UNKNOWN
+ * source to JELLYFIN. Manual, Letterboxd, Plex, and Tautulli entries are kept.
+ */
+export async function mergeJellyfinIntoWatchEntry(
+  entry: Pick<WatchEntry, "id" | "source">,
+): Promise<void> {
+  if (entry.source !== WatchEntrySource.UNKNOWN) return;
+  await prisma.watchEntry.update({
+    where: { id: entry.id },
+    data: { source: WatchEntrySource.JELLYFIN },
+  });
+}
+
+/**
+ * When Trakt reports a play for the same title/time window, upgrade UNKNOWN
+ * source to TRAKT. Entries from other sources are not overwritten.
+ */
+export async function mergeTraktIntoWatchEntry(
+  entry: Pick<WatchEntry, "id" | "source">,
+): Promise<void> {
+  if (entry.source !== WatchEntrySource.UNKNOWN) return;
+  await prisma.watchEntry.update({
+    where: { id: entry.id },
+    data: { source: WatchEntrySource.TRAKT },
+  });
+}
