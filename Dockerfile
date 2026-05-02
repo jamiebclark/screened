@@ -23,12 +23,14 @@ COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Prisma needs its config, schema, migrations, generated client, and node_modules
+# Prisma needs its config, schema, migrations, and generated client.
+# Only install prisma (not full dev deps) to keep the image lean.
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/src/generated ./src/generated
-COPY --from=deps /app/node_modules ./node_modules
+RUN yarn add prisma --ignore-engines && yarn cache clean && \
+    chown -R nextjs:nodejs node_modules
 
 USER nextjs
 EXPOSE 3000
