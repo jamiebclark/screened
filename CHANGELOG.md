@@ -1,3 +1,37 @@
+## [1.14.0](https://github.com/jamiebclark/screened/compare/v1.13.0...v1.14.0) (2026-05-02)
+
+### Features
+
+* **activity:** add /activity feed page and loading skeleton ([73e5b5b](https://github.com/jamiebclark/screened/commit/73e5b5be531c0134a0eb4a9df782841807c69cbf))
+* **discord:** add core discord library ([634874b](https://github.com/jamiebclark/screened/commit/634874b8e16dd6e08184ae409b9c8f5e87e48015))
+* **discord:** add discord settings page ([4c89a27](https://github.com/jamiebclark/screened/commit/4c89a276210e97bd95f67a1950bac9e29ab7841f))
+* **discord:** add Discord unlink endpoint ([21ed659](https://github.com/jamiebclark/screened/commit/21ed659e55290e5a9d79dd23b06458c9f27952a5))
+* **discord:** add interactions endpoint for slash commands ([407ca59](https://github.com/jamiebclark/screened/commit/407ca59157621910a313cd16c7602140b06e2baf))
+* **discord:** add OAuth2 callback and token exchange ([bf0e23b](https://github.com/jamiebclark/screened/commit/bf0e23b7ac4e0a031fbfb2f899660414170921da))
+* **discord:** add slash command registration script ([2a2b0f8](https://github.com/jamiebclark/screened/commit/2a2b0f8cd76d22858a723ac341c51845325fa571))
+* **discord:** add webhook URL field to list settings ([69c9aaf](https://github.com/jamiebclark/screened/commit/69c9aaf675eb7698017a192a53567fa10b153bc2))
+* **discord:** fire webhook notifications on watch and list events ([0e9d4cb](https://github.com/jamiebclark/screened/commit/0e9d4cb0822ef320c378622a7108234a1dfdf123))
+* **discord:** replace manual webhook URL with managed channel picker ([3d1981f](https://github.com/jamiebclark/screened/commit/3d1981fc29a7aefa3ec1bbdefdcfe96ff10d88c7))
+* **discord:** send DMs when a friend watches a watchlisted title ([227f687](https://github.com/jamiebclark/screened/commit/227f687827831cb1eafa3d3d9b333df30d72996e))
+* **nav:** add Activity link and update notification menu ([ce42aab](https://github.com/jamiebclark/screened/commit/ce42aab3a7e8c8035787ade2913f46dbc60549d3))
+* **notifications:** trigger watchlist notifications on manual watch actions ([8574aea](https://github.com/jamiebclark/screened/commit/8574aea1503c8cfb46a0d775ec12c7318ae3d108))
+* **picker:** add /pick/history page and preset selector on pick page ([74e2d0d](https://github.com/jamiebclark/screened/commit/74e2d0dfcb5a9508b762ace843c215c706a51fb3))
+* **picker:** add session save and room preset API routes ([280d1df](https://github.com/jamiebclark/screened/commit/280d1df61c74db7817edea69e347d1d43169a1ff))
+* **picker:** add session save, presets, and history nav to pick session ([9c53a35](https://github.com/jamiebclark/screened/commit/9c53a358d7361b75ba3642bdfb14f7dd7bfa9bf8))
+* **picker:** add shortlist and votes fields to room state ([e1972ea](https://github.com/jamiebclark/screened/commit/e1972ea72178f3ef08b6aa76031e246873405743))
+* **picker:** add shortlist voting panel to picker results ([b3b930d](https://github.com/jamiebclark/screened/commit/b3b930dee5c17d7fded7b9773c40ce6ac670db71))
+* **profile:** add recent activity strip and mutual friends count ([2017b3e](https://github.com/jamiebclark/screened/commit/2017b3eeaa912a7998db7be499c0fde0eda7d592))
+* **schema:** add FRIEND_WATCHED_YOUR_WATCHLIST notification type ([261c72b](https://github.com/jamiebclark/screened/commit/261c72b998d257f1a615136b033e49eba1171c64))
+* **schema:** add PickerSession and PickerRoomPreset models ([9ce6e51](https://github.com/jamiebclark/screened/commit/9ce6e517c1a71884425d2eafde798a7eccde09a5))
+* **social:** add activity feed query, watch notification helper, and mutual friends count ([5d6c224](https://github.com/jamiebclark/screened/commit/5d6c2247877516f90d808deb38e5424995c19a00))
+
+### Bug Fixes
+
+* **discord:** rename unused param in link route ([707214f](https://github.com/jamiebclark/screened/commit/707214fa36128ede886cbf0fcb0d05af69d5b0fb))
+* **discord:** suppress unused-param warning in unlink route ([5d65ded](https://github.com/jamiebclark/screened/commit/5d65dedca8690364b1afa25f47b3da4ca1b0d927))
+* **onboarding:** remove broken Picker link that redirected back to onboarding ([fcfc97d](https://github.com/jamiebclark/screened/commit/fcfc97ddeaae76b51fe2afcb88f3c70f0b1d9180))
+* **onboarding:** remove informational Picker step with no actionable content ([864124f](https://github.com/jamiebclark/screened/commit/864124f926d0a5958d44743ec8ad746da2d31285))
+
 ## [1.13.0](https://github.com/jamiebclark/screened/compare/v1.12.0...v1.13.0) (2026-04-27)
 
 ### Features
