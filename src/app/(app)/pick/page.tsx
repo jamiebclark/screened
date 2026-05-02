@@ -19,7 +19,7 @@ export default async function PickPage({ searchParams }: PageProps) {
   const session = await auth();
   const userId = session!.user.id;
 
-  const [currentUser, savedPreferences, roomRow, plexConnection] =
+  const [currentUser, savedPreferences, roomRow, plexConnection, presets] =
     await Promise.all([
       prisma.user.findUnique({
         where: { id: userId },
@@ -48,6 +48,10 @@ export default async function PickPage({ searchParams }: PageProps) {
       prisma.plexConnection.findUnique({
         where: { userId },
         select: { id: true },
+      }),
+      prisma.pickerRoomPreset.findMany({
+        where: { createdById: userId },
+        orderBy: { updatedAt: "desc" },
       }),
     ]);
 
@@ -119,6 +123,7 @@ export default async function PickPage({ searchParams }: PageProps) {
         roomId={roomParam ?? null}
         initialRoomState={initialRoomState}
         hasPlexLinked={!!plexConnection}
+        presets={presets}
       />
     </div>
   );
