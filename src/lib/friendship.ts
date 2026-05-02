@@ -99,6 +99,18 @@ export async function createFriendshipAndClearPending(
   });
 }
 
+export async function countMutualFriends(
+  userA: string,
+  userB: string,
+): Promise<number> {
+  const [friendsA, friendsB] = await Promise.all([
+    listFriendUserIds(userA),
+    listFriendUserIds(userB),
+  ]);
+  const setB = new Set(friendsB);
+  return friendsA.filter((id) => setB.has(id)).length;
+}
+
 export async function notifyFriendRequest(requestId: string, toUserId: string) {
   await prisma.notification.create({
     data: {

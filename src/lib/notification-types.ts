@@ -12,6 +12,7 @@ export type ListAccessRequestStatus =
 export const NotificationType = {
   LIST_ACCESS_REQUEST: "LIST_ACCESS_REQUEST",
   FRIEND_REQUEST: "FRIEND_REQUEST",
+  FRIEND_WATCHED_YOUR_WATCHLIST: "FRIEND_WATCHED_YOUR_WATCHLIST",
 } as const;
 
 export type NotificationType =
