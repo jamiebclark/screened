@@ -46,6 +46,7 @@ enum ListAccessRequestStatus {
 enum NotificationType {
   LIST_ACCESS_REQUEST
   FRIEND_REQUEST
+  FRIEND_WATCHED_YOUR_WATCHLIST
 }
 
 /// Who can see a profile section. All values apply to signed-in users only; this app is login-protected.
@@ -214,6 +215,7 @@ model WatchEntry {
   user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   mediaItem       MediaItem        @relation(fields: [mediaItemId], references: [id], onDelete: Cascade)
   userMediaStatus UserMediaStatus? @relation(fields: [userMediaStatusId], references: [id], onDelete: SetNull)
+  notifications   Notification[]
 }
 
 model EpisodeStatus {
@@ -331,15 +333,18 @@ model Notification {
   readAt              DateTime?
   listAccessRequestId String?
   friendRequestId     String?
+  watchEntryId        String?
   createdAt           DateTime         @default(now())
 
   user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   listAccessRequest ListAccessRequest? @relation(fields: [listAccessRequestId], references: [id], onDelete: Cascade)
   friendRequest     FriendRequest?     @relation(fields: [friendRequestId], references: [id], onDelete: Cascade)
+  watchEntry        WatchEntry?        @relation(fields: [watchEntryId], references: [id], onDelete: Cascade)
 
   @@index([userId, readAt])
   @@index([listAccessRequestId])
   @@index([friendRequestId])
+  @@index([watchEntryId])
 }
 
 /// Pending friend request from one user to another (one row per direction).
