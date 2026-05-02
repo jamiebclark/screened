@@ -1,3 +1,13 @@
+## [1.15.0](https://github.com/jamiebclark/screened/compare/v1.14.3...v1.15.0) (2026-05-02)
+
+### Features
+
+* **lists:** add integrations sidebar with Radarr copy URL ([9842b97](https://github.com/jamiebclark/screened/commit/9842b9720288d9192b6fea5d016a8919616c89b4))
+
+### Bug Fixes
+
+* **lists:** fix Discord channel select resetting after pick ([13ba190](https://github.com/jamiebclark/screened/commit/13ba190e0923a1d77c97975ec41ce47c506e75bc))
+
 ## [1.14.3](https://github.com/jamiebclark/screened/compare/v1.14.2...v1.14.3) (2026-05-02)
 
 ### Bug Fixes
