@@ -1,3 +1,21 @@
+## [1.16.0](https://github.com/jamiebclark/screened/compare/v1.15.1...v1.16.0) (2026-05-02)
+
+### Features
+
+* **cron:** add Letterboxd auto-sync container and update env docs ([c1b0198](https://github.com/jamiebclark/screened/commit/c1b01984eb08ce45919106a2eb02b2ddaff26e1c))
+* **cron:** log start-of-run timestamp and user count for both sync jobs ([2e8231c](https://github.com/jamiebclark/screened/commit/2e8231cda5b5e4ad65565f8ff6424c1d950fe405))
+* **lists:** show which lists contain a title on movie and TV pages ([d43c0a8](https://github.com/jamiebclark/screened/commit/d43c0a84502d2a5b81c9c45c767b36967a8553b9))
+* **lists:** show which members have watched or are watching each item ([dc65003](https://github.com/jamiebclark/screened/commit/dc65003aa961520fad9a24d221962a779078381d))
+
+### Bug Fixes
+
+* **discord:** add embed title so url renders as a clickable hyperlink ([994f06b](https://github.com/jamiebclark/screened/commit/994f06bb657fe4c346bc9568c5dd79d029872db4))
+* **lists:** revalidatePath after add/remove so refresh is instant ([d32b4ca](https://github.com/jamiebclark/screened/commit/d32b4ca0012f0925ffaf16494b3a0231fc7150b2))
+
+### Performance Improvements
+
+* **plex:** persist library index cache to DB for fast page loads ([0a86c0f](https://github.com/jamiebclark/screened/commit/0a86c0faff8f2298d67dfe131df4911b371411f1))
+
 ## [1.15.1](https://github.com/jamiebclark/screened/compare/v1.15.0...v1.15.1) (2026-05-02)
 
 ### Performance Improvements
