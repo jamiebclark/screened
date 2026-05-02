@@ -1,5 +1,4 @@
 import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Nav } from "@/components/nav";
 import { SiteFooter } from "@/components/site-footer";
@@ -31,17 +30,8 @@ export default async function AppLayout({
     redirect("/login");
   }
 
-  const h = await headers();
-  const pathname = h.get("x-pathname") ?? "";
-  const isOnboarding =
-    pathname === "/onboarding" ||
-    (pathname.length > 0 && pathname.startsWith("/onboarding/"));
-
-  if (!user.onboardingCompletedAt && !isOnboarding) {
+  if (!user.onboardingCompletedAt) {
     redirect("/onboarding");
-  }
-  if (user.onboardingCompletedAt && isOnboarding) {
-    redirect("/");
   }
 
   return (
