@@ -3,7 +3,17 @@ import { prisma } from "@/lib/prisma";
 import { notFound, redirect } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { Globe, Lock, Users, Film, Tv, Download, UserPlus } from "lucide-react";
+import {
+  Globe,
+  Lock,
+  Users,
+  Film,
+  Tv,
+  Download,
+  UserPlus,
+  CheckCheck,
+  Popcorn,
+} from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { tmdbImageUrl } from "@/lib/utils";
 import { InviteMemberForm } from "./invite-member-form";
@@ -95,6 +105,45 @@ export default async function ListPage({ params }: Params) {
   const watchedItems = userId
     ? list.items.filter((i) => watchedIdSet.has(i.mediaItemId))
     : [];
+
+  const memberUserIds = list.members.map((m) => m.userId);
+  const memberStatuses =
+    mediaIds.length > 0 && memberUserIds.length > 0
+      ? await prisma.userMediaStatus.findMany({
+          where: {
+            userId: { in: memberUserIds },
+            mediaItemId: { in: mediaIds },
+            status: { in: [WatchStatus.WATCHED, WatchStatus.WATCHING] },
+          },
+          select: { userId: true, mediaItemId: true, status: true },
+        })
+      : [];
+
+  const memberById = new Map<
+    string,
+    { id: string; name: string | null; avatarUrl: string | null }
+  >(list.members.map((m) => [m.userId, m.user]));
+  const watchedByMap = new Map<
+    string,
+    { id: string; name: string | null; avatarUrl: string | null }[]
+  >();
+  const watchingByMap = new Map<
+    string,
+    { id: string; name: string | null; avatarUrl: string | null }[]
+  >();
+  for (const s of memberStatuses) {
+    const user = memberById.get(s.userId);
+    if (!user) continue;
+    if (s.status === WatchStatus.WATCHED) {
+      const arr = watchedByMap.get(s.mediaItemId) ?? [];
+      arr.push(user);
+      watchedByMap.set(s.mediaItemId, arr);
+    } else {
+      const arr = watchingByMap.get(s.mediaItemId) ?? [];
+      arr.push(user);
+      watchingByMap.set(s.mediaItemId, arr);
+    }
+  }
 
   const allMovies = list.items.filter(
     (i) => i.mediaItem.type === MediaType.MOVIE,
@@ -203,6 +252,8 @@ export default async function ListPage({ params }: Params) {
                         canDelete={isMember || isOwner}
                         isOwner={isOwner}
                         currentUserId={userId}
+                        watchedBy={watchedByMap.get(item.mediaItemId) ?? []}
+                        watchingBy={watchingByMap.get(item.mediaItemId) ?? []}
                       />
                     ))}
                   </div>
@@ -224,6 +275,8 @@ export default async function ListPage({ params }: Params) {
                         canDelete={isMember || isOwner}
                         isOwner={isOwner}
                         currentUserId={userId}
+                        watchedBy={watchedByMap.get(item.mediaItemId) ?? []}
+                        watchingBy={watchingByMap.get(item.mediaItemId) ?? []}
                       />
                     ))}
                   </div>
@@ -251,6 +304,12 @@ export default async function ListPage({ params }: Params) {
                               canDelete={isMember || isOwner}
                               isOwner={isOwner}
                               currentUserId={userId}
+                              watchedBy={
+                                watchedByMap.get(item.mediaItemId) ?? []
+                              }
+                              watchingBy={
+                                watchingByMap.get(item.mediaItemId) ?? []
+                              }
                             />
                           ))}
                         </div>
@@ -271,6 +330,12 @@ export default async function ListPage({ params }: Params) {
                               canDelete={isMember || isOwner}
                               isOwner={isOwner}
                               currentUserId={userId}
+                              watchedBy={
+                                watchedByMap.get(item.mediaItemId) ?? []
+                              }
+                              watchingBy={
+                                watchingByMap.get(item.mediaItemId) ?? []
+                              }
                             />
                           ))}
                         </div>
@@ -342,12 +407,16 @@ export default async function ListPage({ params }: Params) {
   );
 }
 
+type MemberUser = { id: string; name: string | null; avatarUrl: string | null };
+
 function ListItemCard({
   item,
   slug,
   canDelete,
   isOwner,
   currentUserId,
+  watchedBy,
+  watchingBy,
 }: {
   item: {
     id: string;
@@ -366,6 +435,8 @@ function ListItemCard({
   canDelete: boolean;
   isOwner: boolean;
   currentUserId: string | undefined;
+  watchedBy: MemberUser[];
+  watchingBy: MemberUser[];
 }) {
   const posterUrl = tmdbImageUrl(item.mediaItem.poster, "w342");
   const href = `/${item.mediaItem.type === MediaType.MOVIE ? "movies" : "tv"}/${item.mediaItem.tmdbId}`;
@@ -414,6 +485,48 @@ function ListItemCard({
               {item.addedBy.name}
             </span>
           </div>
+          {(watchedBy.length > 0 || watchingBy.length > 0) && (
+            <div className="flex items-center gap-2 mt-1.5">
+              {watchedBy.length > 0 && (
+                <div className="flex items-center gap-1">
+                  <CheckCheck className="h-3 w-3 text-green-500 shrink-0" />
+                  <div className="flex -space-x-1">
+                    {watchedBy.slice(0, 4).map((m) => (
+                      <Avatar
+                        key={m.id}
+                        className="h-4 w-4 border border-background"
+                        title={m.name ?? undefined}
+                      >
+                        <AvatarImage src={m.avatarUrl ?? undefined} />
+                        <AvatarFallback className="text-[7px]">
+                          {m.name?.[0]?.toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {watchingBy.length > 0 && (
+                <div className="flex items-center gap-1">
+                  <Popcorn className="h-3 w-3 text-yellow-500 shrink-0" />
+                  <div className="flex -space-x-1">
+                    {watchingBy.slice(0, 4).map((m) => (
+                      <Avatar
+                        key={m.id}
+                        className="h-4 w-4 border border-background"
+                        title={m.name ?? undefined}
+                      >
+                        <AvatarImage src={m.avatarUrl ?? undefined} />
+                        <AvatarFallback className="text-[7px]">
+                          {m.name?.[0]?.toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </Link>
     </div>
