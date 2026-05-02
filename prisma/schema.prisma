@@ -32,6 +32,7 @@ enum PreferenceType {
 
 enum WatchEntrySource {
   PLEX
+  TAUTULLI
   LETTERBOXD
   MANUAL
   UNKNOWN
@@ -77,6 +78,7 @@ model User {
 
   plexConnection        PlexConnection?
   letterboxdConnection  LetterboxdConnection?
+  tautulliConnection    TautulliConnection?
   discordConnection     DiscordConnection?
   mediaStatuses         UserMediaStatus[]
   watchEntries          WatchEntry[]
@@ -148,6 +150,20 @@ model LetterboxdConnection {
   lastSyncedAt       DateTime?
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model TautulliConnection {
+  id               String    @id @default(cuid())
+  userId           String    @unique
+  tautulliUrl      String
+  apiKey           String
+  /// Plex username to filter history by (recommended on shared servers).
+  tautulliUsername String?
+  lastSyncedAt     DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
