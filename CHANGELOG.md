@@ -1,3 +1,11 @@
+## [1.18.1](https://github.com/jamiebclark/screened/compare/v1.18.0...v1.18.1) (2026-05-02)
+
+### Bug Fixes
+
+* **jellyfin:** guard against missing Items in paginated history response ([b93ba4e](https://github.com/jamiebclark/screened/commit/b93ba4e0902a1c0f4e767c8029e2690aebbf602e))
+* **tautulli:** guard against null guids and missing response data ([ca9f3c2](https://github.com/jamiebclark/screened/commit/ca9f3c2044afeff7b656557ee26754f85cb7326f))
+* **trakt:** guard against non-array response in history fetches ([d18d734](https://github.com/jamiebclark/screened/commit/d18d734086350632d7c7d4105485352ee707bdec))
+
 ## [1.18.0](https://github.com/jamiebclark/screened/compare/v1.17.0...v1.18.0) (2026-05-02)
 
 ### Features
