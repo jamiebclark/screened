@@ -145,7 +145,8 @@ export async function getTraktMovieHistory(
     );
     if (!res.ok) break;
 
-    const data = (await res.json()) as TraktMovieHistoryRecord[];
+    const raw = (await res.json()) as unknown;
+    const data = Array.isArray(raw) ? (raw as TraktMovieHistoryRecord[]) : [];
     all.push(...data);
 
     if (pageCount === null) {
@@ -173,7 +174,8 @@ export async function getTraktEpisodeHistory(
     );
     if (!res.ok) break;
 
-    const data = (await res.json()) as TraktEpisodeHistoryRecord[];
+    const raw = (await res.json()) as unknown;
+    const data = Array.isArray(raw) ? (raw as TraktEpisodeHistoryRecord[]) : [];
     all.push(...data);
 
     if (pageCount === null) {
