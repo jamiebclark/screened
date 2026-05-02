@@ -78,6 +78,10 @@ export type PickerRoomState = {
   lastScoreFingerprint?: string | null;
   filterAttribution?: PickerFilterAttribution;
   filterFieldEditors?: PickerFilterFieldEditors;
+  /** TMDB ids shortlisted for voting (in scored-results order). */
+  shortlist?: number[];
+  /** Per-participant vote: userId → tmdbId they voted for. */
+  votes?: Record<string, number>;
 };
 
 export function defaultPickerState(currentUser: {
@@ -107,6 +111,8 @@ export function defaultPickerState(currentUser: {
     lastScoreFingerprint: null,
     filterAttribution: {},
     filterFieldEditors: {},
+    shortlist: [],
+    votes: {},
   };
 }
 
@@ -173,6 +179,16 @@ export function isPickerState(x: unknown): x is PickerRoomState {
   if (o.filterFieldEditors !== undefined && o.filterFieldEditors !== null) {
     if (typeof o.filterFieldEditors !== "object") return false;
   }
+  if (o.shortlist !== undefined) {
+    if (
+      !Array.isArray(o.shortlist) ||
+      o.shortlist.some((id) => typeof id !== "number")
+    )
+      return false;
+  }
+  if (o.votes !== undefined && o.votes !== null) {
+    if (typeof o.votes !== "object" || Array.isArray(o.votes)) return false;
+  }
   return true;
 }
 
@@ -204,5 +220,7 @@ export function withScoringDefaults(s: PickerRoomState): PickerRoomState {
         : null,
     filterAttribution: rest.filterAttribution ?? {},
     filterFieldEditors: rest.filterFieldEditors ?? {},
+    shortlist: rest.shortlist ?? [],
+    votes: rest.votes ?? {},
   };
 }
