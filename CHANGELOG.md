@@ -1,3 +1,9 @@
+## [1.14.3](https://github.com/jamiebclark/screened/compare/v1.14.2...v1.14.3) (2026-05-02)
+
+### Bug Fixes
+
+* **picker:** restore missing NextRequest import in sessions and presets routes ([b26d67c](https://github.com/jamiebclark/screened/commit/b26d67cb46a9eaca840e9cc0f5e1747622a8baac))
+
 ## [1.14.2](https://github.com/jamiebclark/screened/compare/v1.14.1...v1.14.2) (2026-05-02)
 
 ### Bug Fixes
