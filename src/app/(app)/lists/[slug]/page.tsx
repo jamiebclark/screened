@@ -12,6 +12,7 @@ import { ListItemActions } from "./list-item-actions";
 import { DiscordWebhookForm } from "./discord-webhook-form";
 import { LetterboxdImportDialog } from "@/components/letterboxd-import-dialog";
 import { EditableListSearchAdd } from "@/components/editable-list-search-add";
+import { discordFeatures } from "@/lib/discord";
 import { MediaType, WatchStatus } from "@/generated/prisma";
 
 type Params = { params: Promise<{ slug: string }> };
@@ -210,8 +211,12 @@ export default async function ListPage({ params }: Params) {
       )}
 
       {/* Discord webhook */}
-      {isOwner && (
-        <DiscordWebhookForm slug={slug} currentWebhookUrl={list.discordWebhookUrl} />
+      {isOwner && discordFeatures().bot && (
+        <DiscordWebhookForm
+          slug={slug}
+          connectedChannelName={list.discordChannelName}
+          connectedGuildName={list.discordGuildName}
+        />
       )}
 
       {/* Items grid */}

@@ -263,6 +263,9 @@ model List {
   ownerId            String
   radarrToken        String?  @unique
   discordWebhookUrl  String?
+  discordWebhookId   String?
+  discordChannelName String?
+  discordGuildName   String?
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 

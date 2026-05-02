@@ -56,19 +56,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     name?: string;
     description?: string;
     isPublic?: boolean;
-    discordWebhookUrl?: string | null;
   };
-
-  // Validate webhook URL format if provided
-  if (
-    body.discordWebhookUrl &&
-    !body.discordWebhookUrl.startsWith("https://discord.com/api/webhooks/")
-  ) {
-    return NextResponse.json(
-      { error: "Invalid Discord webhook URL" },
-      { status: 400 },
-    );
-  }
 
   const list = await prisma.list.findUnique({ where: { slug } });
   if (!list || list.ownerId !== session.user.id) {
@@ -81,9 +69,6 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       name: body.name ?? list.name,
       description: body.description !== undefined ? body.description : list.description,
       isPublic: body.isPublic ?? list.isPublic,
-      ...(body.discordWebhookUrl !== undefined && {
-        discordWebhookUrl: body.discordWebhookUrl || null,
-      }),
     },
   });
 
@@ -100,6 +85,13 @@ export async function DELETE(req: NextRequest, { params }: Params) {
   const list = await prisma.list.findUnique({ where: { slug } });
   if (!list || list.ownerId !== session.user.id) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  if (list.discordWebhookId && process.env.DISCORD_BOT_TOKEN) {
+    await fetch(`https://discord.com/api/v10/webhooks/${list.discordWebhookId}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN}` },
+    }).catch(() => null);
   }
 
   await prisma.list.delete({ where: { slug } });
