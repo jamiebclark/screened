@@ -30,6 +30,19 @@ services:
     restart: unless-stopped
     command: ["sh", "/plex-cron.sh"]
 
+  letterboxd-cron:
+    image: alpine:3.19
+    volumes:
+      - ./scripts/letterboxd-cron.sh:/letterboxd-cron.sh:ro
+    environment:
+      CRON_SECRET: "${CRON_SECRET}"
+      APP_URL: "http://app:3000"
+      SYNC_INTERVAL_HOURS: "${SYNC_INTERVAL_HOURS:-6}"
+    depends_on:
+      - app
+    restart: unless-stopped
+    command: ["sh", "/letterboxd-cron.sh"]
+
   db:
     image: postgres:16-alpine
     environment:
