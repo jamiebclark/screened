@@ -12,6 +12,7 @@ A self-hosted web app for tracking movies and TV shows with friends, Plex sync, 
 - **Movie Night Picker** — collaborative “what should we watch?” session with shareable rooms, reference titles, and optional discovery scoring
 - **Watch history** — per-source log (Plex, Letterboxd, manual) with import management and list-driven CSV import on shared lists; global history and calendar merge movie/TV diary lines with TV episode watches (Plex or in-app). **Movies** keep a **Watch history** section on the title page; **TV** logs viewings per episode under **Episodes**
 - **Radarr export** — every list exposes a live URL endpoint that Radarr can poll to auto-download movies
+- **Discord integration (optional)** — three tiers: channel webhooks for list activity, slash commands (`/whats-new`, `/pick`, `/link`), and direct message notifications when a friend watches a title on your watchlist; see [docs/discord-integration.md](docs/discord-integration.md)
 - **Taste / embeddings (optional)** — with `OPENAI_API_KEY` set, titles get text embeddings for picker scoring and “similar to your picks”-style features
 
 ---
@@ -53,6 +54,11 @@ Open `.env` and fill in the required values:
 | `OPENAI_API_KEY`      | Optional; enables text embeddings for the Movie Night Picker and related scoring                                         |
 | `ALLOW_PUBLIC_SIGNUP` | Optional; default `true`. Set to `false` for invite-only signup (see `.env.example`).                                    |
 | `SITE_ADMIN_EMAILS`   | Optional; comma-separated emails that may create signup invites (Settings → Signup invites) when using invite-only mode. |
+| `DISCORD_APPLICATION_ID` | Optional; Discord Application ID — required for slash commands (Tier 2). See [docs/discord-integration.md](docs/discord-integration.md). |
+| `DISCORD_PUBLIC_KEY`  | Optional; Discord Ed25519 public key — required for slash command signature verification.                                |
+| `DISCORD_BOT_TOKEN`   | Optional; Discord bot token — required for slash commands and DM notifications.                                          |
+| `DISCORD_CLIENT_ID`   | Optional; Discord OAuth2 client ID — required for user account linking (Tier 3).                                         |
+| `DISCORD_CLIENT_SECRET` | Optional; Discord OAuth2 client secret — required for user account linking (Tier 3).                                  |
 
 ### 3. Start a local database
 
