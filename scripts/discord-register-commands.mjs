@@ -9,7 +9,9 @@ const applicationId = process.env.DISCORD_APPLICATION_ID;
 const botToken = process.env.DISCORD_BOT_TOKEN;
 
 if (!applicationId || !botToken) {
-  console.error("Set DISCORD_APPLICATION_ID and DISCORD_BOT_TOKEN in .env before running.");
+  console.error(
+    "Set DISCORD_APPLICATION_ID and DISCORD_BOT_TOKEN in .env before running.",
+  );
   process.exit(1);
 }
 
@@ -41,7 +43,10 @@ const res = await fetch(url, {
 
 if (res.ok) {
   const data = await res.json();
-  console.log(`Registered ${data.length} command(s):`, data.map((c) => `/${c.name}`).join(", "));
+  console.log(
+    `Registered ${data.length} command(s):`,
+    data.map((c) => `/${c.name}`).join(", "),
+  );
 } else {
   console.error("Failed to register commands:", res.status, await res.text());
   process.exit(1);

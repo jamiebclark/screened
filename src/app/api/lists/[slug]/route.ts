@@ -67,7 +67,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     where: { slug },
     data: {
       name: body.name ?? list.name,
-      description: body.description !== undefined ? body.description : list.description,
+      description:
+        body.description !== undefined ? body.description : list.description,
       isPublic: body.isPublic ?? list.isPublic,
     },
   });
@@ -88,10 +89,13 @@ export async function DELETE(req: NextRequest, { params }: Params) {
   }
 
   if (list.discordWebhookId && process.env.DISCORD_BOT_TOKEN) {
-    await fetch(`https://discord.com/api/v10/webhooks/${list.discordWebhookId}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN}` },
-    }).catch(() => null);
+    await fetch(
+      `https://discord.com/api/v10/webhooks/${list.discordWebhookId}`,
+      {
+        method: "DELETE",
+        headers: { Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN}` },
+      },
+    ).catch(() => null);
   }
 
   await prisma.list.delete({ where: { slug } });

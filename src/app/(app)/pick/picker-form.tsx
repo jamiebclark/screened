@@ -25,12 +25,7 @@ import {
   UserX,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -834,8 +829,7 @@ function GenreTagInput({
   const availableSuggestions = useMemo(
     () =>
       suggestions.filter(
-        (s: string) =>
-          !values.some((v) => v.toLowerCase() === s.toLowerCase()),
+        (s: string) => !values.some((v) => v.toLowerCase() === s.toLowerCase()),
       ),
     [suggestions, values],
   );
@@ -1082,19 +1076,26 @@ export function PickerForm({
               <div className="h-2 w-2 rounded-full bg-green-500 shrink-0 mt-1.5" />
               <div>
                 <p className="font-medium text-foreground">Like these</p>
-                <p>Add films that capture the mood you&apos;re after. The picker finds titles with similar vibes, themes, and style.</p>
+                <p>
+                  Add films that capture the mood you&apos;re after. The picker
+                  finds titles with similar vibes, themes, and style.
+                </p>
               </div>
             </div>
             <div className="flex gap-3">
               <div className="h-2 w-2 rounded-full bg-red-500 shrink-0 mt-1.5" />
               <div>
                 <p className="font-medium text-foreground">Not like these</p>
-                <p>Add films you want to steer away from. Each one pushes matching titles down the ranked list.</p>
+                <p>
+                  Add films you want to steer away from. Each one pushes
+                  matching titles down the ranked list.
+                </p>
               </div>
             </div>
           </div>
           <p className="text-xs text-muted-foreground">
-            Add at least one film to &quot;Like these&quot;, then click &quot;Find movies&quot; to get a ranked list of suggestions.
+            Add at least one film to &quot;Like these&quot;, then click
+            &quot;Find movies&quot; to get a ranked list of suggestions.
           </p>
         </div>
       )}
@@ -1138,9 +1139,7 @@ export function PickerForm({
                     }
                     onSaveToggle={() => onToggleSave("attractor", m)}
                     addedByLabel={
-                      m.addedByUserId
-                        ? addedByChipLine(m.addedByUserId)
-                        : null
+                      m.addedByUserId ? addedByChipLine(m.addedByUserId) : null
                     }
                   />
                 ))}
@@ -1215,9 +1214,7 @@ export function PickerForm({
                     }
                     onSaveToggle={() => onToggleSave("repeller", m)}
                     addedByLabel={
-                      m.addedByUserId
-                        ? addedByChipLine(m.addedByUserId)
-                        : null
+                      m.addedByUserId ? addedByChipLine(m.addedByUserId) : null
                     }
                   />
                 ))}
@@ -1374,9 +1371,7 @@ export function PickerForm({
 
             {/* Genres */}
             <section className="space-y-3">
-              <h3 className="text-base font-semibold tracking-tight">
-                Genres
-              </h3>
+              <h3 className="text-base font-semibold tracking-tight">Genres</h3>
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
                 <div className="space-y-1.5 min-w-0">
                   <div className="flex items-center gap-1.5">
@@ -1460,8 +1455,7 @@ export function PickerForm({
               />
               {filterFieldEditors.maxRuntime ? (
                 <p className="text-2xs text-muted-foreground">
-                  Last set by{" "}
-                  {participantLabel(filterFieldEditors.maxRuntime)}
+                  Last set by {participantLabel(filterFieldEditors.maxRuntime)}
                 </p>
               ) : null}
             </section>

@@ -7,7 +7,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MediaType, WatchStatus, Prisma } from "@/generated/prisma";
 import { canViewProfileContent } from "@/lib/profile-visibility";
-import { areFriends, countMutualFriends, getProfileFriendState } from "@/lib/friendship";
+import {
+  areFriends,
+  countMutualFriends,
+  getProfileFriendState,
+} from "@/lib/friendship";
 import {
   ProfileFriendActions,
   type ProfileFriendStateJson,
@@ -169,7 +173,15 @@ export default async function ProfilePage({ params }: Params) {
         orderBy: { watchedAt: "desc" },
         take: 5,
         include: {
-          mediaItem: { select: { tmdbId: true, type: true, title: true, poster: true, year: true } },
+          mediaItem: {
+            select: {
+              tmdbId: true,
+              type: true,
+              title: true,
+              poster: true,
+              year: true,
+            },
+          },
         },
       })
     : [];

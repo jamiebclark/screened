@@ -42,23 +42,23 @@ cp .env.example .env
 
 Open `.env` and fill in the required values:
 
-| Variable              | Description                                                                                                              |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `DATABASE_URL`        | PostgreSQL connection string                                                                                             |
-| `AUTH_SECRET`         | Random 32+ character string — run `openssl rand -base64 32`                                                              |
-| `TMDB_API_KEY`        | Read access token from [themoviedb.org/settings/api](https://www.themoviedb.org/settings/api)                            |
-| `NEXTAUTH_URL`        | Base URL of your app (e.g. `http://localhost:3000`)                                                                      |
-| `NEXT_PUBLIC_APP_URL` | Same as above — used client-side for OAuth redirects and absolute links                                                  |
-| `CRON_SECRET`         | Shared secret for `/api/cron/*` (Plex and Letterboxd scheduled sync in Docker) — e.g. `openssl rand -hex 32`             |
-| `SYNC_INTERVAL_HOURS` | Hours between automatic Plex/Letterboxd sync jobs when using Docker cron (default: `6`)                                  |
-| `OPENAI_API_KEY`      | Optional; enables text embeddings for the Movie Night Picker and related scoring                                         |
-| `ALLOW_PUBLIC_SIGNUP` | Optional; default `true`. Set to `false` for invite-only signup (see `.env.example`).                                    |
-| `SITE_ADMIN_EMAILS`   | Optional; comma-separated emails that may create signup invites (Settings → Signup invites) when using invite-only mode. |
+| Variable                 | Description                                                                                                                              |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`           | PostgreSQL connection string                                                                                                             |
+| `AUTH_SECRET`            | Random 32+ character string — run `openssl rand -base64 32`                                                                              |
+| `TMDB_API_KEY`           | Read access token from [themoviedb.org/settings/api](https://www.themoviedb.org/settings/api)                                            |
+| `NEXTAUTH_URL`           | Base URL of your app (e.g. `http://localhost:3000`)                                                                                      |
+| `NEXT_PUBLIC_APP_URL`    | Same as above — used client-side for OAuth redirects and absolute links                                                                  |
+| `CRON_SECRET`            | Shared secret for `/api/cron/*` (Plex and Letterboxd scheduled sync in Docker) — e.g. `openssl rand -hex 32`                             |
+| `SYNC_INTERVAL_HOURS`    | Hours between automatic Plex/Letterboxd sync jobs when using Docker cron (default: `6`)                                                  |
+| `OPENAI_API_KEY`         | Optional; enables text embeddings for the Movie Night Picker and related scoring                                                         |
+| `ALLOW_PUBLIC_SIGNUP`    | Optional; default `true`. Set to `false` for invite-only signup (see `.env.example`).                                                    |
+| `SITE_ADMIN_EMAILS`      | Optional; comma-separated emails that may create signup invites (Settings → Signup invites) when using invite-only mode.                 |
 | `DISCORD_APPLICATION_ID` | Optional; Discord Application ID — required for slash commands (Tier 2). See [docs/discord-integration.md](docs/discord-integration.md). |
-| `DISCORD_PUBLIC_KEY`  | Optional; Discord Ed25519 public key — required for slash command signature verification.                                |
-| `DISCORD_BOT_TOKEN`   | Optional; Discord bot token — required for slash commands and DM notifications.                                          |
-| `DISCORD_CLIENT_ID`   | Optional; Discord OAuth2 client ID — required for user account linking (Tier 3).                                         |
-| `DISCORD_CLIENT_SECRET` | Optional; Discord OAuth2 client secret — required for user account linking (Tier 3).                                  |
+| `DISCORD_PUBLIC_KEY`     | Optional; Discord Ed25519 public key — required for slash command signature verification.                                                |
+| `DISCORD_BOT_TOKEN`      | Optional; Discord bot token — required for slash commands and DM notifications.                                                          |
+| `DISCORD_CLIENT_ID`      | Optional; Discord OAuth2 client ID — required for user account linking (Tier 3).                                                         |
+| `DISCORD_CLIENT_SECRET`  | Optional; Discord OAuth2 client secret — required for user account linking (Tier 3).                                                     |
 
 ### 3. Start a local database
 

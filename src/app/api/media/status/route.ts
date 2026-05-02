@@ -238,9 +238,7 @@ export async function POST(req: NextRequest) {
         source: WatchEntrySource.MANUAL,
       },
     });
-    after(() =>
-      notifyFriendsOfWatch(session.user.id, mediaItem.id, entry.id),
-    );
+    after(() => notifyFriendsOfWatch(session.user.id, mediaItem.id, entry.id));
     after(async () => {
       const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
       const listsWithWebhook = await prisma.list.findMany({

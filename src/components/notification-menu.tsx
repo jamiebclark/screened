@@ -280,7 +280,9 @@ function FriendWatchedRow({ n }: { n: NotificationItem }) {
       <Link href={`/profile/${we.watcher.id}`} className="shrink-0">
         <Avatar className="h-8 w-8">
           <AvatarImage src={we.watcher.avatarUrl ?? undefined} />
-          <AvatarFallback className="text-[10px]">{watcherInitials}</AvatarFallback>
+          <AvatarFallback className="text-[10px]">
+            {watcherInitials}
+          </AvatarFallback>
         </Avatar>
       </Link>
       <div className="min-w-0 flex-1">
@@ -292,7 +294,10 @@ function FriendWatchedRow({ n }: { n: NotificationItem }) {
             {we.watcher.name}
           </Link>{" "}
           watched{" "}
-          <Link href={href} className="font-medium text-foreground hover:underline">
+          <Link
+            href={href}
+            className="font-medium text-foreground hover:underline"
+          >
             {we.mediaItem.title}
           </Link>{" "}
           which is on your watchlist

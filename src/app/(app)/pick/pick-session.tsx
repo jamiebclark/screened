@@ -8,7 +8,17 @@ import {
   useCallback,
   useMemo,
 } from "react";
-import { Loader2, Link2, Share2, Radio, WifiOff, Save, History, Bookmark, Trash2 } from "lucide-react";
+import {
+  Loader2,
+  Link2,
+  Share2,
+  Radio,
+  WifiOff,
+  Save,
+  History,
+  Bookmark,
+  Trash2,
+} from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -610,9 +620,14 @@ export function PickSession({
       });
       if (!res.ok) throw new Error("Failed to save session");
       const picked = scoringResults.find((m) => m.tmdbId === tmdbId);
-      toast({ description: `"${picked?.title ?? "Pick"}" recorded as tonight's pick.` });
+      toast({
+        description: `"${picked?.title ?? "Pick"}" recorded as tonight's pick.`,
+      });
     } catch {
-      toast({ description: "Failed to save pick. Please try again.", variant: "destructive" });
+      toast({
+        description: "Failed to save pick. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setSavingPick(false);
     }
@@ -635,7 +650,10 @@ export function PickSession({
       if (!res.ok) throw new Error("Failed to save session");
       toast({ description: "Session saved to your pick history." });
     } catch {
-      toast({ description: "Failed to save session. Please try again.", variant: "destructive" });
+      toast({
+        description: "Failed to save session. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setSavingSession(false);
     }
@@ -667,7 +685,12 @@ export function PickSession({
   };
 
   const applyPreset = (preset: PickerPreset) => {
-    type Snapshot = { id: string; name: string | null; email: string | null; avatarUrl: string | null };
+    type Snapshot = {
+      id: string;
+      name: string | null;
+      email: string | null;
+      avatarUrl: string | null;
+    };
     const presetParticipants = (preset.participantIds as Snapshot[]) ?? [];
     const presetAttractors = (preset.attractors as ReferenceMovieJson[]) ?? [];
     setRoomState((prev) => ({
@@ -725,12 +748,7 @@ export function PickSession({
               </p>
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                asChild
-              >
+              <Button type="button" variant="ghost" size="sm" asChild>
                 <Link href="/pick/history">
                   <History className="h-4 w-4" />
                   History
@@ -770,12 +788,7 @@ export function PickSession({
               edit together in real time.
             </p>
             <div className="flex items-center gap-2 shrink-0">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                asChild
-              >
+              <Button type="button" variant="ghost" size="sm" asChild>
                 <Link href="/pick/history">
                   <History className="h-4 w-4" />
                   History
@@ -849,7 +862,10 @@ export function PickSession({
                   onChange={(e) => setPresetName(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") void savePreset();
-                    if (e.key === "Escape") { setShowPresetForm(false); setPresetName(""); }
+                    if (e.key === "Escape") {
+                      setShowPresetForm(false);
+                      setPresetName("");
+                    }
                   }}
                   className="h-8 text-sm"
                   autoFocus
@@ -872,7 +888,10 @@ export function PickSession({
                   variant="ghost"
                   size="sm"
                   className="h-8 shrink-0"
-                  onClick={() => { setShowPresetForm(false); setPresetName(""); }}
+                  onClick={() => {
+                    setShowPresetForm(false);
+                    setPresetName("");
+                  }}
                 >
                   Cancel
                 </Button>
@@ -886,14 +905,17 @@ export function PickSession({
               <div className="space-y-1">
                 {localPresets.map((preset) => {
                   type AttrJson = { title: string };
-                  const presetAttractors = (preset.attractors as AttrJson[]) ?? [];
+                  const presetAttractors =
+                    (preset.attractors as AttrJson[]) ?? [];
                   return (
                     <div
                       key={preset.id}
                       className="flex items-center justify-between gap-2 rounded-md px-2 py-1.5 hover:bg-muted/50 transition-colors"
                     >
                       <div className="min-w-0">
-                        <p className="text-sm font-medium truncate">{preset.name}</p>
+                        <p className="text-sm font-medium truncate">
+                          {preset.name}
+                        </p>
                         {presetAttractors.length > 0 && (
                           <p className="text-xs text-muted-foreground truncate">
                             {presetAttractors.map((a) => a.title).join(", ")}

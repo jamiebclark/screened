@@ -6,10 +6,10 @@ Screened ships a three-tier Discord integration. Each tier builds on the previou
 
 ## Overview
 
-| Tier | What you get | What you need |
-|------|-------------|---------------|
-| **1 — Channel webhooks** | Post to a Discord channel when list items are added or a member marks something watched | A Discord server webhook URL |
-| **2 — Slash commands** | `/whats-new`, `/pick`, `/link` in any server where the bot is present | A Discord Application with a bot token + interactions endpoint |
+| Tier                     | What you get                                                                                                       | What you need                                                               |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------- |
+| **1 — Channel webhooks** | Post to a Discord channel when list items are added or a member marks something watched                            | A Discord server webhook URL                                                |
+| **2 — Slash commands**   | `/whats-new`, `/pick`, `/link` in any server where the bot is present                                              | A Discord Application with a bot token + interactions endpoint              |
 | **3 — User DMs + OAuth** | Direct message notifications when a friend watches something on your watchlist; personalised slash command results | Tier 2 env vars + OAuth client ID/secret; users link via Settings → Discord |
 
 ---
@@ -26,6 +26,7 @@ No application-level configuration is needed. Any list owner can set a webhook U
 4. As the list owner you will see a **Discord notifications** panel at the top of the list. Paste the webhook URL and click **Save**.
 
 Once saved, Screened will post an embed to the channel whenever:
+
 - A list member adds a title to the list.
 - A list member marks a title as **Watched** and that title is in the list.
 
@@ -93,6 +94,7 @@ The **Client ID** is the same as `DISCORD_APPLICATION_ID`. Find the **Client Sec
 Users go to **Settings → Discord** in Screened and click **Connect Discord**. They are redirected to Discord to authorise the `identify` scope, then returned to the settings page.
 
 Once linked:
+
 - `/whats-new` returns personalised results based on the user's friends.
 - `/pick` picks from the user's watchlist.
 - When a friend marks something on their watchlist as watched, Screened sends the user a DM (requires the bot to be configured — Tier 2 env vars must also be set, and `dmEnabled` defaults to `true`).
@@ -101,13 +103,13 @@ Once linked:
 
 ## Environment variables
 
-| Variable | Required for | Description |
-|----------|-------------|-------------|
-| `DISCORD_APPLICATION_ID` | Tier 2 | Discord Application ID (also used as OAuth Client ID) |
-| `DISCORD_PUBLIC_KEY` | Tier 2 | Ed25519 public key for verifying interaction signatures |
-| `DISCORD_BOT_TOKEN` | Tier 2 | Bot token for registering commands and sending DMs |
-| `DISCORD_CLIENT_ID` | Tier 3 | OAuth2 Client ID (same value as `DISCORD_APPLICATION_ID`) |
-| `DISCORD_CLIENT_SECRET` | Tier 3 | OAuth2 Client Secret |
+| Variable                 | Required for | Description                                               |
+| ------------------------ | ------------ | --------------------------------------------------------- |
+| `DISCORD_APPLICATION_ID` | Tier 2       | Discord Application ID (also used as OAuth Client ID)     |
+| `DISCORD_PUBLIC_KEY`     | Tier 2       | Ed25519 public key for verifying interaction signatures   |
+| `DISCORD_BOT_TOKEN`      | Tier 2       | Bot token for registering commands and sending DMs        |
+| `DISCORD_CLIENT_ID`      | Tier 3       | OAuth2 Client ID (same value as `DISCORD_APPLICATION_ID`) |
+| `DISCORD_CLIENT_SECRET`  | Tier 3       | OAuth2 Client Secret                                      |
 
 ---
 
@@ -120,6 +122,7 @@ The endpoint is `POST /api/discord/interactions`. It:
 3. Handles slash commands.
 
 **Requirements:**
+
 - Must be accessible over **HTTPS** — Discord will not call `http://` URLs.
 - The URL must be publicly reachable by Discord's servers.
 - `DISCORD_PUBLIC_KEY` must be set correctly before Discord will accept the endpoint.
@@ -129,18 +132,22 @@ The endpoint is `POST /api/discord/interactions`. It:
 ## Troubleshooting
 
 **Signature verification failing / 401 from interactions endpoint**
+
 - Check that `DISCORD_PUBLIC_KEY` matches the value shown in **General Information** in the Discord Developer Portal.
 - Make sure your reverse proxy is forwarding the raw request body unchanged (no body re-encoding).
 
 **DMs not being delivered**
+
 - Confirm `DISCORD_BOT_TOKEN` and `DISCORD_APPLICATION_ID` are both set (both are required for Tier 2/3 DM sending).
 - The recipient must share at least one server with the bot, or have their DM settings open. Discord does not allow bots to DM users who share no mutual server.
 - Check server logs for `[discord] create DM channel failed` or `[discord] send DM failed` messages.
 
 **Slash commands not appearing**
+
 - Run `yarn discord:register-commands` to register or update commands.
 - Global commands can take up to an hour to propagate after first registration.
 - Check that the bot has been invited to the server.
 
 **OAuth "invalid state" error**
+
 - This happens when the `discord_oauth_state` cookie has expired (10 minute window) or was lost. Try the link flow again.

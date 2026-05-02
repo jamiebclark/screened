@@ -27,7 +27,9 @@ const MAX_TMDB_CANDIDATES = 200;
 const MAX_TO_EMBED = 48;
 const RESULTS = 30;
 
-export function yearFromTmdbDate(release: string | null | undefined): number | null {
+export function yearFromTmdbDate(
+  release: string | null | undefined,
+): number | null {
   if (!release) return null;
   const y = new Date(release).getFullYear();
   return Number.isFinite(y) ? y : null;

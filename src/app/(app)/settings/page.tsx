@@ -77,7 +77,11 @@ export default async function SettingsPage() {
               </Link>
             </li>
             <li>
-              <Link prefetch={false} href="/settings/discord" className="block group">
+              <Link
+                prefetch={false}
+                href="/settings/discord"
+                className="block group"
+              >
                 <Card className="transition-colors hover:bg-accent/50">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <div>

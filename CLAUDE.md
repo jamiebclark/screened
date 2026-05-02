@@ -31,6 +31,7 @@ Before pushing: run `yarn ci:check` (needs `DATABASE_URL` in `.env` pointing at 
 **Stack:** Next.js App Router + React Server Components, PostgreSQL + Prisma, NextAuth v5 (JWT), Tailwind v4 + Radix UI, Vitest + Playwright. Self-hosted via Docker Compose.
 
 **Route groups:**
+
 - `src/app/(auth)/` — login, register (public)
 - `src/app/(app)/` — all protected routes; auth checked at layout level via `auth()`
 - `src/app/api/` — Route Handlers for mutations and integrations
@@ -52,6 +53,7 @@ Before pushing: run `yarn ci:check` (needs `DATABASE_URL` in `.env` pointing at 
 **Optional features pattern:** Features gated by env vars (`OPENAI_API_KEY`, `OMDB_API_KEY`) check `process.env.*` at call time and degrade gracefully when absent — no crash, no UI exposure. Follow this pattern for any new optional integration: check presence in the lib module, surface capability flags to the UI only when needed.
 
 **Key Prisma models:**
+
 - `UserMediaStatus` — user's tracking status (WATCHLIST/WATCHING/WATCHED/DROPPED) + rating for a title
 - `WatchEntry` — individual watch log entries (multiple per status record; source: PLEX/LETTERBOXD/MANUAL)
 - `EpisodeStatus` — per-episode TV tracking (season, episode #, watchedAt, review)
@@ -67,10 +69,10 @@ Before pushing: run `yarn ci:check` (needs `DATABASE_URL` in `.env` pointing at 
 
 **Migrations only** — never use `prisma db push` on any database that uses `prisma migrate deploy` (local dev Postgres, staging, production, Docker). `db push` skips migration history and causes drift failures.
 
-| Situation | Command |
-|-----------|---------|
+| Situation           | Command                                            |
+| ------------------- | -------------------------------------------------- |
 | Schema change → dev | `yarn db:migrate --name <short_snake_description>` |
-| CI / production | `yarn db:migrate:deploy` |
+| CI / production     | `yarn db:migrate:deploy`                           |
 
 Always commit **both** `prisma/schema.prisma` and the new `prisma/migrations/<timestamp>_*/` folder together. After schema changes, also run `yarn db:generate`.
 
@@ -132,6 +134,8 @@ These `.cursor/rules/` files contain full detail behind the summaries above — 
 - `engineering-standards.mdc` — API route patterns, security, and testing expectations
 
 <!-- SPECKIT START -->
+
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan
+
 <!-- SPECKIT END -->

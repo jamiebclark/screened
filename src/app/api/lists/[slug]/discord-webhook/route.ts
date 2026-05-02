@@ -69,10 +69,17 @@ export async function POST(req: NextRequest, { params }: Params) {
         { status: 403 },
       );
     }
-    return NextResponse.json({ error: "Failed to create webhook" }, { status: 502 });
+    return NextResponse.json(
+      { error: "Failed to create webhook" },
+      { status: 502 },
+    );
   }
 
-  const webhook = (await whRes.json()) as { id: string; token: string; url: string };
+  const webhook = (await whRes.json()) as {
+    id: string;
+    token: string;
+    url: string;
+  };
 
   await prisma.list.update({
     where: { slug },

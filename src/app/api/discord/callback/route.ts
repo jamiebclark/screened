@@ -6,7 +6,10 @@ export async function GET(req: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.redirect(
-      new URL("/login", process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
+      new URL(
+        "/login",
+        process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
+      ),
     );
   }
 
@@ -17,13 +20,17 @@ export async function GET(req: NextRequest) {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
   if (!code || !state || state !== storedState) {
-    return NextResponse.redirect(new URL("/settings/discord?error=invalid_state", appUrl));
+    return NextResponse.redirect(
+      new URL("/settings/discord?error=invalid_state", appUrl),
+    );
   }
 
   const clientId = process.env.DISCORD_CLIENT_ID;
   const clientSecret = process.env.DISCORD_CLIENT_SECRET;
   if (!clientId || !clientSecret) {
-    return NextResponse.redirect(new URL("/settings/discord?error=not_configured", appUrl));
+    return NextResponse.redirect(
+      new URL("/settings/discord?error=not_configured", appUrl),
+    );
   }
 
   const redirectUri = `${appUrl}/api/discord/callback`;
@@ -42,8 +49,14 @@ export async function GET(req: NextRequest) {
   });
 
   if (!tokenRes.ok) {
-    console.error("[discord] token exchange failed", tokenRes.status, await tokenRes.text());
-    return NextResponse.redirect(new URL("/settings/discord?error=token_exchange", appUrl));
+    console.error(
+      "[discord] token exchange failed",
+      tokenRes.status,
+      await tokenRes.text(),
+    );
+    return NextResponse.redirect(
+      new URL("/settings/discord?error=token_exchange", appUrl),
+    );
   }
 
   const tokens = (await tokenRes.json()) as {
@@ -59,7 +72,9 @@ export async function GET(req: NextRequest) {
   });
 
   if (!userRes.ok) {
-    return NextResponse.redirect(new URL("/settings/discord?error=user_fetch", appUrl));
+    return NextResponse.redirect(
+      new URL("/settings/discord?error=user_fetch", appUrl),
+    );
   }
 
   const discordUser = (await userRes.json()) as {
@@ -91,7 +106,9 @@ export async function GET(req: NextRequest) {
     },
   });
 
-  const response = NextResponse.redirect(new URL("/settings/discord?linked=1", appUrl));
+  const response = NextResponse.redirect(
+    new URL("/settings/discord?linked=1", appUrl),
+  );
   response.cookies.delete("discord_oauth_state");
   return response;
 }

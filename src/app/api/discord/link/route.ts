@@ -10,7 +10,10 @@ export async function GET(_req: NextRequest) {
 
   const clientId = process.env.DISCORD_CLIENT_ID;
   if (!clientId) {
-    return NextResponse.json({ error: "Discord OAuth not configured" }, { status: 503 });
+    return NextResponse.json(
+      { error: "Discord OAuth not configured" },
+      { status: 503 },
+    );
   }
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";

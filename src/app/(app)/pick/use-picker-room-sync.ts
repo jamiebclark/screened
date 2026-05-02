@@ -200,7 +200,8 @@ export function usePickerRoomSync(
         } else {
           toast({
             variant: "destructive",
-            description: "Could not sync your changes to the room. Others may not see them.",
+            description:
+              "Could not sync your changes to the room. Others may not see them.",
           });
         }
       })();

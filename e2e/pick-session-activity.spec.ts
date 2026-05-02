@@ -83,9 +83,7 @@ test.describe("Picker form — filters", () => {
       page.getByRole("heading", { name: "Movie Night Picker" }),
     ).toBeVisible({ timeout: 10000 });
 
-    await expect(
-      page.getByRole("heading", { name: "Filters" }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Filters" })).toBeVisible();
   });
 });
 

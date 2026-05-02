@@ -2,7 +2,15 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, Clock, Bookmark, X, ChevronDown, Check, Loader2 } from "lucide-react";
+import {
+  Eye,
+  Clock,
+  Bookmark,
+  X,
+  ChevronDown,
+  Check,
+  Loader2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -31,7 +39,11 @@ const statusConfig: Record<
 > = {
   WATCHED: { label: "Watched", icon: Eye, color: "text-status-watched" },
   WATCHING: { label: "Watching", icon: Clock, color: "text-status-watching" },
-  WATCHLIST: { label: "Watchlist", icon: Bookmark, color: "text-status-watchlist" },
+  WATCHLIST: {
+    label: "Watchlist",
+    icon: Bookmark,
+    color: "text-status-watchlist",
+  },
   DROPPED: { label: "Dropped", icon: X, color: "text-status-dropped" },
 };
 

@@ -50,7 +50,9 @@ export async function notifyFriendsOfWatch(
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
   const path = mediaItem.type === "MOVIE" ? "movies" : "tv";
-  const titleLine = mediaItem.year ? `${mediaItem.title} (${mediaItem.year})` : mediaItem.title;
+  const titleLine = mediaItem.year
+    ? `${mediaItem.title} (${mediaItem.year})`
+    : mediaItem.title;
 
   const friendUserIds = friendsWithTitle.map((f) => f.userId);
   const discordConnections = await prisma.discordConnection.findMany({
@@ -64,7 +66,9 @@ export async function notifyFriendsOfWatch(
       color: 0x5865f2,
       url: `${appUrl}/${path}/${mediaItem.tmdbId}`,
       ...(mediaItem.poster && {
-        thumbnail: { url: `https://image.tmdb.org/t/p/w185${mediaItem.poster}` },
+        thumbnail: {
+          url: `https://image.tmdb.org/t/p/w185${mediaItem.poster}`,
+        },
       }),
     });
   }

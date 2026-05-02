@@ -169,9 +169,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     },
   );
 
-  after(() =>
-    notifyFriendsOfWatch(session.user.id, mediaItem.id, entry.id),
-  );
+  after(() => notifyFriendsOfWatch(session.user.id, mediaItem.id, entry.id));
 
   return NextResponse.json(
     { ...entry, taggedCreatedCount } as typeof entry & {

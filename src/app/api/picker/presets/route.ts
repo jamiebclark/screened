@@ -3,7 +3,11 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import type { ReferenceMovieJson } from "@/lib/picker-room-state";
 
-type ParticipantSnapshot = { id: string; name: string | null; avatarUrl: string | null };
+type ParticipantSnapshot = {
+  id: string;
+  name: string | null;
+  avatarUrl: string | null;
+};
 
 export async function GET(_req: NextRequest) {
   const session = await auth();
@@ -33,10 +37,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "name is required" }, { status: 400 });
   }
   if (!Array.isArray(body.participants)) {
-    return NextResponse.json({ error: "participants must be an array" }, { status: 400 });
+    return NextResponse.json(
+      { error: "participants must be an array" },
+      { status: 400 },
+    );
   }
   if (!Array.isArray(body.attractors)) {
-    return NextResponse.json({ error: "attractors must be an array" }, { status: 400 });
+    return NextResponse.json(
+      { error: "attractors must be an array" },
+      { status: 400 },
+    );
   }
 
   const preset = await prisma.pickerRoomPreset.create({

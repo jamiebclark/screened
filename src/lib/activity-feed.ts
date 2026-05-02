@@ -152,8 +152,10 @@ export async function getFriendActivityFeed(
   ];
 
   events.sort((a, b) => {
-    const aMs = a.kind === "watched" ? a.watchedAt.getTime() : a.addedAt.getTime();
-    const bMs = b.kind === "watched" ? b.watchedAt.getTime() : b.addedAt.getTime();
+    const aMs =
+      a.kind === "watched" ? a.watchedAt.getTime() : a.addedAt.getTime();
+    const bMs =
+      b.kind === "watched" ? b.watchedAt.getTime() : b.addedAt.getTime();
     return bMs - aMs;
   });
 

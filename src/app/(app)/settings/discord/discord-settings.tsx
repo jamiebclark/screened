@@ -31,7 +31,10 @@ interface DiscordSettingsProps {
   };
 }
 
-export function DiscordSettings({ connection: initialConnection, features }: DiscordSettingsProps) {
+export function DiscordSettings({
+  connection: initialConnection,
+  features,
+}: DiscordSettingsProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const linked = searchParams.get("linked") === "1";
@@ -51,7 +54,8 @@ export function DiscordSettings({ connection: initialConnection, features }: Dis
 
   const errorMessages: Record<string, string> = {
     invalid_state: "The OAuth state was invalid. Please try again.",
-    token_exchange: "Failed to exchange the authorization code. Please try again.",
+    token_exchange:
+      "Failed to exchange the authorization code. Please try again.",
     user_fetch: "Could not fetch your Discord profile. Please try again.",
     not_configured: "Discord OAuth is not configured on this server.",
   };
@@ -78,15 +82,21 @@ export function DiscordSettings({ connection: initialConnection, features }: Dis
             Discord Account
           </CardTitle>
           <CardDescription>
-            Link your Discord account to enable slash commands and direct message notifications.
+            Link your Discord account to enable slash commands and direct
+            message notifications.
           </CardDescription>
         </CardHeader>
         <CardContent>
           {!features.oauth ? (
             <p className="text-sm text-muted-foreground">
               Discord OAuth is not configured on this server. Set{" "}
-              <code className="text-xs bg-muted px-1 py-0.5 rounded">DISCORD_CLIENT_ID</code> and{" "}
-              <code className="text-xs bg-muted px-1 py-0.5 rounded">DISCORD_CLIENT_SECRET</code>{" "}
+              <code className="text-xs bg-muted px-1 py-0.5 rounded">
+                DISCORD_CLIENT_ID
+              </code>{" "}
+              and{" "}
+              <code className="text-xs bg-muted px-1 py-0.5 rounded">
+                DISCORD_CLIENT_SECRET
+              </code>{" "}
               to enable account linking.
             </p>
           ) : connection ? (
@@ -120,7 +130,8 @@ export function DiscordSettings({ connection: initialConnection, features }: Dis
           ) : (
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                No Discord account connected. Click below to authorize with Discord.
+                No Discord account connected. Click below to authorize with
+                Discord.
               </p>
               <Button asChild>
                 <a href="/api/discord/link">
@@ -153,13 +164,17 @@ export function DiscordSettings({ connection: initialConnection, features }: Dis
                 </span>
               </li>
               <li>
-                <code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono">/pick</code>
+                <code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono">
+                  /pick
+                </code>
                 <span className="text-muted-foreground ml-2">
                   Get a random pick from your watchlist
                 </span>
               </li>
               <li>
-                <code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono">/link</code>
+                <code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono">
+                  /link
+                </code>
                 <span className="text-muted-foreground ml-2">
                   Get a link to connect your account
                 </span>
@@ -179,13 +194,14 @@ export function DiscordSettings({ connection: initialConnection, features }: Dis
         <CardHeader>
           <CardTitle className="text-base">Channel Webhooks</CardTitle>
           <CardDescription>
-            Post activity to a Discord channel when list items are added or watched.
+            Post activity to a Discord channel when list items are added or
+            watched.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">
-            Configure per-list Discord webhooks from each list{"'"}s settings. Only list owners can
-            set a webhook URL.
+            Configure per-list Discord webhooks from each list{"'"}s settings.
+            Only list owners can set a webhook URL.
           </p>
         </CardContent>
       </Card>

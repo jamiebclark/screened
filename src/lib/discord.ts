@@ -3,8 +3,12 @@ const DISCORD_API = "https://discord.com/api/v10";
 // Tier detection — checked at call time so env vars can be set after module load
 export function discordFeatures() {
   return {
-    bot: !!(process.env.DISCORD_BOT_TOKEN && process.env.DISCORD_APPLICATION_ID),
-    oauth: !!(process.env.DISCORD_CLIENT_ID && process.env.DISCORD_CLIENT_SECRET),
+    bot: !!(
+      process.env.DISCORD_BOT_TOKEN && process.env.DISCORD_APPLICATION_ID
+    ),
+    oauth: !!(
+      process.env.DISCORD_CLIENT_ID && process.env.DISCORD_CLIENT_SECRET
+    ),
   };
 }
 
@@ -34,7 +38,11 @@ async function postWebhook(webhookUrl: string, body: unknown): Promise<void> {
       body: JSON.stringify(body),
     });
     if (!res.ok) {
-      console.error("[discord] webhook post failed", res.status, await res.text());
+      console.error(
+        "[discord] webhook post failed",
+        res.status,
+        await res.text(),
+      );
     }
   } catch (err) {
     console.error("[discord] webhook post error", err);
@@ -104,7 +112,11 @@ export async function notifyListItemAdded(
 }
 
 // Send a DM to a Discord user (requires bot)
-async function botRequest(path: string, method: string, body?: unknown): Promise<Response> {
+async function botRequest(
+  path: string,
+  method: string,
+  body?: unknown,
+): Promise<Response> {
   const token = process.env.DISCORD_BOT_TOKEN;
   if (!token) throw new Error("DISCORD_BOT_TOKEN not set");
   return fetch(`${DISCORD_API}${path}`, {
@@ -117,7 +129,10 @@ async function botRequest(path: string, method: string, body?: unknown): Promise
   });
 }
 
-export async function sendDM(discordUserId: string, embed: DiscordEmbed): Promise<void> {
+export async function sendDM(
+  discordUserId: string,
+  embed: DiscordEmbed,
+): Promise<void> {
   try {
     const dmRes = await botRequest("/users/@me/channels", "POST", {
       recipient_id: discordUserId,

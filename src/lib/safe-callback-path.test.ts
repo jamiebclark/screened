@@ -24,9 +24,7 @@ describe("safeCallbackPath", () => {
   });
 
   it("passes through a path with query string", () => {
-    expect(safeCallbackPath("/search?q=inception")).toBe(
-      "/search?q=inception",
-    );
+    expect(safeCallbackPath("/search?q=inception")).toBe("/search?q=inception");
   });
 
   it("trims surrounding whitespace before validating", () => {

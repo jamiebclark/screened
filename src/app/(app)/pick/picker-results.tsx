@@ -608,8 +608,8 @@ export function PickerResults({
 
         {firstRunReady && !scoringInProgress && (
           <p className="text-center text-xs text-primary/80 max-w-sm">
-            You&apos;re all set — click &quot;Find movies&quot; to get your first
-            ranked list.
+            You&apos;re all set — click &quot;Find movies&quot; to get your
+            first ranked list.
           </p>
         )}
       </div>

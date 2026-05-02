@@ -5,9 +5,16 @@ import Link from "next/link";
 import { Film, Trophy, Users, Clapperboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import type { ReferenceMovieJson, ScoredMovieJson } from "@/lib/picker-room-state";
+import type {
+  ReferenceMovieJson,
+  ScoredMovieJson,
+} from "@/lib/picker-room-state";
 
-type ParticipantSnapshot = { id: string; name: string | null; avatarUrl: string | null };
+type ParticipantSnapshot = {
+  id: string;
+  name: string | null;
+  avatarUrl: string | null;
+};
 
 function formatDate(date: Date): string {
   return date.toLocaleDateString("en-US", {
@@ -17,7 +24,11 @@ function formatDate(date: Date): string {
   });
 }
 
-function AvatarStack({ participants }: { participants: ParticipantSnapshot[] }) {
+function AvatarStack({
+  participants,
+}: {
+  participants: ParticipantSnapshot[];
+}) {
   const shown = participants.slice(0, 4);
   const extra = participants.length - shown.length;
   return (
@@ -130,7 +141,8 @@ function PickerSessionCard({ session }: { session: PickerSessionRow }) {
 
             <p className="text-xs text-muted-foreground">
               {results.length} result{results.length === 1 ? "" : "s"} ·{" "}
-              {participants.length} participant{participants.length === 1 ? "" : "s"}
+              {participants.length} participant
+              {participants.length === 1 ? "" : "s"}
             </p>
           </div>
         </div>

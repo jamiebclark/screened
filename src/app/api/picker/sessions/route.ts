@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import type { ReferenceMovieJson, ScoredMovieJson } from "@/lib/picker-room-state";
+import type {
+  ReferenceMovieJson,
+  ScoredMovieJson,
+} from "@/lib/picker-room-state";
 
 export async function GET(_req: NextRequest) {
   const session = await auth();
@@ -30,15 +33,25 @@ export async function POST(req: NextRequest) {
     pickedTmdbId?: unknown;
   };
 
-  if (!Array.isArray(body.participants) || !Array.isArray(body.attractors) || !Array.isArray(body.results)) {
-    return NextResponse.json({ error: "participants, attractors, and results are required arrays" }, { status: 400 });
+  if (
+    !Array.isArray(body.participants) ||
+    !Array.isArray(body.attractors) ||
+    !Array.isArray(body.results)
+  ) {
+    return NextResponse.json(
+      { error: "participants, attractors, and results are required arrays" },
+      { status: 400 },
+    );
   }
 
   const pickedTmdbId =
     typeof body.pickedTmdbId === "number" ? body.pickedTmdbId : null;
 
   if (body.roomId !== undefined && typeof body.roomId !== "string") {
-    return NextResponse.json({ error: "roomId must be a string" }, { status: 400 });
+    return NextResponse.json(
+      { error: "roomId must be a string" },
+      { status: 400 },
+    );
   }
 
   const pickerSession = await prisma.pickerSession.create({

@@ -42,7 +42,10 @@ export async function GET() {
   const guildsRes = await botGet("/users/@me/guilds");
   if (!guildsRes.ok) {
     console.error("[discord] failed to fetch guilds", guildsRes.status);
-    return NextResponse.json({ error: "Failed to fetch Discord servers" }, { status: 502 });
+    return NextResponse.json(
+      { error: "Failed to fetch Discord servers" },
+      { status: 502 },
+    );
   }
 
   const guilds = (await guildsRes.json()) as DiscordGuild[];
@@ -60,7 +63,11 @@ export async function GET() {
         .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
         .map((c) => ({ id: c.id, name: c.name! }));
       if (textChannels.length > 0) {
-        groups.push({ guildId: guild.id, guildName: guild.name, channels: textChannels });
+        groups.push({
+          guildId: guild.id,
+          guildName: guild.name,
+          channels: textChannels,
+        });
       }
     }),
   );

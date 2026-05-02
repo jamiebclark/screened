@@ -86,7 +86,9 @@ export async function POST(req: NextRequest) {
       );
 
       if (friendIds.length === 0) {
-        return ephemeral("You have no friends on Screened yet. Add some from the app!");
+        return ephemeral(
+          "You have no friends on Screened yet. Add some from the app!",
+        );
       }
 
       const entries = await prisma.watchEntry.findMany({
@@ -110,18 +112,26 @@ export async function POST(req: NextRequest) {
         return `**${e.user.name}** watched ${title}`;
       });
 
-      return channel(`**What your friends watched recently:**\n${lines.join("\n")}`);
+      return channel(
+        `**What your friends watched recently:**\n${lines.join("\n")}`,
+      );
     }
 
     if (commandName === "pick") {
       const userId = connection.user.id;
       const watchlist = await prisma.userMediaStatus.findMany({
         where: { userId, status: "WATCHLIST" },
-        include: { mediaItem: { select: { title: true, year: true, tmdbId: true, type: true } } },
+        include: {
+          mediaItem: {
+            select: { title: true, year: true, tmdbId: true, type: true },
+          },
+        },
       });
 
       if (watchlist.length === 0) {
-        return ephemeral("Your watchlist is empty. Add some titles from the app!");
+        return ephemeral(
+          "Your watchlist is empty. Add some titles from the app!",
+        );
       }
 
       const pick = watchlist[Math.floor(Math.random() * watchlist.length)];

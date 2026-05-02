@@ -46,8 +46,8 @@ export default async function ActivityPage() {
           <div className="space-y-1 max-w-xs">
             <p className="font-medium">Nothing here yet</p>
             <p className="text-sm text-muted-foreground">
-              Add friends to see what they&apos;re watching and what they&apos;re
-              adding to lists.
+              Add friends to see what they&apos;re watching and what
+              they&apos;re adding to lists.
             </p>
           </div>
           <Button asChild>
@@ -76,7 +76,10 @@ export default async function ActivityPage() {
               key={event.id}
               className="flex items-start gap-3 rounded-lg px-3 py-3 hover:bg-muted/40 transition-colors"
             >
-              <Link href={`/profile/${event.actorId}`} className="shrink-0 mt-0.5">
+              <Link
+                href={`/profile/${event.actorId}`}
+                className="shrink-0 mt-0.5"
+              >
                 <Avatar className="h-8 w-8">
                   <AvatarImage src={event.actorAvatarUrl ?? undefined} />
                   <AvatarFallback className="text-[10px]">

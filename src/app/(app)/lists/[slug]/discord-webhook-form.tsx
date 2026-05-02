@@ -98,14 +98,18 @@ export function DiscordWebhookForm({
         Discord notifications
       </p>
       <p className="text-xs text-muted-foreground mb-3">
-        Post to a Discord channel when items are added or a member marks something watched.
+        Post to a Discord channel when items are added or a member marks
+        something watched.
       </p>
 
       {isConnected ? (
         <div className="flex items-center justify-between gap-3">
           <p className="text-sm">
             <span className="font-medium">{connectedChannelName}</span>
-            <span className="text-muted-foreground"> in {connectedGuildName}</span>
+            <span className="text-muted-foreground">
+              {" "}
+              in {connectedGuildName}
+            </span>
           </p>
           <Button
             variant="outline"
@@ -126,7 +130,11 @@ export function DiscordWebhookForm({
         <div className="flex gap-2">
           <div className="relative flex-1">
             <select
-              value={selectedChannelId ? `${selectedGuildName}|${selectedChannelId}` : ""}
+              value={
+                selectedChannelId
+                  ? `${selectedGuildName}|${selectedChannelId}`
+                  : ""
+              }
               onChange={handleSelect}
               disabled={loading || !!fetchError}
               className="w-full appearance-none rounded-md border border-input bg-background px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
@@ -157,7 +165,11 @@ export function DiscordWebhookForm({
             onClick={connect}
             disabled={!selectedChannelId || isPending}
           >
-            {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Connect"}
+            {isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              "Connect"
+            )}
           </Button>
         </div>
       )}
