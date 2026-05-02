@@ -1,3 +1,12 @@
+## [1.17.0](https://github.com/jamiebclark/screened/compare/v1.16.0...v1.17.0) (2026-05-02)
+
+### Features
+
+* **schema:** add TautulliConnection model and TAUTULLI watch entry source ([c9616d5](https://github.com/jamiebclark/screened/commit/c9616d59977001d1c5bd7e213c562e05b581a212))
+* **tautulli:** add API client, sync function, and watch-entry merge helper ([b0ed57b](https://github.com/jamiebclark/screened/commit/b0ed57b7b4ab6edf9dcea40e6be03fcae0fb2aa0))
+* **tautulli:** add link, sync, and cron API routes ([4b30966](https://github.com/jamiebclark/screened/commit/4b3096695f9d8f592a3cf6f7a33821ea083bbef2))
+* **tautulli:** add settings page and watch history source rows ([7226a4d](https://github.com/jamiebclark/screened/commit/7226a4da67584e83ec64c04c4037e2816fc855af))
+
 ## [1.16.0](https://github.com/jamiebclark/screened/compare/v1.15.1...v1.16.0) (2026-05-02)
 
 ### Features
