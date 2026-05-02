@@ -214,16 +214,15 @@ List owners can also review **access requests** for private lists; contributors 
 
 ### Available scripts
 
-| Command            | Description                                                                                                    |
-| ------------------ | -------------------------------------------------------------------------------------------------------------- |
-| `yarn dev`         | Start development server                                                                                       |
-| `yarn build`       | Build for production                                                                                           |
-| `yarn lint`        | Run ESLint                                                                                                     |
-| `yarn db:migrate`  | Run Prisma migrations                                                                                          |
-| `yarn db:push`     | Push schema without a migration (dev / throwaway only — use migrations for anything `migrate deploy` will run) |
-| `yarn test:e2e`    | Playwright end-to-end tests                                                                                    |
-| `yarn db:studio`   | Open Prisma Studio (database GUI)                                                                              |
-| `yarn db:generate` | Regenerate Prisma client                                                                                       |
+| Command            | Description                       |
+| ------------------ | --------------------------------- |
+| `yarn dev`         | Start development server          |
+| `yarn build`       | Build for production              |
+| `yarn lint`        | Run ESLint                        |
+| `yarn db:migrate`  | Run Prisma migrations             |
+| `yarn test:e2e`    | Playwright end-to-end tests       |
+| `yarn db:studio`   | Open Prisma Studio (database GUI) |
+| `yarn db:generate` | Regenerate Prisma client          |
 
 ### Project structure
 
