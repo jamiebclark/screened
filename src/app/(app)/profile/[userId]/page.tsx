@@ -7,17 +7,24 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MediaType, WatchStatus, Prisma } from "@/generated/prisma";
 import { canViewProfileContent } from "@/lib/profile-visibility";
-import { areFriends, getProfileFriendState } from "@/lib/friendship";
+import { areFriends, countMutualFriends, getProfileFriendState } from "@/lib/friendship";
 import {
   ProfileFriendActions,
   type ProfileFriendStateJson,
 } from "@/components/profile-friend-actions";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
 import {
   buildLastWatchedMsByMediaItemId,
   sortByLastWatchedDesc,
 } from "@/lib/user-media-sort";
+
+function posterUrl(path: string | null) {
+  if (!path) return null;
+  if (path.startsWith("http")) return path;
+  return `https://image.tmdb.org/t/p/w92${path}`;
+}
 
 type Params = { params: Promise<{ userId: string }> };
 
@@ -56,7 +63,7 @@ export default async function ProfilePage({ params }: Params) {
 
   const isOwnProfile = viewerId === userId;
 
-  const [user, isFriend, friendState] = await Promise.all([
+  const [user, isFriend, friendState, mutualCount] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -71,6 +78,7 @@ export default async function ProfilePage({ params }: Params) {
     }),
     isOwnProfile ? true : areFriends(viewerId, userId),
     getProfileFriendState(viewerId, userId),
+    isOwnProfile ? 0 : countMutualFriends(viewerId, userId),
   ]);
 
   if (!user) notFound();
@@ -154,6 +162,17 @@ export default async function ProfilePage({ params }: Params) {
   const lastWatchedMs = canSeeHistory
     ? buildLastWatchedMsByMediaItemId(watchAgg, episodeAgg)
     : new Map<string, number>();
+
+  const recentEntries = canSeeHistory
+    ? await prisma.watchEntry.findMany({
+        where: { userId },
+        orderBy: { watchedAt: "desc" },
+        take: 5,
+        include: {
+          mediaItem: { select: { tmdbId: true, type: true, title: true, poster: true, year: true } },
+        },
+      })
+    : [];
 
   const watched = canSeeHistory
     ? sortByLastWatchedDesc(
@@ -248,6 +267,11 @@ export default async function ProfilePage({ params }: Params) {
                 year: "numeric",
               })}
             </p>
+            {!isOwnProfile && mutualCount > 0 && (
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {mutualCount} mutual {mutualCount === 1 ? "friend" : "friends"}
+              </p>
+            )}
           </div>
         </div>
         {!isOwnProfile && (
@@ -301,6 +325,52 @@ export default async function ProfilePage({ params }: Params) {
           </div>
         ))}
       </div>
+
+      {recentEntries.length > 0 && (
+        <section className="mb-8">
+          <h3 className="text-base font-semibold mb-3">
+            Recent activity{" "}
+            <span className="text-sm font-normal text-muted-foreground">
+              ({recentEntries.length})
+            </span>
+          </h3>
+          <div className="flex gap-3 overflow-x-auto pb-1">
+            {recentEntries.map((entry) => {
+              const href =
+                entry.mediaItem.type === "MOVIE"
+                  ? `/movies/${entry.mediaItem.tmdbId}`
+                  : `/tv/${entry.mediaItem.tmdbId}`;
+              const poster = posterUrl(entry.mediaItem.poster);
+              return (
+                <Link key={entry.id} href={href} className="shrink-0 group">
+                  <div className="w-16 space-y-1">
+                    {poster ? (
+                      <Image
+                        src={poster}
+                        alt={entry.mediaItem.title}
+                        width={64}
+                        height={96}
+                        className="rounded object-cover w-16 h-24 group-hover:opacity-80 transition-opacity"
+                        unoptimized
+                      />
+                    ) : (
+                      <div className="w-16 h-24 rounded bg-muted flex items-center justify-center">
+                        <Eye className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                    )}
+                    <p className="text-[10px] text-muted-foreground truncate leading-tight">
+                      {entry.watchedAt.toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </p>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {hasAnyActivityTab ? (
         <Tabs defaultValue={defaultTab}>
