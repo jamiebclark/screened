@@ -79,6 +79,25 @@ export default async function SettingsPage() {
             <li>
               <Link
                 prefetch={false}
+                href="/settings/tautulli"
+                className="block group"
+              >
+                <Card className="transition-colors hover:bg-accent/50">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <div>
+                      <CardTitle className="text-base">Tautulli</CardTitle>
+                      <CardDescription>
+                        Richer Plex session history with precise timestamps.
+                      </CardDescription>
+                    </div>
+                    <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+                  </CardHeader>
+                </Card>
+              </Link>
+            </li>
+            <li>
+              <Link
+                prefetch={false}
                 href="/settings/discord"
                 className="block group"
               >

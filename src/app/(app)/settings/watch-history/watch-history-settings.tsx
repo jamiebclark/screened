@@ -52,6 +52,22 @@ function buildRows(counts: WatchImportCounts): Row[] {
         "Show-level Plex diary lines (WatchEntry) are not created for TV; episode watches appear on Watch History from episode sync. This count is almost always 0. Clear episode rows via “TV episode progress” below.",
     },
     {
+      scope: "tautulli_movie",
+      integration: "Tautulli",
+      library: "Movies",
+      count: counts.tautulliMovie,
+      resetHint:
+        "Removes movie watch entries synced from Tautulli. Re-sync Tautulli to import them again.",
+    },
+    {
+      scope: "tautulli_tv",
+      integration: "Tautulli",
+      library: "TV shows",
+      count: counts.tautulliTv,
+      resetHint:
+        "Removes show-level Tautulli diary lines. Episode progress is shared with Plex and cleared separately.",
+    },
+    {
       scope: "letterboxd",
       integration: "Letterboxd",
       library: "Diary (movies)",
