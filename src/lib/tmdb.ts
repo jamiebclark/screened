@@ -321,3 +321,40 @@ export async function getTvKeywords(tmdbId: number): Promise<string[]> {
   );
   return data.results.map((k) => k.name);
 }
+
+export interface TmdbWatchProvider {
+  provider_id: number;
+  provider_name: string;
+  logo_path: string;
+  display_priority: number;
+}
+
+export interface TmdbWatchProviderResult {
+  flatrate?: TmdbWatchProvider[];
+  rent?: TmdbWatchProvider[];
+  buy?: TmdbWatchProvider[];
+  free?: TmdbWatchProvider[];
+  ads?: TmdbWatchProvider[];
+  link?: string;
+}
+
+interface TmdbWatchProvidersResponse {
+  results: Record<string, TmdbWatchProviderResult & { link: string }>;
+}
+
+export async function getWatchProviders(
+  tmdbId: number,
+  type: "movie" | "tv",
+  countryCode = "US",
+): Promise<TmdbWatchProviderResult | null> {
+  try {
+    const path =
+      type === "movie"
+        ? `/movie/${tmdbId}/watch/providers`
+        : `/tv/${tmdbId}/watch/providers`;
+    const data = await tmdbFetch<TmdbWatchProvidersResponse>(path);
+    return data.results[countryCode] ?? null;
+  } catch {
+    return null;
+  }
+}

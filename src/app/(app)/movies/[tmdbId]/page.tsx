@@ -27,6 +27,7 @@ import { parseDateOnlyIso } from "@/lib/history-calendar";
 import { fetchTitleWatchHistoryForViewer } from "@/lib/watch-history-queries";
 import { MediaCard } from "@/components/media-card";
 import { TitleListsSection } from "@/components/title-lists-section";
+import { StreamingProviders } from "@/components/streaming-providers";
 
 type Params = {
   params: Promise<{ tmdbId: string }>;
@@ -211,6 +212,10 @@ export default async function MoviePage({ params, searchParams }: Params) {
                     {movie.overview}
                   </p>
                 )}
+
+                <Suspense fallback={null}>
+                  <StreamingProviders tmdbId={tmdbId} type="movie" />
+                </Suspense>
 
                 {session?.user?.id ? (
                   <TitleSiteContext>

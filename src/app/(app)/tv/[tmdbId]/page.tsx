@@ -20,6 +20,7 @@ import { MediaType } from "@/generated/prisma";
 import { MediaCard } from "@/components/media-card";
 import { Suspense } from "react";
 import { TitleListsSection } from "@/components/title-lists-section";
+import { StreamingProviders } from "@/components/streaming-providers";
 type Params = {
   params: Promise<{ tmdbId: string }>;
 };
@@ -217,6 +218,10 @@ export default async function TvPage({ params }: Params) {
                     {show.overview}
                   </p>
                 )}
+
+                <Suspense fallback={null}>
+                  <StreamingProviders tmdbId={tmdbId} type="tv" />
+                </Suspense>
               </div>
             </div>
           </div>
