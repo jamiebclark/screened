@@ -1,6 +1,8 @@
 export const WATCH_ENTRY_SCOPES = [
   "plex_movie",
   "plex_tv",
+  "tautulli_movie",
+  "tautulli_tv",
   "letterboxd",
   "manual_movie",
   "manual_tv",
@@ -19,6 +21,8 @@ export type WatchHistoryResetScope =
 export interface WatchImportCounts {
   plexMovie: number;
   plexTv: number;
+  tautulliMovie: number;
+  tautulliTv: number;
   letterboxd: number;
   manualMovie: number;
   manualTv: number;

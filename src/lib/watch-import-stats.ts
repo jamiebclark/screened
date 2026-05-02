@@ -32,6 +32,18 @@ function watchEntryWhere(userId: string, scope: WatchEntryScope) {
         source: WatchEntrySource.PLEX,
         mediaItem: { type: MediaType.TV },
       };
+    case "tautulli_movie":
+      return {
+        userId,
+        source: WatchEntrySource.TAUTULLI,
+        mediaItem: { type: MediaType.MOVIE },
+      };
+    case "tautulli_tv":
+      return {
+        userId,
+        source: WatchEntrySource.TAUTULLI,
+        mediaItem: { type: MediaType.TV },
+      };
     case "letterboxd":
       return { userId, source: WatchEntrySource.LETTERBOXD };
     case "manual_movie":
@@ -67,6 +79,8 @@ export async function getWatchImportCounts(
   const [
     plexMovie,
     plexTv,
+    tautulliMovie,
+    tautulliTv,
     letterboxd,
     manualMovie,
     manualTv,
@@ -77,6 +91,10 @@ export async function getWatchImportCounts(
   ] = await Promise.all([
     prisma.watchEntry.count({ where: watchEntryWhere(userId, "plex_movie") }),
     prisma.watchEntry.count({ where: watchEntryWhere(userId, "plex_tv") }),
+    prisma.watchEntry.count({
+      where: watchEntryWhere(userId, "tautulli_movie"),
+    }),
+    prisma.watchEntry.count({ where: watchEntryWhere(userId, "tautulli_tv") }),
     prisma.watchEntry.count({ where: watchEntryWhere(userId, "letterboxd") }),
     prisma.watchEntry.count({ where: watchEntryWhere(userId, "manual_movie") }),
     prisma.watchEntry.count({ where: watchEntryWhere(userId, "manual_tv") }),
@@ -94,6 +112,8 @@ export async function getWatchImportCounts(
   return {
     plexMovie,
     plexTv,
+    tautulliMovie,
+    tautulliTv,
     letterboxd,
     manualMovie,
     manualTv,

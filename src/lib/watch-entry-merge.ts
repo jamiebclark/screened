@@ -122,3 +122,22 @@ export async function mergePlexIntoWatchEntryIfUnknown(
     data: { source: WatchEntrySource.PLEX },
   });
 }
+
+/**
+ * Tautulli provides richer session data than Plex. When a same-day match exists,
+ * upgrade UNKNOWN or PLEX source to TAUTULLI. Manual and Letterboxd entries are
+ * not overwritten — they represent explicit user-logged data.
+ */
+export async function mergeTautulliIntoWatchEntry(
+  entry: Pick<WatchEntry, "id" | "source">,
+): Promise<void> {
+  if (
+    entry.source !== WatchEntrySource.UNKNOWN &&
+    entry.source !== WatchEntrySource.PLEX
+  )
+    return;
+  await prisma.watchEntry.update({
+    where: { id: entry.id },
+    data: { source: WatchEntrySource.TAUTULLI },
+  });
+}
