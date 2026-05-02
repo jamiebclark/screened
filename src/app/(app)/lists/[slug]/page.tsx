@@ -9,6 +9,7 @@ import { tmdbImageUrl } from "@/lib/utils";
 import { InviteMemberForm } from "./invite-member-form";
 import { PrivateListGate } from "./private-list-gate";
 import { ListItemActions } from "./list-item-actions";
+import { DiscordWebhookForm } from "./discord-webhook-form";
 import { LetterboxdImportDialog } from "@/components/letterboxd-import-dialog";
 import { EditableListSearchAdd } from "@/components/editable-list-search-add";
 import { MediaType, WatchStatus } from "@/generated/prisma";
@@ -206,6 +207,11 @@ export default async function ListPage({ params }: Params) {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Discord webhook */}
+      {isOwner && (
+        <DiscordWebhookForm slug={slug} currentWebhookUrl={list.discordWebhookUrl} />
       )}
 
       {/* Items grid */}

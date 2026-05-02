@@ -39,7 +39,10 @@ export async function GET(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  return NextResponse.json(list);
+  // Never expose the Discord webhook URL in API responses (it's a server secret)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { discordWebhookUrl: _webhook, ...safeList } = list;
+  return NextResponse.json(safeList);
 }
 
 export async function PATCH(req: NextRequest, { params }: Params) {
@@ -53,7 +56,19 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     name?: string;
     description?: string;
     isPublic?: boolean;
+    discordWebhookUrl?: string | null;
   };
+
+  // Validate webhook URL format if provided
+  if (
+    body.discordWebhookUrl &&
+    !body.discordWebhookUrl.startsWith("https://discord.com/api/webhooks/")
+  ) {
+    return NextResponse.json(
+      { error: "Invalid Discord webhook URL" },
+      { status: 400 },
+    );
+  }
 
   const list = await prisma.list.findUnique({ where: { slug } });
   if (!list || list.ownerId !== session.user.id) {
@@ -64,8 +79,11 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     where: { slug },
     data: {
       name: body.name ?? list.name,
-      description: body.description ?? list.description,
+      description: body.description !== undefined ? body.description : list.description,
       isPublic: body.isPublic ?? list.isPublic,
+      ...(body.discordWebhookUrl !== undefined && {
+        discordWebhookUrl: body.discordWebhookUrl || null,
+      }),
     },
   });
 
