@@ -3,6 +3,7 @@ import { after } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notifyFriendsOfWatch } from "@/lib/watch-notifications";
+import { notifyWatched } from "@/lib/discord";
 import {
   getMovie,
   getTvShow,
@@ -240,6 +241,35 @@ export async function POST(req: NextRequest) {
     after(() =>
       notifyFriendsOfWatch(session.user.id, mediaItem.id, entry.id),
     );
+    after(async () => {
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+      const listsWithWebhook = await prisma.list.findMany({
+        where: {
+          discordWebhookUrl: { not: null },
+          items: { some: { mediaItemId: mediaItem.id } },
+          members: { some: { userId: session.user.id } },
+        },
+        select: { discordWebhookUrl: true },
+      });
+      const user = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { name: true },
+      });
+      for (const list of listsWithWebhook) {
+        if (list.discordWebhookUrl) {
+          await notifyWatched(list.discordWebhookUrl, {
+            userName: user?.name ?? "Someone",
+            title: mediaItem.title,
+            year: mediaItem.year,
+            type: mediaItem.type === MediaType.MOVIE ? "movie" : "tv",
+            poster: mediaItem.poster,
+            rating: result.rating,
+            appUrl,
+            tmdbId: mediaItem.tmdbId,
+          });
+        }
+      }
+    });
   }
 
   return NextResponse.json(result);

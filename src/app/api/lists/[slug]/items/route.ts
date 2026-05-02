@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { after } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { notifyListItemAdded } from "@/lib/discord";
 import { getMovie, getTvShow } from "@/lib/tmdb";
 import { MediaType } from "@/generated/prisma";
 
@@ -98,6 +100,30 @@ export async function POST(req: NextRequest, { params }: Params) {
   await prisma.list.update({
     where: { id: list.id },
     data: { updatedAt: new Date() },
+  });
+
+  after(async () => {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+    const listWithWebhook = await prisma.list.findUnique({
+      where: { id: list.id },
+      select: { discordWebhookUrl: true, name: true, slug: true },
+    });
+    if (!listWithWebhook?.discordWebhookUrl) return;
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { name: true },
+    });
+    await notifyListItemAdded(listWithWebhook.discordWebhookUrl, {
+      userName: user?.name ?? "Someone",
+      title: mediaItem.title,
+      year: mediaItem.year,
+      type: type as "movie" | "tv",
+      poster: mediaItem.poster,
+      listName: listWithWebhook.name,
+      appUrl,
+      tmdbId: mediaItem.tmdbId,
+      listSlug: listWithWebhook.slug,
+    });
   });
 
   return NextResponse.json(item, { status: 201 });
