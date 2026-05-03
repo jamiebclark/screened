@@ -4,6 +4,7 @@ import { MediaType } from "@/generated/prisma";
 interface IcsEvent {
   uid: string;
   dtstart: Date;
+  dtend?: Date;
   summary: string;
   description?: string;
   url?: string;
@@ -53,14 +54,22 @@ function nextDay(date: Date): Date {
 }
 
 function renderEvent(event: IcsEvent, dtstamp: Date): string {
+  const allDay = !event.dtend;
   const lines: string[] = [
     "BEGIN:VEVENT",
     foldLine(`UID:${event.uid}`),
     foldLine(`DTSTAMP:${formatDateTime(dtstamp)}`),
-    foldLine(`DTSTART;VALUE=DATE:${formatDateOnly(event.dtstart)}`),
-    foldLine(`DTEND;VALUE=DATE:${formatDateOnly(nextDay(event.dtstart))}`),
-    foldLine(`SUMMARY:${escapeText(event.summary)}`),
   ];
+  if (allDay) {
+    lines.push(foldLine(`DTSTART;VALUE=DATE:${formatDateOnly(event.dtstart)}`));
+    lines.push(
+      foldLine(`DTEND;VALUE=DATE:${formatDateOnly(nextDay(event.dtstart))}`),
+    );
+  } else {
+    lines.push(foldLine(`DTSTART:${formatDateTime(event.dtstart)}`));
+    lines.push(foldLine(`DTEND:${formatDateTime(event.dtend!)}`));
+  }
+  lines.push(foldLine(`SUMMARY:${escapeText(event.summary)}`));
   if (event.description) {
     lines.push(foldLine(`DESCRIPTION:${escapeText(event.description)}`));
   }
@@ -75,39 +84,77 @@ export async function buildCalendarFeed(
   userId: string,
   appUrl: string,
 ): Promise<string> {
-  const statuses = await prisma.userMediaStatus.findMany({
-    where: {
-      userId,
-      status: { in: ["WATCHLIST", "WATCHING"] },
-      mediaItem: { releaseDate: { not: null } },
-    },
-    select: {
-      mediaItem: {
-        select: {
-          id: true,
-          tmdbId: true,
-          type: true,
-          title: true,
-          overview: true,
-          releaseDate: true,
+  const [statuses, watchParties] = await Promise.all([
+    prisma.userMediaStatus.findMany({
+      where: {
+        userId,
+        status: { in: ["WATCHLIST", "WATCHING"] },
+        mediaItem: { releaseDate: { not: null } },
+      },
+      select: {
+        mediaItem: {
+          select: {
+            id: true,
+            tmdbId: true,
+            type: true,
+            title: true,
+            overview: true,
+            releaseDate: true,
+          },
         },
       },
-    },
-    orderBy: { mediaItem: { releaseDate: "asc" } },
-  });
+      orderBy: { mediaItem: { releaseDate: "asc" } },
+    }),
+    prisma.watchParty.findMany({
+      where: {
+        status: "SCHEDULED",
+        OR: [
+          { hostId: userId },
+          { invites: { some: { userId, status: "ACCEPTED" } } },
+        ],
+      },
+      select: {
+        id: true,
+        scheduledFor: true,
+        hostId: true,
+        mediaItem: { select: { title: true, year: true } },
+        host: { select: { name: true } },
+      },
+      orderBy: { scheduledFor: "asc" },
+    }),
+  ]);
 
   const dtstamp = new Date();
-  const events = statuses.map(({ mediaItem }) => {
+
+  const releaseEvents = statuses.map(({ mediaItem }) => {
     const typeSlug = mediaItem.type === MediaType.MOVIE ? "movies" : "tv";
-    const url = `${appUrl}/${typeSlug}/${mediaItem.tmdbId}`;
     const typeLabel = mediaItem.type === MediaType.MOVIE ? "Movie" : "TV";
     return renderEvent(
       {
-        uid: `screened-${mediaItem.id}@screened`,
+        uid: `screened-release-${mediaItem.id}@screened`,
         dtstart: mediaItem.releaseDate!,
         summary: `${mediaItem.title} — ${typeLabel} Release`,
         description: mediaItem.overview ?? undefined,
-        url,
+        url: `${appUrl}/${typeSlug}/${mediaItem.tmdbId}`,
+      },
+      dtstamp,
+    );
+  });
+
+  const partyEvents = watchParties.map((party) => {
+    const isHost = party.hostId === userId;
+    const title = party.mediaItem.year
+      ? `${party.mediaItem.title} (${party.mediaItem.year})`
+      : party.mediaItem.title;
+    const dtend = new Date(party.scheduledFor.getTime() + 2 * 60 * 60 * 1000);
+    return renderEvent(
+      {
+        uid: `screened-party-${party.id}@screened`,
+        dtstart: party.scheduledFor,
+        dtend,
+        summary: `Watch Party: ${title}`,
+        description: isHost ? `Hosted by you` : `Hosted by ${party.host.name}`,
+        url: `${appUrl}/watch-parties/${party.id}`,
       },
       dtstamp,
     );
@@ -119,11 +166,12 @@ export async function buildCalendarFeed(
     "PRODID:-//Screened//Calendar Feed//EN",
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
-    foldLine("X-WR-CALNAME:Screened — Upcoming Releases"),
+    foldLine("X-WR-CALNAME:Screened — Releases & Watch Parties"),
     foldLine(
-      "X-WR-CALDESC:Release dates for titles on your Screened watchlist",
+      "X-WR-CALDESC:Release dates and watch parties from your Screened account",
     ),
-    ...events,
+    ...releaseEvents,
+    ...partyEvents,
     "END:VCALENDAR",
   ];
 
