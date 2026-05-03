@@ -1,3 +1,14 @@
+## [1.20.0](https://github.com/jamiebclark/screened/compare/v1.19.0...v1.20.0) (2026-05-03)
+
+### Features
+
+* **onboarding:** add all integrations with core/accordion layout ([d1deedf](https://github.com/jamiebclark/screened/commit/d1deedf45356396a99cb5f021cf4c68f6c361b94))
+
+### Bug Fixes
+
+* **settings:** add Jellyfin, Trakt, and Overseerr to integrations nav ([2657a7b](https://github.com/jamiebclark/screened/commit/2657a7b935253f419da982606b8cff22e94928ab))
+* **tmdb:** normalize array fields at the fetch boundary ([732c257](https://github.com/jamiebclark/screened/commit/732c2577dbd0c6d5bdd006aa3b06a4173ff2679a))
+
 ## [1.19.0](https://github.com/jamiebclark/screened/compare/v1.18.1...v1.19.0) (2026-05-03)
 
 ### Features
