@@ -1,3 +1,20 @@
+## [1.34.0](https://github.com/jamiebclark/screened/compare/v1.33.0...v1.34.0) (2026-05-03)
+
+### Features
+
+* **components:** add person avatar and cast/crew section ([24249de](https://github.com/jamiebclark/screened/commit/24249de961df5c36946ba6c83e074ad149d2aff4))
+* **movies,tv:** display cast and crew on title pages ([2563f23](https://github.com/jamiebclark/screened/commit/2563f239c05ac049b73eff579f9353e10ba75d12))
+* **person:** add filmography query and name resolution API ([5e3d5ce](https://github.com/jamiebclark/screened/commit/5e3d5ced2a70ee31adcba6c654d2c814786f1d0e))
+* **person:** add full TMDB directing credits on person pages ([bbff319](https://github.com/jamiebclark/screened/commit/bbff3194d9f95748e7218e87c1d604a6d43730b2))
+* **person:** add person detail pages ([fb4aa28](https://github.com/jamiebclark/screened/commit/fb4aa2832a0743ed1bcd6c88b256da078415c18b))
+* **person:** expandable biography with read more on person page ([8b17f3f](https://github.com/jamiebclark/screened/commit/8b17f3f76aa3c9fe993c99a028c4a9678b40562f))
+* **tmdb:** add person API integration ([f71c916](https://github.com/jamiebclark/screened/commit/f71c91656035c9eaf5021490f857408f848ea6ef))
+
+### Bug Fixes
+
+* **person:** fetch profile photos for cast/crew on title pages ([df866cc](https://github.com/jamiebclark/screened/commit/df866cc7d3e49c9ac4374a548a7bf795bd9c758c))
+* **person:** use full content width for person page helper copy ([4023a1d](https://github.com/jamiebclark/screened/commit/4023a1d58f9a6526f85344325537164f38f61686))
+
 ## [1.33.0](https://github.com/jamiebclark/screened/compare/v1.32.0...v1.33.0) (2026-05-03)
 
 ### Features
