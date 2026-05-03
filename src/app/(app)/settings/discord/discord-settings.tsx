@@ -9,6 +9,7 @@ import {
   MessageSquare,
   Loader2,
   AlertCircle,
+  Bell,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,6 +19,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 interface DiscordSettingsProps {
   connection: {
@@ -42,6 +45,18 @@ export function DiscordSettings({
 
   const [connection, setConnection] = useState(initialConnection);
   const [isPending, startTransition] = useTransition();
+  const [isDmPending, startDmTransition] = useTransition();
+
+  const toggleDm = (enabled: boolean) => {
+    startDmTransition(async () => {
+      await fetch("/api/discord/dm-preference", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dmEnabled: enabled }),
+      });
+      setConnection((c) => (c ? { ...c, dmEnabled: enabled } : c));
+    });
+  };
 
   const unlink = () => {
     startTransition(async () => {
@@ -143,6 +158,35 @@ export function DiscordSettings({
           )}
         </CardContent>
       </Card>
+
+      {/* DM notifications card */}
+      {features.bot && connection && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Bell className="h-4 w-4" />
+              Direct Message Notifications
+            </CardTitle>
+            <CardDescription>
+              Receive a Discord DM when you get a friend request, a list access
+              request, or a friend watches something on your watchlist.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-3">
+              <Checkbox
+                id="dm-enabled"
+                checked={connection.dmEnabled}
+                onCheckedChange={(checked) => toggleDm(checked === true)}
+                disabled={isDmPending}
+              />
+              <Label htmlFor="dm-enabled" className="text-sm cursor-pointer">
+                Send me notifications via Discord DM
+              </Label>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Bot / slash commands info card */}
       {features.bot && (
