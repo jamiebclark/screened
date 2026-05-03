@@ -1,3 +1,9 @@
+## [1.29.1](https://github.com/jamiebclark/screened/compare/v1.29.0...v1.29.1) (2026-05-03)
+
+### Bug Fixes
+
+* **watchlist:** use $queryRaw for upcoming section to avoid stale client cache ([3ccb135](https://github.com/jamiebclark/screened/commit/3ccb1358c9f78972d3838c984150148571caf8da))
+
 ## [1.29.0](https://github.com/jamiebclark/screened/compare/v1.28.0...v1.29.0) (2026-05-03)
 
 ### Features
