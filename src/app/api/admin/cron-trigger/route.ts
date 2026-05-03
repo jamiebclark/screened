@@ -2,14 +2,92 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { isSiteAdminEmail } from "@/lib/signup-invites";
 import { CronIntegration } from "@/generated/prisma";
+import { prisma } from "@/lib/prisma";
+import { syncPlexUser } from "@/lib/plex-sync";
+import { syncLetterboxdUser } from "@/lib/letterboxd-sync";
+import { syncJellyfinUser } from "@/lib/jellyfin-sync";
+import { syncTautulliUser } from "@/lib/tautulli-sync";
+import { syncTraktUser } from "@/lib/trakt-sync";
 
-const CRON_ROUTES: Record<CronIntegration, string> = {
-  [CronIntegration.PLEX]: "/api/cron/plex-sync",
-  [CronIntegration.LETTERBOXD]: "/api/cron/letterboxd-sync",
-  [CronIntegration.JELLYFIN]: "/api/cron/jellyfin-sync",
-  [CronIntegration.TAUTULLI]: "/api/cron/tautulli-sync",
-  [CronIntegration.TRAKT]: "/api/cron/trakt-sync",
-};
+async function runSync(integration: CronIntegration) {
+  const startedAt = Date.now();
+
+  let userIds: string[];
+  let syncFn: (userId: string) => Promise<unknown>;
+
+  switch (integration) {
+    case CronIntegration.PLEX: {
+      const conns = await prisma.plexConnection.findMany({
+        select: { userId: true },
+      });
+      userIds = conns.map((c) => c.userId);
+      syncFn = syncPlexUser;
+      break;
+    }
+    case CronIntegration.LETTERBOXD: {
+      const conns = await prisma.letterboxdConnection.findMany({
+        select: { userId: true },
+      });
+      userIds = conns.map((c) => c.userId);
+      syncFn = syncLetterboxdUser;
+      break;
+    }
+    case CronIntegration.JELLYFIN: {
+      const conns = await prisma.jellyfinConnection.findMany({
+        select: { userId: true },
+      });
+      userIds = conns.map((c) => c.userId);
+      syncFn = syncJellyfinUser;
+      break;
+    }
+    case CronIntegration.TAUTULLI: {
+      const conns = await prisma.tautulliConnection.findMany({
+        select: { userId: true },
+      });
+      userIds = conns.map((c) => c.userId);
+      syncFn = syncTautulliUser;
+      break;
+    }
+    case CronIntegration.TRAKT: {
+      const conns = await prisma.traktConnection.findMany({
+        select: { userId: true },
+      });
+      userIds = conns.map((c) => c.userId);
+      syncFn = syncTraktUser;
+      break;
+    }
+  }
+
+  const results = await Promise.allSettled(userIds.map((id) => syncFn(id)));
+  const summary = results.map((r, i) => ({
+    userId: userIds[i],
+    ...(r.status === "fulfilled"
+      ? { ok: true, ...(r.value as Record<string, unknown>) }
+      : {
+          ok: false,
+          error: r.reason instanceof Error ? r.reason.message : "Unknown error",
+        }),
+  }));
+
+  const succeeded = summary.filter((s) => s.ok).length;
+  const failed = summary.filter((s) => !s.ok).length;
+
+  console.log(
+    `[admin/cron-trigger] ${integration}: ${succeeded} succeeded, ${failed} failed`,
+  );
+
+  await prisma.cronRun.create({
+    data: {
+      integration,
+      durationMs: Date.now() - startedAt,
+      succeeded,
+      failed,
+      result: summary,
+    },
+  });
+
+  return { succeeded, failed, users: summary };
+}
 
 export async function POST(req: NextRequest) {
   const session = await auth();
@@ -25,25 +103,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid integration" }, { status: 400 });
   }
 
-  const cronSecret = process.env.CRON_SECRET;
-  if (!cronSecret) {
+  try {
+    const result = await runSync(integration as CronIntegration);
+    return NextResponse.json(result);
+  } catch (err) {
+    console.error("[admin/cron-trigger] Unexpected error:", err);
     return NextResponse.json(
-      { error: "CRON_SECRET not configured" },
+      { error: "Internal server error" },
       { status: 500 },
     );
   }
-
-  const baseUrl =
-    process.env.NEXTAUTH_URL ||
-    process.env.NEXT_PUBLIC_APP_URL ||
-    "http://localhost:3000";
-
-  const cronPath = CRON_ROUTES[integration as CronIntegration];
-  const response = await fetch(`${baseUrl}${cronPath}`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${cronSecret}` },
-  });
-
-  const data = await response.json();
-  return NextResponse.json(data, { status: response.status });
 }

@@ -8,17 +8,26 @@ type State = "idle" | "running" | "success" | "error";
 
 export function TriggerCronButton({ integration }: { integration: string }) {
   const [state, setState] = useState<State>("idle");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   async function handleClick() {
     setState("running");
+    setErrorMessage(null);
     try {
       const res = await fetch("/api/admin/cron-trigger", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ integration }),
       });
-      setState(res.ok ? "success" : "error");
-    } catch {
+      if (res.ok) {
+        setState("success");
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setErrorMessage(data?.error ?? `HTTP ${res.status}`);
+        setState("error");
+      }
+    } catch (err) {
+      setErrorMessage(err instanceof Error ? err.message : "Network error");
       setState("error");
     } finally {
       setTimeout(() => setState("idle"), 3000);
@@ -32,7 +41,7 @@ export function TriggerCronButton({ integration }: { integration: string }) {
       className="h-7 w-7 shrink-0"
       onClick={handleClick}
       disabled={state === "running"}
-      title="Run now"
+      title={state === "error" && errorMessage ? errorMessage : "Run now"}
     >
       {state === "idle" && <Play className="h-3.5 w-3.5" />}
       {state === "running" && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
