@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@/generated/prisma";
 import Link from "next/link";
 import Image from "next/image";
 import { EditableListSearchAdd } from "@/components/editable-list-search-add";
@@ -78,26 +79,24 @@ export default async function WatchlistPage({ searchParams }: PageProps) {
       },
       orderBy: SORT_ORDERS[sort],
     }),
-    prisma.userMediaStatus.findMany({
-      where: {
-        userId: session!.user.id,
-        status: "WATCHLIST",
-        mediaItem: { releaseDate: { gt: now } },
-      },
-      select: {
-        mediaItem: {
-          select: {
-            tmdbId: true,
-            type: true,
-            title: true,
-            poster: true,
-            releaseDate: true,
-          },
-        },
-      },
-      orderBy: { mediaItem: { releaseDate: "asc" } },
-      take: 12,
-    }),
+    prisma.$queryRaw<
+      {
+        tmdbId: number;
+        type: string;
+        title: string;
+        poster: string | null;
+        releaseDate: Date;
+      }[]
+    >(Prisma.sql`
+      SELECT mi."tmdbId", mi.type::text, mi.title, mi.poster, mi."releaseDate"
+      FROM "MediaItem" mi
+      JOIN "UserMediaStatus" ums ON ums."mediaItemId" = mi.id
+      WHERE ums."userId" = ${session!.user.id}
+        AND ums.status = 'WATCHLIST'
+        AND mi."releaseDate" > ${now}
+      ORDER BY mi."releaseDate" ASC
+      LIMIT 12
+    `),
   ]);
 
   const movies = rows.filter((r) => r.mediaItem.type === MediaType.MOVIE);
@@ -156,7 +155,7 @@ export default async function WatchlistPage({ searchParams }: PageProps) {
             Releasing soon
           </h3>
           <div className="space-y-1">
-            {upcomingRows.map(({ mediaItem }) => {
+            {upcomingRows.map((mediaItem) => {
               const type = mediaItem.type === MediaType.MOVIE ? "movie" : "tv";
               const href = `/${type === "movie" ? "movies" : "tv"}/${mediaItem.tmdbId}`;
               const thumb = posterUrl(mediaItem.poster);
