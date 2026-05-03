@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { CronIntegration } from "@/generated/prisma";
 import { CheckCircle, XCircle, AlertCircle, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { TriggerCronButton } from "./trigger-button";
 
 export const metadata = { title: "Cron status | Screened" };
 
@@ -92,24 +93,27 @@ export default async function CronStatusPage() {
                   )}
                   <span className="font-medium text-sm">{label}</span>
                 </div>
-                {run ? (
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground shrink-0">
-                    <span>{formatRelative(run.ranAt)}</span>
-                    <span>{formatDuration(run.durationMs)}</span>
-                    <span>
-                      {run.succeeded} ok
-                      {run.failed > 0 && (
-                        <span className="text-destructive ml-1">
-                          / {run.failed} failed
-                        </span>
-                      )}
+                <div className="flex items-center gap-3 shrink-0">
+                  {run ? (
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <span>{formatRelative(run.ranAt)}</span>
+                      <span>{formatDuration(run.durationMs)}</span>
+                      <span>
+                        {run.succeeded} ok
+                        {run.failed > 0 && (
+                          <span className="text-destructive ml-1">
+                            / {run.failed} failed
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="text-sm text-muted-foreground">
+                      No runs recorded
                     </span>
-                  </div>
-                ) : (
-                  <span className="text-sm text-muted-foreground">
-                    No runs recorded
-                  </span>
-                )}
+                  )}
+                  <TriggerCronButton integration={key} />
+                </div>
               </div>
             );
           })}
