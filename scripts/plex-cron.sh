@@ -1,8 +1,6 @@
 #!/bin/sh
 set -e
 
-apk add --no-cache curl --quiet
-
 INTERVAL="${SYNC_INTERVAL_HOURS:-6}"
 SLEEP_SECONDS=$((INTERVAL * 3600))
 APP_URL="${APP_URL:-http://app:3000}"
