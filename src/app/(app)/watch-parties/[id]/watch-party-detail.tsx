@@ -5,7 +5,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
-  CalendarDays,
   Film,
   Users,
   CheckCircle2,
@@ -15,9 +14,7 @@ import {
   Trash2,
   Loader2,
   CalendarCheck,
-  CalendarPlus,
-  Copy,
-  Check,
+  CalendarDays,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -30,13 +27,9 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { DateWithHistoryLink } from "@/components/date-with-history-link";
 
 type UserSnap = { id: string; name: string; avatarUrl: string | null };
 
@@ -65,13 +58,6 @@ type Party = {
   };
   invites: InviteSnap[];
 };
-
-function formatDate(date: Date) {
-  return new Date(date).toLocaleString("en-US", {
-    dateStyle: "long",
-    timeStyle: "short",
-  });
-}
 
 function posterSrc(path: string | null) {
   if (!path) return null;
@@ -109,11 +95,9 @@ function InviteRow({ invite }: { invite: InviteSnap }) {
 export function WatchPartyDetail({
   party,
   currentUserId,
-  feedUrl,
 }: {
   party: Party;
   currentUserId: string;
-  feedUrl: string;
 }) {
   const router = useRouter();
   const isHost = party.hostId === currentUserId;
@@ -124,14 +108,6 @@ export function WatchPartyDetail({
   const poster = posterSrc(party.mediaItem.poster);
 
   const [rescheduleOpen, setRescheduleOpen] = useState(false);
-  const [copied, setCopied] = useState(false);
-
-  const webcalUrl = feedUrl.replace(/^https?:\/\//, "webcal://");
-  const copyFeedUrl = async () => {
-    await navigator.clipboard.writeText(feedUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
   const [newDate, setNewDate] = useState("");
   const [responding, setResponding] = useState(false);
   const [confirming, setConfirming] = useState(false);
@@ -251,10 +227,7 @@ export function WatchPartyDetail({
             )}
           </div>
 
-          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-            <CalendarDays className="h-4 w-4" />
-            {formatDate(party.scheduledFor)}
-          </div>
+          <DateWithHistoryLink date={party.scheduledFor} />
 
           <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
             <Users className="h-4 w-4" />
@@ -360,55 +333,6 @@ export function WatchPartyDetail({
 
       {/* Actions */}
       <div className="flex flex-wrap gap-2 pt-2">
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="outline" size="sm" className="gap-1.5">
-              <CalendarPlus className="h-3.5 w-3.5" />
-              Subscribe to Calendar
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent align="start" className="w-80">
-            <p className="text-sm font-medium mb-1">
-              Live calendar subscription
-            </p>
-            <p className="text-xs text-muted-foreground mb-3">
-              Subscribe once and your calendar stays in sync — reschedules and
-              cancellations update automatically.
-            </p>
-            <div className="space-y-2">
-              <Button size="sm" className="w-full gap-1.5" asChild>
-                <a href={webcalUrl}>
-                  <CalendarPlus className="h-3.5 w-3.5" />
-                  Subscribe (Apple / Outlook)
-                </a>
-              </Button>
-              <div className="flex gap-1.5">
-                <Input
-                  readOnly
-                  value={feedUrl}
-                  className="font-mono text-xs h-8"
-                  onClick={(e) => (e.target as HTMLInputElement).select()}
-                />
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-8 w-8 shrink-0"
-                  onClick={copyFeedUrl}
-                >
-                  {copied ? (
-                    <Check className="h-3.5 w-3.5 text-green-500" />
-                  ) : (
-                    <Copy className="h-3.5 w-3.5" />
-                  )}
-                </Button>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                For Google Calendar: Other calendars → From URL → paste above.
-              </p>
-            </div>
-          </PopoverContent>
-        </Popover>
-
         {isHost && isScheduled && !isPast && (
           <>
             <Button

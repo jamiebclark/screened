@@ -19,6 +19,8 @@ import {
   fetchReleasesInMonth,
 } from "@/lib/watch-history-queries";
 import { fetchWatchPartiesInMonth } from "@/lib/watch-party";
+import { ensureCalendarToken } from "@/lib/ensure-calendar-token";
+import { SubscribeToCalendarButton } from "@/components/subscribe-to-calendar-button";
 import Image from "next/image";
 import { Users } from "lucide-react";
 
@@ -63,12 +65,17 @@ export default async function HistoryMonthPage({ params }: Params) {
   const userId = session!.user.id;
   const { start, end } = localMonthRange(year, month);
 
-  const [entries, daysWithEntries, releases, watchParties] = await Promise.all([
-    fetchMyWatchHistoryInRange(userId, start, end),
-    fetchMyWatchDaysInMonth(userId, start, end),
-    fetchReleasesInMonth(userId, start, end),
-    fetchWatchPartiesInMonth(userId, start, end),
-  ]);
+  const [entries, daysWithEntries, releases, watchParties, calendarToken] =
+    await Promise.all([
+      fetchMyWatchHistoryInRange(userId, start, end),
+      fetchMyWatchDaysInMonth(userId, start, end),
+      fetchReleasesInMonth(userId, start, end),
+      fetchWatchPartiesInMonth(userId, start, end),
+      ensureCalendarToken(userId),
+    ]);
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const feedUrl = `${appUrl}/api/calendar/feed?token=${calendarToken}`;
 
   const daysWithReleases = new Set(
     releases.map((r) => r.releaseDate.getDate()),
@@ -100,7 +107,10 @@ export default async function HistoryMonthPage({ params }: Params) {
         ]}
       />
 
-      <h1 className="text-2xl font-bold mb-6">{monthTitle}</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">{monthTitle}</h1>
+        <SubscribeToCalendarButton feedUrl={feedUrl} />
+      </div>
 
       <div className="mb-10">
         <HistoryCalendarGrid

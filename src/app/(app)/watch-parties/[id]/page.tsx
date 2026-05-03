@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { getWatchParty } from "@/lib/watch-party";
-import { ensureCalendarToken } from "@/lib/ensure-calendar-token";
 import { WatchPartyDetail } from "./watch-party-detail";
 
 type Params = { params: Promise<{ id: string }> };
@@ -23,22 +22,12 @@ export default async function WatchPartyPage({ params }: Params) {
   const session = await auth();
   const userId = session!.user.id;
 
-  const [party, calendarToken] = await Promise.all([
-    getWatchParty(id, userId),
-    ensureCalendarToken(userId),
-  ]);
+  const party = await getWatchParty(id, userId);
   if (!party) notFound();
-
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-  const feedUrl = `${appUrl}/api/calendar/feed?token=${calendarToken}`;
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
-      <WatchPartyDetail
-        party={party}
-        currentUserId={userId}
-        feedUrl={feedUrl}
-      />
+      <WatchPartyDetail party={party} currentUserId={userId} />
     </div>
   );
 }
