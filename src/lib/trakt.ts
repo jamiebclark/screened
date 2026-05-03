@@ -1,11 +1,14 @@
 const TRAKT_BASE = "https://api.trakt.tv";
 
+const TRAKT_USER_AGENT = "Screened/1.0 (https://github.com/screened/screened)";
+
 function traktHeaders(accessToken?: string): Record<string, string> {
   const clientId = process.env.TRAKT_CLIENT_ID ?? "";
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     "trakt-api-version": "2",
     "trakt-api-key": clientId,
+    "User-Agent": TRAKT_USER_AGENT,
   };
   if (accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
   return headers;
@@ -56,10 +59,16 @@ export function isTraktConfigured(): boolean {
 export async function requestTraktDeviceCode(): Promise<TraktDeviceCode> {
   const res = await fetch(`${TRAKT_BASE}/oauth/device/code`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "User-Agent": TRAKT_USER_AGENT,
+    },
     body: JSON.stringify({ client_id: process.env.TRAKT_CLIENT_ID }),
   });
-  if (!res.ok) throw new Error("Failed to request device code");
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`Failed to request device code: ${res.status} ${body}`);
+  }
   return res.json() as Promise<TraktDeviceCode>;
 }
 
@@ -75,7 +84,10 @@ export async function pollTraktDeviceToken(
   try {
     const res = await fetch(`${TRAKT_BASE}/oauth/device/token`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "User-Agent": TRAKT_USER_AGENT,
+      },
       body: JSON.stringify({
         code: deviceCode,
         client_id: process.env.TRAKT_CLIENT_ID,
@@ -101,7 +113,10 @@ export async function refreshTraktToken(
   try {
     const res = await fetch(`${TRAKT_BASE}/oauth/token`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "User-Agent": TRAKT_USER_AGENT,
+      },
       body: JSON.stringify({
         refresh_token: refreshToken,
         client_id: process.env.TRAKT_CLIENT_ID,
