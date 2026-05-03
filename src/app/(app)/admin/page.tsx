@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { isSiteAdminEmail } from "@/lib/signup-invites";
 import Link from "next/link";
-import { ArrowRight, RefreshCw } from "lucide-react";
+import { ArrowRight, RefreshCw, Users } from "lucide-react";
 import {
   Card,
   CardDescription,
@@ -13,6 +13,12 @@ import {
 export const metadata = { title: "Admin | Screened" };
 
 const adminSections = [
+  {
+    href: "/admin/users",
+    icon: Users,
+    title: "Users",
+    description: "All registered accounts with integrations and watch counts.",
+  },
   {
     href: "/admin/cron",
     icon: RefreshCw,
