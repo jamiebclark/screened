@@ -5,7 +5,8 @@ import { HistoryBreadcrumbs } from "@/components/history-breadcrumbs";
 import { HistoryWatchEntryRow } from "@/components/history-watch-entry-row";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Search } from "lucide-react";
+import { Search, Users } from "lucide-react";
+import Image from "next/image";
 import {
   dayCanonicalPath,
   historyMonthPath,
@@ -20,7 +21,9 @@ import {
 import {
   fetchFriendsWatchHistoryInRange,
   fetchMyWatchHistoryInRange,
+  fetchReleasesInMonth,
 } from "@/lib/watch-history-queries";
+import { fetchWatchPartiesInMonth } from "@/lib/watch-party";
 
 function formatTime(date: Date): string {
   return new Date(date).toLocaleTimeString("en-US", {
@@ -64,10 +67,14 @@ export default async function HistoryDayPage({ params }: Params) {
   if (canonDay) redirect(canonDay);
 
   const session = await auth();
+  const userId = session!.user.id;
   const { start, end } = localDayRange(year, month, day);
-  const [myEntries, friendEntries] = await Promise.all([
-    fetchMyWatchHistoryInRange(session!.user.id, start, end),
-    fetchFriendsWatchHistoryInRange(session!.user.id, start, end),
+
+  const [myEntries, friendEntries, releases, watchParties] = await Promise.all([
+    fetchMyWatchHistoryInRange(userId, start, end),
+    fetchFriendsWatchHistoryInRange(userId, start, end),
+    fetchReleasesInMonth(userId, start, end),
+    fetchWatchPartiesInMonth(userId, start, end),
   ]);
 
   const dateIso = toDateOnlyIso(year, month, day);
@@ -114,6 +121,100 @@ export default async function HistoryDayPage({ params }: Params) {
         Search opens with a watch date saved on each result. Pick a title, then
         use &quot;Log a viewing&quot; — the date defaults to this day.
       </p>
+
+      {watchParties.length > 0 && (
+        <section className="mb-8">
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+            Watch parties
+          </h2>
+          <div className="space-y-2">
+            {watchParties.map((party) => {
+              const title = party.mediaItem.year
+                ? `${party.mediaItem.title} (${party.mediaItem.year})`
+                : party.mediaItem.title;
+              return (
+                <Link
+                  key={party.id}
+                  href={`/watch-parties/${party.id}`}
+                  className="flex items-center gap-3 rounded-lg border border-border bg-card p-3 hover:bg-accent transition-colors"
+                >
+                  {party.mediaItem.poster ? (
+                    <Image
+                      src={`https://image.tmdb.org/t/p/w92${party.mediaItem.poster}`}
+                      alt=""
+                      width={32}
+                      height={48}
+                      className="rounded object-cover shrink-0"
+                    />
+                  ) : (
+                    <div className="w-8 h-12 rounded bg-muted shrink-0 flex items-center justify-center">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{title}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatTime(party.scheduledFor)}
+                      {" · "}
+                      {party.isHost
+                        ? "Hosted by you"
+                        : `Hosted by ${party.host.name}`}
+                    </p>
+                  </div>
+                  <span
+                    className={
+                      party.status === "CONFIRMED"
+                        ? "text-xs text-green-500 shrink-0"
+                        : "text-xs text-muted-foreground shrink-0"
+                    }
+                  >
+                    {party.status === "CONFIRMED" ? "Confirmed" : "Scheduled"}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {releases.length > 0 && (
+        <section className="mb-8">
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+            Releases from your watchlist
+          </h2>
+          <div className="space-y-2">
+            {releases.map((item) => {
+              const typeSlug = item.type === "MOVIE" ? "movies" : "tv";
+              return (
+                <Link
+                  key={item.id}
+                  href={`/${typeSlug}/${item.tmdbId}`}
+                  className="flex items-center gap-3 rounded-lg border border-border bg-card p-3 hover:bg-accent transition-colors"
+                >
+                  {item.poster ? (
+                    <Image
+                      src={`https://image.tmdb.org/t/p/w92${item.poster}`}
+                      alt=""
+                      width={32}
+                      height={48}
+                      className="rounded object-cover shrink-0"
+                    />
+                  ) : (
+                    <div className="w-8 h-12 rounded bg-muted shrink-0" />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{item.title}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {item.type === "MOVIE" ? "Movie" : "TV"} release
+                    </p>
+                  </div>
+                  <span className="h-2 w-2 rounded-full bg-amber-500 shrink-0" />
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       <section className="mb-10">
         <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">

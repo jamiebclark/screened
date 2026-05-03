@@ -421,6 +421,64 @@ export function generateIcs(party: {
   ].join("\r\n");
 }
 
+export interface WatchPartyCalendarItem {
+  id: string;
+  scheduledFor: Date;
+  status: "SCHEDULED" | "CONFIRMED" | "CANCELLED";
+  isHost: boolean;
+  mediaItem: {
+    title: string;
+    year: number | null;
+    tmdbId: number;
+    type: "MOVIE" | "TV";
+    poster: string | null;
+  };
+  host: { name: string };
+}
+
+/** SCHEDULED parties in [start, end] where the user is host or has an accepted invite. */
+export async function fetchWatchPartiesInMonth(
+  userId: string,
+  start: Date,
+  end: Date,
+): Promise<WatchPartyCalendarItem[]> {
+  const parties = await prisma.watchParty.findMany({
+    where: {
+      scheduledFor: { gte: start, lte: end },
+      status: { not: "CANCELLED" },
+      OR: [
+        { hostId: userId },
+        { invites: { some: { userId, status: "ACCEPTED" } } },
+      ],
+    },
+    select: {
+      id: true,
+      scheduledFor: true,
+      status: true,
+      hostId: true,
+      mediaItem: {
+        select: {
+          title: true,
+          year: true,
+          tmdbId: true,
+          type: true,
+          poster: true,
+        },
+      },
+      host: { select: { name: true } },
+    },
+    orderBy: { scheduledFor: "asc" },
+  });
+  return parties.map((p) => ({
+    id: p.id,
+    scheduledFor: p.scheduledFor,
+    status: p.status as WatchPartyCalendarItem["status"],
+    isHost: p.hostId === userId,
+    mediaItem: p.mediaItem as WatchPartyCalendarItem["mediaItem"],
+    host: p.host,
+  }));
+}
+
 function formatIcsDate(date: Date): string {
   return date
     .toISOString()

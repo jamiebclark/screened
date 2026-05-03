@@ -366,6 +366,46 @@ export async function fetchMyWatchDaysInMonth(
   return days;
 }
 
+export interface CalendarReleaseItem {
+  id: string;
+  tmdbId: number;
+  type: MediaType;
+  title: string;
+  poster: string | null;
+  releaseDate: Date;
+}
+
+/** WATCHLIST/WATCHING items whose release date falls within [start, end]. */
+export async function fetchReleasesInMonth(
+  userId: string,
+  start: Date,
+  end: Date,
+): Promise<CalendarReleaseItem[]> {
+  const statuses = await prisma.userMediaStatus.findMany({
+    where: {
+      userId,
+      status: { in: ["WATCHLIST", "WATCHING"] },
+      mediaItem: { releaseDate: { gte: start, lte: end } },
+    },
+    select: {
+      mediaItem: {
+        select: {
+          id: true,
+          tmdbId: true,
+          type: true,
+          title: true,
+          poster: true,
+          releaseDate: true,
+        },
+      },
+    },
+    orderBy: { mediaItem: { releaseDate: "asc" } },
+  });
+  return statuses
+    .filter((s) => s.mediaItem.releaseDate != null)
+    .map((s) => ({ ...s.mediaItem, releaseDate: s.mediaItem.releaseDate! }));
+}
+
 /**
  * Recently watched titles for the home grid: one card per title, ordered by latest watch
  * (movie diary, TV diary, or any episode of that show).
