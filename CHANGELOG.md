@@ -1,3 +1,19 @@
+## [1.32.0](https://github.com/jamiebclark/screened/compare/v1.31.0...v1.32.0) (2026-05-03)
+
+### Features
+
+* **calendar:** add watch parties to iCal feed ([dd9cf3f](https://github.com/jamiebclark/screened/commit/dd9cf3f82136d25b652508194e0f1bee239b514a))
+* **discord:** add DM notification toggle to Discord settings ([a6325dc](https://github.com/jamiebclark/screened/commit/a6325dc4c989b4454aef5d3d95c5e206e2998b8b))
+* **discord:** add PATCH /api/discord/dm-preference endpoint ([d2112ec](https://github.com/jamiebclark/screened/commit/d2112ec6d2830a9173b50887dd4b52d5dd30e1fe))
+* **discord:** send DMs for friend-request and list-access-request notifications ([d29df1a](https://github.com/jamiebclark/screened/commit/d29df1aaea76c43ca753b9d18f08dedb6c647d43))
+* **history:** add releases and watch parties to calendar views ([3808ee8](https://github.com/jamiebclark/screened/commit/3808ee8eed18b3590057b216f1613ca2b72d54cc))
+* **history:** add schedule watch party shortcut from day view ([3871f97](https://github.com/jamiebclark/screened/commit/3871f97866b318c68f8ee1b6d7a847dad40bb4e4))
+* **nav:** consolidate History/Stats/Activity under shared tab nav ([05e3cf9](https://github.com/jamiebclark/screened/commit/05e3cf90e5b8a86f8c519cc2d863b0ad770d1b6e))
+* **nav:** replace Search nav link with icon button and modal ([91c312e](https://github.com/jamiebclark/screened/commit/91c312e08562f3fc39c429d147ddafe87fc8c582))
+* **pick:** add Watch Party button to result cards and icon to shortlist ([498a1ab](https://github.com/jamiebclark/screened/commit/498a1ab10b7aa3fa754031a88e9b251e37b15217))
+* **watch-parties:** replace one-time ICS download with live calendar subscription ([022979f](https://github.com/jamiebclark/screened/commit/022979f282fcc5caf331020ab636f826446cbd61))
+* **watch-parties:** replace subscribe popover with DateWithHistoryLink; move subscribe to history ([a24e5e6](https://github.com/jamiebclark/screened/commit/a24e5e6a02b8c648c7bee1284743c5d0ec41e523))
+
 ## [1.31.0](https://github.com/jamiebclark/screened/compare/v1.30.0...v1.31.0) (2026-05-03)
 
 ### Features
