@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { DiscordSettings } from "./discord-settings";
 import { discordFeatures } from "@/lib/discord";
 
-export const metadata = { title: "Discord Settings | Screened" };
+export const metadata = { title: "Discord Settings" };
 
 export default async function DiscordSettingsPage() {
   const session = await auth();

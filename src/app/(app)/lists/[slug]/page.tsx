@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notFound, redirect } from "next/navigation";
@@ -27,6 +28,15 @@ import { discordFeatures } from "@/lib/discord";
 import { MediaType, WatchStatus } from "@/generated/prisma";
 
 type Params = { params: Promise<{ slug: string }> };
+
+export async function generateMetadata({ params }: Params): Promise<Metadata> {
+  const { slug } = await params;
+  const list = await prisma.list.findUnique({
+    where: { slug },
+    select: { name: true },
+  });
+  return { title: list ? `${list.name}` : "List" };
+}
 
 export default async function ListPage({ params }: Params) {
   const { slug } = await params;

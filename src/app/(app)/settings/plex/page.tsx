@@ -1,6 +1,9 @@
+import type { Metadata } from "next";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PlexSettings } from "./plex-settings";
+
+export const metadata: Metadata = { title: "Plex" };
 
 export default async function PlexSettingsPage() {
   const session = await auth();

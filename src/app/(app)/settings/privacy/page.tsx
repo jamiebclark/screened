@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { PrivacySettings } from "./privacy-settings";
 
-export const metadata = { title: "Privacy | Settings | Screened" };
+export const metadata = { title: "Privacy | Settings" };
 
 export default async function PrivacyPage() {
   const session = await auth();

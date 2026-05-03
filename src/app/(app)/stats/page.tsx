@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { auth } from "@/lib/auth";
 import {
   getUserStats,
@@ -167,6 +168,8 @@ function RankedList({ items }: { items: PersonStat[] }) {
     </ol>
   );
 }
+
+export const metadata: Metadata = { title: "Stats" };
 
 export default async function StatsPage() {
   const session = await auth();

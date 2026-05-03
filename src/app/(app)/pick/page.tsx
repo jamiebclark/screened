@@ -10,7 +10,7 @@ import {
 import { hydratePickerFingerprintIfNeeded } from "@/lib/picker-score-fingerprint";
 import { redirect } from "next/navigation";
 
-export const metadata = { title: "Movie Night Picker | Screened" };
+export const metadata = { title: "Movie Night Picker" };
 
 type PageProps = { searchParams: Promise<{ room?: string }> };
 

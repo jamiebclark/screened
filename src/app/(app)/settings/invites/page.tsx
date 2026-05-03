@@ -5,7 +5,7 @@ import { isSiteAdminEmail } from "@/lib/signup-invites";
 import { SignupInvitesManager } from "./signup-invites-manager";
 import { ArrowLeft } from "lucide-react";
 
-export const metadata = { title: "Signup invites | Screened" };
+export const metadata = { title: "Signup invites" };
 
 export default async function SignupInvitesSettingsPage() {
   const session = await auth();

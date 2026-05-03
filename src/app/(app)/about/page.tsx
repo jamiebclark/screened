@@ -1,7 +1,7 @@
 import { ExternalLink } from "lucide-react";
 import { getRepoDocumentationLinks } from "@/lib/app-release";
 
-export const metadata = { title: "About | Screened" };
+export const metadata = { title: "About" };
 
 export default async function AboutPage() {
   const { readmeUrl, uiUxUrl } = await getRepoDocumentationLinks();

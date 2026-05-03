@@ -47,8 +47,8 @@ export async function generateMetadata({ params }: Params) {
           month: "long",
           day: "numeric",
           year: "numeric",
-        })} | Screened`
-      : "Watch history | Screened";
+        })}`
+      : "Watch history";
   return { title };
 }
 

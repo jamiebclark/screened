@@ -6,7 +6,7 @@ import { getRecentLogs } from "@/lib/logger";
 import { Badge } from "@/components/ui/badge";
 import { RefreshButton } from "./refresh-button";
 
-export const metadata = { title: "Error logs | Screened" };
+export const metadata = { title: "Error logs" };
 
 function formatRelative(iso: string) {
   const diffMs = Date.now() - new Date(iso).getTime();

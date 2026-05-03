@@ -1,6 +1,9 @@
+import type { Metadata } from "next";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { LetterboxdSettings } from "./letterboxd-settings";
+
+export const metadata: Metadata = { title: "Letterboxd" };
 
 export default async function LetterboxdSettingsPage() {
   const session = await auth();

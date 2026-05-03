@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { auth } from "@/lib/auth";
 import { searchMulti } from "@/lib/tmdb";
 import { MediaCard } from "@/components/media-card";
@@ -11,6 +12,8 @@ import { Search, Film } from "lucide-react";
 interface SearchPageProps {
   searchParams: Promise<{ q?: string; type?: string; watchedDate?: string }>;
 }
+
+export const metadata: Metadata = { title: "Search" };
 
 export default async function SearchPage({ searchParams }: SearchPageProps) {
   const { q, type, watchedDate: watchedDateRaw } = await searchParams;

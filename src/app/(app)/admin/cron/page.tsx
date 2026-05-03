@@ -7,7 +7,7 @@ import { CheckCircle, XCircle, AlertCircle, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { TriggerCronButton } from "./trigger-button";
 
-export const metadata = { title: "Cron status | Screened" };
+export const metadata = { title: "Cron status" };
 
 const INTEGRATIONS: { key: CronIntegration; label: string }[] = [
   { key: CronIntegration.PLEX, label: "Plex" },

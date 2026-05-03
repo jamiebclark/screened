@@ -10,7 +10,10 @@ const plusJakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Screened",
+  title: {
+    default: "Screened",
+    template: "%s | Screened",
+  },
   description: "Track movies and TV shows with friends",
 };
 

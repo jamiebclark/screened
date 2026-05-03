@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma";
@@ -48,6 +49,8 @@ function posterUrl(path: string | null): string | null {
   if (path.startsWith("http")) return path;
   return `https://image.tmdb.org/t/p/w92${path}`;
 }
+
+export const metadata: Metadata = { title: "Watchlist" };
 
 export default async function WatchlistPage({ searchParams }: PageProps) {
   const session = await auth();

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { auth } from "@/lib/auth";
 import { getFriendActivityFeed } from "@/lib/activity-feed";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -32,6 +33,8 @@ function relativeTime(date: Date): string {
   if (diffDays < 30) return `${diffDays}d ago`;
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
+
+export const metadata: Metadata = { title: "Activity" };
 
 export default async function ActivityPage() {
   const session = await auth();

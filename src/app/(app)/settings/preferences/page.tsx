@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PreferencesSettings } from "./preferences-settings";
 
-export const metadata = { title: "Saved Preferences | Screened" };
+export const metadata = { title: "Saved Preferences" };
 
 export default async function PreferencesPage() {
   const session = await auth();

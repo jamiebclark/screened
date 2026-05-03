@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { auth } from "@/lib/auth";
 import Link from "next/link";
 import { Eye } from "lucide-react";
@@ -37,6 +38,8 @@ function formatTime(date: Date): string {
     hour12: true,
   });
 }
+
+export const metadata: Metadata = { title: "Watch history" };
 
 export default async function HistoryPage() {
   const session = await auth();

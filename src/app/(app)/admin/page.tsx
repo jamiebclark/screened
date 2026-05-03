@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-export const metadata = { title: "Admin | Screened" };
+export const metadata = { title: "Admin" };
 
 const adminSections = [
   {

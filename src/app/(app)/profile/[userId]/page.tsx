@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
@@ -31,6 +32,15 @@ function posterUrl(path: string | null) {
 }
 
 type Params = { params: Promise<{ userId: string }> };
+
+export async function generateMetadata({ params }: Params): Promise<Metadata> {
+  const { userId } = await params;
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { name: true },
+  });
+  return { title: user?.name ? `${user.name}` : "Profile" };
+}
 
 function toFriendJson(
   s: Awaited<ReturnType<typeof getProfileFriendState>>,

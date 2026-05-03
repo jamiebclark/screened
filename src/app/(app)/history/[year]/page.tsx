@@ -19,9 +19,7 @@ export async function generateMetadata({ params }: Params) {
   const { year: yStr } = await params;
   const year = parseYearSegment(yStr);
   return {
-    title: year
-      ? `${year} | Watch history | Screened`
-      : "Watch history | Screened",
+    title: year ? `${year} | Watch history` : "Watch history",
   };
 }
 

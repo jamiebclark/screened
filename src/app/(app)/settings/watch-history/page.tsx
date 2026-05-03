@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth";
 import { getWatchImportCounts } from "@/lib/watch-import-stats";
 import { WatchHistorySettings } from "./watch-history-settings";
 
-export const metadata = { title: "Watch history & imports | Screened" };
+export const metadata = { title: "Watch history & imports" };
 
 export default async function WatchHistorySettingsPage() {
   const session = await auth();

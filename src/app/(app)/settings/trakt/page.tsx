@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { isTraktConfigured } from "@/lib/trakt";
 import { TraktSettings } from "./trakt-settings";
 
-export const metadata = { title: "Trakt | Screened" };
+export const metadata = { title: "Trakt" };
 
 export default async function TraktSettingsPage() {
   if (!isTraktConfigured()) notFound();

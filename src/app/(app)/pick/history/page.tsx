@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Image from "next/image";
@@ -150,6 +151,8 @@ function PickerSessionCard({ session }: { session: PickerSessionRow }) {
     </Card>
   );
 }
+
+export const metadata: Metadata = { title: "Picker history" };
 
 export default async function PickHistoryPage() {
   const session = await auth();

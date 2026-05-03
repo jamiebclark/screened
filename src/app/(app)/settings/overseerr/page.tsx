@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { OverseerrSettings } from "./overseerr-settings";
 
-export const metadata = { title: "Overseerr | Screened" };
+export const metadata = { title: "Overseerr" };
 
 export default async function OverseerrSettingsPage() {
   const session = await auth();

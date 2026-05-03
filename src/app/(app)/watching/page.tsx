@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
@@ -11,6 +12,8 @@ import {
 } from "@/lib/user-media-sort";
 import { Clock } from "lucide-react";
 import { MediaType } from "@/generated/prisma";
+
+export const metadata: Metadata = { title: "Watching" };
 
 export default async function WatchingPage() {
   const session = await auth();

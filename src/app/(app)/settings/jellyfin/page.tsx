@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { JellyfinSettings } from "./jellyfin-settings";
 
-export const metadata = { title: "Jellyfin | Screened" };
+export const metadata = { title: "Jellyfin" };
 
 export default async function JellyfinSettingsPage() {
   const session = await auth();

@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { TautulliSettings } from "./tautulli-settings";
 
-export const metadata = { title: "Tautulli | Screened" };
+export const metadata = { title: "Tautulli" };
 
 export default async function TautulliSettingsPage() {
   const session = await auth();

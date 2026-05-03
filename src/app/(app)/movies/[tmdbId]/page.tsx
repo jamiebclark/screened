@@ -37,7 +37,7 @@ type Params = {
 export async function generateMetadata({ params }: Params) {
   const { tmdbId } = await params;
   const movie = await getMovie(parseInt(tmdbId)).catch(() => null);
-  return { title: movie ? `${movie.title} | Screened` : "Screened" };
+  return { title: movie?.title };
 }
 
 export default async function MoviePage({ params, searchParams }: Params) {

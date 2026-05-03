@@ -1,9 +1,12 @@
+import type { Metadata } from "next";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { Plus, ListVideo } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ListCard } from "@/components/list-card";
+
+export const metadata: Metadata = { title: "Lists" };
 
 export default async function ListsPage() {
   const session = await auth();

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -5,6 +6,8 @@ import { prisma } from "@/lib/prisma";
 import { isTraktConfigured } from "@/lib/trakt";
 import { discordFeatures } from "@/lib/discord";
 import { OnboardingClient } from "./onboarding-client";
+
+export const metadata: Metadata = { title: "Get started" };
 
 export default async function OnboardingPage() {
   const session = await auth();

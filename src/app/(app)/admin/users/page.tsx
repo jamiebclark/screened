@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { AdminDeleteUserButton } from "@/components/admin-delete-user-button";
 
-export const metadata = { title: "Users | Admin | Screened" };
+export const metadata = { title: "Users | Admin" };
 
 const INTEGRATION_LABELS = [
   { key: "plexConnection", label: "Plex" },

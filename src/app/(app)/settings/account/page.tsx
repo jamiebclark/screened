@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { AccountSettings } from "./account-settings";
 
-export const metadata = { title: "Account | Screened" };
+export const metadata = { title: "Account" };
 
 function hasBcryptPasswordHash(passwordHash: string): boolean {
   return passwordHash.startsWith("$2");

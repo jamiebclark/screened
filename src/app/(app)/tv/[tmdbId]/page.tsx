@@ -28,7 +28,7 @@ type Params = {
 export async function generateMetadata({ params }: Params) {
   const { tmdbId } = await params;
   const show = await getTvShow(parseInt(tmdbId)).catch(() => null);
-  return { title: show ? `${show.name} | Screened` : "Screened" };
+  return { title: show?.name };
 }
 
 export default async function TvPage({ params }: Params) {

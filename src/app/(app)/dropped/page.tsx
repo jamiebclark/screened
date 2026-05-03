@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
@@ -6,6 +7,8 @@ import { EditableListSearchAdd } from "@/components/editable-list-search-add";
 import { Button } from "@/components/ui/button";
 import { TvMinimal } from "lucide-react";
 import { MediaType } from "@/generated/prisma";
+
+export const metadata: Metadata = { title: "Dropped" };
 
 export default async function DroppedPage() {
   const session = await auth();

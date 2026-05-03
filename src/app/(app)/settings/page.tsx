@@ -28,7 +28,7 @@ import { auth } from "@/lib/auth";
 import { isTraktConfigured } from "@/lib/trakt";
 import { isSiteAdminEmail } from "@/lib/signup-invites";
 
-export const metadata = { title: "Settings | Screened" };
+export const metadata = { title: "Settings" };
 
 export default async function SettingsPage() {
   const session = await auth();

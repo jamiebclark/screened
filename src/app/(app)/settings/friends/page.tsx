@@ -1,6 +1,6 @@
 import { FriendsSettings } from "./friends-settings";
 
-export const metadata = { title: "Friends | Settings | Screened" };
+export const metadata = { title: "Friends | Settings" };
 
 export default function FriendsPage() {
   return (

@@ -33,8 +33,8 @@ export async function generateMetadata({ params }: Params) {
   const month = parseMonthSegment(mStr);
   const title =
     year != null && month != null
-      ? `${new Date(year, month - 1, 1).toLocaleDateString("en-US", { month: "long", year: "numeric" })} | Screened`
-      : "Watch history | Screened";
+      ? `${new Date(year, month - 1, 1).toLocaleDateString("en-US", { month: "long", year: "numeric" })}`
+      : "Watch history";
   return { title };
 }
 

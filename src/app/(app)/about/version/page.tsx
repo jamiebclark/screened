@@ -5,7 +5,7 @@ import {
   getLatestReleaseAndChangelogUrl,
 } from "@/lib/app-release";
 
-export const metadata = { title: "Version | Screened" };
+export const metadata = { title: "Version" };
 
 export default async function AboutVersionPage() {
   const { latestSection, changelogUrl } =
