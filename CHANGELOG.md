@@ -1,3 +1,9 @@
+## [1.26.2](https://github.com/jamiebclark/screened/compare/v1.26.1...v1.26.2) (2026-05-03)
+
+### Bug Fixes
+
+* **plex:** prefer non-local server connections for cloud/Docker syncs ([42ad3b7](https://github.com/jamiebclark/screened/commit/42ad3b7b744f1dbd1dc181fd450506645bbc75c5))
+
 ## [1.26.1](https://github.com/jamiebclark/screened/compare/v1.26.0...v1.26.1) (2026-05-03)
 
 ### Bug Fixes
