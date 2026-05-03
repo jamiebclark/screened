@@ -1,3 +1,9 @@
+## [1.22.0](https://github.com/jamiebclark/screened/compare/v1.21.0...v1.22.0) (2026-05-03)
+
+### Features
+
+* **admin:** add breadcrumbs to admin layout ([635486e](https://github.com/jamiebclark/screened/commit/635486e4868364a7aaf94b897b3fff1ad6a1fd11))
+
 ## [1.21.0](https://github.com/jamiebclark/screened/compare/v1.20.0...v1.21.0) (2026-05-03)
 
 ### Features
