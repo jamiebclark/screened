@@ -1,3 +1,9 @@
+## [1.26.1](https://github.com/jamiebclark/screened/compare/v1.26.0...v1.26.1) (2026-05-03)
+
+### Bug Fixes
+
+* **trakt:** remove invalid configured prop from TraktSettings in onboarding ([632f44f](https://github.com/jamiebclark/screened/commit/632f44f9013298d74771e5e6da9372c6e6991c96))
+
 ## [1.26.0](https://github.com/jamiebclark/screened/compare/v1.25.0...v1.26.0) (2026-05-03)
 
 ### Features
