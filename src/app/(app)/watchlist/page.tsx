@@ -1,25 +1,57 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import { MediaCard } from "@/components/media-card";
 import { EditableListSearchAdd } from "@/components/editable-list-search-add";
 import { Bookmark, Film, Search } from "lucide-react";
 import { CopyButton } from "@/components/copy-button";
 import { Button } from "@/components/ui/button";
 import { MediaType } from "@/generated/prisma";
 import { ensureWatchlistRadarrToken } from "@/lib/ensure-watchlist-radarr-token";
-import { ClearTrackingCornerButton } from "@/components/clear-tracking-corner-button";
+import { WatchlistClient, type WatchlistItem } from "./watchlist-client";
 
-export default async function WatchlistPage() {
+const SORT_ORDERS = {
+  added_desc: { createdAt: "desc" as const },
+  title_asc: { mediaItem: { title: "asc" as const } },
+  year_desc: { mediaItem: { year: "desc" as const } },
+  year_asc: { mediaItem: { year: "asc" as const } },
+  rating_desc: { rating: { sort: "desc" as const, nulls: "last" as const } },
+} satisfies Record<string, object>;
+
+type SortKey = keyof typeof SORT_ORDERS;
+
+interface PageProps {
+  searchParams: Promise<{ sort?: string }>;
+}
+
+export default async function WatchlistPage({ searchParams }: PageProps) {
   const session = await auth();
+  const { sort: sortParam } = await searchParams;
+  const sort: SortKey =
+    sortParam && sortParam in SORT_ORDERS
+      ? (sortParam as SortKey)
+      : "added_desc";
 
-  const items = await prisma.userMediaStatus.findMany({
+  const rows = await prisma.userMediaStatus.findMany({
     where: { userId: session!.user.id, status: "WATCHLIST" },
-    include: { mediaItem: true },
-    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      status: true,
+      rating: true,
+      mediaItem: {
+        select: {
+          tmdbId: true,
+          type: true,
+          title: true,
+          poster: true,
+          year: true,
+          genres: true,
+        },
+      },
+    },
+    orderBy: SORT_ORDERS[sort],
   });
 
-  const movies = items.filter((i) => i.mediaItem.type === MediaType.MOVIE);
+  const movies = rows.filter((r) => r.mediaItem.type === MediaType.MOVIE);
   const radarrToken =
     movies.length > 0
       ? await ensureWatchlistRadarrToken(session!.user.id)
@@ -29,10 +61,27 @@ export default async function WatchlistPage() {
     ? `${appUrl}/api/user/radarr/watchlist?token=${radarrToken}`
     : null;
 
-  const existingKeys = items.map(
-    (i) =>
-      `${i.mediaItem.type === MediaType.MOVIE ? "movie" : "tv"}-${i.mediaItem.tmdbId}`,
+  const existingKeys = rows.map(
+    (r) =>
+      `${r.mediaItem.type === MediaType.MOVIE ? "movie" : "tv"}-${r.mediaItem.tmdbId}`,
   );
+
+  const availableGenres = [
+    ...new Set(rows.flatMap((r) => r.mediaItem.genres)),
+  ].sort();
+
+  const items: WatchlistItem[] = rows.map((r) => ({
+    id: r.id,
+    status: "WATCHLIST",
+    mediaItem: {
+      tmdbId: r.mediaItem.tmdbId,
+      type: r.mediaItem.type as "MOVIE" | "TV",
+      title: r.mediaItem.title,
+      poster: r.mediaItem.poster,
+      year: r.mediaItem.year,
+      genres: r.mediaItem.genres,
+    },
+  }));
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 space-y-6">
@@ -43,7 +92,7 @@ export default async function WatchlistPage() {
         <div>
           <h1 className="text-2xl font-bold">Watchlist</h1>
           <p className="text-sm text-muted-foreground">
-            {items.length} title{items.length !== 1 ? "s" : ""} saved
+            {rows.length} title{rows.length !== 1 ? "s" : ""} saved
           </p>
         </div>
       </div>
@@ -51,9 +100,8 @@ export default async function WatchlistPage() {
       <EditableListSearchAdd variant="watchlist" existingKeys={existingKeys} />
 
       <div className="flex flex-col lg:flex-row gap-8 items-start">
-        {/* Main content */}
         <div className="flex-1 min-w-0">
-          {items.length === 0 ? (
+          {rows.length === 0 ? (
             <div className="text-center py-20 border border-dashed border-border rounded-xl max-w-sm mx-auto">
               <Bookmark className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
               <p className="font-medium mb-1">Your watchlist is empty</p>
@@ -68,36 +116,14 @@ export default async function WatchlistPage() {
               </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-3">
-              {items.map((item) => {
-                const type =
-                  item.mediaItem.type === MediaType.MOVIE ? "movie" : "tv";
-                return (
-                  <div key={item.id} className="relative">
-                    <ClearTrackingCornerButton
-                      tmdbId={item.mediaItem.tmdbId}
-                      type={type}
-                      position="top-left"
-                      title="Remove from watchlist"
-                      ariaLabel="Remove from watchlist"
-                    />
-                    <MediaCard
-                      tmdbId={item.mediaItem.tmdbId}
-                      type={type}
-                      title={item.mediaItem.title}
-                      poster={item.mediaItem.poster}
-                      year={item.mediaItem.year}
-                      status={item.status}
-                      compact
-                    />
-                  </div>
-                );
-              })}
-            </div>
+            <WatchlistClient
+              items={items}
+              availableGenres={availableGenres}
+              sort={sort}
+            />
           )}
         </div>
 
-        {/* Sidebar */}
         {movies.length > 0 && radarrUrl && (
           <div className="lg:w-72 shrink-0 space-y-4">
             <div className="rounded-lg border border-border bg-card p-4">
