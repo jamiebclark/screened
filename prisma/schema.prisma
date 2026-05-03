@@ -245,7 +245,8 @@ model MediaItem {
   year      Int?
   overview  String?
   genres    String[]
-  runtime   Int?
+  runtime     Int?
+  releaseDate DateTime?
   cast      String[]  @default([])
   director  String?
   keywords  String[]  @default([])
