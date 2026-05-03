@@ -19,8 +19,11 @@ const groups = [
     title: "Integrations",
     items: [
       { href: "/settings/plex", label: "Plex" },
+      { href: "/settings/jellyfin", label: "Jellyfin" },
       { href: "/settings/letterboxd", label: "Letterboxd" },
       { href: "/settings/tautulli", label: "Tautulli" },
+      { href: "/settings/trakt", label: "Trakt" },
+      { href: "/settings/overseerr", label: "Overseerr" },
       { href: "/settings/discord", label: "Discord" },
     ],
   },
