@@ -140,11 +140,14 @@ export async function getPlexServers(token: string): Promise<PlexServer[]> {
   return resources
     .filter((r) => r.provides?.includes("server"))
     .map((r) => {
-      // Prefer a direct local connection, then any non-relay, then fall back to relay
       const connections = r.connections ?? [];
+      // Prefer a non-local direct connection (plex.direct or public IP) so
+      // server-side syncs work from cloud/Docker. Local IPs are only reachable
+      // on the same LAN and would always fail with "fetch failed" from a remote
+      // server. Fall back to relay if no direct remote connection exists.
       const conn =
-        connections.find((c) => c.local && !c.relay) ??
-        connections.find((c) => !c.relay) ??
+        connections.find((c) => !c.local && !c.relay) ??
+        connections.find((c) => !c.local) ??
         connections[0];
 
       return {
@@ -177,6 +180,17 @@ async function plexServerFetch(url: string): Promise<Response> {
         "X-Plex-Client-Identifier": PLEX_CLIENT_IDENTIFIER,
       },
     });
+  } catch {
+    const host = (() => {
+      try {
+        return new URL(url).host;
+      } catch {
+        return url.slice(0, 60);
+      }
+    })();
+    throw new Error(
+      `fetch failed: could not reach Plex server at ${host} — ensure remote access is enabled`,
+    );
   } finally {
     if (origReject === undefined) {
       delete process.env.NODE_TLS_REJECT_UNAUTHORIZED;
