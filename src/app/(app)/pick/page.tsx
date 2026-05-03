@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { ExternalLink } from "lucide-react";
 import { PickSession } from "./pick-session";
 import {
   defaultPickerState,
@@ -8,6 +9,7 @@ import {
   type PickerRoomState,
 } from "@/lib/picker-room-state";
 import { hydratePickerFingerprintIfNeeded } from "@/lib/picker-score-fingerprint";
+import { getRepoDocumentationLinks } from "@/lib/app-release";
 import { redirect } from "next/navigation";
 
 export const metadata = { title: "Movie Night Picker" };
@@ -19,8 +21,12 @@ export default async function PickPage({ searchParams }: PageProps) {
   const session = await auth();
   const userId = session!.user.id;
 
-  const [currentUser, savedPreferences, roomRow, plexConnection, presets] =
-    await Promise.all([
+  const [
+    { pickerUrl },
+    [currentUser, savedPreferences, roomRow, plexConnection, presets],
+  ] = await Promise.all([
+    getRepoDocumentationLinks(),
+    Promise.all([
       prisma.user.findUnique({
         where: { id: userId },
         select: { id: true, name: true, email: true, avatarUrl: true },
@@ -53,7 +59,8 @@ export default async function PickPage({ searchParams }: PageProps) {
         where: { createdById: userId },
         orderBy: { updatedAt: "desc" },
       }),
-    ]);
+    ]),
+  ]);
 
   if (roomParam && !roomRow) {
     redirect("/pick");
@@ -113,9 +120,20 @@ export default async function PickPage({ searchParams }: PageProps) {
     <div className="mx-auto max-w-7xl px-4 py-8">
       <div className="mb-8">
         <h1 className="text-2xl font-bold">Movie Night Picker</h1>
-        <p className="text-muted-foreground mt-1">
+        <p className="text-sm text-muted-foreground mt-1">
           Tell us what you&apos;re in the mood for and we&apos;ll find the best
-          match from your library.
+          match from your library.{" "}
+          {pickerUrl && (
+            <a
+              href={pickerUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-primary underline underline-offset-2 whitespace-nowrap"
+            >
+              Learn more
+              <ExternalLink className="h-3 w-3 shrink-0" aria-hidden />
+            </a>
+          )}
         </p>
       </div>
       <PickSession
