@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { isSiteAdminEmail } from "@/lib/signup-invites";
 import { prisma } from "@/lib/prisma";
@@ -80,9 +81,12 @@ export default async function AdminUsersPage() {
 
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="font-medium text-sm truncate">
+                  <Link
+                    href={`/profile/${user.id}`}
+                    className="font-medium text-sm truncate hover:underline"
+                  >
                     {user.name}
-                  </span>
+                  </Link>
                   {isSelf && (
                     <Badge variant="outline" className="text-xs shrink-0">
                       you
