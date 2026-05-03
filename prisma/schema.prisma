@@ -50,6 +50,20 @@ enum NotificationType {
   LIST_ACCESS_REQUEST
   FRIEND_REQUEST
   FRIEND_WATCHED_YOUR_WATCHLIST
+  WATCH_PARTY_INVITE
+  WATCH_PARTY_CONFIRM
+}
+
+enum WatchPartyStatus {
+  SCHEDULED
+  CONFIRMED
+  CANCELLED
+}
+
+enum WatchPartyInviteStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
 }
 
 /// Who can see a profile section. All values apply to signed-in users only; this app is login-protected.
@@ -77,6 +91,8 @@ model User {
   bio           String?
   /// Secret query token for the per-user Radarr watchlist export (movies only). Unique when set.
   watchlistRadarrToken String? @unique
+  /// Secret query token for the per-user iCal calendar feed. Unique when set.
+  calendarToken        String? @unique
   /// Watchlist tab and item grid on your profile.
   watchlistVisibility ProfileContentVisibility @default(PUBLIC)
   /// Watched and watching activity on your profile (and related stat counts / average rating from visible titles).
@@ -113,6 +129,8 @@ model User {
   friendshipsLower       Friendship[]     @relation("FriendUserLow")
   friendshipsUpper       Friendship[]     @relation("FriendUserHigh")
   signupInvitesCreated   SignupInvite[]  @relation("SignupInviteCreatedBy")
+  hostedWatchParties     WatchParty[]     @relation("WatchPartyHost")
+  watchPartyInvites      WatchPartyInvite[]
 }
 
 /// Single- or multi-use token for self-service signup when public registration is disabled.
