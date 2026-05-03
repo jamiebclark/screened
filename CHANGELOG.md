@@ -1,3 +1,10 @@
+## [1.29.0](https://github.com/jamiebclark/screened/compare/v1.28.0...v1.29.0) (2026-05-03)
+
+### Features
+
+* **media:** populate releaseDate in all MediaItem create paths ([c8606ea](https://github.com/jamiebclark/screened/commit/c8606ea5951429468d13571f616a23f9a3e6b165))
+* **watchlist:** add releasing-soon section ([15bfe3c](https://github.com/jamiebclark/screened/commit/15bfe3cc3ef8da6e9731d6ad81eece6324b3eaef))
+
 ## [1.28.0](https://github.com/jamiebclark/screened/compare/v1.27.0...v1.28.0) (2026-05-03)
 
 ### Features
