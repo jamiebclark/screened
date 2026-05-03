@@ -1,16 +1,19 @@
 import type { Metadata } from "next";
 import { auth } from "@/lib/auth";
 import Link from "next/link";
-import { Eye } from "lucide-react";
+import Image from "next/image";
+import { Eye, Film, Tv } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { HistoryWatchEntryRow } from "@/components/history-watch-entry-row";
 import { fetchMyWatchHistoryRecent } from "@/lib/watch-history-queries";
+import type { WatchHistoryListItem } from "@/lib/watch-history-queries";
 import {
   historyDayPath,
   historyMonthPath,
   localCalendarParts,
 } from "@/lib/history-calendar";
 import { WatchingTabs } from "@/components/watching-tabs";
+import { MediaType } from "@/generated/prisma";
+import { tmdbImageUrl } from "@/lib/utils";
 
 function formatGroupDate(date: Date): string {
   const now = new Date();
@@ -38,6 +41,95 @@ function formatTime(date: Date): string {
     minute: "2-digit",
     hour12: true,
   });
+}
+
+type TitleGroup = {
+  tmdbId: number;
+  mediaItem: WatchHistoryListItem["mediaItem"];
+  count: number;
+  latestAt: Date;
+  firstSeason?: number;
+  firstEpisode?: number;
+};
+
+function groupByTitle(items: WatchHistoryListItem[]): TitleGroup[] {
+  const map = new Map<number, TitleGroup>();
+  for (const item of items) {
+    const key = item.mediaItem.tmdbId;
+    if (map.has(key)) {
+      map.get(key)!.count++;
+    } else {
+      map.set(key, {
+        tmdbId: item.mediaItem.tmdbId,
+        mediaItem: item.mediaItem,
+        count: 1,
+        latestAt: item.watchedAt,
+        firstSeason: item.seasonNumber,
+        firstEpisode: item.episodeNumber,
+      });
+    }
+  }
+  return Array.from(map.values());
+}
+
+function HistoryPosterCard({ group }: { group: TitleGroup }) {
+  const isMovie = group.mediaItem.type === MediaType.MOVIE;
+  const href = isMovie
+    ? `/movies/${group.mediaItem.tmdbId}`
+    : `/tv/${group.mediaItem.tmdbId}`;
+  const poster = tmdbImageUrl(group.mediaItem.poster, "w185");
+
+  let subLabel: string;
+  if (isMovie) {
+    subLabel = formatTime(group.latestAt);
+  } else if (
+    group.count === 1 &&
+    group.firstSeason != null &&
+    group.firstEpisode != null
+  ) {
+    subLabel = `S${group.firstSeason}E${group.firstEpisode}`;
+  } else {
+    subLabel = `${group.count} ep${group.count !== 1 ? "s" : ""}`;
+  }
+
+  return (
+    <Link
+      href={href}
+      className="group relative block rounded-lg overflow-hidden aspect-[2/3] bg-zinc-900"
+    >
+      {poster ? (
+        <Image
+          src={poster}
+          alt={group.mediaItem.title}
+          fill
+          sizes="(max-width: 640px) 33vw, 25vw"
+          className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+        />
+      ) : (
+        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-zinc-800 to-zinc-950">
+          {isMovie ? (
+            <Film className="h-6 w-6 text-zinc-600" />
+          ) : (
+            <Tv className="h-6 w-6 text-zinc-600" />
+          )}
+        </div>
+      )}
+
+      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/95 via-black/60 to-transparent px-2.5 pb-2.5 pt-12">
+        <p className="text-[11px] font-semibold text-white leading-tight line-clamp-2">
+          {group.mediaItem.title}
+        </p>
+        <p className="text-[10px] text-white/55 mt-0.5 tabular-nums">
+          {subLabel}
+        </p>
+        {!isMovie && group.count > 1 && (
+          <p className="text-[10px] text-white/35 tabular-nums">
+            {formatTime(group.latestAt)}
+          </p>
+        )}
+      </div>
+    </Link>
+  );
 }
 
 export const metadata: Metadata = { title: "Watch history" };
@@ -68,14 +160,11 @@ export default async function HistoryPage() {
     <div className="mx-auto max-w-3xl px-4 py-8">
       <WatchingTabs />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-8">
-        <div className="flex items-center gap-3">
-          <Eye className="h-6 w-6 text-primary" />
-          <div>
-            <h1 className="text-2xl font-bold">Watch History</h1>
-            <p className="text-sm text-muted-foreground">
-              {watched.length} viewing{watched.length !== 1 ? "s" : ""}
-            </p>
-          </div>
+        <div>
+          <h1 className="text-2xl font-bold">Watch History</h1>
+          <p className="text-sm text-muted-foreground">
+            {watched.length} viewing{watched.length !== 1 ? "s" : ""}
+          </p>
         </div>
         <div className="flex flex-col items-end gap-2 shrink-0">
           <Link
@@ -119,6 +208,7 @@ export default async function HistoryPage() {
           {groups.map((group) => {
             const { year, month, day } = localCalendarParts(group.date);
             const dayHref = historyDayPath(year, month, day);
+            const titleGroups = groupByTitle(group.items);
             return (
               <div key={`${group.label}-${group.date.toISOString()}`}>
                 <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 sticky top-16 bg-background/95 backdrop-blur py-1 -mx-4 px-4">
@@ -129,13 +219,9 @@ export default async function HistoryPage() {
                     {group.label}
                   </Link>
                 </h2>
-                <div className="space-y-2">
-                  {group.items.map((entry) => (
-                    <HistoryWatchEntryRow
-                      key={entry.id}
-                      entry={entry}
-                      timeLabel={formatTime(entry.watchedAt)}
-                    />
+                <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+                  {titleGroups.map((tg) => (
+                    <HistoryPosterCard key={tg.tmdbId} group={tg} />
                   ))}
                 </div>
               </div>
