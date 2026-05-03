@@ -11,6 +11,7 @@ function getHeaders() {
 async function tmdbFetch<T>(
   path: string,
   params?: Record<string, string>,
+  revalidate = 3600,
 ): Promise<T> {
   const url = new URL(`${TMDB_BASE}${path}`);
   if (params) {
@@ -19,7 +20,7 @@ async function tmdbFetch<T>(
 
   const res = await fetch(url.toString(), {
     headers: getHeaders(),
-    next: { revalidate: 3600 },
+    next: { revalidate },
   });
 
   if (!res.ok) {
@@ -363,4 +364,163 @@ export async function getWatchProviders(
   } catch {
     return null;
   }
+}
+
+// Person API
+
+interface TmdbPersonResponse {
+  id: number;
+  name: string;
+  biography: string;
+  birthday: string | null;
+  place_of_birth: string | null;
+  profile_path: string | null;
+  known_for_department: string;
+  popularity: number;
+}
+
+export interface TmdbPerson {
+  id: number;
+  name: string;
+  profilePath: string | null;
+  biography: string;
+  birthday: string | null;
+  placeOfBirth: string | null;
+  knownForDepartment: string;
+  popularity: number;
+}
+
+export async function getPerson(tmdbId: number): Promise<TmdbPerson> {
+  const data = await tmdbFetch<TmdbPersonResponse>(
+    `/person/${tmdbId}`,
+    {},
+    604800, // 7 days
+  );
+
+  return {
+    id: data.id,
+    name: data.name,
+    profilePath: data.profile_path,
+    biography: data.biography || "",
+    birthday: data.birthday,
+    placeOfBirth: data.place_of_birth,
+    knownForDepartment: data.known_for_department || "Unknown",
+    popularity: data.popularity,
+  };
+}
+
+export interface PersonSearchResult {
+  tmdbId: number;
+  profilePath: string | null;
+}
+
+export async function searchPersonByName(
+  name: string,
+): Promise<PersonSearchResult | null> {
+  try {
+    const res = await tmdbFetch<TmdbPersonSearchResponse>(
+      "/search/person",
+      {
+        query: name,
+        include_adult: "false",
+        page: "1",
+      },
+      604800, // 7 days
+    );
+
+    const person = res.results[0];
+    if (!person) return null;
+
+    return {
+      tmdbId: person.id,
+      profilePath: person.profile_path,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** Jobs we treat as “directing” for discovery lists (movies + TV). */
+const PERSON_DIRECTING_JOBS = new Set([
+  "Director",
+  "Co-Director",
+  "Series Director",
+  "Creator",
+]);
+
+interface TmdbCombinedCreditsCrew {
+  id: number;
+  job: string;
+  department?: string;
+  media_type?: string;
+  title?: string;
+  original_title?: string;
+  name?: string;
+  poster_path: string | null;
+  release_date?: string | null;
+  first_air_date?: string | null;
+}
+
+interface TmdbCombinedCreditsResponse {
+  crew: TmdbCombinedCreditsCrew[];
+}
+
+/** Every movie/TV credit where this person has a directing-style job (TMDB combined_credits). */
+export type PersonDirectedCredit = {
+  tmdbId: number;
+  mediaType: "movie" | "tv";
+  title: string;
+  poster: string | null;
+  /** ISO date string or null when unknown */
+  releaseDate: string | null;
+  job: string;
+};
+
+export async function getPersonDirectedCredits(
+  personTmdbId: number,
+): Promise<PersonDirectedCredit[]> {
+  const data = await tmdbFetch<TmdbCombinedCreditsResponse>(
+    `/person/${personTmdbId}/combined_credits`,
+    {},
+    604800,
+  );
+
+  const crew = data.crew ?? [];
+  const byKey = new Map<string, PersonDirectedCredit>();
+
+  for (const c of crew) {
+    if (!PERSON_DIRECTING_JOBS.has(c.job)) continue;
+    const mt = c.media_type;
+    if (mt !== "movie" && mt !== "tv") continue;
+
+    const title =
+      mt === "movie"
+        ? (c.title ?? c.original_title ?? "").trim()
+        : (c.name ?? "").trim();
+    if (!title) continue;
+
+    const key = `${mt}-${c.id}`;
+    if (byKey.has(key)) continue;
+
+    const releaseDate =
+      mt === "movie" ? (c.release_date ?? null) : (c.first_air_date ?? null);
+
+    byKey.set(key, {
+      tmdbId: c.id,
+      mediaType: mt,
+      title,
+      poster: c.poster_path,
+      releaseDate,
+      job: c.job,
+    });
+  }
+
+  const list = [...byKey.values()];
+  list.sort((a, b) => {
+    const ta = a.releaseDate ? new Date(a.releaseDate).getTime() : 0;
+    const tb = b.releaseDate ? new Date(b.releaseDate).getTime() : 0;
+    return tb - ta;
+  });
+
+  return list;
 }

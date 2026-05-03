@@ -101,3 +101,57 @@ describe("getTvShow", () => {
     await expect(getTvShow(1)).rejects.toThrow("TMDB error");
   });
 });
+
+describe("getPersonDirectedCredits", () => {
+  it("returns deduped directing credits sorted by release date", async () => {
+    mockFetch({
+      crew: [
+        {
+          id: 100,
+          job: "Director",
+          media_type: "movie",
+          title: "Old Film",
+          poster_path: "/a.jpg",
+          release_date: "1990-01-01",
+        },
+        {
+          id: 200,
+          job: "Director",
+          media_type: "movie",
+          title: "New Film",
+          poster_path: "/b.jpg",
+          release_date: "2020-06-15",
+        },
+        {
+          id: 200,
+          job: "Producer",
+          media_type: "movie",
+          title: "New Film",
+          poster_path: "/b.jpg",
+          release_date: "2020-06-15",
+        },
+        {
+          id: 300,
+          job: "Creator",
+          media_type: "tv",
+          name: "A Show",
+          poster_path: null,
+          first_air_date: "2015-03-01",
+        },
+      ],
+    });
+    const { getPersonDirectedCredits } = await import("./tmdb");
+    const credits = await getPersonDirectedCredits(1);
+    expect(credits).toHaveLength(3);
+    expect(credits[0].title).toBe("New Film");
+    expect(credits[1].title).toBe("A Show");
+    expect(credits[2].title).toBe("Old Film");
+  });
+
+  it("normalizes missing crew to []", async () => {
+    mockFetch({});
+    const { getPersonDirectedCredits } = await import("./tmdb");
+    const credits = await getPersonDirectedCredits(1);
+    expect(credits).toEqual([]);
+  });
+});

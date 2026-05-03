@@ -23,6 +23,7 @@ import { Suspense } from "react";
 import { TitleListsSection } from "@/components/title-lists-section";
 import { StreamingProviders } from "@/components/streaming-providers";
 import { parseDateOnlyIso } from "@/lib/history-calendar";
+import { PersonCastCrewSection } from "@/components/person-cast-crew-section";
 type Params = {
   params: Promise<{ tmdbId: string }>;
   searchParams: Promise<{ partyDate?: string }>;
@@ -44,7 +45,7 @@ export default async function TvPage({ params, searchParams }: Params) {
 
   const session = await auth();
 
-  const [show, userStatus, similar] = await Promise.all([
+  const [show, userStatus, similar, mediaItem] = await Promise.all([
     getTvShow(tmdbId).catch(() => null),
     session?.user?.id
       ? prisma.userMediaStatus
@@ -59,6 +60,12 @@ export default async function TvPage({ params, searchParams }: Params) {
     getTvSimilar(tmdbId)
       .then((r) => r.results.filter((m) => m.poster_path).slice(0, 10))
       .catch(() => []),
+    prisma.mediaItem
+      .findUnique({
+        where: { tmdbId_type: { tmdbId, type: MediaType.TV } },
+        select: { cast: true, director: true },
+      })
+      .catch(() => null),
   ]);
 
   if (!show) notFound();
@@ -237,6 +244,13 @@ export default async function TvPage({ params, searchParams }: Params) {
             </div>
           </div>
         </div>
+
+        {mediaItem && (mediaItem.cast.length > 0 || mediaItem.director) && (
+          <PersonCastCrewSection
+            cast={mediaItem.cast}
+            director={mediaItem.director}
+          />
+        )}
 
         <div className="mt-8">
           <Tabs defaultValue="episodes">

@@ -29,6 +29,7 @@ import { fetchTitleWatchHistoryForViewer } from "@/lib/watch-history-queries";
 import { MediaCard } from "@/components/media-card";
 import { TitleListsSection } from "@/components/title-lists-section";
 import { StreamingProviders } from "@/components/streaming-providers";
+import { PersonCastCrewSection } from "@/components/person-cast-crew-section";
 
 type Params = {
   params: Promise<{ tmdbId: string }>;
@@ -52,29 +53,36 @@ export default async function MoviePage({ params, searchParams }: Params) {
 
   const session = await auth();
 
-  const [movie, userStatus, titleWatchHistory, similar] = await Promise.all([
-    getMovie(tmdbId).catch(() => null),
-    session?.user?.id
-      ? prisma.userMediaStatus
-          .findFirst({
-            where: {
-              userId: session.user.id,
-              mediaItem: { tmdbId, type: MediaType.MOVIE },
-            },
-          })
-          .catch(() => null)
-      : null,
-    session?.user?.id
-      ? fetchTitleWatchHistoryForViewer(
-          session.user.id,
-          tmdbId,
-          MediaType.MOVIE,
-        ).catch(() => [])
-      : [],
-    getMovieSimilar(tmdbId)
-      .then((r) => r.results.filter((m) => m.poster_path).slice(0, 10))
-      .catch(() => []),
-  ]);
+  const [movie, userStatus, titleWatchHistory, similar, mediaItem] =
+    await Promise.all([
+      getMovie(tmdbId).catch(() => null),
+      session?.user?.id
+        ? prisma.userMediaStatus
+            .findFirst({
+              where: {
+                userId: session.user.id,
+                mediaItem: { tmdbId, type: MediaType.MOVIE },
+              },
+            })
+            .catch(() => null)
+        : null,
+      session?.user?.id
+        ? fetchTitleWatchHistoryForViewer(
+            session.user.id,
+            tmdbId,
+            MediaType.MOVIE,
+          ).catch(() => [])
+        : [],
+      getMovieSimilar(tmdbId)
+        .then((r) => r.results.filter((m) => m.poster_path).slice(0, 10))
+        .catch(() => []),
+      prisma.mediaItem
+        .findUnique({
+          where: { tmdbId_type: { tmdbId, type: MediaType.MOVIE } },
+          select: { cast: true, director: true },
+        })
+        .catch(() => null),
+    ]);
 
   if (!movie) notFound();
 
@@ -256,6 +264,13 @@ export default async function MoviePage({ params, searchParams }: Params) {
                 }))}
                 hasStatus={!!userStatus}
                 prefillLogDate={prefillLogDate}
+              />
+            )}
+
+            {mediaItem && (mediaItem.cast.length > 0 || mediaItem.director) && (
+              <PersonCastCrewSection
+                cast={mediaItem.cast}
+                director={mediaItem.director}
               />
             )}
           </div>
