@@ -277,6 +277,7 @@ model MediaItem {
   episodeStatuses EpisodeStatus[]
   listItems       ListItem[]
   preferences     UserPreference[]
+  watchParties    WatchParty[]
 
   @@unique([tmdbId, type])
 }
@@ -434,8 +435,9 @@ model PickerSession {
   pickedTmdbId Int?
   createdAt    DateTime @default(now())
 
-  createdBy User        @relation("PickerSessionOwner", fields: [createdById], references: [id], onDelete: Cascade)
-  room      PickerRoom? @relation(fields: [roomId], references: [id], onDelete: SetNull)
+  createdBy    User        @relation("PickerSessionOwner", fields: [createdById], references: [id], onDelete: Cascade)
+  room         PickerRoom? @relation(fields: [roomId], references: [id], onDelete: SetNull)
+  watchParties WatchParty[]
 }
 
 /// Named preset: saved participants + attractor seeds for quick room creation.
@@ -481,17 +483,20 @@ model Notification {
   listAccessRequestId String?
   friendRequestId     String?
   watchEntryId        String?
+  watchPartyInviteId  String?
   createdAt           DateTime         @default(now())
 
   user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   listAccessRequest ListAccessRequest? @relation(fields: [listAccessRequestId], references: [id], onDelete: Cascade)
   friendRequest     FriendRequest?     @relation(fields: [friendRequestId], references: [id], onDelete: Cascade)
   watchEntry        WatchEntry?        @relation(fields: [watchEntryId], references: [id], onDelete: Cascade)
+  watchPartyInvite  WatchPartyInvite?  @relation(fields: [watchPartyInviteId], references: [id], onDelete: Cascade)
 
   @@index([userId, readAt])
   @@index([listAccessRequestId])
   @@index([friendRequestId])
   @@index([watchEntryId])
+  @@index([watchPartyInviteId])
 }
 
 /// Pending friend request from one user to another (one row per direction).
@@ -524,6 +529,44 @@ model Friendship {
   @@unique([userLowId, userHighId])
   @@index([userHighId])
   @@index([userLowId])
+}
+
+model WatchParty {
+  id              String           @id @default(cuid())
+  hostId          String
+  mediaItemId     String
+  scheduledFor    DateTime
+  status          WatchPartyStatus @default(SCHEDULED)
+  confirmedAt     DateTime?
+  cancelledAt     DateTime?
+  pickerSessionId String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  host          User              @relation("WatchPartyHost", fields: [hostId], references: [id], onDelete: Cascade)
+  mediaItem     MediaItem         @relation(fields: [mediaItemId], references: [id], onDelete: Cascade)
+  pickerSession PickerSession?    @relation(fields: [pickerSessionId], references: [id], onDelete: SetNull)
+  invites       WatchPartyInvite[]
+
+  @@index([hostId])
+  @@index([scheduledFor])
+}
+
+model WatchPartyInvite {
+  id           String                 @id @default(cuid())
+  watchPartyId String
+  userId       String
+  status       WatchPartyInviteStatus @default(PENDING)
+  respondedAt  DateTime?
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+
+  watchParty    WatchParty     @relation(fields: [watchPartyId], references: [id], onDelete: Cascade)
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  notifications Notification[]
+
+  @@unique([watchPartyId, userId])
+  @@index([userId])
 }
 
 model CronRun {
