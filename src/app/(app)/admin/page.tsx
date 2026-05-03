@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { isSiteAdminEmail } from "@/lib/signup-invites";
 import Link from "next/link";
-import { ArrowRight, RefreshCw, Users } from "lucide-react";
+import { ArrowRight, RefreshCw, ScrollText, Users } from "lucide-react";
 import {
   Card,
   CardDescription,
@@ -24,6 +24,12 @@ const adminSections = [
     icon: RefreshCw,
     title: "Cron status",
     description: "Sync job history and last-run status for all integrations.",
+  },
+  {
+    href: "/admin/logs",
+    icon: ScrollText,
+    title: "Error logs",
+    description: "In-memory ring buffer of server errors and warnings.",
   },
 ];
 

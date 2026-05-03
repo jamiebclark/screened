@@ -7,6 +7,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   admin: "Admin",
   users: "Users",
   cron: "Cron status",
+  logs: "Error logs",
 };
 
 export function AdminBreadcrumbs() {
