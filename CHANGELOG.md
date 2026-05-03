@@ -1,3 +1,10 @@
+## [1.23.0](https://github.com/jamiebclark/screened/compare/v1.22.0...v1.23.0) (2026-05-03)
+
+### Features
+
+* **admin:** add manual trigger button to cron status page ([94f90e4](https://github.com/jamiebclark/screened/commit/94f90e40617e383d5973f76e4db10cdb4f62c93d))
+* **admin:** add service health badges and next-run estimates to cron status ([5f65416](https://github.com/jamiebclark/screened/commit/5f65416ae6e4731bbdd5c65292dcd268ddee5c5d))
+
 ## [1.22.0](https://github.com/jamiebclark/screened/compare/v1.21.0...v1.22.0) (2026-05-03)
 
 ### Features
