@@ -1,3 +1,9 @@
+## [1.30.0](https://github.com/jamiebclark/screened/compare/v1.29.1...v1.30.0) (2026-05-03)
+
+### Features
+
+* **seo:** add page titles to all routes via metadata template ([c7dc26b](https://github.com/jamiebclark/screened/commit/c7dc26b8265acd7dabd52395c63edc44a634b3f9))
+
 ## [1.29.1](https://github.com/jamiebclark/screened/compare/v1.29.0...v1.29.1) (2026-05-03)
 
 ### Bug Fixes
