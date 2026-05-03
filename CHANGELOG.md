@@ -1,3 +1,13 @@
+## [1.33.0](https://github.com/jamiebclark/screened/compare/v1.32.0...v1.33.0) (2026-05-03)
+
+### Features
+
+* **app-release:** add per-feature doc URLs to getRepoDocumentationLinks ([62abad6](https://github.com/jamiebclark/screened/commit/62abad65cb7201704f2683de944d7f1d9a3eb5ee))
+* **history:** replace row list with grouped poster card grid ([5d80ab1](https://github.com/jamiebclark/screened/commit/5d80ab1da8f790275f5e80f7dfaaebf684789ea0))
+* **lists,pick:** standardize nav page headers and add Learn more links ([dec2963](https://github.com/jamiebclark/screened/commit/dec29630341462519a2bca98e2be3335e7a66f9d))
+* **watch-parties:** add page header with blurb, CTA button, and Learn more link ([e35dd59](https://github.com/jamiebclark/screened/commit/e35dd59fb9a22829b798728ca1c7a965b7255192))
+* **watch-parties:** redesign list and detail with poster-forward cards ([eb608b9](https://github.com/jamiebclark/screened/commit/eb608b9b016db4595e7bec55846a8e130d4735ec))
+
 ## [1.32.0](https://github.com/jamiebclark/screened/compare/v1.31.0...v1.32.0) (2026-05-03)
 
 ### Features
