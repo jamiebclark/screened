@@ -10,6 +10,7 @@ import {
   historyMonthPath,
   localCalendarParts,
 } from "@/lib/history-calendar";
+import { WatchingTabs } from "@/components/watching-tabs";
 
 function formatGroupDate(date: Date): string {
   const now = new Date();
@@ -65,6 +66,7 @@ export default async function HistoryPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
+      <WatchingTabs />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-8">
         <div className="flex items-center gap-3">
           <Eye className="h-6 w-6 text-primary" />

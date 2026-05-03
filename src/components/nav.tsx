@@ -14,9 +14,7 @@ import {
   X,
   History,
   Sparkles,
-  Users,
   ShieldCheck,
-  BarChart3,
   PartyPopper,
 } from "lucide-react";
 import { useState } from "react";
@@ -48,10 +46,8 @@ const navLinks = [
   { href: "/search", label: "Search", icon: Search },
   { href: "/pick", label: "Picker", icon: Sparkles },
   { href: "/history", label: "History", icon: History },
-  { href: "/stats", label: "Stats", icon: BarChart3 },
   { href: "/lists", label: "Lists", icon: ListVideo },
   { href: "/watch-parties", label: "Watch Parties", icon: PartyPopper },
-  { href: "/activity", label: "Activity", icon: Users },
 ];
 
 export function Nav({ user, initialUnreadNotifications, isAdmin }: NavProps) {

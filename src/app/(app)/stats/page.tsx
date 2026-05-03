@@ -6,6 +6,7 @@ import {
   type PersonStat,
 } from "@/lib/stats-queries";
 import { BarChart3, Clock, Film, Star, Tv } from "lucide-react";
+import { WatchingTabs } from "@/components/watching-tabs";
 
 function formatHours(minutes: number): string {
   const hours = Math.round(minutes / 60);
@@ -181,7 +182,7 @@ export default async function StatsPage() {
   if (!hasAnyData) {
     return (
       <div className="mx-auto max-w-5xl px-4 py-8">
-        <h1 className="text-2xl font-bold mb-8">Your stats</h1>
+        <WatchingTabs />
         <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed border-border p-12 text-center">
           <BarChart3 className="h-10 w-10 text-muted-foreground" />
           <div className="space-y-1 max-w-xs">
@@ -215,6 +216,7 @@ export default async function StatsPage() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
+      <WatchingTabs />
       <h1 className="text-2xl font-bold mb-8">Your stats</h1>
 
       {/* Overview */}

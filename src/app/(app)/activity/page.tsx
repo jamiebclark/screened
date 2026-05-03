@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Link from "next/link";
 import { Users } from "lucide-react";
+import { WatchingTabs } from "@/components/watching-tabs";
 
 function posterUrl(path: string | null) {
   if (!path) return null;
@@ -43,6 +44,7 @@ export default async function ActivityPage() {
   if (events.length === 0) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-8">
+        <WatchingTabs />
         <h1 className="text-2xl font-bold mb-8">Friends activity</h1>
         <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed border-border p-12 text-center">
           <Users className="h-10 w-10 text-muted-foreground" />
@@ -63,6 +65,7 @@ export default async function ActivityPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
+      <WatchingTabs />
       <h1 className="text-2xl font-bold mb-8">Friends activity</h1>
       <ul className="space-y-1">
         {events.map((event) => {
