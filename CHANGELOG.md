@@ -1,3 +1,9 @@
+## [1.25.0](https://github.com/jamiebclark/screened/compare/v1.24.1...v1.25.0) (2026-05-03)
+
+### Features
+
+* **admin:** show per-user failure details on cron run rows ([a5ed011](https://github.com/jamiebclark/screened/commit/a5ed011f673f43012daf9766e498fdde928e8b49))
+
 ## [1.24.1](https://github.com/jamiebclark/screened/compare/v1.24.0...v1.24.1) (2026-05-03)
 
 ### Bug Fixes
