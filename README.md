@@ -63,6 +63,7 @@ The app will be available at `http://localhost:3000`. The first user to register
 | [Letterboxd](docs/letterboxd.md)       | Importing your diary and ratings                       |
 | [Lists & Radarr](docs/lists.md)        | Collaborative lists and auto-downloading via Radarr    |
 | [Movie Night Picker](docs/picker.md)   | How the Picker and scoring work                        |
+| [Watch Parties](docs/watch-parties.md) | Scheduling and inviting friends to watch together      |
 | [Discord](docs/discord-integration.md) | Webhooks, slash commands, and DM notifications         |
 | [Contributing](CONTRIBUTING.md)        | Local dev setup, commit conventions, PR checklist      |
 
