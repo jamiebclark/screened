@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { sortedFriendshipUserIds } from "@/lib/profile-visibility";
 import { NotificationType } from "@/generated/prisma";
+import { sendDM, discordFeatures } from "@/lib/discord";
 
 export type ProfileFriendState =
   | { kind: "self" }
@@ -118,5 +119,27 @@ export async function notifyFriendRequest(requestId: string, toUserId: string) {
       type: NotificationType.FRIEND_REQUEST,
       friendRequestId: requestId,
     },
+  });
+
+  if (!discordFeatures().bot) return;
+
+  const [request, discordConnection] = await Promise.all([
+    prisma.friendRequest.findUnique({
+      where: { id: requestId },
+      select: { fromUser: { select: { name: true } } },
+    }),
+    prisma.discordConnection.findUnique({
+      where: { userId: toUserId },
+      select: { discordUserId: true, dmEnabled: true },
+    }),
+  ]);
+
+  if (!request || !discordConnection?.dmEnabled) return;
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  await sendDM(discordConnection.discordUserId, {
+    description: `**${request.fromUser.name}** sent you a friend request`,
+    color: 0x5865f2,
+    url: `${appUrl}/notifications`,
   });
 }
