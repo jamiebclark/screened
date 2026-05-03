@@ -141,13 +141,12 @@ export function OnboardingClient({
               <TautulliSettings connection={tautulliConnection} />
             </section>
 
-            <section>
-              <h2 className="text-lg font-semibold mb-3">Trakt</h2>
-              <TraktSettings
-                connection={traktConnection}
-                configured={traktConfigured}
-              />
-            </section>
+            {traktConfigured && (
+              <section>
+                <h2 className="text-lg font-semibold mb-3">Trakt</h2>
+                <TraktSettings connection={traktConnection} />
+              </section>
+            )}
 
             <section>
               <h2 className="text-lg font-semibold mb-3">Discord</h2>
