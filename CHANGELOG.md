@@ -1,3 +1,17 @@
+## [1.21.0](https://github.com/jamiebclark/screened/compare/v1.20.0...v1.21.0) (2026-05-03)
+
+### Features
+
+* **admin:** add admin index page and nav dropdown link ([b877fbc](https://github.com/jamiebclark/screened/commit/b877fbcf0054010e76351a43850288808136e1a7))
+* **admin:** add cron status page and instrument sync routes ([433c96b](https://github.com/jamiebclark/screened/commit/433c96b0cc948a48ac94ed9e0e7f3887573cd2e4))
+* **admin:** add users list page with delete ([7e18276](https://github.com/jamiebclark/screened/commit/7e18276ef8967bd924c946f34434c1f785bc7549))
+* **admin:** link user names to their public profile ([0daa580](https://github.com/jamiebclark/screened/commit/0daa580806c51065530fb72ced48d294e4c81778))
+* **cron:** add CronRun model to record sync job executions ([26dddec](https://github.com/jamiebclark/screened/commit/26dddec9e402de1b8c4c5331ef83524594a3c210))
+
+### Bug Fixes
+
+* **prisma:** include cronRun in dev HMR staleness check ([7f2a894](https://github.com/jamiebclark/screened/commit/7f2a894b60b37fe743a6272545283bf5f7240cbb))
+
 ## [1.20.0](https://github.com/jamiebclark/screened/compare/v1.19.0...v1.20.0) (2026-05-03)
 
 ### Features
