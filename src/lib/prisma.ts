@@ -13,7 +13,7 @@ function createPrismaClient() {
 function getPrisma(): PrismaClient {
   const existing = globalForPrisma.prisma;
   // After `prisma generate`, dev HMR can leave a pre-generate client on globalThis without new delegates.
-  if (existing && "notification" in existing) {
+  if (existing && "notification" in existing && "cronRun" in existing) {
     return existing;
   }
   const client = createPrismaClient();
