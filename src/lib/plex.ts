@@ -141,10 +141,11 @@ export async function getPlexServers(token: string): Promise<PlexServer[]> {
     .filter((r) => r.provides?.includes("server"))
     .map((r) => {
       // Prefer a direct local connection, then any non-relay, then fall back to relay
+      const connections = r.connections ?? [];
       const conn =
-        r.connections.find((c) => c.local && !c.relay) ??
-        r.connections.find((c) => !c.relay) ??
-        r.connections[0];
+        connections.find((c) => c.local && !c.relay) ??
+        connections.find((c) => !c.relay) ??
+        connections[0];
 
       return {
         name: r.name,

@@ -129,13 +129,19 @@ export async function getMovie(tmdbId: number): Promise<TmdbMovie> {
     append_to_response: "external_ids",
   });
   const imdb_id = data.external_ids?.imdb_id ?? data.imdb_id ?? null;
-  return { ...data, imdb_id };
+  return { ...data, imdb_id, genres: data.genres ?? [] };
 }
 
 export async function getTvShow(tmdbId: number): Promise<TmdbTvShow> {
-  return tmdbFetch<TmdbTvShow>(`/tv/${tmdbId}`, {
+  const data = await tmdbFetch<TmdbTvShow>(`/tv/${tmdbId}`, {
     append_to_response: "external_ids",
   });
+  return {
+    ...data,
+    genres: data.genres ?? [],
+    episode_run_time: data.episode_run_time ?? [],
+    seasons: data.seasons ?? [],
+  };
 }
 
 export async function getTvSeason(
