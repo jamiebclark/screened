@@ -1,3 +1,10 @@
+## [1.28.0](https://github.com/jamiebclark/screened/compare/v1.27.0...v1.28.0) (2026-05-03)
+
+### Features
+
+* **watchlist:** add WatchlistClient with sort/filter controls ([8afe36f](https://github.com/jamiebclark/screened/commit/8afe36f08d7ea8ce45f2289888e708a839f3db3d))
+* **watchlist:** wire server-side sort via searchParams ([cd478a6](https://github.com/jamiebclark/screened/commit/cd478a61f66e3a1b7173101f420ca8d05bf3a6f4))
+
 ## [1.27.0](https://github.com/jamiebclark/screened/compare/v1.26.2...v1.27.0) (2026-05-03)
 
 ### Features
