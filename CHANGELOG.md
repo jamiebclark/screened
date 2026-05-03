@@ -1,3 +1,15 @@
+## [1.31.0](https://github.com/jamiebclark/screened/compare/v1.30.0...v1.31.0) (2026-05-03)
+
+### Features
+
+* **api:** add watch-party CRUD, respond, confirm, ICS, and cron routes ([c83984c](https://github.com/jamiebclark/screened/commit/c83984cc3554ac68eeafc0f8b87c76957491e012))
+* **calendar:** add ICS feed generation and token management API ([9a56c3b](https://github.com/jamiebclark/screened/commit/9a56c3b47a9635bb200d368b8f22d94dd4a5d2d5))
+* **schema:** add WatchParty and WatchPartyInvite models ([0b449f1](https://github.com/jamiebclark/screened/commit/0b449f1852a85325fc7a087e1506d219c6ebb777))
+* **settings:** add calendar feed settings page ([013234c](https://github.com/jamiebclark/screened/commit/013234c9a34b154845b5d6647a95d0bf9b06ce75))
+* **ui:** add Watch Parties list and detail pages with CreateWatchPartyDialog ([9519d38](https://github.com/jamiebclark/screened/commit/9519d38b86d08b40c5872749a3971744a0a8114f))
+* **ui:** wire Watch Party entry points into title pages, Picker, and nav ([db02ec7](https://github.com/jamiebclark/screened/commit/db02ec764ad08bb6028ce4949300c7ae2c5ff08b))
+* **watch-party:** add lib module and notification-types mirror ([3e8f3bc](https://github.com/jamiebclark/screened/commit/3e8f3bc26c13fbf63d1afcf22fd506a9404e2d96))
+
 ## [1.30.0](https://github.com/jamiebclark/screened/compare/v1.29.1...v1.30.0) (2026-05-03)
 
 ### Features
