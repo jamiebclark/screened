@@ -1,3 +1,10 @@
+## [1.24.0](https://github.com/jamiebclark/screened/compare/v1.23.1...v1.24.0) (2026-05-03)
+
+### Features
+
+* **admin:** add error logs page ([be531c1](https://github.com/jamiebclark/screened/commit/be531c14a7d40527b5f61115acdee09a815810ad))
+* **logger:** add in-memory ring buffer with console capture ([867e606](https://github.com/jamiebclark/screened/commit/867e6062ef7383b3444c67a0e8e4de2a26bbbc98))
+
 ## [1.23.1](https://github.com/jamiebclark/screened/compare/v1.23.0...v1.23.1) (2026-05-03)
 
 ### Bug Fixes
