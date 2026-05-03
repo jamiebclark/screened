@@ -62,7 +62,7 @@ type Party = {
 function posterSrc(path: string | null) {
   if (!path) return null;
   if (path.startsWith("http")) return path;
-  return `https://image.tmdb.org/t/p/w185${path}`;
+  return `https://image.tmdb.org/t/p/w342${path}`;
 }
 
 function InviteRow({ invite }: { invite: InviteSnap }) {
@@ -172,31 +172,47 @@ export function WatchPartyDetail({
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex gap-4">
-        <Link
-          href={`/${titlePath}/${party.mediaItem.tmdbId}`}
-          className="shrink-0"
-        >
+      {/* Hero */}
+      <div className="relative rounded-xl overflow-hidden">
+        {/* Blurred backdrop */}
+        <div className="absolute inset-0">
           {poster ? (
             <Image
               src={poster}
-              alt={party.mediaItem.title}
-              width={80}
-              height={120}
-              className="rounded object-cover hover:opacity-80 transition-opacity"
+              alt=""
+              fill
+              aria-hidden
+              className="object-cover scale-110 blur-2xl opacity-35"
             />
           ) : (
-            <div className="w-20 h-30 rounded bg-muted flex items-center justify-center">
-              <Film className="h-6 w-6 text-muted-foreground" />
-            </div>
+            <div className="absolute inset-0 bg-gradient-to-br from-zinc-800 to-zinc-900" />
           )}
-        </Link>
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-background/30" />
+        </div>
 
-        <div className="flex-1 min-w-0 space-y-1.5">
-          <div className="flex items-start justify-between gap-2 flex-wrap">
-            <div>
-              <h1 className="text-xl font-bold">
+        <div className="relative flex gap-5 px-5 py-6">
+          <Link
+            href={`/${titlePath}/${party.mediaItem.tmdbId}`}
+            className="shrink-0 self-end"
+          >
+            {poster ? (
+              <Image
+                src={poster}
+                alt={party.mediaItem.title}
+                width={100}
+                height={150}
+                className="rounded-lg object-cover shadow-2xl hover:opacity-90 transition-opacity"
+              />
+            ) : (
+              <div className="w-[100px] h-[150px] rounded-lg bg-zinc-800 flex items-center justify-center">
+                <Film className="h-8 w-8 text-zinc-600" />
+              </div>
+            )}
+          </Link>
+
+          <div className="flex-1 min-w-0 flex flex-col justify-end pb-1 space-y-1.5">
+            <div className="flex items-start justify-between gap-2 flex-wrap">
+              <h1 className="text-xl font-bold leading-tight">
                 <Link
                   href={`/${titlePath}/${party.mediaItem.tmdbId}`}
                   className="hover:underline"
@@ -205,34 +221,40 @@ export function WatchPartyDetail({
                   {party.mediaItem.year ? ` (${party.mediaItem.year})` : ""}
                 </Link>
               </h1>
-              <p className="text-sm text-muted-foreground mt-0.5">
-                Hosted by{" "}
-                <Link
-                  href={`/profile/${party.host.id}`}
-                  className="font-medium text-foreground hover:underline"
-                >
-                  {party.host.name}
-                </Link>
-              </p>
+              {party.status === "CONFIRMED" && (
+                <Badge className="bg-green-600 text-white shrink-0">
+                  Confirmed
+                </Badge>
+              )}
+              {party.status === "CANCELLED" && (
+                <Badge variant="destructive" className="shrink-0">
+                  Cancelled
+                </Badge>
+              )}
+              {party.status === "SCHEDULED" && (
+                <Badge variant="secondary" className="shrink-0">
+                  Scheduled
+                </Badge>
+              )}
             </div>
 
-            {party.status === "CONFIRMED" && (
-              <Badge className="bg-green-600 text-white">Confirmed</Badge>
-            )}
-            {party.status === "CANCELLED" && (
-              <Badge variant="destructive">Cancelled</Badge>
-            )}
-            {party.status === "SCHEDULED" && (
-              <Badge variant="secondary">Scheduled</Badge>
-            )}
-          </div>
+            <p className="text-sm text-muted-foreground">
+              Hosted by{" "}
+              <Link
+                href={`/profile/${party.host.id}`}
+                className="font-medium text-foreground hover:underline"
+              >
+                {party.host.name}
+              </Link>
+            </p>
 
-          <DateWithHistoryLink date={party.scheduledFor} />
+            <DateWithHistoryLink date={party.scheduledFor} />
 
-          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-            <Users className="h-4 w-4" />
-            {party.invites.length + 1} participant
-            {party.invites.length + 1 !== 1 ? "s" : ""}
+            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+              <Users className="h-4 w-4" />
+              {party.invites.length + 1} participant
+              {party.invites.length + 1 !== 1 ? "s" : ""}
+            </div>
           </div>
         </div>
       </div>
