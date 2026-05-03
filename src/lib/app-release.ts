@@ -83,11 +83,24 @@ export async function getLatestReleaseAndChangelogUrl(): Promise<{
 export async function getRepoDocumentationLinks(): Promise<{
   readmeUrl: string | null;
   uiUxUrl: string | null;
+  listsUrl: string | null;
+  pickerUrl: string | null;
+  watchPartiesUrl: string | null;
 }> {
   const base = getRepoBaseUrl();
-  if (!base) return { readmeUrl: null, uiUxUrl: null };
+  if (!base)
+    return {
+      readmeUrl: null,
+      uiUxUrl: null,
+      listsUrl: null,
+      pickerUrl: null,
+      watchPartiesUrl: null,
+    };
   return {
     readmeUrl: `${base}/blob/main/README.md`,
     uiUxUrl: `${base}/blob/main/docs/ui-ux-standards.md`,
+    listsUrl: `${base}/blob/main/docs/lists.md`,
+    pickerUrl: `${base}/blob/main/docs/picker.md`,
+    watchPartiesUrl: `${base}/blob/main/docs/watch-parties.md`,
   };
 }
