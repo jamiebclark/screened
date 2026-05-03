@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Play, Loader2, CheckCircle, XCircle } from "lucide-react";
 
@@ -9,6 +10,7 @@ type State = "idle" | "running" | "success" | "error";
 export function TriggerCronButton({ integration }: { integration: string }) {
   const [state, setState] = useState<State>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const router = useRouter();
 
   async function handleClick() {
     setState("running");
@@ -21,6 +23,7 @@ export function TriggerCronButton({ integration }: { integration: string }) {
       });
       if (res.ok) {
         setState("success");
+        router.refresh();
       } else {
         const data = await res.json().catch(() => ({}));
         setErrorMessage(data?.error ?? `HTTP ${res.status}`);
