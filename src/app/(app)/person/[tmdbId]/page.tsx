@@ -8,6 +8,7 @@ import {
 import { getPersonFilmography } from "@/lib/person-filmography-queries";
 import { notFound } from "next/navigation";
 import { PersonAvatar } from "@/components/person-avatar";
+import { PersonBiography } from "@/components/person-biography";
 import { MediaCard } from "@/components/media-card";
 import { TitlePageTopNav } from "@/components/title-page-top-nav";
 import type { Metadata } from "next";
@@ -61,11 +62,9 @@ export default async function PersonPage({ params }: Params) {
                 {person.knownForDepartment}
               </p>
             )}
-            {person.biography && (
-              <p className="text-sm text-muted-foreground leading-relaxed line-clamp-6">
-                {person.biography}
-              </p>
-            )}
+            {person.biography ? (
+              <PersonBiography text={person.biography} />
+            ) : null}
           </div>
         </div>
 
