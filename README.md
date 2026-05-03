@@ -1,6 +1,15 @@
-# Screened
+<p align="center">
+  <img src="docs/logo.svg" alt="Screened" width="600">
+</p>
 
-A self-hosted web app for tracking movies and TV shows with friends, Plex sync, and Radarr integration.
+<p align="center">
+  <a href="https://github.com/jamiebclark/screened/actions/workflows/ci.yml"><img src="https://github.com/jamiebclark/screened/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/jamiebclark/screened/releases"><img src="https://img.shields.io/github/v/release/jamiebclark/screened" alt="Release"></a>
+  <a href="https://hub.docker.com/r/jamiebclark/screened"><img src="https://img.shields.io/docker/pulls/jamiebclark/screened?logo=docker&logoColor=white" alt="Docker Pulls"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
+</p>
+
+<p align="center">A self-hosted web app for tracking movies and TV shows with friends, Plex sync, and Radarr integration.</p>
 
 ## Features
 
@@ -14,6 +23,19 @@ A self-hosted web app for tracking movies and TV shows with friends, Plex sync, 
 - **Radarr export** — every list exposes a live URL endpoint that Radarr can poll to auto-download movies
 - **Discord integration (optional)** — three tiers: channel webhooks for list activity, slash commands (`/whats-new`, `/pick`, `/link`), and direct message notifications when a friend watches a title on your watchlist; see [docs/discord-integration.md](docs/discord-integration.md)
 - **Taste / embeddings (optional)** — with `OPENAI_API_KEY` set, titles get text embeddings for picker scoring and “similar to your picks”-style features
+
+---
+
+## Screenshots
+
+<p align="center">
+  <img src="docs/screenshots/01-dashboard.png" alt="Dashboard" width="49%">
+  <img src="docs/screenshots/02-watchlist.png" alt="Watchlist" width="49%">
+</p>
+<p align="center">
+  <img src="docs/screenshots/09-picker.png" alt="Movie Night Picker" width="49%">
+  <img src="docs/screenshots/07-lists.png" alt="Collaborative Lists" width="49%">
+</p>
 
 ---
 
@@ -85,12 +107,17 @@ yarn dev          # starts Next.js on http://localhost:3000
 
 ## Docker Compose (Self-hosted)
 
-The easiest way to run Screened on a home server or VPS.
+The easiest way to run Screened on a home server or VPS. Pre-built images are published to Docker Hub on every release — no build step needed.
+
+```
+docker pull jamiebclark/screened:latest
+```
 
 ### 1. Configure environment
 
 ```bash
-cp .env.example .env
+curl -o .env https://raw.githubusercontent.com/jamiebclark/screened/main/.env.example
+# edit .env and fill in required values
 ```
 
 At minimum set `TMDB_API_KEY`, `AUTH_SECRET`, `NEXTAUTH_URL`/`NEXT_PUBLIC_APP_URL` to your server's public URL, and `CRON_SECRET` if you use the included cron services.
@@ -98,12 +125,11 @@ At minimum set `TMDB_API_KEY`, `AUTH_SECRET`, `NEXTAUTH_URL`/`NEXT_PUBLIC_APP_UR
 ### 2. Start everything
 
 ```bash
+curl -o docker-compose.yml https://raw.githubusercontent.com/jamiebclark/screened/main/docker-compose.yml
 docker compose up -d
 ```
 
-This starts the app, a PostgreSQL database, and a small **plex-cron** sidecar that `POST`s to `/api/cron/plex-sync` on a schedule. Set `CRON_SECRET` in `.env` to match what the app expects (see `.env.example`). The same `CRON_SECRET` pattern applies to `POST /api/cron/letterboxd-sync` if you add a separate job or external cron.
-
-The app will be available at `http://localhost:3000` (or your configured URL).
+This starts the app, a PostgreSQL database, and cron sidecars for Plex and Letterboxd sync. The app will be available at `http://localhost:3000` (or your configured URL).
 
 ### 3. Updating
 
