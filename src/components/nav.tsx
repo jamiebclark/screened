@@ -16,6 +16,7 @@ import {
   Sparkles,
   Users,
   ShieldCheck,
+  BarChart3,
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -46,6 +47,7 @@ const navLinks = [
   { href: "/search", label: "Search", icon: Search },
   { href: "/pick", label: "Picker", icon: Sparkles },
   { href: "/history", label: "History", icon: History },
+  { href: "/stats", label: "Stats", icon: BarChart3 },
   { href: "/lists", label: "Lists", icon: ListVideo },
   { href: "/activity", label: "Activity", icon: Users },
 ];
