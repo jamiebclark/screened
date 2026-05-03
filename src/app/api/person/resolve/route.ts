@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { searchPersonByName, tmdbImage } from "@/lib/tmdb";
+import { searchPersonByName } from "@/lib/tmdb";
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;

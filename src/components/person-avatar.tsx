@@ -19,12 +19,6 @@ export function PersonAvatar({
     lg: "h-24 w-24 text-xl",
   };
 
-  const imageSize = {
-    sm: 48,
-    md: 64,
-    lg: 96,
-  };
-
   if (photoUrl) {
     return (
       <div
