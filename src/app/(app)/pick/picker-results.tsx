@@ -16,6 +16,7 @@ import {
   BookmarkCheck,
   Trophy,
   ThumbsUp,
+  PartyPopper,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -114,6 +115,7 @@ function PickerScoredMovieActionsInner({
         title={title}
         onAddedToList={onInvalidatePickerStatuses}
       />
+      <CreateWatchPartyDialog tmdbId={tmdbId} mediaType="MOVIE" title={title} />
       {showRating && (
         <RatingStars
           tmdbId={tmdbId}
@@ -468,8 +470,9 @@ function ShortlistPanel({
                     trigger={
                       <button
                         type="button"
-                        className="text-xs text-primary hover:text-primary/80 transition-colors font-medium"
+                        className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors font-medium"
                       >
+                        <PartyPopper className="h-3 w-3" />
                         Watch Party
                       </button>
                     }
