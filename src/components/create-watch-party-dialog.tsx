@@ -51,6 +51,8 @@ export function CreateWatchPartyDialog({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Load friends once when dialog opens; preselectedInviteeIds is intentionally
+  // excluded from deps — it's an array default that changes reference every render.
   useEffect(() => {
     if (!open) return;
     const ac = new AbortController();
@@ -61,9 +63,6 @@ export function CreateWatchPartyDialog({
         const data = (await r.json()) as FriendsResponse;
         if (!ac.signal.aborted) {
           setFriends(data.friends ?? []);
-          if (preselectedInviteeIds.length > 0) {
-            setSelectedIds(new Set(preselectedInviteeIds));
-          }
         }
       } catch {
         // ignore abort errors
@@ -72,7 +71,7 @@ export function CreateWatchPartyDialog({
       }
     })();
     return () => ac.abort();
-  }, [open, preselectedInviteeIds]);
+  }, [open]);
 
   const toggle = (id: string) => {
     setSelectedIds((prev) => {
