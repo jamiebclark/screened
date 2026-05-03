@@ -52,6 +52,8 @@ Before pushing: run `yarn ci:check` (needs `DATABASE_URL` in `.env` pointing at 
 
 **Optional features pattern:** Features gated by env vars (`OPENAI_API_KEY`, `OMDB_API_KEY`) check `process.env.*` at call time and degrade gracefully when absent — no crash, no UI exposure. Follow this pattern for any new optional integration: check presence in the lib module, surface capability flags to the UI only when needed.
 
+**External API response normalization:** Normalize potentially-missing array fields to `[]` at the fetch boundary (the function that owns the API call), not at each callsite. Example: `getMovie` and `getTvShow` in `tmdb.ts` guarantee `genres`, `seasons`, and `episode_run_time` are always arrays before returning. Consumers never need `?? []` guards. Apply this to any new external API wrapper that returns fields typed as arrays.
+
 **Key Prisma models:**
 
 - `UserMediaStatus` — user's tracking status (WATCHLIST/WATCHING/WATCHED/DROPPED) + rating for a title
