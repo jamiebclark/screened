@@ -40,6 +40,8 @@ function formatRelative(date: Date) {
   return `${diffDays}d ago`;
 }
 
+type UserResult = { userId: string; ok: boolean; error?: string };
+
 type RunStatus = "success" | "partial" | "failed";
 
 function runStatus(succeeded: number, failed: number): RunStatus {
@@ -108,79 +110,85 @@ export default async function CronStatusPage() {
             const status = run ? runStatus(run.succeeded, run.failed) : null;
             const health = serviceHealth(run?.ranAt ?? null);
             const nextRun = formatNextRun(run?.ranAt ?? null);
+            const failures =
+              run && run.failed > 0
+                ? (run.result as UserResult[]).filter((r) => !r.ok)
+                : [];
             return (
-              <div
-                key={key}
-                className="flex items-center justify-between px-4 py-3 gap-4"
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  {status === "success" && (
-                    <CheckCircle className="h-4 w-4 shrink-0 text-green-500" />
-                  )}
-                  {status === "partial" && (
-                    <AlertCircle className="h-4 w-4 shrink-0 text-yellow-500" />
-                  )}
-                  {status === "failed" && (
-                    <XCircle className="h-4 w-4 shrink-0 text-destructive" />
-                  )}
-                  {status === null && (
-                    <Clock className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  )}
-                  <span className="font-medium text-sm">{label}</span>
-                  {health === "on_schedule" && (
-                    <Badge
-                      variant="outline"
-                      className="text-xs text-green-600 border-green-300 dark:text-green-400 dark:border-green-700"
-                    >
-                      On schedule
-                    </Badge>
-                  )}
-                  {health === "overdue" && (
-                    <Badge
-                      variant="outline"
-                      className="text-xs text-amber-600 border-amber-300 dark:text-amber-400 dark:border-amber-700"
-                    >
-                      Overdue
-                    </Badge>
-                  )}
-                  {health === "never_run" && (
-                    <Badge variant="outline" className="text-xs">
-                      Never run
-                    </Badge>
-                  )}
-                </div>
-                <div className="flex items-center gap-3 shrink-0">
-                  {run ? (
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <span>{formatRelative(run.ranAt)}</span>
-                      <span>{formatDuration(run.durationMs)}</span>
-                      <span>
-                        {run.succeeded} ok
-                        {run.failed > 0 && (
-                          <span className="text-destructive ml-1">
-                            / {run.failed} failed
+              <div key={key} className="px-4 py-3 space-y-2">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3 min-w-0">
+                    {status === "success" && (
+                      <CheckCircle className="h-4 w-4 shrink-0 text-green-500" />
+                    )}
+                    {status === "partial" && (
+                      <AlertCircle className="h-4 w-4 shrink-0 text-yellow-500" />
+                    )}
+                    {status === "failed" && (
+                      <XCircle className="h-4 w-4 shrink-0 text-destructive" />
+                    )}
+                    {status === null && (
+                      <Clock className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    )}
+                    <span className="font-medium text-sm">{label}</span>
+                    {health === "on_schedule" && (
+                      <Badge
+                        variant="outline"
+                        className="text-xs text-green-600 border-green-300 dark:text-green-400 dark:border-green-700"
+                      >
+                        On schedule
+                      </Badge>
+                    )}
+                    {health === "overdue" && (
+                      <Badge
+                        variant="outline"
+                        className="text-xs text-amber-600 border-amber-300 dark:text-amber-400 dark:border-amber-700"
+                      >
+                        Overdue
+                      </Badge>
+                    )}
+                    {health === "never_run" && (
+                      <Badge variant="outline" className="text-xs">
+                        Never run
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    {run ? (
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <span>{formatRelative(run.ranAt)}</span>
+                        <span>{formatDuration(run.durationMs)}</span>
+                        <span>
+                          {run.succeeded} ok
+                          {run.failed > 0 && (
+                            <span className="text-destructive ml-1">
+                              / {run.failed} failed
+                            </span>
+                          )}
+                        </span>
+                        {nextRun && (
+                          <span
+                            className={
+                              health === "overdue"
+                                ? "text-amber-600 dark:text-amber-400"
+                                : ""
+                            }
+                          >
+                            {nextRun}
                           </span>
                         )}
+                      </div>
+                    ) : (
+                      <span className="text-sm text-muted-foreground">
+                        No runs recorded
                       </span>
-                      {nextRun && (
-                        <span
-                          className={
-                            health === "overdue"
-                              ? "text-amber-600 dark:text-amber-400"
-                              : ""
-                          }
-                        >
-                          {nextRun}
-                        </span>
-                      )}
-                    </div>
-                  ) : (
-                    <span className="text-sm text-muted-foreground">
-                      No runs recorded
-                    </span>
-                  )}
-                  <TriggerCronButton integration={key} />
+                    )}
+                    <TriggerCronButton integration={key} />
+                  </div>
                 </div>
+                {failures.length > 0 && (
+                  <RunFailureDetails failures={failures} />
+                )}
               </div>
             );
           })}
@@ -200,39 +208,45 @@ export default async function CronStatusPage() {
           <div className="rounded-lg border divide-y">
             {recentRuns.map((run) => {
               const status = runStatus(run.succeeded, run.failed);
+              const failures =
+                run.failed > 0
+                  ? (run.result as UserResult[]).filter((r) => !r.ok)
+                  : [];
               return (
-                <div
-                  key={run.id}
-                  className="flex items-center justify-between px-4 py-3 gap-4"
-                >
-                  <div className="flex items-center gap-3">
-                    {status === "success" && (
-                      <CheckCircle className="h-4 w-4 shrink-0 text-green-500" />
-                    )}
-                    {status === "partial" && (
-                      <AlertCircle className="h-4 w-4 shrink-0 text-yellow-500" />
-                    )}
-                    {status === "failed" && (
-                      <XCircle className="h-4 w-4 shrink-0 text-destructive" />
-                    )}
-                    <Badge variant="outline" className="text-xs font-mono">
-                      {run.integration}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground shrink-0">
-                    <span title={run.ranAt.toISOString()}>
-                      {formatRelative(run.ranAt)}
-                    </span>
-                    <span>{formatDuration(run.durationMs)}</span>
-                    <span>
-                      {run.succeeded} ok
-                      {run.failed > 0 && (
-                        <span className="text-destructive ml-1">
-                          / {run.failed} failed
-                        </span>
+                <div key={run.id} className="px-4 py-3 space-y-2">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      {status === "success" && (
+                        <CheckCircle className="h-4 w-4 shrink-0 text-green-500" />
                       )}
-                    </span>
+                      {status === "partial" && (
+                        <AlertCircle className="h-4 w-4 shrink-0 text-yellow-500" />
+                      )}
+                      {status === "failed" && (
+                        <XCircle className="h-4 w-4 shrink-0 text-destructive" />
+                      )}
+                      <Badge variant="outline" className="text-xs font-mono">
+                        {run.integration}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground shrink-0">
+                      <span title={run.ranAt.toISOString()}>
+                        {formatRelative(run.ranAt)}
+                      </span>
+                      <span>{formatDuration(run.durationMs)}</span>
+                      <span>
+                        {run.succeeded} ok
+                        {run.failed > 0 && (
+                          <span className="text-destructive ml-1">
+                            / {run.failed} failed
+                          </span>
+                        )}
+                      </span>
+                    </div>
                   </div>
+                  {failures.length > 0 && (
+                    <RunFailureDetails failures={failures} />
+                  )}
                 </div>
               );
             })}
@@ -240,5 +254,30 @@ export default async function CronStatusPage() {
         )}
       </section>
     </div>
+  );
+}
+
+function RunFailureDetails({ failures }: { failures: UserResult[] }) {
+  return (
+    <details className="group">
+      <summary className="cursor-pointer text-xs text-destructive select-none list-none flex items-center gap-1">
+        <XCircle className="h-3 w-3" />
+        {failures.length} failure{failures.length !== 1 ? "s" : ""} — click to
+        expand
+      </summary>
+      <ul className="mt-2 space-y-1 pl-4">
+        {failures.map((f) => (
+          <li
+            key={f.userId}
+            className="text-xs text-muted-foreground font-mono"
+          >
+            <span className="text-foreground">{f.userId.slice(0, 8)}…</span>
+            {f.error && (
+              <span className="text-destructive ml-2">{f.error}</span>
+            )}
+          </li>
+        ))}
+      </ul>
+    </details>
   );
 }
