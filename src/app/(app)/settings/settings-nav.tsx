@@ -4,32 +4,34 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
-const groups = [
-  {
-    title: "General",
-    items: [
-      { href: "/settings/account", label: "Account" },
-      { href: "/settings/privacy", label: "Privacy" },
-      { href: "/settings/friends", label: "Friends" },
-      { href: "/settings/preferences", label: "Saved preferences" },
-      { href: "/settings/watch-history", label: "Watch history & imports" },
-    ],
-  },
-  {
-    title: "Integrations",
-    items: [
-      { href: "/settings/plex", label: "Plex" },
-      { href: "/settings/jellyfin", label: "Jellyfin" },
-      { href: "/settings/letterboxd", label: "Letterboxd" },
-      { href: "/settings/tautulli", label: "Tautulli" },
-      { href: "/settings/trakt", label: "Trakt" },
-      { href: "/settings/overseerr", label: "Overseerr" },
-      { href: "/settings/discord", label: "Discord" },
-    ],
-  },
-] as const;
+const baseIntegrations = [
+  { href: "/settings/plex", label: "Plex" },
+  { href: "/settings/jellyfin", label: "Jellyfin" },
+  { href: "/settings/letterboxd", label: "Letterboxd" },
+  { href: "/settings/tautulli", label: "Tautulli" },
+  { href: "/settings/trakt", label: "Trakt", requiresTrakt: true },
+  { href: "/settings/overseerr", label: "Overseerr" },
+  { href: "/settings/discord", label: "Discord" },
+];
 
-export function SettingsNav() {
+const generalItems = [
+  { href: "/settings/account", label: "Account" },
+  { href: "/settings/privacy", label: "Privacy" },
+  { href: "/settings/friends", label: "Friends" },
+  { href: "/settings/preferences", label: "Saved preferences" },
+  { href: "/settings/watch-history", label: "Watch history & imports" },
+];
+
+export function SettingsNav({ traktConfigured }: { traktConfigured: boolean }) {
+  const groups = [
+    { title: "General", items: generalItems },
+    {
+      title: "Integrations",
+      items: baseIntegrations.filter(
+        (i) => !("requiresTrakt" in i) || traktConfigured,
+      ),
+    },
+  ];
   const pathname = usePathname();
 
   return (

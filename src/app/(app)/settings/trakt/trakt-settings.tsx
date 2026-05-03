@@ -26,7 +26,6 @@ interface TraktSettingsProps {
     traktUsername: string;
     lastSyncedAt: Date | null;
   } | null;
-  configured: boolean;
 }
 
 interface SyncResult {
@@ -49,7 +48,6 @@ type LinkState =
 
 export function TraktSettings({
   connection: initialConnection,
-  configured,
 }: TraktSettingsProps) {
   const router = useRouter();
   const [connection, setConnection] = useState(initialConnection);
@@ -174,39 +172,6 @@ export function TraktSettings({
       setSyncing(false);
     }
   };
-
-  if (!configured) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <SimpleBrandIcon
-              icon={siTrakt}
-              className="h-5 w-5 text-[#ED1C24]"
-            />
-            Trakt
-          </CardTitle>
-          <CardDescription>
-            Trakt integration requires server configuration.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            Add{" "}
-            <code className="text-xs bg-muted px-1 py-0.5 rounded">
-              TRAKT_CLIENT_ID
-            </code>{" "}
-            and{" "}
-            <code className="text-xs bg-muted px-1 py-0.5 rounded">
-              TRAKT_CLIENT_SECRET
-            </code>{" "}
-            to your environment to enable Trakt. Register an app at
-            trakt.tv/oauth/applications.
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <div className="space-y-4">

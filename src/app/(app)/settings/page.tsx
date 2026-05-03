@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/card";
 import { SimpleBrandIcon } from "@/components/simple-brand-icon";
 import { auth } from "@/lib/auth";
+import { isTraktConfigured } from "@/lib/trakt";
 import { isSiteAdminEmail } from "@/lib/signup-invites";
 
 export const metadata = { title: "Settings | Screened" };
@@ -32,6 +33,7 @@ export const metadata = { title: "Settings | Screened" };
 export default async function SettingsPage() {
   const session = await auth();
   const isSiteAdmin = isSiteAdminEmail(session?.user?.email);
+  const traktConfigured = isTraktConfigured();
   return (
     <div className="mx-auto max-w-2xl">
       <h1 className="text-2xl font-bold mb-2">Settings</h1>
@@ -140,31 +142,33 @@ export default async function SettingsPage() {
                 </Card>
               </Link>
             </li>
-            <li>
-              <Link
-                prefetch={false}
-                href="/settings/trakt"
-                className="block group"
-              >
-                <Card className="transition-colors hover:bg-accent/50">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <div>
-                      <CardTitle className="text-base flex items-center gap-2">
-                        <SimpleBrandIcon
-                          icon={siTrakt}
-                          className="h-4 w-4 shrink-0 text-[#ED1C24]"
-                        />
-                        Trakt
-                      </CardTitle>
-                      <CardDescription>
-                        Import your full watch history from Trakt.
-                      </CardDescription>
-                    </div>
-                    <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
-                  </CardHeader>
-                </Card>
-              </Link>
-            </li>
+            {traktConfigured && (
+              <li>
+                <Link
+                  prefetch={false}
+                  href="/settings/trakt"
+                  className="block group"
+                >
+                  <Card className="transition-colors hover:bg-accent/50">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <div>
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <SimpleBrandIcon
+                            icon={siTrakt}
+                            className="h-4 w-4 shrink-0 text-[#ED1C24]"
+                          />
+                          Trakt
+                        </CardTitle>
+                        <CardDescription>
+                          Import your full watch history from Trakt.
+                        </CardDescription>
+                      </div>
+                      <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+                    </CardHeader>
+                  </Card>
+                </Link>
+              </li>
+            )}
             <li>
               <Link
                 prefetch={false}
