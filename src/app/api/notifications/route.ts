@@ -42,6 +42,24 @@ export async function GET() {
             },
           },
         },
+        watchPartyInvite: {
+          include: {
+            watchParty: {
+              include: {
+                host: { select: { id: true, name: true, avatarUrl: true } },
+                mediaItem: {
+                  select: {
+                    tmdbId: true,
+                    type: true,
+                    title: true,
+                    poster: true,
+                    year: true,
+                  },
+                },
+              },
+            },
+          },
+        },
       },
     }),
     prisma.notification.count({
@@ -75,6 +93,19 @@ export async function GET() {
             id: n.watchEntry.id,
             watcher: n.watchEntry.user,
             mediaItem: n.watchEntry.mediaItem,
+          }
+        : null,
+      watchPartyInvite: n.watchPartyInvite
+        ? {
+            id: n.watchPartyInvite.id,
+            status: n.watchPartyInvite.status,
+            watchParty: {
+              id: n.watchPartyInvite.watchParty.id,
+              scheduledFor: n.watchPartyInvite.watchParty.scheduledFor,
+              status: n.watchPartyInvite.watchParty.status,
+              host: n.watchPartyInvite.watchParty.host,
+              mediaItem: n.watchPartyInvite.watchParty.mediaItem,
+            },
           }
         : null,
     })),
