@@ -1,3 +1,15 @@
+## [1.26.0](https://github.com/jamiebclark/screened/compare/v1.25.0...v1.26.0) (2026-05-03)
+
+### Features
+
+* **auth:** hide email/password form when pinId param is present ([4be8e06](https://github.com/jamiebclark/screened/commit/4be8e06c252106ba67f638d7212720d8d8827043))
+* **icons:** adds icons at various sizes ([77d0d47](https://github.com/jamiebclark/screened/commit/77d0d47308b8912318f07e119aab132f9a2d9564))
+* **trakt:** hide settings when TRAKT_CLIENT_ID/SECRET are not set ([5129e2f](https://github.com/jamiebclark/screened/commit/5129e2f1a3ae082f7d9c500e05d4b96e5ade165e))
+
+### Bug Fixes
+
+* **trakt:** add User-Agent header to all Trakt API requests ([7f07f58](https://github.com/jamiebclark/screened/commit/7f07f58276d0db8b8d807dcfe03a80faeeffd2bb))
+
 ## [1.25.0](https://github.com/jamiebclark/screened/compare/v1.24.1...v1.25.0) (2026-05-03)
 
 ### Features
