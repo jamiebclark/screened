@@ -18,7 +18,7 @@ services:
     restart: unless-stopped
 
   plex-cron:
-    image: alpine:3.19
+    image: curlimages/curl:latest
     volumes:
       - ./scripts/plex-cron.sh:/plex-cron.sh:ro
     environment:
@@ -28,10 +28,10 @@ services:
     depends_on:
       - app
     restart: unless-stopped
-    command: ["sh", "/plex-cron.sh"]
+    entrypoint: ["sh", "/plex-cron.sh"]
 
   letterboxd-cron:
-    image: alpine:3.19
+    image: curlimages/curl:latest
     volumes:
       - ./scripts/letterboxd-cron.sh:/letterboxd-cron.sh:ro
     environment:
@@ -41,7 +41,46 @@ services:
     depends_on:
       - app
     restart: unless-stopped
-    command: ["sh", "/letterboxd-cron.sh"]
+    entrypoint: ["sh", "/letterboxd-cron.sh"]
+
+  jellyfin-cron:
+    image: curlimages/curl:latest
+    volumes:
+      - ./scripts/jellyfin-cron.sh:/jellyfin-cron.sh:ro
+    environment:
+      CRON_SECRET: "${CRON_SECRET}"
+      APP_URL: "http://app:3000"
+      SYNC_INTERVAL_HOURS: "${SYNC_INTERVAL_HOURS:-6}"
+    depends_on:
+      - app
+    restart: unless-stopped
+    entrypoint: ["sh", "/jellyfin-cron.sh"]
+
+  tautulli-cron:
+    image: curlimages/curl:latest
+    volumes:
+      - ./scripts/tautulli-cron.sh:/tautulli-cron.sh:ro
+    environment:
+      CRON_SECRET: "${CRON_SECRET}"
+      APP_URL: "http://app:3000"
+      SYNC_INTERVAL_HOURS: "${SYNC_INTERVAL_HOURS:-6}"
+    depends_on:
+      - app
+    restart: unless-stopped
+    entrypoint: ["sh", "/tautulli-cron.sh"]
+
+  trakt-cron:
+    image: curlimages/curl:latest
+    volumes:
+      - ./scripts/trakt-cron.sh:/trakt-cron.sh:ro
+    environment:
+      CRON_SECRET: "${CRON_SECRET}"
+      APP_URL: "http://app:3000"
+      SYNC_INTERVAL_HOURS: "${SYNC_INTERVAL_HOURS:-6}"
+    depends_on:
+      - app
+    restart: unless-stopped
+    entrypoint: ["sh", "/trakt-cron.sh"]
 
   db:
     image: postgres:16-alpine
