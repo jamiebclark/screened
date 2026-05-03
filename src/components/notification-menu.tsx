@@ -52,6 +52,23 @@ type NotificationItem = {
       poster: string | null;
     };
   } | null;
+  watchPartyInvite: {
+    id: string;
+    status: string;
+    watchParty: {
+      id: string;
+      scheduledFor: string;
+      status: string;
+      host: { id: string; name: string; avatarUrl: string | null };
+      mediaItem: {
+        tmdbId: number;
+        type: "MOVIE" | "TV";
+        title: string;
+        poster: string | null;
+        year: number | null;
+      };
+    };
+  } | null;
 };
 
 type NotificationsResponse = {
@@ -248,6 +265,10 @@ export function NotificationMenu({
                       NotificationType.FRIEND_WATCHED_YOUR_WATCHLIST &&
                     n.watchEntry ? (
                     <FriendWatchedRow n={n} />
+                  ) : (n.type === NotificationType.WATCH_PARTY_INVITE ||
+                      n.type === NotificationType.WATCH_PARTY_CONFIRM) &&
+                    n.watchPartyInvite ? (
+                    <WatchPartyNotifRow n={n} />
                   ) : (
                     <span className="text-muted-foreground">Notification</span>
                   )}
@@ -486,6 +507,76 @@ function AccessRequestRow({
             ? "Approved"
             : "Declined"}
         </p>
+      )}
+    </div>
+  );
+}
+
+function WatchPartyNotifRow({ n }: { n: NotificationItem }) {
+  const invite = n.watchPartyInvite!;
+  const party = invite.watchParty;
+  const isInvite = n.type === NotificationType.WATCH_PARTY_INVITE;
+  const titleLine = party.mediaItem.year
+    ? `${party.mediaItem.title} (${party.mediaItem.year})`
+    : party.mediaItem.title;
+  const scheduled = new Date(party.scheduledFor).toLocaleString("en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+  const poster = posterUrl(party.mediaItem.poster);
+
+  return (
+    <div className="flex gap-2 items-start">
+      <Avatar className="h-8 w-8 shrink-0">
+        <AvatarImage src={party.host.avatarUrl ?? undefined} />
+        <AvatarFallback className="text-[10px]">
+          {party.host.name[0]}
+        </AvatarFallback>
+      </Avatar>
+      <div className="min-w-0 flex-1">
+        <p className="text-xs text-muted-foreground leading-tight">
+          {isInvite ? (
+            <>
+              <span className="font-medium text-foreground">
+                {party.host.name}
+              </span>{" "}
+              invited you to a Watch Party for{" "}
+              <Link
+                href={`/watch-parties/${party.id}`}
+                className="font-medium text-foreground hover:underline"
+              >
+                {titleLine}
+              </Link>
+            </>
+          ) : (
+            <>
+              Watch Party for{" "}
+              <Link
+                href={`/watch-parties/${party.id}`}
+                className="font-medium text-foreground hover:underline"
+              >
+                {titleLine}
+              </Link>{" "}
+              — did it happen?
+            </>
+          )}
+        </p>
+        <p className="text-xs text-muted-foreground mt-0.5">{scheduled}</p>
+        <Link
+          href={`/watch-parties/${party.id}`}
+          className="inline-block mt-1 text-xs text-primary hover:underline"
+        >
+          {isInvite ? "View invite" : "Confirm or skip"}
+        </Link>
+      </div>
+      {poster && (
+        <Image
+          src={poster}
+          alt={party.mediaItem.title}
+          width={32}
+          height={48}
+          className="rounded shrink-0 object-cover"
+        />
       )}
     </div>
   );

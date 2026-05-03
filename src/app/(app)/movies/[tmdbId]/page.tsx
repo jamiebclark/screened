@@ -7,6 +7,7 @@ import { Suspense } from "react";
 import { WatchStatusButton } from "@/components/watch-status-button";
 import { RatingStars } from "@/components/rating-stars";
 import { AddToListDialog } from "@/components/add-to-list-dialog";
+import { CreateWatchPartyDialog } from "@/components/create-watch-party-dialog";
 import { WatchHistory } from "@/components/watch-history";
 import { MovieScreenedContextAsync } from "@/components/movie-screened-context";
 import {
@@ -192,6 +193,11 @@ export default async function MoviePage({ params, searchParams }: Params) {
                   <AddToListDialog
                     tmdbId={tmdbId}
                     type="movie"
+                    title={movie.title}
+                  />
+                  <CreateWatchPartyDialog
+                    tmdbId={tmdbId}
+                    mediaType="MOVIE"
                     title={movie.title}
                   />
                   {userStatus && (

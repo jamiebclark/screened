@@ -110,6 +110,13 @@ export function PickSession({
   >({});
   const [pickerStatusesNonce, setPickerStatusesNonce] = useState(0);
   const [savingPick, setSavingPick] = useState(false);
+  const [lastSavedPick, setLastSavedPick] = useState<{
+    tmdbId: number;
+    sessionId: string;
+    title: string;
+    year: number | null;
+    inviteeIds: string[];
+  } | null>(null);
   const [savingSession, setSavingSession] = useState(false);
   const [savingPreset, setSavingPreset] = useState(false);
   const [presetName, setPresetName] = useState("");
@@ -619,7 +626,17 @@ export function PickSession({
         }),
       });
       if (!res.ok) throw new Error("Failed to save session");
+      const saved = (await res.json()) as { session: { id: string } };
       const picked = scoringResults.find((m) => m.tmdbId === tmdbId);
+      setLastSavedPick({
+        tmdbId,
+        sessionId: saved.session.id,
+        title: picked?.title ?? "Pick",
+        year: picked?.year ?? null,
+        inviteeIds: participants
+          .filter((p) => p.id !== currentUser.id)
+          .map((p) => p.id),
+      });
       toast({
         description: `"${picked?.title ?? "Pick"}" recorded as tonight's pick.`,
       });
@@ -985,6 +1002,7 @@ export function PickSession({
             onToggleShortlist={toggleShortlist}
             onVote={castVote}
             onRecordPick={recordPick}
+            lastSavedPick={lastSavedPick}
           />
         </div>
 

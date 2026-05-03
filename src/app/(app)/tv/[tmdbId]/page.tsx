@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import { WatchStatusButton } from "@/components/watch-status-button";
 import { RatingStars } from "@/components/rating-stars";
 import { AddToListDialog } from "@/components/add-to-list-dialog";
+import { CreateWatchPartyDialog } from "@/components/create-watch-party-dialog";
 import { TitleCatalogLinks } from "@/components/movie-site-context-panel";
 import { TitlePageTopNav } from "@/components/title-page-top-nav";
 import { TitlePageMobilePoster } from "@/components/title-page-mobile-poster";
@@ -198,6 +199,11 @@ export default async function TvPage({ params }: Params) {
                   <AddToListDialog
                     tmdbId={tmdbId}
                     type="tv"
+                    title={show.name}
+                  />
+                  <CreateWatchPartyDialog
+                    tmdbId={tmdbId}
+                    mediaType="TV"
                     title={show.name}
                   />
                   {userStatus && (

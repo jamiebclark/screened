@@ -27,6 +27,7 @@ import { RatingStars } from "@/components/rating-stars";
 import { ToastAction } from "@/components/ui/toast";
 import { toast } from "@/hooks/use-toast";
 import type { ScoredMovieJson } from "@/lib/picker-room-state";
+import { CreateWatchPartyDialog } from "@/components/create-watch-party-dialog";
 
 type PickerWatchStatus = "WATCHLIST" | "WATCHING" | "WATCHED" | "DROPPED";
 
@@ -333,6 +334,7 @@ function ShortlistPanel({
   onVote,
   onRecordPick,
   savingPick,
+  lastSavedPick,
 }: {
   shortlist: number[];
   scoringResults: ScoredMovieJson[] | null;
@@ -343,6 +345,13 @@ function ShortlistPanel({
   onVote: (tmdbId: number) => void;
   onRecordPick: (tmdbId: number) => Promise<void>;
   savingPick: boolean;
+  lastSavedPick?: {
+    tmdbId: number;
+    sessionId: string;
+    title: string;
+    year: number | null;
+    inviteeIds: string[];
+  } | null;
 }) {
   if (shortlist.length === 0) return null;
 
@@ -449,6 +458,23 @@ function ShortlistPanel({
                     Record pick
                   </Button>
                 )}
+                {lastSavedPick?.tmdbId === movie.tmdbId && (
+                  <CreateWatchPartyDialog
+                    tmdbId={movie.tmdbId}
+                    mediaType="MOVIE"
+                    title={lastSavedPick.title}
+                    preselectedInviteeIds={lastSavedPick.inviteeIds}
+                    pickerSessionId={lastSavedPick.sessionId}
+                    trigger={
+                      <button
+                        type="button"
+                        className="text-xs text-primary hover:text-primary/80 transition-colors font-medium"
+                      >
+                        Watch Party
+                      </button>
+                    }
+                  />
+                )}
                 <button
                   type="button"
                   onClick={() => onToggleShortlist(movie.tmdbId)}
@@ -495,6 +521,13 @@ interface PickerResultsProps {
   onToggleShortlist: (tmdbId: number) => void;
   onVote: (tmdbId: number) => void;
   onRecordPick: (tmdbId: number) => Promise<void>;
+  lastSavedPick?: {
+    tmdbId: number;
+    sessionId: string;
+    title: string;
+    year: number | null;
+    inviteeIds: string[];
+  } | null;
 }
 
 export function PickerResults({
@@ -520,6 +553,7 @@ export function PickerResults({
   onToggleShortlist,
   onVote,
   onRecordPick,
+  lastSavedPick,
 }: PickerResultsProps) {
   const resultsRef = useRef<HTMLDivElement>(null);
   const prevScoringInProgressRef = useRef(scoringInProgress);
@@ -651,6 +685,7 @@ export function PickerResults({
             onVote={onVote}
             onRecordPick={onRecordPick}
             savingPick={savingPick}
+            lastSavedPick={lastSavedPick}
           />
 
           <div className="flex items-center justify-between">
