@@ -1,8 +1,9 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+import Image from "next/image";
 import { EditableListSearchAdd } from "@/components/editable-list-search-add";
-import { Bookmark, Film, Search } from "lucide-react";
+import { Bookmark, CalendarDays, Film, Search } from "lucide-react";
 import { CopyButton } from "@/components/copy-button";
 import { Button } from "@/components/ui/button";
 import { MediaType } from "@/generated/prisma";
@@ -23,6 +24,30 @@ interface PageProps {
   searchParams: Promise<{ sort?: string }>;
 }
 
+function formatReleaseDate(date: Date): string {
+  const now = new Date();
+  const diffDays = Math.ceil(
+    (date.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+  );
+
+  if (diffDays === 0) return "Today";
+  if (diffDays === 1) return "Tomorrow";
+  if (diffDays <= 14) return `In ${diffDays} days`;
+
+  const sameYear = date.getFullYear() === now.getFullYear();
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: sameYear ? undefined : "numeric",
+  });
+}
+
+function posterUrl(path: string | null): string | null {
+  if (!path) return null;
+  if (path.startsWith("http")) return path;
+  return `https://image.tmdb.org/t/p/w92${path}`;
+}
+
 export default async function WatchlistPage({ searchParams }: PageProps) {
   const session = await auth();
   const { sort: sortParam } = await searchParams;
@@ -31,25 +56,49 @@ export default async function WatchlistPage({ searchParams }: PageProps) {
       ? (sortParam as SortKey)
       : "added_desc";
 
-  const rows = await prisma.userMediaStatus.findMany({
-    where: { userId: session!.user.id, status: "WATCHLIST" },
-    select: {
-      id: true,
-      status: true,
-      rating: true,
-      mediaItem: {
-        select: {
-          tmdbId: true,
-          type: true,
-          title: true,
-          poster: true,
-          year: true,
-          genres: true,
+  const now = new Date();
+
+  const [rows, upcomingRows] = await Promise.all([
+    prisma.userMediaStatus.findMany({
+      where: { userId: session!.user.id, status: "WATCHLIST" },
+      select: {
+        id: true,
+        status: true,
+        rating: true,
+        mediaItem: {
+          select: {
+            tmdbId: true,
+            type: true,
+            title: true,
+            poster: true,
+            year: true,
+            genres: true,
+          },
         },
       },
-    },
-    orderBy: SORT_ORDERS[sort],
-  });
+      orderBy: SORT_ORDERS[sort],
+    }),
+    prisma.userMediaStatus.findMany({
+      where: {
+        userId: session!.user.id,
+        status: "WATCHLIST",
+        mediaItem: { releaseDate: { gt: now } },
+      },
+      select: {
+        mediaItem: {
+          select: {
+            tmdbId: true,
+            type: true,
+            title: true,
+            poster: true,
+            releaseDate: true,
+          },
+        },
+      },
+      orderBy: { mediaItem: { releaseDate: "asc" } },
+      take: 12,
+    }),
+  ]);
 
   const movies = rows.filter((r) => r.mediaItem.type === MediaType.MOVIE);
   const radarrToken =
@@ -98,6 +147,49 @@ export default async function WatchlistPage({ searchParams }: PageProps) {
       </div>
 
       <EditableListSearchAdd variant="watchlist" existingKeys={existingKeys} />
+
+      {/* Releasing soon */}
+      {upcomingRows.length > 0 && (
+        <section>
+          <h3 className="text-base font-semibold mb-3 flex items-center gap-2">
+            <CalendarDays className="h-4 w-4 text-muted-foreground" />
+            Releasing soon
+          </h3>
+          <div className="space-y-1">
+            {upcomingRows.map(({ mediaItem }) => {
+              const type = mediaItem.type === MediaType.MOVIE ? "movie" : "tv";
+              const href = `/${type === "movie" ? "movies" : "tv"}/${mediaItem.tmdbId}`;
+              const thumb = posterUrl(mediaItem.poster);
+              return (
+                <Link
+                  key={mediaItem.tmdbId}
+                  href={href}
+                  className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-muted/50 transition-colors"
+                >
+                  {thumb ? (
+                    <Image
+                      src={thumb}
+                      alt={mediaItem.title}
+                      width={28}
+                      height={42}
+                      className="rounded object-cover shrink-0"
+                      unoptimized
+                    />
+                  ) : (
+                    <div className="w-7 h-10 rounded bg-muted shrink-0" />
+                  )}
+                  <span className="flex-1 text-sm font-medium truncate">
+                    {mediaItem.title}
+                  </span>
+                  <span className="text-sm text-muted-foreground shrink-0">
+                    {formatReleaseDate(mediaItem.releaseDate!)}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       <div className="flex flex-col lg:flex-row gap-8 items-start">
         <div className="flex-1 min-w-0">
