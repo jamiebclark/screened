@@ -1,3 +1,13 @@
+## [1.19.0](https://github.com/jamiebclark/screened/compare/v1.18.1...v1.19.0) (2026-05-03)
+
+### Features
+
+* **cron:** switch to curlimages/curl and add jellyfin/tautulli/trakt cron containers ([e0abe0d](https://github.com/jamiebclark/screened/commit/e0abe0d8815574c92a6d45bc8ebcc90b2612d6ad))
+
+### Bug Fixes
+
+* **cron:** remove runtime apk install from cron scripts ([eaa749d](https://github.com/jamiebclark/screened/commit/eaa749d5a68d07c78571be5a0c418f415353006c))
+
 ## [1.18.1](https://github.com/jamiebclark/screened/compare/v1.18.0...v1.18.1) (2026-05-02)
 
 ### Bug Fixes
