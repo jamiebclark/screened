@@ -1,3 +1,9 @@
+## [1.23.1](https://github.com/jamiebclark/screened/compare/v1.23.0...v1.23.1) (2026-05-03)
+
+### Bug Fixes
+
+* **admin:** fix cron trigger self-fetch failure and surface error messages ([dbdb7ff](https://github.com/jamiebclark/screened/commit/dbdb7ff53bea8f46bd3b55fdde08987d9a6b399d))
+
 ## [1.23.0](https://github.com/jamiebclark/screened/compare/v1.22.0...v1.23.0) (2026-05-03)
 
 ### Features
