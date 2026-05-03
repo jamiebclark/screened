@@ -60,6 +60,14 @@ enum ProfileContentVisibility {
   FRIENDS
 }
 
+enum CronIntegration {
+  PLEX
+  LETTERBOXD
+  JELLYFIN
+  TAUTULLI
+  TRAKT
+}
+
 model User {
   id            String    @id @default(cuid())
   email         String    @unique
@@ -497,4 +505,16 @@ model Friendship {
   @@unique([userLowId, userHighId])
   @@index([userHighId])
   @@index([userLowId])
+}
+
+model CronRun {
+  id          String          @id @default(cuid())
+  integration CronIntegration
+  ranAt       DateTime        @default(now())
+  durationMs  Int
+  succeeded   Int
+  failed      Int
+  result      Json
+
+  @@index([integration, ranAt(sort: Desc)])
 }
