@@ -13,13 +13,16 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const tmdbId = await searchPersonByName(name);
+    const result = await searchPersonByName(name);
 
-    if (!tmdbId) {
+    if (!result) {
       return NextResponse.json({ tmdbId: null, profilePath: null });
     }
 
-    return NextResponse.json({ tmdbId, profilePath: null });
+    return NextResponse.json({
+      tmdbId: result.tmdbId,
+      profilePath: result.profilePath,
+    });
   } catch (error) {
     console.error("Error resolving person:", error);
     return NextResponse.json(

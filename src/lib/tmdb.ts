@@ -409,7 +409,14 @@ export async function getPerson(tmdbId: number): Promise<TmdbPerson> {
   };
 }
 
-export async function searchPersonByName(name: string): Promise<number | null> {
+export interface PersonSearchResult {
+  tmdbId: number;
+  profilePath: string | null;
+}
+
+export async function searchPersonByName(
+  name: string,
+): Promise<PersonSearchResult | null> {
   try {
     const res = await tmdbFetch<TmdbPersonSearchResponse>(
       "/search/person",
@@ -421,7 +428,13 @@ export async function searchPersonByName(name: string): Promise<number | null> {
       604800, // 7 days
     );
 
-    return res.results[0]?.id ?? null;
+    const person = res.results[0];
+    if (!person) return null;
+
+    return {
+      tmdbId: person.id,
+      profilePath: person.profile_path,
+    };
   } catch {
     return null;
   }
