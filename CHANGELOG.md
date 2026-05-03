@@ -1,3 +1,10 @@
+## [1.27.0](https://github.com/jamiebclark/screened/compare/v1.26.2...v1.27.0) (2026-05-03)
+
+### Features
+
+* **stats:** add /stats page with CSS bar charts ([7dc0b85](https://github.com/jamiebclark/screened/commit/7dc0b85e919967b808a96808dc6e5ec6e305998c))
+* **stats:** add getUserStats query lib ([cfb51ed](https://github.com/jamiebclark/screened/commit/cfb51ed523767fc3f0b11fcaccf322c97f615362))
+
 ## [1.26.2](https://github.com/jamiebclark/screened/compare/v1.26.1...v1.26.2) (2026-05-03)
 
 ### Bug Fixes
