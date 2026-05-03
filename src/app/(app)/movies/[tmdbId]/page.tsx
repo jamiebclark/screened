@@ -32,7 +32,7 @@ import { StreamingProviders } from "@/components/streaming-providers";
 
 type Params = {
   params: Promise<{ tmdbId: string }>;
-  searchParams: Promise<{ watchedDate?: string }>;
+  searchParams: Promise<{ watchedDate?: string; partyDate?: string }>;
 };
 
 export async function generateMetadata({ params }: Params) {
@@ -45,6 +45,7 @@ export default async function MoviePage({ params, searchParams }: Params) {
   const { tmdbId: tmdbIdStr } = await params;
   const sp = await searchParams;
   const prefillLogDate = parseDateOnlyIso(sp.watchedDate);
+  const prefillPartyDate = parseDateOnlyIso(sp.partyDate);
   const tmdbId = parseInt(tmdbIdStr);
 
   if (isNaN(tmdbId)) notFound();
@@ -199,6 +200,7 @@ export default async function MoviePage({ params, searchParams }: Params) {
                     tmdbId={tmdbId}
                     mediaType="MOVIE"
                     title={movie.title}
+                    defaultScheduledFor={prefillPartyDate ?? undefined}
                   />
                   {userStatus && (
                     <RatingStars

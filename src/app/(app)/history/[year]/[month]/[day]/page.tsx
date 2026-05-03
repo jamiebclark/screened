@@ -5,7 +5,7 @@ import { HistoryBreadcrumbs } from "@/components/history-breadcrumbs";
 import { HistoryWatchEntryRow } from "@/components/history-watch-entry-row";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Search, Users } from "lucide-react";
+import { PartyPopper, Search, Users } from "lucide-react";
 import Image from "next/image";
 import {
   dayCanonicalPath,
@@ -84,6 +84,12 @@ export default async function HistoryDayPage({ params }: Params) {
     return `/search?${q.toString()}`;
   })();
 
+  const partySearchHref = (() => {
+    const q = new URLSearchParams();
+    q.set("partyDate", dateIso);
+    return `/search?${q.toString()}`;
+  })();
+
   const longDate = new Date(year, month - 1, day).toLocaleDateString("en-US", {
     weekday: "long",
     month: "long",
@@ -109,12 +115,20 @@ export default async function HistoryDayPage({ params }: Params) {
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-8">
         <h1 className="text-2xl font-bold">{longDate}</h1>
-        <Button variant="outline" size="sm" className="shrink-0" asChild>
-          <Link href={searchHref}>
-            <Search className="h-4 w-4 mr-1.5" />
-            Log a viewing…
-          </Link>
-        </Button>
+        <div className="flex gap-2 shrink-0">
+          <Button variant="outline" size="sm" asChild>
+            <Link href={partySearchHref}>
+              <PartyPopper className="h-4 w-4 mr-1.5" />
+              Schedule watch party…
+            </Link>
+          </Button>
+          <Button variant="outline" size="sm" asChild>
+            <Link href={searchHref}>
+              <Search className="h-4 w-4 mr-1.5" />
+              Log a viewing…
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <p className="text-sm text-muted-foreground mb-6">

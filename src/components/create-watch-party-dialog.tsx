@@ -29,6 +29,8 @@ interface CreateWatchPartyDialogProps {
   preselectedInviteeIds?: string[];
   /** Picker session ID to link. */
   pickerSessionId?: string;
+  /** Pre-fill the date field — YYYY-MM-DD format. */
+  defaultScheduledFor?: string;
   trigger?: React.ReactNode;
 }
 
@@ -38,6 +40,7 @@ export function CreateWatchPartyDialog({
   title,
   preselectedInviteeIds = [],
   pickerSessionId,
+  defaultScheduledFor,
   trigger,
 }: CreateWatchPartyDialogProps) {
   const router = useRouter();
@@ -47,7 +50,9 @@ export function CreateWatchPartyDialog({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(
     new Set(preselectedInviteeIds),
   );
-  const [scheduledFor, setScheduledFor] = useState("");
+  const [scheduledFor, setScheduledFor] = useState(
+    defaultScheduledFor ? `${defaultScheduledFor}T19:00` : "",
+  );
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

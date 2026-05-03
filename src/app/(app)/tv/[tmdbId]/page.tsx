@@ -22,8 +22,10 @@ import { MediaCard } from "@/components/media-card";
 import { Suspense } from "react";
 import { TitleListsSection } from "@/components/title-lists-section";
 import { StreamingProviders } from "@/components/streaming-providers";
+import { parseDateOnlyIso } from "@/lib/history-calendar";
 type Params = {
   params: Promise<{ tmdbId: string }>;
+  searchParams: Promise<{ partyDate?: string }>;
 };
 
 export async function generateMetadata({ params }: Params) {
@@ -32,8 +34,10 @@ export async function generateMetadata({ params }: Params) {
   return { title: show?.name };
 }
 
-export default async function TvPage({ params }: Params) {
+export default async function TvPage({ params, searchParams }: Params) {
   const { tmdbId: tmdbIdStr } = await params;
+  const sp = await searchParams;
+  const prefillPartyDate = parseDateOnlyIso(sp.partyDate);
   const tmdbId = parseInt(tmdbIdStr);
 
   if (isNaN(tmdbId)) notFound();
@@ -205,6 +209,7 @@ export default async function TvPage({ params }: Params) {
                     tmdbId={tmdbId}
                     mediaType="TV"
                     title={show.name}
+                    defaultScheduledFor={prefillPartyDate ?? undefined}
                   />
                   {userStatus && (
                     <RatingStars
