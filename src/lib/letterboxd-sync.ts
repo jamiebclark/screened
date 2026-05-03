@@ -118,6 +118,7 @@ async function ensureMediaItem(tmdbId: number) {
       overview: movie.overview,
       genres: movie.genres.map((g) => g.name),
       runtime: movie.runtime,
+      releaseDate: movie.release_date ? new Date(movie.release_date) : null,
     },
   });
 }

@@ -77,6 +77,9 @@ export async function syncTraktUser(userId: string): Promise<TraktSyncResult> {
             overview: movie.overview,
             genres: movie.genres.map((g) => g.name),
             runtime: movie.runtime,
+            releaseDate: movie.release_date
+              ? new Date(movie.release_date)
+              : null,
           },
         });
       } catch {
@@ -160,6 +163,9 @@ export async function syncTraktUser(userId: string): Promise<TraktSyncResult> {
               overview: show.overview,
               genres: show.genres.map((g) => g.name),
               runtime: show.episode_run_time[0] ?? null,
+              releaseDate: show.first_air_date
+                ? new Date(show.first_air_date)
+                : null,
             },
           });
         } catch {
