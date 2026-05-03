@@ -4,6 +4,7 @@ import {
   ArrowRight,
   Download,
   Lock,
+  RefreshCw,
   Sparkles,
   User,
   UserPlus,
@@ -217,29 +218,54 @@ export default async function SettingsPage() {
           </h2>
           <ul className="flex flex-col gap-3">
             {isSiteAdmin && (
-              <li>
-                <Link
-                  prefetch={false}
-                  href="/settings/invites"
-                  className="block group"
-                >
-                  <Card className="transition-colors hover:bg-accent/50">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <div>
-                        <CardTitle className="text-base flex items-center gap-2">
-                          <UserPlus className="h-4 w-4 text-primary" />
-                          Signup invites
-                        </CardTitle>
-                        <CardDescription>
-                          Create links for new members when this server is
-                          invite-only.
-                        </CardDescription>
-                      </div>
-                      <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
-                    </CardHeader>
-                  </Card>
-                </Link>
-              </li>
+              <>
+                <li>
+                  <Link
+                    prefetch={false}
+                    href="/settings/invites"
+                    className="block group"
+                  >
+                    <Card className="transition-colors hover:bg-accent/50">
+                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <div>
+                          <CardTitle className="text-base flex items-center gap-2">
+                            <UserPlus className="h-4 w-4 text-primary" />
+                            Signup invites
+                          </CardTitle>
+                          <CardDescription>
+                            Create links for new members when this server is
+                            invite-only.
+                          </CardDescription>
+                        </div>
+                        <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+                      </CardHeader>
+                    </Card>
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    prefetch={false}
+                    href="/admin/cron"
+                    className="block group"
+                  >
+                    <Card className="transition-colors hover:bg-accent/50">
+                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <div>
+                          <CardTitle className="text-base flex items-center gap-2">
+                            <RefreshCw className="h-4 w-4 text-primary" />
+                            Cron status
+                          </CardTitle>
+                          <CardDescription>
+                            Sync job history and last-run status for all
+                            integrations.
+                          </CardDescription>
+                        </div>
+                        <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+                      </CardHeader>
+                    </Card>
+                  </Link>
+                </li>
+              </>
             )}
             <li>
               <Link

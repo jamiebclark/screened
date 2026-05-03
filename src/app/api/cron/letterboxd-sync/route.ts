@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { syncLetterboxdUser } from "@/lib/letterboxd-sync";
+import { CronIntegration } from "@/generated/prisma";
 
 export async function POST(req: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
@@ -16,6 +17,8 @@ export async function POST(req: NextRequest) {
   if (authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const startedAt = Date.now();
 
   const connections = await prisma.letterboxdConnection.findMany({
     select: { userId: true },
@@ -45,6 +48,16 @@ export async function POST(req: NextRequest) {
   console.log(
     `[cron/letterboxd-sync] ${succeeded} succeeded, ${failed} failed`,
   );
+
+  await prisma.cronRun.create({
+    data: {
+      integration: CronIntegration.LETTERBOXD,
+      durationMs: Date.now() - startedAt,
+      succeeded,
+      failed,
+      result: summary,
+    },
+  });
 
   return NextResponse.json({ succeeded, failed, users: summary });
 }
