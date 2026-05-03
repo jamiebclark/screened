@@ -33,8 +33,8 @@
   <img src="docs/screenshots/02-watchlist.png" alt="Watchlist" width="49%">
 </p>
 <p align="center">
-  <img src="docs/screenshots/09-picker.png" alt="Movie Night Picker" width="49%">
-  <img src="docs/screenshots/07-lists.png" alt="Collaborative Lists" width="49%">
+  <img src="docs/screenshots/04-movie-title.png" alt="Movie title page" width="49%">
+  <img src="docs/screenshots/08-list-detail.png" alt="Collaborative list" width="49%">
 </p>
 
 ---
