@@ -17,6 +17,12 @@ const INTEGRATIONS: { key: CronIntegration; label: string }[] = [
   { key: CronIntegration.TRAKT, label: "Trakt" },
 ];
 
+const SYNC_INTERVAL_HOURS = parseInt(
+  process.env.SYNC_INTERVAL_HOURS ?? "6",
+  10,
+);
+const SYNC_INTERVAL_MS = SYNC_INTERVAL_HOURS * 3600 * 1000;
+
 function formatDuration(ms: number) {
   if (ms < 1000) return `${ms}ms`;
   if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
@@ -40,6 +46,30 @@ function runStatus(succeeded: number, failed: number): RunStatus {
   if (failed === 0) return "success";
   if (succeeded === 0) return "failed";
   return "partial";
+}
+
+type ServiceHealth = "on_schedule" | "overdue" | "never_run";
+
+function serviceHealth(lastRanAt: Date | null): ServiceHealth {
+  if (!lastRanAt) return "never_run";
+  return lastRanAt.getTime() + SYNC_INTERVAL_MS > Date.now()
+    ? "on_schedule"
+    : "overdue";
+}
+
+function formatNextRun(lastRanAt: Date | null): string | null {
+  if (!lastRanAt) return null;
+  const diffMs = lastRanAt.getTime() + SYNC_INTERVAL_MS - Date.now();
+  const absMins = Math.floor(Math.abs(diffMs) / 60000);
+  const absHours = Math.floor(absMins / 60);
+  const remMins = absMins % 60;
+  const label =
+    absHours > 0
+      ? remMins > 0
+        ? `${absHours}h ${remMins}m`
+        : `${absHours}h`
+      : `${absMins}m`;
+  return diffMs > 0 ? `in ${label}` : `${label} overdue`;
 }
 
 export default async function CronStatusPage() {
@@ -68,11 +98,16 @@ export default async function CronStatusPage() {
       <section aria-labelledby="summary-heading" className="mb-10">
         <h3 id="summary-heading" className="text-base font-semibold mb-3">
           Last run per integration
+          <span className="ml-2 text-sm font-normal text-muted-foreground">
+            every {SYNC_INTERVAL_HOURS}h
+          </span>
         </h3>
         <div className="rounded-lg border divide-y">
           {INTEGRATIONS.map(({ key, label }) => {
             const run = latestByIntegration.get(key);
             const status = run ? runStatus(run.succeeded, run.failed) : null;
+            const health = serviceHealth(run?.ranAt ?? null);
+            const nextRun = formatNextRun(run?.ranAt ?? null);
             return (
               <div
                 key={key}
@@ -92,6 +127,27 @@ export default async function CronStatusPage() {
                     <Clock className="h-4 w-4 shrink-0 text-muted-foreground" />
                   )}
                   <span className="font-medium text-sm">{label}</span>
+                  {health === "on_schedule" && (
+                    <Badge
+                      variant="outline"
+                      className="text-xs text-green-600 border-green-300 dark:text-green-400 dark:border-green-700"
+                    >
+                      On schedule
+                    </Badge>
+                  )}
+                  {health === "overdue" && (
+                    <Badge
+                      variant="outline"
+                      className="text-xs text-amber-600 border-amber-300 dark:text-amber-400 dark:border-amber-700"
+                    >
+                      Overdue
+                    </Badge>
+                  )}
+                  {health === "never_run" && (
+                    <Badge variant="outline" className="text-xs">
+                      Never run
+                    </Badge>
+                  )}
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
                   {run ? (
@@ -106,6 +162,17 @@ export default async function CronStatusPage() {
                           </span>
                         )}
                       </span>
+                      {nextRun && (
+                        <span
+                          className={
+                            health === "overdue"
+                              ? "text-amber-600 dark:text-amber-400"
+                              : ""
+                          }
+                        >
+                          {nextRun}
+                        </span>
+                      )}
                     </div>
                   ) : (
                     <span className="text-sm text-muted-foreground">
