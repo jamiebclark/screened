@@ -77,7 +77,7 @@ export default async function PersonPage({ params }: Params) {
           </div>
         ) : (
           <>
-            <p className="text-sm text-muted-foreground mb-6 max-w-2xl">
+            <p className="text-sm text-muted-foreground mb-6">
               Titles below are titles Screened already knows about (usually from
               Plex or Jellyfin sync) where this person appears in the stored
               cast list or matches the stored director name.
@@ -152,7 +152,7 @@ export default async function PersonPage({ params }: Params) {
                 {directedCredits.length}
               </span>
             </h3>
-            <p className="text-sm text-muted-foreground mb-6 max-w-2xl">
+            <p className="text-sm text-muted-foreground mb-6">
               Full list from TMDB (Director, Co-Director, Series Director,
               Creator). Open a title to add it to your watchlist or log a
               watch—even if it is not in your Plex/Jellyfin library yet.
