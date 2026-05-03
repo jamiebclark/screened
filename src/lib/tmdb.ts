@@ -11,6 +11,7 @@ function getHeaders() {
 async function tmdbFetch<T>(
   path: string,
   params?: Record<string, string>,
+  revalidate = 3600,
 ): Promise<T> {
   const url = new URL(`${TMDB_BASE}${path}`);
   if (params) {
@@ -19,7 +20,7 @@ async function tmdbFetch<T>(
 
   const res = await fetch(url.toString(), {
     headers: getHeaders(),
-    next: { revalidate: 3600 },
+    next: { revalidate },
   });
 
   if (!res.ok) {
@@ -360,6 +361,67 @@ export async function getWatchProviders(
         : `/tv/${tmdbId}/watch/providers`;
     const data = await tmdbFetch<TmdbWatchProvidersResponse>(path);
     return data.results[countryCode] ?? null;
+  } catch {
+    return null;
+  }
+}
+
+// Person API
+
+interface TmdbPersonResponse {
+  id: number;
+  name: string;
+  biography: string;
+  birthday: string | null;
+  place_of_birth: string | null;
+  profile_path: string | null;
+  known_for_department: string;
+  popularity: number;
+}
+
+export interface TmdbPerson {
+  id: number;
+  name: string;
+  profilePath: string | null;
+  biography: string;
+  birthday: string | null;
+  placeOfBirth: string | null;
+  knownForDepartment: string;
+  popularity: number;
+}
+
+export async function getPerson(tmdbId: number): Promise<TmdbPerson> {
+  const data = await tmdbFetch<TmdbPersonResponse>(
+    `/person/${tmdbId}`,
+    {},
+    604800, // 7 days
+  );
+
+  return {
+    id: data.id,
+    name: data.name,
+    profilePath: data.profile_path,
+    biography: data.biography || "",
+    birthday: data.birthday,
+    placeOfBirth: data.place_of_birth,
+    knownForDepartment: data.known_for_department || "Unknown",
+    popularity: data.popularity,
+  };
+}
+
+export async function searchPersonByName(name: string): Promise<number | null> {
+  try {
+    const res = await tmdbFetch<TmdbPersonSearchResponse>(
+      "/search/person",
+      {
+        query: name,
+        include_adult: "false",
+        page: "1",
+      },
+      604800, // 7 days
+    );
+
+    return res.results[0]?.id ?? null;
   } catch {
     return null;
   }
