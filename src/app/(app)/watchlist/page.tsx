@@ -3,7 +3,8 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { MediaCard } from "@/components/media-card";
 import { EditableListSearchAdd } from "@/components/editable-list-search-add";
-import { Bookmark, Film, ExternalLink, Search } from "lucide-react";
+import { Bookmark, Film, Search } from "lucide-react";
+import { CopyButton } from "@/components/copy-button";
 import { Button } from "@/components/ui/button";
 import { MediaType } from "@/generated/prisma";
 import { ensureWatchlistRadarrToken } from "@/lib/ensure-watchlist-radarr-token";
@@ -49,10 +50,57 @@ export default async function WatchlistPage() {
 
       <EditableListSearchAdd variant="watchlist" existingKeys={existingKeys} />
 
-      {movies.length > 0 && radarrUrl && (
-        <div className="rounded-lg border border-border bg-card p-4">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
+      <div className="flex flex-col lg:flex-row gap-8 items-start">
+        {/* Main content */}
+        <div className="flex-1 min-w-0">
+          {items.length === 0 ? (
+            <div className="text-center py-20 border border-dashed border-border rounded-xl max-w-sm mx-auto">
+              <Bookmark className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+              <p className="font-medium mb-1">Your watchlist is empty</p>
+              <p className="text-sm text-muted-foreground mb-5">
+                Search for a movie or show to get started.
+              </p>
+              <Button size="sm" asChild>
+                <Link href="/search">
+                  <Search className="h-4 w-4" />
+                  Search titles
+                </Link>
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-3">
+              {items.map((item) => {
+                const type =
+                  item.mediaItem.type === MediaType.MOVIE ? "movie" : "tv";
+                return (
+                  <div key={item.id} className="relative">
+                    <ClearTrackingCornerButton
+                      tmdbId={item.mediaItem.tmdbId}
+                      type={type}
+                      position="top-left"
+                      title="Remove from watchlist"
+                      ariaLabel="Remove from watchlist"
+                    />
+                    <MediaCard
+                      tmdbId={item.mediaItem.tmdbId}
+                      type={type}
+                      title={item.mediaItem.title}
+                      poster={item.mediaItem.poster}
+                      year={item.mediaItem.year}
+                      status={item.status}
+                      compact
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Sidebar */}
+        {movies.length > 0 && radarrUrl && (
+          <div className="lg:w-72 shrink-0 space-y-4">
+            <div className="rounded-lg border border-border bg-card p-4">
               <p className="text-sm font-medium mb-1 flex items-center gap-1.5">
                 <Film className="h-4 w-4 text-primary" />
                 Radarr import URL
@@ -61,69 +109,19 @@ export default async function WatchlistPage() {
                 Add this URL as a &quot;Custom List&quot; in Radarr to
                 auto-import movies from your watchlist.
               </p>
-              <code
-                className="text-xs bg-muted px-2 py-1 rounded font-mono break-all block"
-                data-testid="watchlist-radarr-url"
-              >
-                {radarrUrl}
-              </code>
-            </div>
-            <div className="flex gap-2 shrink-0">
-              <a
-                href={radarrUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center h-9 w-9 rounded-md border border-input bg-transparent hover:bg-accent transition-colors"
-              >
-                <ExternalLink className="h-3.5 w-3.5" />
-              </a>
+              <div className="flex items-center gap-2">
+                <code
+                  className="text-xs bg-muted px-2 py-1 rounded font-mono break-all block flex-1 min-w-0"
+                  data-testid="watchlist-radarr-url"
+                >
+                  {radarrUrl}
+                </code>
+                <CopyButton text={radarrUrl} />
+              </div>
             </div>
           </div>
-        </div>
-      )}
-
-      {items.length === 0 ? (
-        <div className="text-center py-20 border border-dashed border-border rounded-xl max-w-sm mx-auto">
-          <Bookmark className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-          <p className="font-medium mb-1">Your watchlist is empty</p>
-          <p className="text-sm text-muted-foreground mb-5">
-            Search for a movie or show to get started.
-          </p>
-          <Button size="sm" asChild>
-            <Link href="/search">
-              <Search className="h-4 w-4" />
-              Search titles
-            </Link>
-          </Button>
-        </div>
-      ) : (
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-3">
-          {items.map((item) => {
-            const type =
-              item.mediaItem.type === MediaType.MOVIE ? "movie" : "tv";
-            return (
-              <div key={item.id} className="relative">
-                <ClearTrackingCornerButton
-                  tmdbId={item.mediaItem.tmdbId}
-                  type={type}
-                  position="top-left"
-                  title="Remove from watchlist"
-                  ariaLabel="Remove from watchlist"
-                />
-                <MediaCard
-                  tmdbId={item.mediaItem.tmdbId}
-                  type={type}
-                  title={item.mediaItem.title}
-                  poster={item.mediaItem.poster}
-                  year={item.mediaItem.year}
-                  status={item.status}
-                  compact
-                />
-              </div>
-            );
-          })}
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
