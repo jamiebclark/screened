@@ -4,6 +4,7 @@ import { Nav } from "@/components/nav";
 import { SiteFooter } from "@/components/site-footer";
 import { Toaster } from "@/components/toaster";
 import { prisma } from "@/lib/prisma";
+import { isSiteAdminEmail } from "@/lib/signup-invites";
 
 export default async function AppLayout({
   children,
@@ -39,6 +40,7 @@ export default async function AppLayout({
       <Nav
         user={session.user}
         initialUnreadNotifications={unreadNotifications}
+        isAdmin={isSiteAdminEmail(session.user.email)}
       />
       <main className="flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden">
         <div className="w-full flex-1">{children}</div>

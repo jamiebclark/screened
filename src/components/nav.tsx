@@ -15,6 +15,7 @@ import {
   History,
   Sparkles,
   Users,
+  ShieldCheck,
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -37,6 +38,7 @@ interface NavProps {
     image?: string | null;
   };
   initialUnreadNotifications: number;
+  isAdmin?: boolean;
 }
 
 const navLinks = [
@@ -48,7 +50,7 @@ const navLinks = [
   { href: "/activity", label: "Activity", icon: Users },
 ];
 
-export function Nav({ user, initialUnreadNotifications }: NavProps) {
+export function Nav({ user, initialUnreadNotifications, isAdmin }: NavProps) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -131,6 +133,17 @@ export function Nav({ user, initialUnreadNotifications }: NavProps) {
                   Settings
                 </Link>
               </DropdownMenuItem>
+              {isAdmin && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/admin" className="cursor-pointer">
+                      <ShieldCheck className="mr-2 h-4 w-4" />
+                      Admin
+                    </Link>
+                  </DropdownMenuItem>
+                </>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 className="text-destructive focus:text-destructive cursor-pointer"
