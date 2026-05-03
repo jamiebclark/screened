@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import { MediaType } from "@/generated/prisma";
+import { getOrCreateMediaItem } from "@/lib/media-item";
 import { createWatchParty, listWatchPartiesForUser } from "@/lib/watch-party";
 
 export async function GET() {
@@ -86,21 +85,10 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const mediaItem = await prisma.mediaItem.findUnique({
-      where: {
-        tmdbId_type: {
-          tmdbId,
-          type: mediaType === "MOVIE" ? MediaType.MOVIE : MediaType.TV,
-        },
-      },
-    });
-
-    if (!mediaItem) {
-      return NextResponse.json(
-        { error: "Title not found — open the title page first" },
-        { status: 404 },
-      );
-    }
+    const mediaItem = await getOrCreateMediaItem(
+      tmdbId,
+      mediaType === "MOVIE" ? "movie" : "tv",
+    );
 
     const party = await createWatchParty(
       session.user.id,
