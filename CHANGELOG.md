@@ -1,3 +1,9 @@
+## [1.24.1](https://github.com/jamiebclark/screened/compare/v1.24.0...v1.24.1) (2026-05-03)
+
+### Bug Fixes
+
+* **admin:** refresh cron status page after successful job trigger ([77547cc](https://github.com/jamiebclark/screened/commit/77547cc841eddf0741519e2f5f2664ffe5ef3911))
+
 ## [1.24.0](https://github.com/jamiebclark/screened/compare/v1.23.1...v1.24.0) (2026-05-03)
 
 ### Features
