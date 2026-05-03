@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import {
   Film,
-  Search,
   ListVideo,
   User,
   LogOut,
@@ -20,6 +19,7 @@ import {
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { NotificationMenu } from "@/components/notification-menu";
+import { SearchModal } from "@/components/search-modal";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,12 +42,10 @@ interface NavProps {
 }
 
 const navLinks = [
-  { href: "/", label: "Home", icon: Film },
-  { href: "/search", label: "Search", icon: Search },
-  { href: "/pick", label: "Picker", icon: Sparkles },
-  { href: "/history", label: "History", icon: History },
   { href: "/lists", label: "Lists", icon: ListVideo },
+  { href: "/pick", label: "Picker", icon: Sparkles },
   { href: "/watch-parties", label: "Watch Parties", icon: PartyPopper },
+  { href: "/history", label: "History", icon: History },
 ];
 
 export function Nav({ user, initialUnreadNotifications, isAdmin }: NavProps) {
@@ -100,6 +98,7 @@ export function Nav({ user, initialUnreadNotifications, isAdmin }: NavProps) {
         </div>
 
         <div className="flex items-center gap-2">
+          <SearchModal />
           <NotificationMenu initialUnreadCount={initialUnreadNotifications} />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
