@@ -1,3 +1,9 @@
+## [1.35.1](https://github.com/jamiebclark/screened/compare/v1.35.0...v1.35.1) (2026-05-04)
+
+### Bug Fixes
+
+* **cast-crew:** fall back to legacy director field for un-enriched items ([793b930](https://github.com/jamiebclark/screened/commit/793b930d03ed5b3a326ce7b4dbb946d44fa03115))
+
 ## [1.35.0](https://github.com/jamiebclark/screened/compare/v1.34.0...v1.35.0) (2026-05-04)
 
 ### Features
