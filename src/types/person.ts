@@ -61,7 +61,7 @@ export interface PersonFilmographyItem {
   releaseDate: Date | null;
   watchStatus: "WATCHLIST" | "WATCHING" | "WATCHED" | "DROPPED" | null;
   userRating: number | null;
-  role: "cast" | "director";
+  role: "cast" | "director" | "creator";
 }
 
 export interface PersonFilmography {

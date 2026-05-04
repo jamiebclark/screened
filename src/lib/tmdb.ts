@@ -280,25 +280,40 @@ const DIRECTOR_JOBS = new Set(["Director", "Co-Director"]);
 
 export type TmdbMovieCredits = {
   cast: string[];
-  /** Primary (first) director for display / DB. */
+  castTmdbIds: number[];
   director: string | null;
-  /** All unique director and co-director names from crew (for person matching). */
+  directorTmdbId: number | null;
   directors: string[];
+  directorsTmdbIds: number[];
 };
 
 export async function getMovieCredits(
   tmdbId: number,
 ): Promise<TmdbMovieCredits> {
   const data = await tmdbFetch<TmdbCreditsResponse>(`/movie/${tmdbId}/credits`);
-  const cast = data.cast
-    .sort((a, b) => a.order - b.order)
-    .slice(0, 8)
-    .map((c) => c.name);
-  const directorNames = data.crew
-    .filter((c) => DIRECTOR_JOBS.has(c.job))
-    .map((c) => c.name);
-  const directors = [...new Set(directorNames)];
-  return { cast, director: directors[0] ?? null, directors };
+  const sortedCast = data.cast.sort((a, b) => a.order - b.order).slice(0, 8);
+  const cast = sortedCast.map((c) => c.name);
+  const castTmdbIds = sortedCast.map((c) => c.id);
+
+  const seen = new Set<string>();
+  const uniqueDirectors: { id: number; name: string }[] = [];
+  for (const c of data.crew) {
+    if (DIRECTOR_JOBS.has(c.job) && !seen.has(c.name)) {
+      seen.add(c.name);
+      uniqueDirectors.push(c);
+    }
+  }
+  const directors = uniqueDirectors.map((c) => c.name);
+  const directorsTmdbIds = uniqueDirectors.map((c) => c.id);
+
+  return {
+    cast,
+    castTmdbIds,
+    director: directors[0] ?? null,
+    directorTmdbId: directorsTmdbIds[0] ?? null,
+    directors,
+    directorsTmdbIds,
+  };
 }
 
 export async function getMovieKeywords(tmdbId: number): Promise<string[]> {
@@ -308,18 +323,27 @@ export async function getMovieKeywords(tmdbId: number): Promise<string[]> {
   return data.keywords.map((k) => k.name);
 }
 
-export async function getTvCredits(
-  tmdbId: number,
-): Promise<{ cast: string[]; director: string | null }> {
+export type TmdbTvCredits = {
+  cast: string[];
+  castTmdbIds: number[];
+  creatorName: string | null;
+  creatorTmdbId: number | null;
+};
+
+export async function getTvCredits(tmdbId: number): Promise<TmdbTvCredits> {
   const data = await tmdbFetch<TmdbCreditsResponse>(`/tv/${tmdbId}/credits`);
-  const cast = data.cast
-    .sort((a, b) => a.order - b.order)
-    .slice(0, 8)
-    .map((c) => c.name);
-  const creator =
-    data.crew.find((c) => c.job === "Creator" || c.job === "Series Director")
-      ?.name ?? null;
-  return { cast, director: creator };
+  const sortedCast = data.cast.sort((a, b) => a.order - b.order).slice(0, 8);
+  const cast = sortedCast.map((c) => c.name);
+  const castTmdbIds = sortedCast.map((c) => c.id);
+  const creatorCrew = data.crew.find(
+    (c) => c.job === "Creator" || c.job === "Series Director",
+  );
+  return {
+    cast,
+    castTmdbIds,
+    creatorName: creatorCrew?.name ?? null,
+    creatorTmdbId: creatorCrew?.id ?? null,
+  };
 }
 
 export async function getTvKeywords(tmdbId: number): Promise<string[]> {
@@ -461,7 +485,20 @@ interface TmdbCombinedCreditsCrew {
   first_air_date?: string | null;
 }
 
+interface TmdbCombinedCreditsCast {
+  id: number;
+  character: string;
+  media_type?: string;
+  title?: string;
+  name?: string;
+  poster_path: string | null;
+  release_date?: string | null;
+  first_air_date?: string | null;
+  popularity: number;
+}
+
 interface TmdbCombinedCreditsResponse {
+  cast: TmdbCombinedCreditsCast[];
   crew: TmdbCombinedCreditsCrew[];
 }
 
@@ -523,4 +560,121 @@ export async function getPersonDirectedCredits(
   });
 
   return list;
+}
+
+/** Fetch TMDB profile paths for a batch of person IDs. Cached 7 days. */
+export async function getPersonProfilePaths(
+  tmdbIds: number[],
+): Promise<Map<number, string | null>> {
+  if (tmdbIds.length === 0) return new Map();
+  const entries = await Promise.all(
+    tmdbIds.map(async (id) => {
+      try {
+        const person = await getPerson(id);
+        return [id, person.profilePath] as const;
+      } catch {
+        return [id, null] as const;
+      }
+    }),
+  );
+  return new Map(entries);
+}
+
+export interface ResolvedPerson {
+  name: string;
+  tmdbId: number | null;
+  profilePath: string | null;
+}
+
+/**
+ * Build a ResolvedPerson list from parallel name + tmdbId arrays (e.g.
+ * MediaItem.cast + castTmdbIds). Falls back to TMDB name search when the
+ * id arrays are empty (items not yet enriched).
+ */
+export async function resolvePersonList(
+  names: string[],
+  tmdbIds: number[],
+): Promise<ResolvedPerson[]> {
+  if (names.length === 0) return [];
+  const hasIds =
+    tmdbIds.length === names.length && tmdbIds.some((id) => id > 0);
+
+  if (hasIds) {
+    const validIds = tmdbIds.filter((id) => id > 0);
+    const profileMap = await getPersonProfilePaths(validIds);
+    return names.map((name, i) => {
+      const id = tmdbIds[i] ?? 0;
+      return {
+        name,
+        tmdbId: id > 0 ? id : null,
+        profilePath: id > 0 ? (profileMap.get(id) ?? null) : null,
+      };
+    });
+  }
+
+  // Fallback: parallel name searches (cached 7 days)
+  return Promise.all(
+    names.map(async (name) => {
+      const result = await searchPersonByName(name);
+      return {
+        name,
+        tmdbId: result?.tmdbId ?? null,
+        profilePath: result?.profilePath ?? null,
+      };
+    }),
+  );
+}
+
+export type PersonActingCredit = {
+  tmdbId: number;
+  mediaType: "movie" | "tv";
+  title: string;
+  character: string;
+  poster: string | null;
+  releaseDate: string | null;
+};
+
+/** Top acting credits from TMDB combined_credits, sorted by popularity. Capped at 40. */
+export async function getPersonActingCredits(
+  personTmdbId: number,
+): Promise<PersonActingCredit[]> {
+  const data = await tmdbFetch<TmdbCombinedCreditsResponse>(
+    `/person/${personTmdbId}/combined_credits`,
+    {},
+    604800,
+  );
+
+  const castEntries = data.cast ?? [];
+  const byKey = new Map<string, PersonActingCredit & { popularity: number }>();
+
+  for (const c of castEntries) {
+    const mt = c.media_type;
+    if (mt !== "movie" && mt !== "tv") continue;
+    const title =
+      mt === "movie" ? (c.title ?? "").trim() : (c.name ?? "").trim();
+    if (!title) continue;
+    const key = `${mt}-${c.id}`;
+    if (byKey.has(key)) continue;
+    byKey.set(key, {
+      tmdbId: c.id,
+      mediaType: mt,
+      title,
+      character: c.character || "",
+      poster: c.poster_path,
+      releaseDate:
+        mt === "movie" ? (c.release_date ?? null) : (c.first_air_date ?? null),
+      popularity: c.popularity,
+    });
+  }
+
+  const list = [...byKey.values()];
+  list.sort((a, b) => b.popularity - a.popularity);
+  return list.slice(0, 40).map((c) => ({
+    tmdbId: c.tmdbId,
+    mediaType: c.mediaType,
+    title: c.title,
+    character: c.character,
+    poster: c.poster,
+    releaseDate: c.releaseDate,
+  }));
 }
