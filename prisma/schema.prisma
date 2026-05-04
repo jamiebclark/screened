@@ -265,9 +265,15 @@ model MediaItem {
   genres    String[]
   runtime     Int?
   releaseDate DateTime?
-  cast      String[]  @default([])
-  director  String?
-  keywords  String[]  @default([])
+  cast             String[] @default([])
+  castTmdbIds      Int[]    @default([])
+  director         String?
+  directorTmdbId   Int?
+  directors        String[] @default([])
+  directorsTmdbIds Int[]    @default([])
+  creatorName      String?
+  creatorTmdbId    Int?
+  keywords         String[] @default([])
   embedding Float[]  @default([])
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
