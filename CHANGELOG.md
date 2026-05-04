@@ -1,3 +1,9 @@
+## [1.35.2](https://github.com/jamiebclark/screened/compare/v1.35.1...v1.35.2) (2026-05-04)
+
+### Bug Fixes
+
+* **enrichment:** use created_by for TV creator, add force re-enrichment ([7d06d6b](https://github.com/jamiebclark/screened/commit/7d06d6b3828b5e3509980cbabac464e98664084a))
+
 ## [1.35.1](https://github.com/jamiebclark/screened/compare/v1.35.0...v1.35.1) (2026-05-04)
 
 ### Bug Fixes
