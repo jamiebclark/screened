@@ -1,103 +1,75 @@
-"use client";
-
 import Link from "next/link";
 import { PersonAvatar } from "./person-avatar";
-import { tmdbImage } from "@/lib/tmdb";
-import { useEffect, useState } from "react";
+import { resolvePersonList, tmdbImage, type ResolvedPerson } from "@/lib/tmdb";
 
 interface PersonCastCrewSectionProps {
   cast: string[];
-  director: string | null;
+  castTmdbIds: number[];
+  directors: string[];
+  directorsTmdbIds: number[];
+  creatorName: string | null;
+  creatorTmdbId: number | null;
 }
 
-interface PersonWithId {
-  name: string;
-  tmdbId: number | null;
-  profilePath: string | null;
-}
-
-export function PersonCastCrewSection({
+export async function PersonCastCrewSection({
   cast,
-  director,
+  castTmdbIds,
+  directors,
+  directorsTmdbIds,
+  creatorName,
+  creatorTmdbId,
 }: PersonCastCrewSectionProps) {
-  const [castWithIds, setCastWithIds] = useState<PersonWithId[]>([]);
-  const [directorWithId, setDirectorWithId] = useState<PersonWithId | null>(
-    null,
-  );
-  const [loading, setLoading] = useState(true);
+  const [resolvedCast, resolvedDirectors, resolvedCreator] = await Promise.all([
+    resolvePersonList(cast, castTmdbIds),
+    resolvePersonList(directors, directorsTmdbIds),
+    creatorName
+      ? resolvePersonList(
+          [creatorName],
+          creatorTmdbId ? [creatorTmdbId] : [],
+        ).then((r) => r[0] ?? null)
+      : Promise.resolve(null),
+  ]);
 
-  useEffect(() => {
-    async function resolvePersonIds() {
-      setLoading(true);
-      try {
-        const peopleToResolve = [...(director ? [director] : []), ...cast];
+  const hasContent =
+    resolvedCast.length > 0 ||
+    resolvedDirectors.length > 0 ||
+    resolvedCreator !== null;
 
-        const resolved = await Promise.all(
-          peopleToResolve.map(async (name) => {
-            try {
-              const res = await fetch(
-                `/api/person/resolve?name=${encodeURIComponent(name)}`,
-              );
-              if (!res.ok) {
-                return { name, tmdbId: null, profilePath: null };
-              }
-              const data = await res.json();
-              return {
-                name,
-                tmdbId: data.tmdbId,
-                profilePath: data.profilePath,
-              };
-            } catch {
-              return { name, tmdbId: null, profilePath: null };
-            }
-          }),
-        );
-
-        if (director) {
-          setDirectorWithId(resolved[0]);
-          setCastWithIds(resolved.slice(1));
-        } else {
-          setCastWithIds(resolved);
-        }
-      } catch (error) {
-        console.error("Error resolving person IDs:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    resolvePersonIds();
-  }, [cast, director]);
-
-  if (loading) {
-    return (
-      <section className="mt-8">
-        <h3 className="text-base font-semibold mb-4">Cast & Crew</h3>
-        <div className="text-sm text-muted-foreground">Loading...</div>
-      </section>
-    );
-  }
+  if (!hasContent) return null;
 
   return (
     <section className="mt-8">
       <h3 className="text-base font-semibold mb-4">Cast & Crew</h3>
 
-      {directorWithId && (
+      {resolvedDirectors.length > 0 && (
         <div className="mb-6">
           <h4 className="text-sm font-medium text-muted-foreground mb-3">
-            Director
+            {resolvedDirectors.length === 1 ? "Director" : "Directors"}
           </h4>
-          <PersonCard person={directorWithId} />
+          <div className="flex flex-wrap gap-2">
+            {resolvedDirectors.map((person) => (
+              <PersonCard key={person.name} person={person} />
+            ))}
+          </div>
         </div>
       )}
 
-      {castWithIds.length > 0 && (
+      {resolvedCreator && (
+        <div className="mb-6">
+          <h4 className="text-sm font-medium text-muted-foreground mb-3">
+            Creator
+          </h4>
+          <PersonCard person={resolvedCreator} />
+        </div>
+      )}
+
+      {resolvedCast.length > 0 && (
         <div>
           <h4 className="text-sm font-medium text-muted-foreground mb-3">
             Cast
           </h4>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-            {castWithIds.map((person) => (
+            {resolvedCast.map((person) => (
               <PersonCard key={person.name} person={person} />
             ))}
           </div>
@@ -107,7 +79,7 @@ export function PersonCastCrewSection({
   );
 }
 
-function PersonCard({ person }: { person: PersonWithId }) {
+function PersonCard({ person }: { person: ResolvedPerson }) {
   const profileUrl = person.profilePath
     ? tmdbImage(person.profilePath, "w185")
     : null;

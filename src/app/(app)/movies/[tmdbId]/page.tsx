@@ -79,7 +79,12 @@ export default async function MoviePage({ params, searchParams }: Params) {
       prisma.mediaItem
         .findUnique({
           where: { tmdbId_type: { tmdbId, type: MediaType.MOVIE } },
-          select: { cast: true, director: true },
+          select: {
+            cast: true,
+            castTmdbIds: true,
+            directors: true,
+            directorsTmdbIds: true,
+          },
         })
         .catch(() => null),
     ]);
@@ -267,12 +272,25 @@ export default async function MoviePage({ params, searchParams }: Params) {
               />
             )}
 
-            {mediaItem && (mediaItem.cast.length > 0 || mediaItem.director) && (
-              <PersonCastCrewSection
-                cast={mediaItem.cast}
-                director={mediaItem.director}
-              />
-            )}
+            {mediaItem &&
+              (mediaItem.cast.length > 0 || mediaItem.directors.length > 0) && (
+                <Suspense
+                  fallback={
+                    <div className="mt-8 text-sm text-muted-foreground">
+                      Loading cast & crew…
+                    </div>
+                  }
+                >
+                  <PersonCastCrewSection
+                    cast={mediaItem.cast}
+                    castTmdbIds={mediaItem.castTmdbIds}
+                    directors={mediaItem.directors}
+                    directorsTmdbIds={mediaItem.directorsTmdbIds}
+                    creatorName={null}
+                    creatorTmdbId={null}
+                  />
+                </Suspense>
+              )}
           </div>
         </div>
 
