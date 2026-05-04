@@ -51,8 +51,11 @@ export async function POST(req: NextRequest) {
           getMovie(tmdbId),
           getMovieCredits(tmdbId).catch(() => ({
             cast: [] as string[],
+            castTmdbIds: [] as number[],
             director: null,
+            directorTmdbId: null,
             directors: [] as string[],
+            directorsTmdbIds: [] as number[],
           })),
           getMovieKeywords(tmdbId).catch(() => [] as string[]),
         ]);
@@ -66,12 +69,34 @@ export async function POST(req: NextRequest) {
         cast = credits.cast;
         director = credits.director;
         keywords = kws;
+        mediaItem = await prisma.mediaItem.create({
+          data: {
+            tmdbId,
+            type: mediaType,
+            title,
+            poster: null,
+            backdrop: null,
+            year,
+            overview,
+            genres,
+            runtime,
+            cast,
+            castTmdbIds: credits.castTmdbIds,
+            director,
+            directorTmdbId: credits.directorTmdbId,
+            directors: credits.directors,
+            directorsTmdbIds: credits.directorsTmdbIds,
+            keywords,
+          },
+        });
       } else {
         const [show, credits, kws] = await Promise.all([
           getTvShow(tmdbId),
           getTvCredits(tmdbId).catch(() => ({
             cast: [] as string[],
-            director: null,
+            castTmdbIds: [] as number[],
+            creatorName: null,
+            creatorTmdbId: null,
           })),
           getTvKeywords(tmdbId).catch(() => [] as string[]),
         ]);
@@ -83,26 +108,26 @@ export async function POST(req: NextRequest) {
         genres = show.genres.map((g) => g.name);
         runtime = show.episode_run_time[0] ?? null;
         cast = credits.cast;
-        director = credits.director;
         keywords = kws;
+        mediaItem = await prisma.mediaItem.create({
+          data: {
+            tmdbId,
+            type: mediaType,
+            title,
+            poster: null,
+            backdrop: null,
+            year,
+            overview,
+            genres,
+            runtime,
+            cast,
+            castTmdbIds: credits.castTmdbIds,
+            creatorName: credits.creatorName,
+            creatorTmdbId: credits.creatorTmdbId,
+            keywords,
+          },
+        });
       }
-
-      mediaItem = await prisma.mediaItem.create({
-        data: {
-          tmdbId,
-          type: mediaType,
-          title,
-          poster: null,
-          backdrop: null,
-          year,
-          overview,
-          genres,
-          runtime,
-          cast,
-          director,
-          keywords,
-        },
-      });
     } else {
       // Fill in missing enrichment
       if (!mediaItem.cast.length || !mediaItem.keywords.length) {
@@ -110,30 +135,61 @@ export async function POST(req: NextRequest) {
           const [credits, kws] = await Promise.all([
             getMovieCredits(tmdbId).catch(() => ({
               cast: [] as string[],
+              castTmdbIds: [] as number[],
               director: null,
+              directorTmdbId: null,
               directors: [] as string[],
+              directorsTmdbIds: [] as number[],
             })),
             getMovieKeywords(tmdbId).catch(() => [] as string[]),
           ]);
           cast = credits.cast.length ? credits.cast : mediaItem.cast;
           director = credits.director ?? mediaItem.director;
           keywords = kws.length ? kws : mediaItem.keywords;
+          mediaItem = await prisma.mediaItem.update({
+            where: { id: mediaItem.id },
+            data: {
+              cast,
+              castTmdbIds: credits.castTmdbIds.length
+                ? credits.castTmdbIds
+                : mediaItem.castTmdbIds,
+              director,
+              directorTmdbId:
+                credits.directorTmdbId ?? mediaItem.directorTmdbId,
+              directors: credits.directors.length
+                ? credits.directors
+                : mediaItem.directors,
+              directorsTmdbIds: credits.directorsTmdbIds.length
+                ? credits.directorsTmdbIds
+                : mediaItem.directorsTmdbIds,
+              keywords,
+            },
+          });
         } else {
           const [credits, kws] = await Promise.all([
             getTvCredits(tmdbId).catch(() => ({
               cast: [] as string[],
-              director: null,
+              castTmdbIds: [] as number[],
+              creatorName: null,
+              creatorTmdbId: null,
             })),
             getTvKeywords(tmdbId).catch(() => [] as string[]),
           ]);
           cast = credits.cast.length ? credits.cast : mediaItem.cast;
-          director = credits.director ?? mediaItem.director;
           keywords = kws.length ? kws : mediaItem.keywords;
+          mediaItem = await prisma.mediaItem.update({
+            where: { id: mediaItem.id },
+            data: {
+              cast,
+              castTmdbIds: credits.castTmdbIds.length
+                ? credits.castTmdbIds
+                : mediaItem.castTmdbIds,
+              creatorName: credits.creatorName ?? mediaItem.creatorName,
+              creatorTmdbId: credits.creatorTmdbId ?? mediaItem.creatorTmdbId,
+              keywords,
+            },
+          });
         }
-        mediaItem = await prisma.mediaItem.update({
-          where: { id: mediaItem.id },
-          data: { cast, director, keywords },
-        });
       } else {
         cast = mediaItem.cast;
         director = mediaItem.director;

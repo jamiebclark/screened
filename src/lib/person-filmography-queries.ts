@@ -9,9 +9,11 @@ export interface GetPersonFilmographyResult {
 }
 
 export async function getPersonFilmography(
-  personName: string,
+  person: { name: string; tmdbId: number },
   userId: string,
 ): Promise<GetPersonFilmographyResult> {
+  const { name: personName, tmdbId: personTmdbId } = person;
+
   const items = await prisma.$queryRaw<
     Array<{
       id: string;
@@ -22,10 +24,10 @@ export async function getPersonFilmography(
       releaseDate: Date | null;
       watchStatus: "WATCHLIST" | "WATCHING" | "WATCHED" | "DROPPED" | null;
       userRating: number | null;
-      role: "cast" | "director";
+      role: "cast" | "director" | "creator";
     }>
   >(Prisma.sql`
-    SELECT 
+    SELECT
       mi.id,
       mi."tmdbId",
       mi.type,
@@ -34,18 +36,31 @@ export async function getPersonFilmography(
       mi."releaseDate",
       ums.status as "watchStatus",
       ums.rating as "userRating",
-      CASE 
-        WHEN mi.cast @> ARRAY[${personName}]::text[] THEN 'cast'::text
-        WHEN mi.director = ${personName} THEN 'director'::text
-        ELSE 'cast'::text
+      CASE
+        WHEN mi."creatorTmdbId" = ${personTmdbId}
+          OR (mi."creatorTmdbId" IS NULL AND mi."creatorName" = ${personName})
+          OR (mi.type = 'TV' AND mi."creatorTmdbId" IS NULL AND mi."creatorName" IS NULL AND mi.director = ${personName})
+          THEN 'creator'
+        WHEN mi."directorTmdbId" = ${personTmdbId}
+          OR mi."directorsTmdbIds" @> ARRAY[${personTmdbId}]::int[]
+          OR (mi."directorTmdbId" IS NULL AND cardinality(mi."directorsTmdbIds") = 0 AND mi.director = ${personName})
+          THEN 'director'
+        ELSE 'cast'
       END as role
     FROM "MediaItem" mi
-    LEFT JOIN "UserMediaStatus" ums 
-      ON ums."mediaItemId" = mi.id 
+    LEFT JOIN "UserMediaStatus" ums
+      ON ums."mediaItemId" = mi.id
       AND ums."userId" = ${userId}
-    WHERE mi.cast @> ARRAY[${personName}]::text[]
-       OR mi.director = ${personName}
-    ORDER BY 
+    WHERE
+      mi."castTmdbIds" @> ARRAY[${personTmdbId}]::int[]
+      OR mi."directorTmdbId" = ${personTmdbId}
+      OR mi."directorsTmdbIds" @> ARRAY[${personTmdbId}]::int[]
+      OR mi."creatorTmdbId" = ${personTmdbId}
+      OR (cardinality(mi."castTmdbIds") = 0 AND mi.cast @> ARRAY[${personName}]::text[])
+      OR (mi."directorTmdbId" IS NULL AND cardinality(mi."directorsTmdbIds") = 0 AND mi.director = ${personName})
+      OR (mi."creatorTmdbId" IS NULL AND mi."creatorName" = ${personName})
+      OR (mi.type = 'TV' AND mi."creatorTmdbId" IS NULL AND mi."creatorName" IS NULL AND mi.director = ${personName})
+    ORDER BY
       CASE WHEN mi.type = 'MOVIE' THEN 0 ELSE 1 END,
       mi."releaseDate" DESC NULLS LAST
   `);
@@ -60,7 +75,7 @@ export async function getPersonFilmography(
       releaseDate: i.releaseDate,
       watchStatus: i.watchStatus,
       userRating: i.userRating,
-      role: i.role as "cast" | "director",
+      role: i.role,
     }));
 
   const tvShows = items
@@ -73,7 +88,7 @@ export async function getPersonFilmography(
       releaseDate: i.releaseDate,
       watchStatus: i.watchStatus,
       userRating: i.userRating,
-      role: i.role as "cast" | "director",
+      role: i.role,
     }));
 
   return {

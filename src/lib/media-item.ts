@@ -25,30 +25,55 @@ async function enrichAndEmbed(
       const [credits, kws] = await Promise.all([
         getMovieCredits(tmdbId).catch(() => ({
           cast: [] as string[],
+          castTmdbIds: [] as number[],
           director: null,
+          directorTmdbId: null,
           directors: [] as string[],
+          directorsTmdbIds: [] as number[],
         })),
         getMovieKeywords(tmdbId).catch(() => [] as string[]),
       ]);
       cast = credits.cast;
       director = credits.director;
       keywords = kws;
+      await prisma.mediaItem.update({
+        where: { id: mediaItemId },
+        data: {
+          cast,
+          castTmdbIds: credits.castTmdbIds,
+          director,
+          directorTmdbId: credits.directorTmdbId,
+          directors: credits.directors,
+          directorsTmdbIds: credits.directorsTmdbIds,
+          keywords,
+        },
+      });
     } else {
       const [credits, kws] = await Promise.all([
         getTvCredits(tmdbId).catch(() => ({
           cast: [] as string[],
-          director: null,
+          castTmdbIds: [] as number[],
+          creatorName: null,
+          creatorTmdbId: null,
         })),
         getTvKeywords(tmdbId).catch(() => [] as string[]),
       ]);
       cast = credits.cast;
-      director = credits.director;
       keywords = kws;
+      await prisma.mediaItem.update({
+        where: { id: mediaItemId },
+        data: {
+          cast,
+          castTmdbIds: credits.castTmdbIds,
+          creatorName: credits.creatorName,
+          creatorTmdbId: credits.creatorTmdbId,
+          keywords,
+        },
+      });
     }
 
-    const updated = await prisma.mediaItem.update({
+    const updated = await prisma.mediaItem.findUniqueOrThrow({
       where: { id: mediaItemId },
-      data: { cast, director, keywords },
     });
 
     const text = buildEmbeddingText({
