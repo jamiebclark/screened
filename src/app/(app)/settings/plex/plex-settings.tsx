@@ -44,6 +44,7 @@ export function PlexSettings({
     skipped: number;
     tvShows: number;
     episodes: number;
+    usedRelay: boolean;
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [verifying, setVerifying] = useState(!!pinId);
@@ -126,6 +127,7 @@ export function PlexSettings({
         skipped?: number;
         tvShows?: number;
         episodes?: number;
+        usedRelay?: boolean;
         error?: string;
       };
       if (res.ok) {
@@ -134,6 +136,7 @@ export function PlexSettings({
           skipped: data.skipped ?? 0,
           tvShows: data.tvShows ?? 0,
           episodes: data.episodes ?? 0,
+          usedRelay: data.usedRelay ?? false,
         });
         router.refresh();
       } else {
@@ -168,19 +171,31 @@ export function PlexSettings({
       )}
 
       {syncResult && (
-        <div className="rounded-md bg-green-500/10 border border-green-500/30 px-3 py-2 text-sm text-green-400 space-y-0.5">
-          <p className="font-medium">Sync complete</p>
-          <p>
-            {syncResult.synced} movie{syncResult.synced !== 1 ? "s" : ""}{" "}
-            watched
-            {" · "}
-            {syncResult.episodes} TV episode
-            {syncResult.episodes !== 1 ? "s" : ""} across {syncResult.tvShows}{" "}
-            show{syncResult.tvShows !== 1 ? "s" : ""} imported
-            {syncResult.synced === 0 && syncResult.episodes === 0
-              ? " — nothing new"
-              : ""}
-          </p>
+        <div className="space-y-2">
+          <div className="rounded-md bg-green-500/10 border border-green-500/30 px-3 py-2 text-sm text-green-400 space-y-0.5">
+            <p className="font-medium">Sync complete</p>
+            <p>
+              {syncResult.synced} movie{syncResult.synced !== 1 ? "s" : ""}{" "}
+              watched
+              {" · "}
+              {syncResult.episodes} TV episode
+              {syncResult.episodes !== 1 ? "s" : ""} across {syncResult.tvShows}{" "}
+              show{syncResult.tvShows !== 1 ? "s" : ""} imported
+              {syncResult.synced === 0 && syncResult.episodes === 0
+                ? " — nothing new"
+                : ""}
+            </p>
+          </div>
+          {syncResult.usedRelay && (
+            <div className="rounded-md bg-yellow-500/10 border border-yellow-500/30 px-3 py-2 text-sm text-yellow-400">
+              <p className="font-medium">Direct connection unavailable</p>
+              <p className="mt-0.5">
+                Your Plex server could not be reached directly — sync completed
+                via Plex relay instead. Check that remote access is enabled in
+                Plex and that port 32400 is open on your router.
+              </p>
+            </div>
+          )}
         </div>
       )}
 
