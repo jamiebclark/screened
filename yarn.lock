@@ -8027,10 +8027,10 @@ sigstore@^4.0.0:
     "@sigstore/tuf" "^4.0.1"
     "@sigstore/verify" "^3.1.0"
 
-simple-icons@^16.18.0:
-  version "16.18.0"
-  resolved "https://registry.yarnpkg.com/simple-icons/-/simple-icons-16.18.0.tgz#c4ef34683dbd11004f5e7abc35da0ae0728673a1"
-  integrity sha512-5KbjcP456Gm1lrk+rhDuX4zFri+3lRX39IjzXAvoMAO8Ne76WlVlM+Z3kA6jdZ7+QHadgXsf++R7g2jaYVbYig==
+simple-icons@^16.18.1:
+  version "16.18.1"
+  resolved "https://registry.yarnpkg.com/simple-icons/-/simple-icons-16.18.1.tgz#65f5ffdb1e9fe62fd1c7e9c80dac3036696e2b17"
+  integrity sha512-+AS16pmdVHFdKrzYuTGfNGW6RRJ7eubpRhh2wipqPD5nglXKKIbAoEFhdxuweR1AV63+TuLXVJ+NEqlJpXXa2A==
 
 skin-tone@^2.0.0:
   version "2.0.0"
