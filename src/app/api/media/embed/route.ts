@@ -22,8 +22,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = (await req.json()) as { tmdbId?: number; type?: string };
-  const { tmdbId, type } = body;
+  const body = (await req.json()) as {
+    tmdbId?: number;
+    type?: string;
+    force?: boolean;
+  };
+  const { tmdbId, type, force } = body;
 
   if (!tmdbId || !type || !["movie", "tv"].includes(type)) {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
@@ -109,6 +113,7 @@ export async function POST(req: NextRequest) {
         runtime = show.episode_run_time[0] ?? null;
         cast = credits.cast;
         keywords = kws;
+        const creator = show.created_by?.[0] ?? null;
         mediaItem = await prisma.mediaItem.create({
           data: {
             tmdbId,
@@ -122,15 +127,15 @@ export async function POST(req: NextRequest) {
             runtime,
             cast,
             castTmdbIds: credits.castTmdbIds,
-            creatorName: credits.creatorName,
-            creatorTmdbId: credits.creatorTmdbId,
+            creatorName: creator?.name ?? credits.creatorName,
+            creatorTmdbId: creator?.id ?? credits.creatorTmdbId,
             keywords,
           },
         });
       }
     } else {
       // Fill in missing enrichment
-      if (!mediaItem.cast.length || !mediaItem.keywords.length) {
+      if (!mediaItem.cast.length || !mediaItem.keywords.length || force) {
         if (type === "movie") {
           const [credits, kws] = await Promise.all([
             getMovieCredits(tmdbId).catch(() => ({
@@ -166,7 +171,8 @@ export async function POST(req: NextRequest) {
             },
           });
         } else {
-          const [credits, kws] = await Promise.all([
+          const [show, credits, kws] = await Promise.all([
+            getTvShow(tmdbId).catch(() => null),
             getTvCredits(tmdbId).catch(() => ({
               cast: [] as string[],
               castTmdbIds: [] as number[],
@@ -175,6 +181,7 @@ export async function POST(req: NextRequest) {
             })),
             getTvKeywords(tmdbId).catch(() => [] as string[]),
           ]);
+          const creator = show?.created_by?.[0] ?? null;
           cast = credits.cast.length ? credits.cast : mediaItem.cast;
           keywords = kws.length ? kws : mediaItem.keywords;
           mediaItem = await prisma.mediaItem.update({
@@ -184,8 +191,10 @@ export async function POST(req: NextRequest) {
               castTmdbIds: credits.castTmdbIds.length
                 ? credits.castTmdbIds
                 : mediaItem.castTmdbIds,
-              creatorName: credits.creatorName ?? mediaItem.creatorName,
-              creatorTmdbId: credits.creatorTmdbId ?? mediaItem.creatorTmdbId,
+              creatorName:
+                creator?.name ?? credits.creatorName ?? mediaItem.creatorName,
+              creatorTmdbId:
+                creator?.id ?? credits.creatorTmdbId ?? mediaItem.creatorTmdbId,
               keywords,
             },
           });
@@ -231,7 +240,11 @@ export async function POST(req: NextRequest) {
       year: mediaItem.year,
       genres: mediaItem.genres,
       cast: mediaItem.cast,
+      castTmdbIds: mediaItem.castTmdbIds,
       director: mediaItem.director,
+      directors: mediaItem.directors,
+      creatorName: mediaItem.creatorName,
+      creatorTmdbId: mediaItem.creatorTmdbId,
       keywords: mediaItem.keywords,
       hasEmbedding,
     });

@@ -66,6 +66,7 @@ export interface TmdbTvShow {
   number_of_episodes: number;
   vote_average: number;
   seasons: TmdbSeason[];
+  created_by?: { id: number; name: string; profile_path: string | null }[];
   external_ids?: {
     imdb_id?: string | null;
   };
