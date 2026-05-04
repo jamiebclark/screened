@@ -90,7 +90,7 @@
     "@types/react-dom": "^19",
     "@vitest/coverage-v8": "4.1.5",
     "conventional-changelog-conventionalcommits": "^9.3.1",
-    "eslint": "^9",
+    "eslint": "^10",
     "eslint-config-next": "16.2.4",
     "husky": "^9.1.7",
     "lint-staged": "^16.4.0",
