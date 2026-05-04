@@ -66,6 +66,7 @@ export default async function TvPage({ params, searchParams }: Params) {
         select: {
           cast: true,
           castTmdbIds: true,
+          director: true,
           creatorName: true,
           creatorTmdbId: true,
         },
@@ -250,24 +251,27 @@ export default async function TvPage({ params, searchParams }: Params) {
           </div>
         </div>
 
-        {mediaItem && (mediaItem.cast.length > 0 || mediaItem.creatorName) && (
-          <Suspense
-            fallback={
-              <div className="mt-8 text-sm text-muted-foreground">
-                Loading cast & crew…
-              </div>
-            }
-          >
-            <PersonCastCrewSection
-              cast={mediaItem.cast}
-              castTmdbIds={mediaItem.castTmdbIds}
-              directors={[]}
-              directorsTmdbIds={[]}
-              creatorName={mediaItem.creatorName}
-              creatorTmdbId={mediaItem.creatorTmdbId}
-            />
-          </Suspense>
-        )}
+        {mediaItem &&
+          (mediaItem.cast.length > 0 ||
+            mediaItem.creatorName ||
+            mediaItem.director) && (
+            <Suspense
+              fallback={
+                <div className="mt-8 text-sm text-muted-foreground">
+                  Loading cast & crew…
+                </div>
+              }
+            >
+              <PersonCastCrewSection
+                cast={mediaItem.cast}
+                castTmdbIds={mediaItem.castTmdbIds}
+                directors={[]}
+                directorsTmdbIds={[]}
+                creatorName={mediaItem.creatorName ?? mediaItem.director}
+                creatorTmdbId={mediaItem.creatorTmdbId}
+              />
+            </Suspense>
+          )}
 
         <div className="mt-8">
           <Tabs defaultValue="episodes">

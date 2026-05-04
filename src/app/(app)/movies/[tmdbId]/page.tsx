@@ -82,6 +82,7 @@ export default async function MoviePage({ params, searchParams }: Params) {
           select: {
             cast: true,
             castTmdbIds: true,
+            director: true,
             directors: true,
             directorsTmdbIds: true,
           },
@@ -273,7 +274,9 @@ export default async function MoviePage({ params, searchParams }: Params) {
             )}
 
             {mediaItem &&
-              (mediaItem.cast.length > 0 || mediaItem.directors.length > 0) && (
+              (mediaItem.cast.length > 0 ||
+                mediaItem.directors.length > 0 ||
+                mediaItem.director) && (
                 <Suspense
                   fallback={
                     <div className="mt-8 text-sm text-muted-foreground">
@@ -284,7 +287,13 @@ export default async function MoviePage({ params, searchParams }: Params) {
                   <PersonCastCrewSection
                     cast={mediaItem.cast}
                     castTmdbIds={mediaItem.castTmdbIds}
-                    directors={mediaItem.directors}
+                    directors={
+                      mediaItem.directors.length > 0
+                        ? mediaItem.directors
+                        : mediaItem.director
+                          ? [mediaItem.director]
+                          : []
+                    }
                     directorsTmdbIds={mediaItem.directorsTmdbIds}
                     creatorName={null}
                     creatorTmdbId={null}
