@@ -29,6 +29,8 @@ export interface PlexServer {
   machineIdentifier: string;
   accessToken: string;
   uri: string;
+  /** Plex relay URI to fall back to if the direct connection is unreachable. */
+  relayUri?: string;
   scheme: string;
   address: string;
   port: string;
@@ -145,10 +147,9 @@ export async function getPlexServers(token: string): Promise<PlexServer[]> {
       // server-side syncs work from cloud/Docker. Local IPs are only reachable
       // on the same LAN and would always fail with "fetch failed" from a remote
       // server. Fall back to relay if no direct remote connection exists.
-      const conn =
-        connections.find((c) => !c.local && !c.relay) ??
-        connections.find((c) => !c.local) ??
-        connections[0];
+      const directConn = connections.find((c) => !c.local && !c.relay);
+      const relayConn = connections.find((c) => !c.local && c.relay);
+      const conn = directConn ?? relayConn ?? connections[0];
 
       return {
         name: r.name,
@@ -159,6 +160,8 @@ export async function getPlexServers(token: string): Promise<PlexServer[]> {
         uri:
           conn?.uri ??
           `${conn?.protocol ?? "https"}://${conn?.address}:${conn?.port ?? 32400}`,
+        // Only expose relay as fallback when the primary is a direct connection
+        relayUri: directConn && relayConn ? relayConn.uri : undefined,
         scheme: conn?.protocol ?? "https",
         address: conn?.address ?? "",
         port: String(conn?.port ?? 32400),

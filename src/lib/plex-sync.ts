@@ -21,6 +21,8 @@ export interface PlexSyncResult {
   tvShows: number;
   episodes: number;
   episodesSkipped: number;
+  /** True when the sync fell back to Plex's relay because the direct connection was unreachable. */
+  usedRelay: boolean;
 }
 
 export async function syncPlexUser(userId: string): Promise<PlexSyncResult> {
@@ -41,7 +43,8 @@ export async function syncPlexUser(userId: string): Promise<PlexSyncResult> {
     throw new Error("No Plex server found");
   }
 
-  const serverUrl = server.uri;
+  let serverUrl = server.uri;
+  let usedRelay = false;
   const serverToken = server.accessToken ?? connection.plexToken;
 
   // --- Movie sync ---
@@ -49,7 +52,15 @@ export async function syncPlexUser(userId: string): Promise<PlexSyncResult> {
     serverUrl,
     serverToken,
     "movie",
-  );
+  ).catch(async (err: unknown) => {
+    if (!server.relayUri) throw err;
+    console.warn(
+      `[plex] direct connection failed, retrying via relay (${server.relayUri})`,
+    );
+    serverUrl = server.relayUri;
+    usedRelay = true;
+    return getPlexWatchHistory(serverUrl, serverToken, "movie");
+  });
 
   let synced = 0;
   let skipped = 0;
@@ -268,5 +279,5 @@ export async function syncPlexUser(userId: string): Promise<PlexSyncResult> {
     data: { lastSyncedAt: new Date() },
   });
 
-  return { synced, skipped, tvShows, episodes, episodesSkipped };
+  return { synced, skipped, tvShows, episodes, episodesSkipped, usedRelay };
 }
