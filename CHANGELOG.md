@@ -1,3 +1,12 @@
+## [1.35.0](https://github.com/jamiebclark/screened/compare/v1.34.0...v1.35.0) (2026-05-04)
+
+### Features
+
+* **enrichment:** store person TMDB IDs on MediaItem during sync ([bb50f00](https://github.com/jamiebclark/screened/commit/bb50f0005b03400cf8c73054aaca0737a91f92a9))
+* **person:** add acting credits section; auth person resolve route ([9fa40e0](https://github.com/jamiebclark/screened/commit/9fa40e040df31b11b9fe7e69ca1f839dd784a700))
+* **schema:** add person TMDB ID fields to MediaItem ([be5e5a7](https://github.com/jamiebclark/screened/commit/be5e5a73eb5f9f23dba6706c5d85430ebbddaa78))
+* **tmdb:** return TMDB person IDs from credits; add person helpers ([c000805](https://github.com/jamiebclark/screened/commit/c000805ef4b302ef44af29983e0212b71ad7c827))
+
 ## [1.34.0](https://github.com/jamiebclark/screened/compare/v1.33.0...v1.34.0) (2026-05-03)
 
 ### Features
