@@ -2,7 +2,9 @@ import { auth } from "@/lib/auth";
 import {
   getPerson,
   getPersonDirectedCredits,
+  getPersonActingCredits,
   type PersonDirectedCredit,
+  type PersonActingCredit,
   tmdbImage,
 } from "@/lib/tmdb";
 import { getPersonFilmography } from "@/lib/person-filmography-queries";
@@ -35,9 +37,10 @@ export default async function PersonPage({ params }: Params) {
   const person = await getPerson(tmdbId).catch(() => null);
   if (!person) notFound();
 
-  const [filmography, directedCredits] = await Promise.all([
-    getPersonFilmography(person.name, session.user.id),
+  const [filmography, directedCredits, actingCredits] = await Promise.all([
+    getPersonFilmography({ name: person.name, tmdbId }, session.user.id),
     getPersonDirectedCredits(tmdbId).catch((): PersonDirectedCredit[] => []),
+    getPersonActingCredits(tmdbId).catch((): PersonActingCredit[] => []),
   ]);
 
   const directedMovies = directedCredits.filter((c) => c.mediaType === "movie");
@@ -142,6 +145,36 @@ export default async function PersonPage({ params }: Params) {
               </section>
             )}
           </>
+        )}
+
+        {actingCredits.length > 0 && (
+          <section className="mt-12 border-t border-border pt-10">
+            <h3 className="text-base font-semibold mb-1">
+              All acting credits{" "}
+              <span className="text-sm font-normal text-muted-foreground">
+                {actingCredits.length}
+              </span>
+            </h3>
+            <p className="text-sm text-muted-foreground mb-6">
+              Top credits from TMDB by popularity. Open a title to add it to
+              your watchlist or log a watch.
+            </p>
+            <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-10 gap-3">
+              {actingCredits.map((c) => (
+                <MediaCard
+                  key={`tmdb-act-${c.mediaType}-${c.tmdbId}`}
+                  tmdbId={c.tmdbId}
+                  type={c.mediaType}
+                  title={c.title}
+                  poster={c.poster}
+                  year={
+                    c.releaseDate ? new Date(c.releaseDate).getFullYear() : null
+                  }
+                  compact
+                />
+              ))}
+            </div>
+          </section>
         )}
 
         {directedCredits.length > 0 && (
