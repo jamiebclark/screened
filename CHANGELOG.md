@@ -1,3 +1,10 @@
+## [1.36.0](https://github.com/jamiebclark/screened/compare/v1.35.2...v1.36.0) (2026-05-04)
+
+### Features
+
+* **plex:** fall back to relay when direct connection fails ([d35319c](https://github.com/jamiebclark/screened/commit/d35319cb3f9509c75309bd786375cd6ae91cb940))
+* **plex:** show relay warning in settings when sync used relay ([939277d](https://github.com/jamiebclark/screened/commit/939277d7722f92762d2c14650af89ed8bb87b81a))
+
 ## [1.35.2](https://github.com/jamiebclark/screened/compare/v1.35.1...v1.35.2) (2026-05-04)
 
 ### Bug Fixes
