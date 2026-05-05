@@ -102,7 +102,12 @@ export function Nav({ user, initialUnreadNotifications, isAdmin }: NavProps) {
           <NotificationMenu initialUnreadCount={initialUnreadNotifications} />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-full">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="rounded-full"
+                aria-label="Open user menu"
+              >
                 <Avatar className="h-8 w-8">
                   <AvatarImage
                     src={user.image ?? undefined}
