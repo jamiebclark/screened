@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { isTraktConfigured } from "@/lib/trakt";
 import { discordFeatures } from "@/lib/discord";
 import { OnboardingClient } from "./onboarding-client";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const metadata: Metadata = { title: "Get started" };
 
@@ -64,7 +65,15 @@ export default async function OnboardingPage() {
         </p>
       </div>
 
-      <Suspense fallback={null}>
+      <Suspense
+        fallback={
+          <div className="space-y-3 mt-6">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-16 w-full rounded-xl" />
+            ))}
+          </div>
+        }
+      >
         <OnboardingClient
           plexConnection={plex}
           letterboxdConnection={letterboxd}
