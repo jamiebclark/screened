@@ -1,3 +1,9 @@
+## [1.38.0](https://github.com/jamiebclark/screened/compare/v1.37.0...v1.38.0) (2026-05-05)
+
+### Features
+
+* **watchlist:** add sort/filter controls with URL persistence ([d7711a9](https://github.com/jamiebclark/screened/commit/d7711a94b9e1f1ac15419b40013f00699ac428d7))
+
 ## [1.37.0](https://github.com/jamiebclark/screened/compare/v1.36.0...v1.37.0) (2026-05-05)
 
 ### Features
