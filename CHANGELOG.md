@@ -1,3 +1,22 @@
+## [1.37.0](https://github.com/jamiebclark/screened/compare/v1.36.0...v1.37.0) (2026-05-05)
+
+### Features
+
+* **enrichment:** add enrichmentVersion to MediaItem ([1c85f79](https://github.com/jamiebclark/screened/commit/1c85f793921b688b171b5955242e772a74784bbd))
+* **enrichment:** lazy re-enrichment via version gate ([507f9ae](https://github.com/jamiebclark/screened/commit/507f9aec9841b150bf0d9fea94c0779d27c93093))
+* **loading:** add loading skeletons to 7 high-traffic routes ([09c8767](https://github.com/jamiebclark/screened/commit/09c876700fa837773597c69d60e0db90fc73dcf1))
+
+### Bug Fixes
+
+* **a11y:** add aria-label to user menu button in nav ([f9de695](https://github.com/jamiebclark/screened/commit/f9de69502ce4698f5546987618c86668a01d43fb))
+* **stats:** use directors array in top directors query ([593cea5](https://github.com/jamiebclark/screened/commit/593cea56a44cc23f0c2dc907425d5500cfefb703))
+* **ux:** replace Suspense fallback=null with skeleton placeholders ([428f34b](https://github.com/jamiebclark/screened/commit/428f34b998b9265760820470744bdadc462ccd30))
+
+### Performance Improvements
+
+* **home:** collapse 4-step query waterfall into 2 parallel steps ([b0ed762](https://github.com/jamiebclark/screened/commit/b0ed7628edf7618ef65b1de574334c1b44122b06))
+* **media-card:** add priority prop and fix dead compact conditional ([6a8340e](https://github.com/jamiebclark/screened/commit/6a8340e260455693d678cfd0e838a076664f73cc))
+
 ## [1.36.0](https://github.com/jamiebclark/screened/compare/v1.35.2...v1.36.0) (2026-05-04)
 
 ### Features
