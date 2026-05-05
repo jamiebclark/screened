@@ -11,7 +11,7 @@ import {
 import { buildEmbeddingText, generateEmbedding } from "@/lib/embeddings";
 import { MediaType } from "@/generated/prisma";
 
-export const CURRENT_ENRICHMENT_VERSION = 1;
+export const CURRENT_ENRICHMENT_VERSION = 2;
 
 async function enrichAndEmbed(
   mediaItemId: string,
@@ -74,9 +74,30 @@ async function enrichAndEmbed(
       });
     }
 
-    const updated = await prisma.mediaItem.findUniqueOrThrow({
+    let updated = await prisma.mediaItem.findUniqueOrThrow({
       where: { id: mediaItemId },
     });
+
+    if (updated.releaseDate === null) {
+      try {
+        const releaseDate =
+          type === "movie"
+            ? await getMovie(tmdbId).then((m) =>
+                m.release_date ? new Date(m.release_date) : null,
+              )
+            : await getTvShow(tmdbId).then((s) =>
+                s.first_air_date ? new Date(s.first_air_date) : null,
+              );
+        if (releaseDate) {
+          updated = await prisma.mediaItem.update({
+            where: { id: mediaItemId },
+            data: { releaseDate },
+          });
+        }
+      } catch {
+        // non-fatal: releaseDate backfill failure doesn't block enrichment
+      }
+    }
 
     const text = buildEmbeddingText({
       title: updated.title,
