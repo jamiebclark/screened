@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronDown, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -31,6 +32,7 @@ export type WatchlistItem = {
     poster: string | null;
     year: number | null;
     genres: string[];
+    runtime: number | null;
   };
 };
 
@@ -42,7 +44,23 @@ const SORT_LABELS: Record<string, string> = {
   year_desc: "Year (newest)",
   year_asc: "Year (oldest)",
   rating_desc: "Rating",
+  runtime_asc: "Runtime (shortest)",
+  runtime_desc: "Runtime (longest)",
 };
+
+const RUNTIME_OPTIONS = [
+  { label: "Up to 1 hr", value: 60 },
+  { label: "Up to 90 min", value: 90 },
+  { label: "Up to 2 hrs", value: 120 },
+  { label: "Up to 2.5 hrs", value: 150 },
+  { label: "Up to 3 hrs", value: 180 },
+];
+
+function parseIntParam(value: string | null): number | null {
+  if (!value) return null;
+  const n = parseInt(value, 10);
+  return isNaN(n) ? null : n;
+}
 
 export function WatchlistClient({
   items,
@@ -56,8 +74,17 @@ export function WatchlistClient({
   const router = useRouter();
   const searchParams = useSearchParams();
   const [, startTransition] = useTransition();
-  const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
-  const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
+
+  // Derive filter state from URL (single source of truth)
+  const typeFilter = (searchParams.get("type") as TypeFilter) ?? "all";
+  const genresParam = searchParams.get("genres");
+  const selectedGenres = useMemo(
+    () => genresParam?.split(",").filter(Boolean) ?? [],
+    [genresParam],
+  );
+  const maxRuntime = parseIntParam(searchParams.get("maxRuntime"));
+  const yearFrom = parseIntParam(searchParams.get("yearFrom"));
+  const yearTo = parseIntParam(searchParams.get("yearTo"));
 
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
@@ -69,34 +96,82 @@ export function WatchlistClient({
         !selectedGenres.some((g) => item.mediaItem.genres.includes(g))
       )
         return false;
+      if (
+        maxRuntime !== null &&
+        (item.mediaItem.runtime === null || item.mediaItem.runtime > maxRuntime)
+      )
+        return false;
+      if (
+        yearFrom !== null &&
+        (item.mediaItem.year === null || item.mediaItem.year < yearFrom)
+      )
+        return false;
+      if (
+        yearTo !== null &&
+        (item.mediaItem.year === null || item.mediaItem.year > yearTo)
+      )
+        return false;
       return true;
     });
-  }, [items, typeFilter, selectedGenres]);
+  }, [items, typeFilter, selectedGenres, maxRuntime, yearFrom, yearTo]);
 
-  const hasActiveFilters = typeFilter !== "all" || selectedGenres.length > 0;
+  const hasActiveFilters =
+    typeFilter !== "all" ||
+    selectedGenres.length > 0 ||
+    maxRuntime !== null ||
+    yearFrom !== null ||
+    yearTo !== null;
   const isFiltered = filteredItems.length !== items.length;
 
-  function handleSortChange(value: string) {
+  function pushParams(updates: Record<string, string | null>) {
     const params = new URLSearchParams(searchParams.toString());
-    if (value === "added_desc") {
-      params.delete("sort");
-    } else {
-      params.set("sort", value);
+    for (const [key, value] of Object.entries(updates)) {
+      if (value === null || value === "") {
+        params.delete(key);
+      } else {
+        params.set(key, value);
+      }
     }
     startTransition(() => {
       router.push(`?${params.toString()}`);
     });
   }
 
-  function toggleGenre(genre: string, checked: boolean) {
-    setSelectedGenres((prev) =>
-      checked ? [...prev, genre] : prev.filter((g) => g !== genre),
-    );
+  function handleSortChange(value: string) {
+    pushParams({ sort: value === "added_desc" ? null : value });
+  }
+
+  function handleTypeChange(value: TypeFilter) {
+    pushParams({ type: value === "all" ? null : value });
+  }
+
+  function handleGenreToggle(genre: string, checked: boolean) {
+    const next = checked
+      ? [...selectedGenres, genre]
+      : selectedGenres.filter((g) => g !== genre);
+    pushParams({ genres: next.length > 0 ? next.join(",") : null });
+  }
+
+  function handleRuntimeChange(value: string) {
+    pushParams({ maxRuntime: value === "any" ? null : value });
+  }
+
+  function handleYearFromBlur(e: React.FocusEvent<HTMLInputElement>) {
+    pushParams({ yearFrom: e.target.value || null });
+  }
+
+  function handleYearToBlur(e: React.FocusEvent<HTMLInputElement>) {
+    pushParams({ yearTo: e.target.value || null });
   }
 
   function clearFilters() {
-    setTypeFilter("all");
-    setSelectedGenres([]);
+    pushParams({
+      type: null,
+      genres: null,
+      maxRuntime: null,
+      yearFrom: null,
+      yearTo: null,
+    });
   }
 
   if (items.length === 0) {
@@ -124,7 +199,7 @@ export function WatchlistClient({
           {(["all", "movie", "tv"] as const).map((t) => (
             <button
               key={t}
-              onClick={() => setTypeFilter(t)}
+              onClick={() => handleTypeChange(t)}
               className={cn(
                 "px-3 py-1.5 font-medium transition-colors",
                 typeFilter === t
@@ -155,7 +230,9 @@ export function WatchlistClient({
                 <DropdownMenuCheckboxItem
                   key={genre}
                   checked={selectedGenres.includes(genre)}
-                  onCheckedChange={(checked) => toggleGenre(genre, checked)}
+                  onCheckedChange={(checked) =>
+                    handleGenreToggle(genre, checked)
+                  }
                 >
                   {genre}
                 </DropdownMenuCheckboxItem>
@@ -163,6 +240,45 @@ export function WatchlistClient({
             </DropdownMenuContent>
           </DropdownMenu>
         )}
+
+        <Select
+          value={maxRuntime !== null ? String(maxRuntime) : "any"}
+          onValueChange={handleRuntimeChange}
+        >
+          <SelectTrigger className="h-8 w-36 text-sm">
+            <SelectValue placeholder="Any length" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="any">Any length</SelectItem>
+            {RUNTIME_OPTIONS.map(({ label, value }) => (
+              <SelectItem key={value} value={String(value)}>
+                {label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {/* key resets uncontrolled inputs when URL params are cleared */}
+        <div
+          key={`years-${yearFrom ?? ""}-${yearTo ?? ""}`}
+          className="flex items-center gap-1"
+        >
+          <Input
+            type="number"
+            placeholder="Year from"
+            className="h-8 w-24 text-sm"
+            defaultValue={yearFrom ?? ""}
+            onBlur={handleYearFromBlur}
+          />
+          <span className="text-sm text-muted-foreground">–</span>
+          <Input
+            type="number"
+            placeholder="To"
+            className="h-8 w-20 text-sm"
+            defaultValue={yearTo ?? ""}
+            onBlur={handleYearToBlur}
+          />
+        </div>
 
         {hasActiveFilters && (
           <Button
@@ -185,9 +301,15 @@ export function WatchlistClient({
 
       {/* Grid */}
       {filteredItems.length === 0 ? (
-        <p className="text-sm text-muted-foreground py-12 text-center">
-          No titles match the current filters.
-        </p>
+        <div className="py-12 text-center">
+          <p className="text-sm text-muted-foreground mb-3">
+            No titles match the current filters.
+          </p>
+          <Button variant="outline" size="sm" onClick={clearFilters}>
+            <X className="h-3.5 w-3.5 mr-1" />
+            Clear filters
+          </Button>
+        </div>
       ) : (
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-3">
           {filteredItems.map((item) => {

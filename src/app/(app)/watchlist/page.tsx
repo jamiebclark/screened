@@ -18,6 +18,12 @@ const SORT_ORDERS = {
   year_desc: { mediaItem: { year: "desc" as const } },
   year_asc: { mediaItem: { year: "asc" as const } },
   rating_desc: { rating: { sort: "desc" as const, nulls: "last" as const } },
+  runtime_asc: {
+    mediaItem: { runtime: { sort: "asc" as const, nulls: "last" as const } },
+  },
+  runtime_desc: {
+    mediaItem: { runtime: { sort: "desc" as const, nulls: "last" as const } },
+  },
 } satisfies Record<string, object>;
 
 type SortKey = keyof typeof SORT_ORDERS;
@@ -77,6 +83,7 @@ export default async function WatchlistPage({ searchParams }: PageProps) {
             poster: true,
             year: true,
             genres: true,
+            runtime: true,
           },
         },
       },
@@ -131,6 +138,7 @@ export default async function WatchlistPage({ searchParams }: PageProps) {
       poster: r.mediaItem.poster,
       year: r.mediaItem.year,
       genres: r.mediaItem.genres,
+      runtime: r.mediaItem.runtime,
     },
   }));
 
