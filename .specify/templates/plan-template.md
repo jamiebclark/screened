@@ -31,7 +31,13 @@
 
 _GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
-[Gates determined based on constitution file]
+Verify against the [Screened Constitution](.specify/memory/constitution.md) (v1.0.0):
+
+- [ ] **I. Server Components First** — data rendering uses RSC; mutations go through Route Handlers + `router.refresh()`
+- [ ] **II. Security by Default** — all new routes call `await auth()`, validate inputs, return correct status codes, no secrets in client env vars
+- [ ] **III. Migrations Only** — any schema changes use `yarn db:migrate`, not `db push`; schema + migration committed together
+- [ ] **IV. Conventional Commits** — commit plan is small, ordered (infrastructure before app code), follows Conventional Commits
+- [ ] **V. Test at the Right Level** — Vitest for pure lib logic, Playwright for critical user journeys; `yarn ci:check` planned
 
 ## Project Structure
 
