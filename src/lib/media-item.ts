@@ -11,6 +11,8 @@ import {
 import { buildEmbeddingText, generateEmbedding } from "@/lib/embeddings";
 import { MediaType } from "@/generated/prisma";
 
+export const CURRENT_ENRICHMENT_VERSION = 1;
+
 async function enrichAndEmbed(
   mediaItemId: string,
   tmdbId: number,
@@ -87,15 +89,20 @@ async function enrichAndEmbed(
     });
 
     const embedding = await generateEmbedding(text);
-    if (embedding) {
-      await prisma.mediaItem.update({
-        where: { id: mediaItemId },
-        data: { embedding },
-      });
-    }
+    await prisma.mediaItem.update({
+      where: { id: mediaItemId },
+      data: {
+        ...(embedding ? { embedding } : {}),
+        enrichmentVersion: CURRENT_ENRICHMENT_VERSION,
+      },
+    });
   } catch (err) {
     console.error("[enrichAndEmbed] failed for", mediaItemId, err);
   }
+}
+
+function isUnderEnriched(item: { enrichmentVersion: number }): boolean {
+  return item.enrichmentVersion < CURRENT_ENRICHMENT_VERSION;
 }
 
 export async function getOrCreateMediaItem(
@@ -110,7 +117,12 @@ export async function getOrCreateMediaItem(
       },
     },
   });
-  if (existing) return existing;
+  if (existing) {
+    if (isUnderEnriched(existing)) {
+      after(() => enrichAndEmbed(existing.id, tmdbId, type));
+    }
+    return existing;
+  }
 
   if (type === "movie") {
     const movie = await getMovie(tmdbId);
