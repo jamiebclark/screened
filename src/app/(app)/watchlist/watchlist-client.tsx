@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronDown, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -86,6 +86,14 @@ export function WatchlistClient({
   const yearFrom = parseIntParam(searchParams.get("yearFrom"));
   const yearTo = parseIntParam(searchParams.get("yearTo"));
 
+  // Local controlled state for year inputs — push to URL on complete (4-digit) or cleared
+  const [yearFromInput, setYearFromInput] = useState(
+    yearFrom !== null ? String(yearFrom) : "",
+  );
+  const [yearToInput, setYearToInput] = useState(
+    yearTo !== null ? String(yearTo) : "",
+  );
+
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
       if (typeFilter === "movie" && item.mediaItem.type !== "MOVIE")
@@ -156,15 +164,21 @@ export function WatchlistClient({
     pushParams({ maxRuntime: value === "any" ? null : value });
   }
 
-  function handleYearFromBlur(e: React.FocusEvent<HTMLInputElement>) {
-    pushParams({ yearFrom: e.target.value || null });
+  function handleYearFromChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const val = e.target.value.replace(/\D/g, "").slice(0, 4);
+    setYearFromInput(val);
+    if (val === "" || val.length === 4) pushParams({ yearFrom: val || null });
   }
 
-  function handleYearToBlur(e: React.FocusEvent<HTMLInputElement>) {
-    pushParams({ yearTo: e.target.value || null });
+  function handleYearToChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const val = e.target.value.replace(/\D/g, "").slice(0, 4);
+    setYearToInput(val);
+    if (val === "" || val.length === 4) pushParams({ yearTo: val || null });
   }
 
   function clearFilters() {
+    setYearFromInput("");
+    setYearToInput("");
     pushParams({
       type: null,
       genres: null,
@@ -258,25 +272,38 @@ export function WatchlistClient({
           </SelectContent>
         </Select>
 
-        {/* key resets uncontrolled inputs when URL params are cleared */}
         <div
-          key={`years-${yearFrom ?? ""}-${yearTo ?? ""}`}
-          className="flex items-center gap-1"
+          role="group"
+          aria-label="Release year range"
+          className="flex h-8 w-fit items-center gap-1 rounded-md border border-input bg-background px-2 text-sm shadow-sm transition-colors focus-within:ring-1 focus-within:ring-ring"
         >
           <Input
-            type="number"
-            placeholder="Year from"
-            className="h-8 w-24 text-sm"
-            defaultValue={yearFrom ?? ""}
-            onBlur={handleYearFromBlur}
+            type="text"
+            inputMode="numeric"
+            autoComplete="off"
+            maxLength={4}
+            placeholder="?"
+            aria-label="From year"
+            value={yearFromInput}
+            onChange={handleYearFromChange}
+            className="h-8 w-12 border-0 bg-transparent px-1 text-center text-sm tabular-nums shadow-none focus-visible:ring-0"
           />
-          <span className="text-sm text-muted-foreground">–</span>
+          <span
+            className="shrink-0 select-none text-muted-foreground"
+            aria-hidden
+          >
+            –
+          </span>
           <Input
-            type="number"
-            placeholder="To"
-            className="h-8 w-20 text-sm"
-            defaultValue={yearTo ?? ""}
-            onBlur={handleYearToBlur}
+            type="text"
+            inputMode="numeric"
+            autoComplete="off"
+            maxLength={4}
+            placeholder="?"
+            aria-label="To year"
+            value={yearToInput}
+            onChange={handleYearToChange}
+            className="h-8 w-12 border-0 bg-transparent px-1 text-center text-sm tabular-nums shadow-none focus-visible:ring-0"
           />
         </div>
 
