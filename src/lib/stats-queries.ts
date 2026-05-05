@@ -125,13 +125,19 @@ export async function getUserStats(userId: string): Promise<UserStats> {
     `),
 
     prisma.$queryRaw<RawDirector[]>(Prisma.sql`
-      SELECT mi.director, COUNT(DISTINCT we."mediaItemId")::int AS count
+      SELECT d.director, COUNT(DISTINCT we."mediaItemId")::int AS count
       FROM "WatchEntry" we
       JOIN "MediaItem" mi ON we."mediaItemId" = mi.id
+      CROSS JOIN LATERAL unnest(
+        CASE
+          WHEN array_length(mi.directors, 1) > 0 THEN mi.directors
+          WHEN mi.director IS NOT NULL AND mi.director != '' THEN ARRAY[mi.director]
+          ELSE ARRAY[]::text[]
+        END
+      ) AS d(director)
       WHERE we."userId" = ${userId}
-        AND mi.director IS NOT NULL
-        AND mi.director != ''
-      GROUP BY mi.director
+        AND d.director != ''
+      GROUP BY d.director
       ORDER BY count DESC
       LIMIT 10
     `),

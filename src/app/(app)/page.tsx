@@ -25,53 +25,32 @@ export default async function HomePage() {
     }),
   ]);
 
-  const recentMediaRows =
-    recentMediaIdsOrdered.length > 0
-      ? await prisma.mediaItem.findMany({
-          where: { id: { in: recentMediaIdsOrdered } },
-        })
-      : [];
-  const mediaById = new Map(recentMediaRows.map((m) => [m.id, m]));
-  const recentByLastWatch = recentMediaIdsOrdered
-    .map((id) => {
-      const m = mediaById.get(id);
-      return m ? { mediaItem: m, mediaItemId: m.id } : null;
-    })
-    .filter(Boolean) as {
-    mediaItem: (typeof recentMediaRows)[0];
-    mediaItemId: string;
-  }[];
-
-  const recentMediaIds = recentByLastWatch.map((e) => e.mediaItemId);
-  const statusRows =
-    recentMediaIds.length > 0
-      ? await prisma.userMediaStatus.findMany({
-          where: {
-            userId: session!.user.id,
-            mediaItemId: { in: recentMediaIds },
-          },
-        })
-      : [];
-  const statusByMediaId = new Map(statusRows.map((s) => [s.mediaItemId, s]));
-
-  const recentActivity = recentByLastWatch.map((entry) => ({
-    key: entry.mediaItem.id,
-    mediaItem: entry.mediaItem,
-    status:
-      statusByMediaId.get(entry.mediaItemId)?.status ?? WatchStatus.WATCHED,
-  }));
-
-  const statMap = Object.fromEntries(stats.map((s) => [s.status, s._count]));
-
   const trendingMovies = trending.results
     .filter((r) => r.media_type === "movie")
     .slice(0, 10);
-
   const trendingTv = trending.results
     .filter((r) => r.media_type === "tv")
     .slice(0, 10);
 
-  const [trendingMovieTmdbState, trendingTvTmdbState] = await Promise.all([
+  const [
+    recentMediaRows,
+    statusRows,
+    trendingMovieTmdbState,
+    trendingTvTmdbState,
+  ] = await Promise.all([
+    recentMediaIdsOrdered.length > 0
+      ? prisma.mediaItem.findMany({
+          where: { id: { in: recentMediaIdsOrdered } },
+        })
+      : [],
+    recentMediaIdsOrdered.length > 0
+      ? prisma.userMediaStatus.findMany({
+          where: {
+            userId: session!.user.id,
+            mediaItemId: { in: recentMediaIdsOrdered },
+          },
+        })
+      : [],
     getUserTmdbMediaStateForTmdbIds(
       session!.user.id,
       "movie",
@@ -83,6 +62,28 @@ export default async function HomePage() {
       trendingTv.map((t) => t.id),
     ),
   ]);
+
+  const mediaById = new Map(recentMediaRows.map((m) => [m.id, m]));
+  const recentByLastWatch = recentMediaIdsOrdered
+    .map((id) => {
+      const m = mediaById.get(id);
+      return m ? { mediaItem: m, mediaItemId: m.id } : null;
+    })
+    .filter(Boolean) as {
+    mediaItem: (typeof recentMediaRows)[0];
+    mediaItemId: string;
+  }[];
+
+  const statusByMediaId = new Map(statusRows.map((s) => [s.mediaItemId, s]));
+
+  const recentActivity = recentByLastWatch.map((entry) => ({
+    key: entry.mediaItem.id,
+    mediaItem: entry.mediaItem,
+    status:
+      statusByMediaId.get(entry.mediaItemId)?.status ?? WatchStatus.WATCHED,
+  }));
+
+  const statMap = Object.fromEntries(stats.map((s) => [s.status, s._count]));
 
   const statusIcons = {
     WATCHED: {
@@ -149,7 +150,7 @@ export default async function HomePage() {
             </Button>
           </div>
           <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-10 gap-3">
-            {recentActivity.map((activity) => (
+            {recentActivity.map((activity, index) => (
               <MediaCard
                 key={activity.key}
                 tmdbId={activity.mediaItem.tmdbId}
@@ -161,6 +162,7 @@ export default async function HomePage() {
                 year={activity.mediaItem.year}
                 status={activity.status}
                 compact
+                priority={index < 3}
               />
             ))}
           </div>
@@ -177,7 +179,7 @@ export default async function HomePage() {
             </Button>
           </div>
           <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-10 gap-3">
-            {trendingMovies.map((movie) => {
+            {trendingMovies.map((movie, index) => {
               const st = trendingMovieTmdbState.get(movie.id);
               return (
                 <MediaCard
@@ -194,6 +196,7 @@ export default async function HomePage() {
                   status={st?.status ?? null}
                   onList={st?.onList ?? false}
                   compact
+                  priority={index < 3}
                 />
               );
             })}

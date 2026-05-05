@@ -27,6 +27,7 @@ import { MediaType } from "@/generated/prisma";
 import { parseDateOnlyIso } from "@/lib/history-calendar";
 import { fetchTitleWatchHistoryForViewer } from "@/lib/watch-history-queries";
 import { MediaCard } from "@/components/media-card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { TitleListsSection } from "@/components/title-lists-section";
 import { StreamingProviders } from "@/components/streaming-providers";
 import { PersonCastCrewSection } from "@/components/person-cast-crew-section";
@@ -235,7 +236,16 @@ export default async function MoviePage({ params, searchParams }: Params) {
                   </p>
                 )}
 
-                <Suspense fallback={null}>
+                <Suspense
+                  fallback={
+                    <div className="mt-3 flex items-center gap-1.5">
+                      <Skeleton className="h-3 w-12 shrink-0" />
+                      {Array.from({ length: 3 }).map((_, i) => (
+                        <Skeleton key={i} className="h-7 w-7 rounded-md" />
+                      ))}
+                    </div>
+                  }
+                >
                   <StreamingProviders tmdbId={tmdbId} type="movie" />
                 </Suspense>
 
@@ -303,7 +313,17 @@ export default async function MoviePage({ params, searchParams }: Params) {
           </div>
         </div>
 
-        <Suspense fallback={null}>
+        <Suspense
+          fallback={
+            <div className="mt-8 space-y-3">
+              <Skeleton className="h-5 w-40" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Skeleton className="h-28 rounded-lg" />
+                <Skeleton className="h-28 rounded-lg" />
+              </div>
+            </div>
+          }
+        >
           <TitleListsSection
             tmdbId={tmdbId}
             mediaType="movie"

@@ -17,6 +17,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { PlexSignInButton } from "@/components/plex-sign-in-button";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type SignupConfig = {
   publicSignup: boolean;
@@ -124,7 +125,7 @@ function RegisterForm() {
             back on.
           </div>
         )}
-        <Suspense fallback={null}>
+        <Suspense fallback={<Skeleton className="h-10 w-full rounded-md" />}>
           <PlexSignInButton
             disabled={configLoading || !!needsInviteInUrl}
             disabledReason="Open the invite link you were sent (it must include the invite in the address bar) before using Plex sign-in."

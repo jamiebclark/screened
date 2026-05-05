@@ -18,6 +18,7 @@ interface MediaCardProps {
   onList?: boolean;
   className?: string;
   compact?: boolean;
+  priority?: boolean;
   /** Appended as query string, e.g. `watchedDate=2026-04-26`. */
   hrefSearch?: string | null;
 }
@@ -48,6 +49,7 @@ export function MediaCard({
   onList = false,
   className,
   compact = false,
+  priority = false,
   hrefSearch = null,
 }: MediaCardProps) {
   const base = `/${type === "movie" ? "movies" : "tv"}/${tmdbId}`;
@@ -61,7 +63,7 @@ export function MediaCard({
       <div
         className={cn(
           "relative overflow-hidden rounded-lg bg-card border border-border transition-all duration-200 group-hover:border-primary/50 group-hover:shadow-lg group-hover:shadow-primary/10",
-          compact ? "aspect-[2/3]" : "aspect-[2/3]",
+          "aspect-[2/3]",
         )}
       >
         {imageUrl ? (
@@ -71,6 +73,7 @@ export function MediaCard({
             fill
             className="object-cover transition-transform duration-300 group-hover:scale-105"
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 200px"
+            priority={priority}
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-muted">

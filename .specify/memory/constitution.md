@@ -1,73 +1,110 @@
-# [PROJECT_NAME] Constitution
+<!--
+SYNC IMPACT REPORT
+==================
+Version change: [unversioned template] → 1.0.0
+New principles:
+  - I. Server Components First
+  - II. Security by Default
+  - III. Migrations Only (NON-NEGOTIABLE)
+  - IV. Conventional Commits, Ordered and Small
+  - V. Test at the Right Level
+New sections: Integration Standards, UI/UX Standards, Governance
+Templates reviewed:
+  - .specify/templates/plan-template.md ✅ Constitution Check section aligns with these principles
+  - .specify/templates/spec-template.md ✅ No changes required
+  - .specify/templates/tasks-template.md ✅ No changes required
+Deferred items: None
+-->
 
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+# Screened Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
+### I. Server Components First
 
-<!-- Example: I. Library-First -->
+All data rendering MUST use React Server Components (RSC). The `"use client"` directive is reserved
+exclusively for interactive UI that requires browser state or event handlers. Mutations MUST go
+through `fetch` to `/api/...` Route Handlers; after a successful mutation, call `router.refresh()`
+to re-hydrate the page. Skip `router.refresh()` only when UI is entirely client-state-driven or
+the next step is `router.push()` to another route.
 
-[PRINCIPLE_1_DESCRIPTION]
+**Rationale**: RSC eliminates unnecessary client-side data-fetching, reduces bundle size, and keeps
+secrets server-side. The pattern is established in `letterboxd-import-dialog.tsx`,
+`watch-status-button.tsx`, and `invite-member-form.tsx`.
 
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### II. Security by Default
 
-### [PRINCIPLE_2_NAME]
+Every API route MUST call `await auth()` before reading or mutating user-owned data and return 401
+when no session is present. All request bodies and query parameters MUST be validated; return 400
+with a clear `error` message on invalid input. Raw exception messages and stack traces MUST NOT
+appear in JSON responses — log server-side and return a generic 500 message. Secrets
+(`AUTH_SECRET`, `DATABASE_URL`, API keys) MUST remain server-only and MUST NOT appear in
+`NEXT_PUBLIC_` env vars. Use Prisma's parameterized API only — no string-concatenated SQL.
 
-<!-- Example: II. CLI Interface -->
+**Rationale**: Auth and validation failures are the most common source of data exposure. This
+principle ensures every route is secure by construction, not by coincidence.
 
-[PRINCIPLE_2_DESCRIPTION]
+### III. Migrations Only (NON-NEGOTIABLE)
 
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+Schema changes MUST use `yarn db:migrate --name <description>` on dev and
+`yarn db:migrate:deploy` on production/CI. `prisma db push` is PROHIBITED on any database that
+uses `prisma migrate deploy`. The schema file and its migration folder MUST be committed together.
+After every schema change, regenerate the Prisma client with `yarn db:generate`.
 
-### [PRINCIPLE_3_NAME]
+**Rationale**: `db push` bypasses migration history and causes drift failures that are difficult to
+recover from in production and Docker environments. Prior incidents with mock/push divergence
+motivate this as non-negotiable.
 
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
+### IV. Conventional Commits, Ordered and Small
 
-[PRINCIPLE_3_DESCRIPTION]
+All commits MUST follow Conventional Commits: `feat`, `fix`, `refactor`, `chore`, `test`, `perf`,
+`ci`, `docs`. `feat` triggers a minor release; `fix` triggers a patch. The default MUST be many
+small commits — one logical concern per commit. Infrastructure (config, schema, migrations,
+generated code) MUST land in earlier commits before application code that depends on it. Ask about
+commit grouping before committing when scope is ambiguous.
 
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+**Rationale**: Semantic-release derives versions and changelogs from commit history. Small, ordered
+commits enable bisection, cherry-picks, and precise rollbacks.
 
-### [PRINCIPLE_4_NAME]
+### V. Test at the Right Level
 
-<!-- Example: IV. Integration Testing -->
+Vitest unit tests MUST cover non-trivial or regression-prone pure logic in `src/lib/` (parsers,
+validators, helpers). Playwright E2E tests MUST cover critical user journeys when behavior changes
+(auth, pick, lists, watch status). `yarn ci:check` MUST pass before claiming work complete. When
+an API contract changes (status code or JSON shape), callers and tests asserting the response
+MUST be updated simultaneously.
 
-[PRINCIPLE_4_DESCRIPTION]
+**Rationale**: Testing at the wrong level produces false confidence. This principle matches test
+type to the risk profile of each layer — unit for pure logic, E2E for user-visible flows.
 
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+## Integration Standards
 
-### [PRINCIPLE_5_NAME]
+External account connections (Plex, Letterboxd, Discord) MUST use dedicated connection models
+(e.g., `PlexConnection`) with a `userId` unique FK. Link/unlink flows MUST live under
+`/api/<service>/link`. External API responses MUST normalize potentially-missing array fields to
+`[]` at the fetch boundary — never at individual callsites. Optional features gated by env vars
+(e.g., `OPENAI_API_KEY`, `OMDB_API_KEY`) MUST check `process.env.*` at call time and degrade
+gracefully when absent — no crash, no UI exposure. Prisma-generated enums needed in `"use client"`
+components MUST be re-exported as plain `const` objects + types in a lib module (e.g.,
+`src/lib/notification-types.ts`).
 
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
+## UI/UX Standards
 
-[PRINCIPLE_5_DESCRIPTION]
-
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
-
-## [SECTION_2_NAME]
-
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
-
-[SECTION_2_CONTENT]
-
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
-
-## [SECTION_3_NAME]
-
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
-
-[SECTION_3_CONTENT]
-
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+Content hierarchy on every page MUST follow: hero/identity → primary actions → peer sections. Do
+not wrap unrelated sections in one bordered card. Section headings MUST use `h3` with
+`text-base font-semibold`; do not mix uppercase-tracking labels with sentence-case `h3` on the
+same page. Loading states MUST use route-level `loading.tsx` or section-level skeletons that mirror
+final layout. Error states MUST show a user-safe message (no stack traces) and optionally a retry
+action using existing `Alert`/toast patterns. Full guidance is in `docs/ui-ux-standards.md`.
 
 ## Governance
 
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
+This constitution supersedes all other practices when there is a conflict. Amendments require:
+(1) a version increment per semantic versioning rules — MAJOR for principle removals or
+redefinitions, MINOR for additions or material expansions, PATCH for clarifications and wording;
+(2) documented rationale; (3) a migration plan if existing code must change. All PRs MUST pass the
+`yarn ci:check` gate. Reviewers MUST verify compliance with these principles. The
+`.cursor/rules/` directory contains authoritative detail behind the summaries above — read them
+when a situation is not covered here.
 
-[GOVERNANCE_RULES]
-
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
-
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+**Version**: 1.0.0 | **Ratified**: 2026-05-05 | **Last Amended**: 2026-05-05
