@@ -1,3 +1,9 @@
+## [1.39.0](https://github.com/jamiebclark/screened/compare/v1.38.0...v1.39.0) (2026-05-06)
+
+### Features
+
+* **upcoming:** add /upcoming page for watchlist releases ([#11](https://github.com/jamiebclark/screened/issues/11)) ([5a7a7cd](https://github.com/jamiebclark/screened/commit/5a7a7cd739d9486c34a60ba354cfc2cd8e18345d))
+
 ## [1.38.0](https://github.com/jamiebclark/screened/compare/v1.37.0...v1.38.0) (2026-05-05)
 
 ### Features
