@@ -15,6 +15,7 @@ import {
   Sparkles,
   ShieldCheck,
   PartyPopper,
+  CalendarDays,
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -46,6 +47,7 @@ const navLinks = [
   { href: "/pick", label: "Picker", icon: Sparkles },
   { href: "/watch-parties", label: "Watch Parties", icon: PartyPopper },
   { href: "/history", label: "History", icon: History },
+  { href: "/upcoming", label: "Upcoming", icon: CalendarDays },
 ];
 
 export function Nav({ user, initialUnreadNotifications, isAdmin }: NavProps) {

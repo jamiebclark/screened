@@ -198,6 +198,14 @@ export default async function WatchlistPage({ searchParams }: PageProps) {
               );
             })}
           </div>
+          <div className="mt-2">
+            <Link
+              href="/upcoming"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              See all upcoming →
+            </Link>
+          </div>
         </section>
       )}
 
