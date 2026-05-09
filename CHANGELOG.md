@@ -1,3 +1,9 @@
+## [1.41.0](https://github.com/jamiebclark/screened/compare/v1.40.2...v1.41.0) (2026-05-09)
+
+### Features
+
+* **cron:** replace Docker cron containers with in-process node-cron scheduler ([76782c9](https://github.com/jamiebclark/screened/commit/76782c98f886e1cbaeaf1106f63f1e5dd5184fd8))
+
 ## [1.40.2](https://github.com/jamiebclark/screened/compare/v1.40.1...v1.40.2) (2026-05-09)
 
 ### Bug Fixes
