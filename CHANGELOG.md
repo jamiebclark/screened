@@ -1,3 +1,9 @@
+## [1.40.1](https://github.com/jamiebclark/screened/compare/v1.40.0...v1.40.1) (2026-05-09)
+
+### Bug Fixes
+
+* **deps:** upgrade next and eslint-config-next to 16.2.6 (security) ([401ae3c](https://github.com/jamiebclark/screened/commit/401ae3c1ab3079b7161b1e3f44413aa88f2a364f))
+
 ## [1.40.0](https://github.com/jamiebclark/screened/compare/v1.39.0...v1.40.0) (2026-05-09)
 
 ### Features
