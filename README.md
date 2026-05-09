@@ -79,3 +79,44 @@ The app will be available at `http://localhost:3000`. The first user to register
 | Auth       | Auth.js v5 (credentials + Plex OAuth) |
 | Metadata   | TMDB API                              |
 | Deployment | Docker Compose                        |
+
+---
+
+## Development
+
+### Available scripts
+
+| Command            | Description                       |
+| ------------------ | --------------------------------- |
+| `yarn dev`         | Start development server          |
+| `yarn build`       | Build for production              |
+| `yarn lint`        | Run ESLint                        |
+| `yarn db:migrate`  | Run Prisma migrations             |
+| `yarn test:e2e`    | Playwright end-to-end tests       |
+| `yarn db:studio`   | Open Prisma Studio (database GUI) |
+| `yarn db:generate` | Regenerate Prisma client          |
+
+### Project structure
+
+```
+src/
+├── app/
+│   ├── (auth)/          # Login and register
+│   ├── (app)/           # App shell: home, search, pick, watchlists, lists, movies, TV, settings, history, …
+│   └── api/             # Route handlers (media, lists, plex, letterboxd, picker, cron, auth, …)
+├── components/          # Feature UI and components/ui (Radix + Tailwind)
+├── generated/           # Prisma client output (from prisma/schema.prisma)
+└── lib/                 # auth, prisma, tmdb, plex, letterboxd, embeddings, picker state, etc.
+```
+
+Prisma schema and migrations live under `prisma/`; the generated client is written to `src/generated/prisma` (not committed).
+
+### Commits
+
+This project uses [Conventional Commits](https://www.conventionalcommits.org/). Releases and changelogs are automated via [semantic-release](https://semantic-release.gitbook.io/).
+
+```
+feat(lists): add CSV import for watchlists
+fix(plex): handle expired tokens gracefully
+docs: update Radarr setup instructions
+```
