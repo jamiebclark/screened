@@ -1,3 +1,9 @@
+## [1.42.0](https://github.com/jamiebclark/screened/compare/v1.41.0...v1.42.0) (2026-05-09)
+
+### Features
+
+* **backup:** add daily pg_dump backup container with 7-day retention ([90eaecd](https://github.com/jamiebclark/screened/commit/90eaecd7dde9c7ff1e345d17dc03075777ac9184))
+
 ## [1.41.0](https://github.com/jamiebclark/screened/compare/v1.40.2...v1.41.0) (2026-05-09)
 
 ### Features
