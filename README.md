@@ -50,7 +50,7 @@ docker compose up -d
 
 The app will be available at `http://localhost:3000`. The first user to register gets admin access.
 
-**→ [Full deployment guide](docs/deployment.md)** — env var reference, manual setup, updating, cron endpoints
+**→ [Full deployment guide](docs/deployment.md)** — env var reference, sync scheduling, backup & restore, manual setup
 
 ---
 
