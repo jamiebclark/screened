@@ -1,3 +1,9 @@
+## [1.40.2](https://github.com/jamiebclark/screened/compare/v1.40.1...v1.40.2) (2026-05-09)
+
+### Bug Fixes
+
+* **cron:** remove set -e to prevent container exit on curl failure ([7f77b02](https://github.com/jamiebclark/screened/commit/7f77b02892a85d76a001021d9d09b81a0af8b9c2))
+
 ## [1.40.1](https://github.com/jamiebclark/screened/compare/v1.40.0...v1.40.1) (2026-05-09)
 
 ### Bug Fixes
