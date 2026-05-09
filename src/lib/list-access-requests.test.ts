@@ -16,6 +16,11 @@ vi.mock("@/lib/prisma", () => ({
   },
 }));
 
+vi.mock("@/lib/discord", () => ({
+  discordFeatures: () => ({ bot: false, oauth: false }),
+  sendDM: vi.fn(),
+}));
+
 import {
   listAdminUserIdsForList,
   notifyAdminsOfPendingAccessRequest,

@@ -6,6 +6,7 @@ import {
   type PersonStat,
 } from "@/lib/stats-queries";
 import { BarChart3, Clock, Film, Star, Tv } from "lucide-react";
+import Link from "next/link";
 import { WatchingTabs } from "@/components/watching-tabs";
 
 function formatHours(minutes: number): string {
@@ -35,9 +36,7 @@ function StatCard({
     <div className="rounded-lg border border-border bg-card p-4">
       <div className="flex items-center gap-2 text-muted-foreground mb-2">
         <Icon className="h-4 w-4" />
-        <span className="text-xs font-medium uppercase tracking-wide">
-          {label}
-        </span>
+        <span className="text-xs font-medium">{label}</span>
       </div>
       <p className="text-2xl font-bold">{value}</p>
       {sub && <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>}
@@ -162,7 +161,16 @@ function RankedList({ items }: { items: PersonStat[] }) {
           <span className="text-muted-foreground w-4 text-right shrink-0">
             {i + 1}
           </span>
-          <span className="flex-1 truncate">{item.name}</span>
+          {item.tmdbId ? (
+            <Link
+              href={`/person/${item.tmdbId}`}
+              className="flex-1 truncate hover:underline"
+            >
+              {item.name}
+            </Link>
+          ) : (
+            <span className="flex-1 truncate">{item.name}</span>
+          )}
           <span className="text-muted-foreground shrink-0">{item.count}</span>
         </li>
       ))}
@@ -217,7 +225,17 @@ export default async function StatsPage() {
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
       <WatchingTabs />
-      <h1 className="text-2xl font-bold mb-8">Your stats</h1>
+      <div className="flex items-center gap-3 mb-8">
+        <div className="rounded-full bg-muted p-2 text-muted-foreground">
+          <BarChart3 className="h-5 w-5" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold">Your stats</h1>
+          <p className="text-sm text-muted-foreground">
+            Your personal watch analytics
+          </p>
+        </div>
+      </div>
 
       {/* Overview */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">

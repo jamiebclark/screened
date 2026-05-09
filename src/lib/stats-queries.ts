@@ -32,6 +32,7 @@ export interface MonthlyStat {
 export interface PersonStat {
   name: string;
   count: number;
+  tmdbId: number | null;
 }
 
 export interface UserStats {
@@ -53,8 +54,16 @@ type RawRating = { rating: number; count: number | bigint };
 type RawGenre = { genre: string; count: number | bigint };
 type RawDecade = { decade: number | bigint; count: number | bigint };
 type RawMonth = { month: Date; count: number | bigint };
-type RawDirector = { director: string; count: number | bigint };
-type RawActor = { actor: string; count: number | bigint };
+type RawDirector = {
+  name: string;
+  tmdb_id: number | null;
+  count: number | bigint;
+};
+type RawActor = {
+  name: string;
+  tmdb_id: number | null;
+  count: number | bigint;
+};
 type RawAvg = { avg_rating: number | null; rated_count: number | bigint };
 
 export async function getUserStats(userId: string): Promise<UserStats> {
@@ -125,7 +134,7 @@ export async function getUserStats(userId: string): Promise<UserStats> {
     `),
 
     prisma.$queryRaw<RawDirector[]>(Prisma.sql`
-      SELECT d.director, COUNT(DISTINCT we."mediaItemId")::int AS count
+      SELECT d.name, MAX(d.tmdb_id) AS tmdb_id, COUNT(DISTINCT we."mediaItemId")::int AS count
       FROM "WatchEntry" we
       JOIN "MediaItem" mi ON we."mediaItemId" = mi.id
       CROSS JOIN LATERAL unnest(
@@ -133,22 +142,30 @@ export async function getUserStats(userId: string): Promise<UserStats> {
           WHEN array_length(mi.directors, 1) > 0 THEN mi.directors
           WHEN mi.director IS NOT NULL AND mi.director != '' THEN ARRAY[mi.director]
           ELSE ARRAY[]::text[]
+        END,
+        CASE
+          WHEN array_length(mi.directors, 1) > 0 THEN mi."directorsTmdbIds"
+          WHEN mi."directorTmdbId" IS NOT NULL THEN ARRAY[mi."directorTmdbId"]
+          ELSE ARRAY[]::int[]
         END
-      ) AS d(director)
+      ) AS d(name, tmdb_id)
       WHERE we."userId" = ${userId}
-        AND d.director != ''
-      GROUP BY d.director
+        AND d.name IS NOT NULL
+        AND d.name != ''
+      GROUP BY d.name
       ORDER BY count DESC
       LIMIT 10
     `),
 
     prisma.$queryRaw<RawActor[]>(Prisma.sql`
-      SELECT actor, COUNT(DISTINCT we."mediaItemId")::int AS count
+      SELECT c.name, MAX(c.tmdb_id) AS tmdb_id, COUNT(DISTINCT we."mediaItemId")::int AS count
       FROM "WatchEntry" we
       JOIN "MediaItem" mi ON we."mediaItemId" = mi.id
-      CROSS JOIN LATERAL unnest(mi.cast) AS actor
+      CROSS JOIN LATERAL unnest(mi.cast, mi."castTmdbIds") AS c(name, tmdb_id)
       WHERE we."userId" = ${userId}
-      GROUP BY actor
+        AND c.name IS NOT NULL
+        AND c.name != ''
+      GROUP BY c.name
       ORDER BY count DESC
       LIMIT 10
     `),
@@ -201,9 +218,14 @@ export async function getUserStats(userId: string): Promise<UserStats> {
     })),
     monthlyActivity,
     topDirectors: directorRows.map((d) => ({
-      name: d.director,
+      name: d.name,
       count: Number(d.count),
+      tmdbId: d.tmdb_id ? Number(d.tmdb_id) : null,
     })),
-    topCast: castRows.map((c) => ({ name: c.actor, count: Number(c.count) })),
+    topCast: castRows.map((c) => ({
+      name: c.name,
+      count: Number(c.count),
+      tmdbId: c.tmdb_id ? Number(c.tmdb_id) : null,
+    })),
   };
 }
