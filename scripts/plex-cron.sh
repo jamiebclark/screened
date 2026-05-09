@@ -1,5 +1,4 @@
 #!/bin/sh
-set -e
 
 INTERVAL="${SYNC_INTERVAL_HOURS:-6}"
 SLEEP_SECONDS=$((INTERVAL * 3600))
