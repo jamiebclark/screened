@@ -9,76 +9,11 @@ services:
       NEXTAUTH_URL: "${NEXTAUTH_URL:-http://localhost:3000}"
       TMDB_API_KEY: "${TMDB_API_KEY}"
       NEXT_PUBLIC_APP_URL: "${NEXT_PUBLIC_APP_URL:-http://localhost:3000}"
-      CRON_SECRET: "${CRON_SECRET}"
+      SYNC_CRON_SCHEDULE: "${SYNC_CRON_SCHEDULE:-0 */6 * * *}"
     depends_on:
       db:
         condition: service_healthy
     restart: unless-stopped
-
-  plex-cron:
-    image: curlimages/curl:latest
-    volumes:
-      - ./scripts/plex-cron.sh:/plex-cron.sh:ro
-    environment:
-      CRON_SECRET: "${CRON_SECRET}"
-      APP_URL: "http://app:3000"
-      SYNC_INTERVAL_HOURS: "${SYNC_INTERVAL_HOURS:-6}"
-    depends_on:
-      - app
-    restart: unless-stopped
-    entrypoint: ["sh", "/plex-cron.sh"]
-
-  letterboxd-cron:
-    image: curlimages/curl:latest
-    volumes:
-      - ./scripts/letterboxd-cron.sh:/letterboxd-cron.sh:ro
-    environment:
-      CRON_SECRET: "${CRON_SECRET}"
-      APP_URL: "http://app:3000"
-      SYNC_INTERVAL_HOURS: "${SYNC_INTERVAL_HOURS:-6}"
-    depends_on:
-      - app
-    restart: unless-stopped
-    entrypoint: ["sh", "/letterboxd-cron.sh"]
-
-  jellyfin-cron:
-    image: curlimages/curl:latest
-    volumes:
-      - ./scripts/jellyfin-cron.sh:/jellyfin-cron.sh:ro
-    environment:
-      CRON_SECRET: "${CRON_SECRET}"
-      APP_URL: "http://app:3000"
-      SYNC_INTERVAL_HOURS: "${SYNC_INTERVAL_HOURS:-6}"
-    depends_on:
-      - app
-    restart: unless-stopped
-    entrypoint: ["sh", "/jellyfin-cron.sh"]
-
-  tautulli-cron:
-    image: curlimages/curl:latest
-    volumes:
-      - ./scripts/tautulli-cron.sh:/tautulli-cron.sh:ro
-    environment:
-      CRON_SECRET: "${CRON_SECRET}"
-      APP_URL: "http://app:3000"
-      SYNC_INTERVAL_HOURS: "${SYNC_INTERVAL_HOURS:-6}"
-    depends_on:
-      - app
-    restart: unless-stopped
-    entrypoint: ["sh", "/tautulli-cron.sh"]
-
-  trakt-cron:
-    image: curlimages/curl:latest
-    volumes:
-      - ./scripts/trakt-cron.sh:/trakt-cron.sh:ro
-    environment:
-      CRON_SECRET: "${CRON_SECRET}"
-      APP_URL: "http://app:3000"
-      SYNC_INTERVAL_HOURS: "${SYNC_INTERVAL_HOURS:-6}"
-    depends_on:
-      - app
-    restart: unless-stopped
-    entrypoint: ["sh", "/trakt-cron.sh"]
 
   db:
     image: postgres:16-alpine
@@ -88,8 +23,6 @@ services:
       POSTGRES_DB: movienightdb
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U movienight -d movienightdb"]
       interval: 5s
