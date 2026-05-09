@@ -1,3 +1,14 @@
+## [1.40.0](https://github.com/jamiebclark/screened/compare/v1.39.0...v1.40.0) (2026-05-09)
+
+### Features
+
+* **stats:** complete /stats page with all sections ([706d36e](https://github.com/jamiebclark/screened/commit/706d36eb10bcee824e70e9248e801e9d95883917))
+* **stats:** complete stats-queries aggregation layer ([b071bc2](https://github.com/jamiebclark/screened/commit/b071bc2cb6fa5edda31552347d4b04f67e0e2d9c))
+
+### Bug Fixes
+
+* **tests:** mock discord module in list-access-requests test ([648609f](https://github.com/jamiebclark/screened/commit/648609f6e219b3a6276b7b9c8df719ba15f530e9))
+
 ## [1.39.0](https://github.com/jamiebclark/screened/compare/v1.38.0...v1.39.0) (2026-05-06)
 
 ### Features
