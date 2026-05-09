@@ -30,5 +30,30 @@ services:
       retries: 10
     restart: unless-stopped
 
+  db-backup:
+    image: postgres:16-alpine
+    volumes:
+      - "${BACKUP_PATH:-./backups}:/backups"
+    environment:
+      PGHOST: "db"
+      PGUSER: "movienight"
+      PGPASSWORD: "movienight"
+      PGDATABASE: "movienightdb"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    entrypoint:
+      - sh
+      - -c
+      - |
+        while true; do
+          echo "[db-backup] $$(date -u '+%Y-%m-%dT%H:%M:%SZ') Running backup..."
+          pg_dump | gzip > /backups/screened-$$(date +%Y%m%d-%H%M%S).sql.gz
+          find /backups -name "screened-*.sql.gz" -mtime +7 -delete
+          echo "[db-backup] Done. Next backup in 24h."
+          sleep 86400
+        done
+
 volumes:
   postgres_data:
