@@ -35,6 +35,8 @@ export async function GET(req: NextRequest) {
       name: true,
       email: true,
       avatarUrl: true,
+      status: true,
+      pendingPlexUsername: true,
       plexConnection: { select: { plexUsername: true } },
     },
     take: 8,
