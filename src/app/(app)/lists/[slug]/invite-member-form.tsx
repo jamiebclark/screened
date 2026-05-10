@@ -26,7 +26,19 @@ interface SearchUser {
   name: string;
   email: string;
   avatarUrl: string | null;
+  status: string;
+  pendingPlexUsername: string | null;
   plexConnection: { plexUsername: string } | null;
+}
+
+function userSubline(user: SearchUser): string {
+  if (user.status === "INVITED") {
+    return `Plex: ${user.pendingPlexUsername} · pending`;
+  }
+  const prefix = user.plexConnection?.plexUsername
+    ? `@${user.plexConnection.plexUsername} · `
+    : "";
+  return `${prefix}${user.email}`;
 }
 
 interface InviteMemberFormProps {
@@ -246,7 +258,7 @@ export function InviteMemberForm({ slug }: InviteMemberFormProps) {
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium">{selected.name}</p>
                     <p className="truncate text-xs text-muted-foreground">
-                      {selected.email}
+                      {userSubline(selected)}
                     </p>
                   </div>
                 </div>
@@ -274,10 +286,7 @@ export function InviteMemberForm({ slug }: InviteMemberFormProps) {
                         <div className="min-w-0 flex-1 text-left">
                           <p className="truncate font-medium">{user.name}</p>
                           <p className="truncate text-xs text-muted-foreground">
-                            {user.plexConnection?.plexUsername
-                              ? `@${user.plexConnection.plexUsername} · `
-                              : ""}
-                            {user.email}
+                            {userSubline(user)}
                           </p>
                         </div>
                       </button>

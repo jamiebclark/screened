@@ -48,7 +48,9 @@ export default async function ListPage({ params }: Params) {
       owner: { select: { id: true, name: true, avatarUrl: true } },
       members: {
         include: {
-          user: { select: { id: true, name: true, avatarUrl: true } },
+          user: {
+            select: { id: true, name: true, avatarUrl: true, status: true },
+          },
         },
         orderBy: { createdAt: "asc" },
       },
@@ -368,6 +370,47 @@ export default async function ListPage({ params }: Params) {
                   Invite collaborators to this list.
                 </p>
                 <InviteMemberForm slug={slug} />
+                {list.members.length > 0 && (
+                  <ul className="mt-3 space-y-1.5 border-t border-border pt-3">
+                    {list.members.map((m) => {
+                      const isInvited = m.user.status === "INVITED";
+                      return (
+                        <li
+                          key={m.id}
+                          className="flex items-center gap-2 text-sm"
+                        >
+                          <Avatar className="h-5 w-5 shrink-0">
+                            <AvatarImage src={m.user.avatarUrl ?? undefined} />
+                            <AvatarFallback className="text-[9px]">
+                              {m.user.name?.[0]?.toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          {isInvited ? (
+                            <span className="flex-1 truncate text-xs text-muted-foreground">
+                              {m.user.name}
+                            </span>
+                          ) : (
+                            <Link
+                              href={`/profile/${m.user.id}`}
+                              className="flex-1 truncate text-xs hover:underline"
+                            >
+                              {m.user.name}
+                            </Link>
+                          )}
+                          {isInvited ? (
+                            <span className="text-[10px] font-medium text-amber-600 shrink-0">
+                              pending
+                            </span>
+                          ) : (
+                            <span className="text-[10px] text-muted-foreground capitalize shrink-0">
+                              {m.role.toLowerCase()}
+                            </span>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
               </div>
             )}
             {isMember && (
@@ -455,7 +498,7 @@ function ListItemCard({
       )}
       <Link
         href={href}
-        className="flex gap-3 p-3 hover:bg-accent/30 transition-colors"
+        className="flex gap-3 p-3 pb-1.5 hover:bg-accent/30 transition-colors"
       >
         <div className="w-12 shrink-0 aspect-[2/3] rounded overflow-hidden bg-muted">
           {posterUrl ? (
@@ -482,16 +525,6 @@ function ListItemCard({
               {item.notes}
             </p>
           )}
-          <div className="flex items-center gap-1 mt-1.5">
-            <Avatar className="h-4 w-4">
-              <AvatarFallback className="text-[8px]">
-                {item.addedBy.name?.[0]?.toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <span className="text-xs text-muted-foreground">
-              {item.addedBy.name}
-            </span>
-          </div>
           {(watchedBy.length > 0 || watchingBy.length > 0) && (
             <div className="flex items-center gap-2 mt-1.5">
               {watchedBy.length > 0 && (
@@ -536,6 +569,19 @@ function ListItemCard({
           )}
         </div>
       </Link>
+      <div className="flex items-center gap-1 px-3 pb-2.5">
+        <Avatar className="h-4 w-4 shrink-0">
+          <AvatarFallback className="text-[8px]">
+            {item.addedBy.name?.[0]?.toUpperCase()}
+          </AvatarFallback>
+        </Avatar>
+        <Link
+          href={`/profile/${item.addedBy.id}`}
+          className="text-xs text-muted-foreground hover:underline truncate"
+        >
+          {item.addedBy.name}
+        </Link>
+      </div>
     </div>
   );
 }
