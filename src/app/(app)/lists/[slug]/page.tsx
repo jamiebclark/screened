@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notFound, redirect } from "next/navigation";
-import Image from "next/image";
 import Link from "next/link";
 import {
   Globe,
@@ -16,7 +15,7 @@ import {
   Popcorn,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { tmdbImageUrl } from "@/lib/utils";
+import { MediaCard } from "@/components/media-card";
 import { InviteMemberForm } from "./invite-member-form";
 import { PrivateListGate } from "./private-list-gate";
 import { ListItemActions } from "./list-item-actions";
@@ -252,7 +251,7 @@ export default async function ListPage({ params }: Params) {
                     <Film className="h-4 w-4" />
                     Movies ({movies.length})
                   </h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                     {movies.map((item) => (
                       <ListItemCard
                         key={item.id}
@@ -275,7 +274,7 @@ export default async function ListPage({ params }: Params) {
                     <Tv className="h-4 w-4" />
                     TV Shows ({tvShows.length})
                   </h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                     {tvShows.map((item) => (
                       <ListItemCard
                         key={item.id}
@@ -304,7 +303,7 @@ export default async function ListPage({ params }: Params) {
                           <Film className="h-4 w-4" />
                           Movies ({watchedMovies.length})
                         </h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                           {watchedMovies.map((item) => (
                             <ListItemCard
                               key={item.id}
@@ -330,7 +329,7 @@ export default async function ListPage({ params }: Params) {
                           <Tv className="h-4 w-4" />
                           TV Shows ({watchedTv.length})
                         </h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                           {watchedTv.map((item) => (
                             <ListItemCard
                               key={item.id}
@@ -488,99 +487,93 @@ function ListItemCard({
   watchedBy: MemberUser[];
   watchingBy: MemberUser[];
 }) {
-  const posterUrl = tmdbImageUrl(item.mediaItem.poster, "w342");
-  const href = `/${item.mediaItem.type === MediaType.MOVIE ? "movies" : "tv"}/${item.mediaItem.tmdbId}`;
+  const type = item.mediaItem.type === MediaType.MOVIE ? "movie" : "tv";
 
   return (
-    <div className="relative rounded-lg border border-border bg-card overflow-hidden group">
+    <div className="relative">
       {canDelete && (isOwner || item.addedBy.id === currentUserId) && (
         <ListItemActions itemId={item.id} slug={slug} />
       )}
-      <Link
-        href={href}
-        className="flex gap-3 p-3 pb-1.5 hover:bg-accent/30 transition-colors"
-      >
-        <div className="w-12 shrink-0 aspect-[2/3] rounded overflow-hidden bg-muted">
-          {posterUrl ? (
-            <Image
-              src={posterUrl}
-              alt={item.mediaItem.title}
-              width={48}
-              height={72}
-              className="object-cover w-full h-full"
-            />
-          ) : null}
-        </div>
-        <div className="flex-1 min-w-0 pr-6">
-          <p className="text-sm font-medium line-clamp-1">
-            {item.mediaItem.title}
-          </p>
+      <MediaCard
+        tmdbId={item.mediaItem.tmdbId}
+        type={type}
+        title={item.mediaItem.title}
+        poster={item.mediaItem.poster}
+        year={item.mediaItem.year}
+        compact
+      />
+      <div className="mt-1.5 space-y-1">
+        <p className="text-sm font-medium line-clamp-1">
+          {item.mediaItem.title}
+        </p>
+        <div className="flex items-center gap-1.5">
           {item.mediaItem.year && (
-            <p className="text-xs text-muted-foreground">
+            <span className="text-xs text-muted-foreground">
               {item.mediaItem.year}
-            </p>
-          )}
-          {item.notes && (
-            <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
-              {item.notes}
-            </p>
-          )}
-          {(watchedBy.length > 0 || watchingBy.length > 0) && (
-            <div className="flex items-center gap-2 mt-1.5">
-              {watchedBy.length > 0 && (
-                <div className="flex items-center gap-1">
-                  <CheckCheck className="h-3 w-3 text-green-500 shrink-0" />
-                  <div className="flex -space-x-1">
-                    {watchedBy.slice(0, 4).map((m) => (
-                      <Avatar
-                        key={m.id}
-                        className="h-4 w-4 border border-background"
-                        title={m.name ?? undefined}
-                      >
-                        <AvatarImage src={m.avatarUrl ?? undefined} />
-                        <AvatarFallback className="text-[7px]">
-                          {m.name?.[0]?.toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {watchingBy.length > 0 && (
-                <div className="flex items-center gap-1">
-                  <Popcorn className="h-3 w-3 text-yellow-500 shrink-0" />
-                  <div className="flex -space-x-1">
-                    {watchingBy.slice(0, 4).map((m) => (
-                      <Avatar
-                        key={m.id}
-                        className="h-4 w-4 border border-background"
-                        title={m.name ?? undefined}
-                      >
-                        <AvatarImage src={m.avatarUrl ?? undefined} />
-                        <AvatarFallback className="text-[7px]">
-                          {m.name?.[0]?.toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+            </span>
           )}
         </div>
-      </Link>
-      <div className="flex items-center gap-1 px-3 pb-2.5">
-        <Avatar className="h-4 w-4 shrink-0">
-          <AvatarFallback className="text-[8px]">
-            {item.addedBy.name?.[0]?.toUpperCase()}
-          </AvatarFallback>
-        </Avatar>
-        <Link
-          href={`/profile/${item.addedBy.id}`}
-          className="text-xs text-muted-foreground hover:underline truncate"
-        >
-          {item.addedBy.name}
-        </Link>
+        {item.notes && (
+          <p className="text-xs text-muted-foreground line-clamp-2">
+            {item.notes}
+          </p>
+        )}
+        {(watchedBy.length > 0 || watchingBy.length > 0) && (
+          <div className="flex items-center gap-2">
+            {watchedBy.length > 0 && (
+              <div className="flex items-center gap-1">
+                <CheckCheck className="h-3 w-3 text-green-500 shrink-0" />
+                <div className="flex -space-x-1">
+                  {watchedBy.slice(0, 4).map((m) => (
+                    <Avatar
+                      key={m.id}
+                      className="h-4 w-4 border border-background"
+                      title={m.name ?? undefined}
+                    >
+                      <AvatarImage src={m.avatarUrl ?? undefined} />
+                      <AvatarFallback className="text-[7px]">
+                        {m.name?.[0]?.toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                  ))}
+                </div>
+              </div>
+            )}
+            {watchingBy.length > 0 && (
+              <div className="flex items-center gap-1">
+                <Popcorn className="h-3 w-3 text-yellow-500 shrink-0" />
+                <div className="flex -space-x-1">
+                  {watchingBy.slice(0, 4).map((m) => (
+                    <Avatar
+                      key={m.id}
+                      className="h-4 w-4 border border-background"
+                      title={m.name ?? undefined}
+                    >
+                      <AvatarImage src={m.avatarUrl ?? undefined} />
+                      <AvatarFallback className="text-[7px]">
+                        {m.name?.[0]?.toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+        <div className="flex items-center gap-1">
+          <Avatar className="h-4 w-4 shrink-0">
+            <AvatarImage src={item.addedBy.avatarUrl ?? undefined} />
+            <AvatarFallback className="text-[8px]">
+              {item.addedBy.name?.[0]?.toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <Link
+            href={`/profile/${item.addedBy.id}`}
+            className="text-xs text-muted-foreground hover:underline truncate"
+          >
+            {item.addedBy.name}
+          </Link>
+        </div>
       </div>
     </div>
   );
