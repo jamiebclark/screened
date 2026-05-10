@@ -82,11 +82,19 @@ enum CronIntegration {
   TRAKT
 }
 
+enum UserStatus {
+  ACTIVE
+  INVITED
+}
+
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
+  id            String     @id @default(cuid())
+  email         String     @unique
   passwordHash  String
   name          String
+  status        UserStatus @default(ACTIVE)
+  /// Plex username used to match this invited stub to a real Plex sign-in. Cleared on activation.
+  pendingPlexUsername String? @unique
   avatarUrl     String?
   bio           String?
   /// Secret query token for the per-user Radarr watchlist export (movies only). Unique when set.
