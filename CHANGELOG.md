@@ -1,3 +1,18 @@
+## [1.43.0](https://github.com/jamiebclark/screened/compare/v1.42.0...v1.43.0) (2026-05-10)
+
+### Features
+
+* **admin:** add invite-by-Plex-username form to users page ([0e1e404](https://github.com/jamiebclark/screened/commit/0e1e4043e114b7f8db7272696ed925d52a668dd2))
+* **api:** add POST /api/admin/users/invite endpoint ([8c46736](https://github.com/jamiebclark/screened/commit/8c46736c369ae04fdf5a56c853f17a0d4142cb91))
+* **auth:** activate invited stub users on Plex OAuth sign-in ([44edd8d](https://github.com/jamiebclark/screened/commit/44edd8d5a7c7bc82eca844eae7555bd223eb6089))
+* **lists:** show pending badge for invited members, link users to profiles ([e0c359a](https://github.com/jamiebclark/screened/commit/e0c359ab8540d5dc5a0a69e3026d527416976d29))
+
+### Bug Fixes
+
+* **history:** link friend names in daily history view to their profiles ([7c7eef8](https://github.com/jamiebclark/screened/commit/7c7eef8192f5259c0749247004f6aba90d232232))
+* **notifications:** link requester and host names to their profiles ([57969a8](https://github.com/jamiebclark/screened/commit/57969a8a4e981a3f36fd8e26073fdcbcbe91cbeb))
+* **watch-parties:** link host and invite user names to their profiles ([bd9e82a](https://github.com/jamiebclark/screened/commit/bd9e82af3da9aa585957a47855d35d9e7c61e2a8))
+
 ## [1.42.0](https://github.com/jamiebclark/screened/compare/v1.41.0...v1.42.0) (2026-05-09)
 
 ### Features
