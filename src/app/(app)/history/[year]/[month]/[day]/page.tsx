@@ -270,9 +270,12 @@ export default async function HistoryDayPage({ params }: Params) {
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0 space-y-1">
-                  <p className="text-xs text-muted-foreground font-medium">
+                  <Link
+                    href={`/profile/${entry.user.id}`}
+                    className="text-xs text-muted-foreground font-medium hover:underline"
+                  >
                     {entry.user.name}
-                  </p>
+                  </Link>
                   <HistoryWatchEntryRow
                     entry={entry}
                     timeLabel={formatTime(entry.watchedAt)}
