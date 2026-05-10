@@ -73,6 +73,52 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         let user = await prisma.user.findUnique({ where: { email } });
 
+        // If no user found by email, check for an invited stub matched by Plex username.
+        if (!user) {
+          const stub = await prisma.user.findUnique({
+            where: { pendingPlexUsername: plexUser.username },
+          });
+          if (stub?.status === "INVITED") {
+            user = await prisma.$transaction(async (tx) => {
+              const activated = await tx.user.update({
+                where: { id: stub.id },
+                data: {
+                  email,
+                  name: plexUser.username,
+                  avatarUrl: plexUser.thumb ?? stub.avatarUrl,
+                  passwordHash: randomBytes(32).toString("hex"),
+                  watchlistRadarrToken: generateToken(24),
+                  status: "ACTIVE",
+                  pendingPlexUsername: null,
+                },
+              });
+              await tx.plexConnection.upsert({
+                where: { userId: activated.id },
+                update: {
+                  plexToken,
+                  plexUsername: plexUser.username,
+                  plexServerId: firstServer?.machineIdentifier ?? null,
+                },
+                create: {
+                  userId: activated.id,
+                  plexToken,
+                  plexClientId: "screened",
+                  plexUsername: plexUser.username,
+                  plexServerId: firstServer?.machineIdentifier ?? null,
+                },
+              });
+              return activated;
+            });
+            bumpPlexLibraryIndexCacheGeneration(user.id);
+            return {
+              id: user.id,
+              email: user.email,
+              name: user.name,
+              image: user.avatarUrl,
+            };
+          }
+        }
+
         if (user) {
           await prisma.plexConnection.upsert({
             where: { userId: user.id },
