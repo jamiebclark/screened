@@ -452,9 +452,12 @@ function AccessRequestRow({
         </Avatar>
         <div className="min-w-0 flex-1">
           <p className="text-xs text-muted-foreground leading-tight">
-            <span className="font-medium text-foreground">
+            <Link
+              href={`/profile/${req.requester.id}`}
+              className="font-medium text-foreground hover:underline"
+            >
               {req.requester.name}
-            </span>{" "}
+            </Link>{" "}
             requested access to{" "}
             <Link
               href={`/lists/${req.list.slug}`}
@@ -537,9 +540,12 @@ function WatchPartyNotifRow({ n }: { n: NotificationItem }) {
         <p className="text-xs text-muted-foreground leading-tight">
           {isInvite ? (
             <>
-              <span className="font-medium text-foreground">
+              <Link
+                href={`/profile/${party.host.id}`}
+                className="font-medium text-foreground hover:underline"
+              >
                 {party.host.name}
-              </span>{" "}
+              </Link>{" "}
               invited you to a Watch Party for{" "}
               <Link
                 href={`/watch-parties/${party.id}`}
