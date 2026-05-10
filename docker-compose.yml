@@ -10,6 +10,7 @@ services:
       TMDB_API_KEY: "${TMDB_API_KEY}"
       NEXT_PUBLIC_APP_URL: "${NEXT_PUBLIC_APP_URL:-http://localhost:3000}"
       SYNC_CRON_SCHEDULE: "${SYNC_CRON_SCHEDULE:-0 */6 * * *}"
+      SITE_ADMIN_EMAILS: "${SITE_ADMIN_EMAILS}"
     depends_on:
       db:
         condition: service_healthy
