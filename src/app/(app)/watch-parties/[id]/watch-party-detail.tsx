@@ -73,7 +73,12 @@ function InviteRow({ invite }: { invite: InviteSnap }) {
           <AvatarImage src={invite.user.avatarUrl ?? undefined} />
           <AvatarFallback>{invite.user.name[0]}</AvatarFallback>
         </Avatar>
-        <span className="text-sm font-medium">{invite.user.name}</span>
+        <Link
+          href={`/profile/${invite.user.id}`}
+          className="text-sm font-medium hover:underline"
+        >
+          {invite.user.name}
+        </Link>
       </div>
       {invite.status === "ACCEPTED" ? (
         <span className="flex items-center gap-1 text-xs text-green-600">
@@ -337,7 +342,12 @@ export function WatchPartyDetail({
                 <AvatarFallback>{party.host.name[0]}</AvatarFallback>
               </Avatar>
               <div>
-                <span className="text-sm font-medium">{party.host.name}</span>
+                <Link
+                  href={`/profile/${party.host.id}`}
+                  className="text-sm font-medium hover:underline"
+                >
+                  {party.host.name}
+                </Link>
                 <span className="ml-2 text-xs text-muted-foreground">Host</span>
               </div>
             </div>

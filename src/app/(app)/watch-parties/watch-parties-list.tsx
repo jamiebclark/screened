@@ -333,7 +333,17 @@ export function WatchPartiesList({
                 invites={i.watchParty.invites}
                 currentUserId={currentUserId}
                 myInviteStatus={i.status}
-                hostOrInviteLabel={`Hosted by ${i.watchParty.host.name}`}
+                hostOrInviteLabel={
+                  <>
+                    Hosted by{" "}
+                    <Link
+                      href={`/profile/${i.watchParty.host.id}`}
+                      className="relative z-[2] hover:underline"
+                    >
+                      {i.watchParty.host.name}
+                    </Link>
+                  </>
+                }
               />
             ))}
           </div>
@@ -370,7 +380,17 @@ export function WatchPartiesList({
                 currentUserId={currentUserId}
                 myInviteStatus={i.status}
                 isPast
-                hostOrInviteLabel={`Hosted by ${i.watchParty.host.name}`}
+                hostOrInviteLabel={
+                  <>
+                    Hosted by{" "}
+                    <Link
+                      href={`/profile/${i.watchParty.host.id}`}
+                      className="relative z-[2] hover:underline"
+                    >
+                      {i.watchParty.host.name}
+                    </Link>
+                  </>
+                }
               />
             ))}
           </div>
