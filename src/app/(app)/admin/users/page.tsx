@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { AdminDeleteUserButton } from "@/components/admin-delete-user-button";
+import { AdminInviteUserForm } from "@/components/admin-invite-user-form";
 
 export const metadata = { title: "Users | Admin" };
 
@@ -37,6 +38,8 @@ export default async function AdminUsersPage() {
       email: true,
       avatarUrl: true,
       createdAt: true,
+      status: true,
+      pendingPlexUsername: true,
       plexConnection: { select: { lastSyncedAt: true } },
       letterboxdConnection: { select: { lastSyncedAt: true } },
       jellyfinConnection: { select: { lastSyncedAt: true } },
@@ -52,7 +55,10 @@ export default async function AdminUsersPage() {
         <h1 className="text-2xl font-bold">Users</h1>
         <span className="text-sm text-muted-foreground">{users.length}</span>
       </div>
-      <p className="text-muted-foreground mb-8">All registered accounts.</p>
+      <div className="flex items-center justify-between mb-8">
+        <p className="text-muted-foreground">All registered accounts.</p>
+        <AdminInviteUserForm />
+      </div>
 
       <div className="rounded-lg border divide-y">
         {users.map((user) => {
@@ -68,6 +74,7 @@ export default async function AdminUsersPage() {
           );
 
           const isSelf = user.id === session!.user!.id;
+          const isInvited = user.status === "INVITED";
 
           return (
             <div key={user.id} className="flex items-center gap-4 px-4 py-3">
@@ -81,12 +88,26 @@ export default async function AdminUsersPage() {
 
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <Link
-                    href={`/profile/${user.id}`}
-                    className="font-medium text-sm truncate hover:underline"
-                  >
-                    {user.name}
-                  </Link>
+                  {isInvited ? (
+                    <span className="font-medium text-sm truncate text-muted-foreground">
+                      {user.name}
+                    </span>
+                  ) : (
+                    <Link
+                      href={`/profile/${user.id}`}
+                      className="font-medium text-sm truncate hover:underline"
+                    >
+                      {user.name}
+                    </Link>
+                  )}
+                  {isInvited && (
+                    <Badge
+                      variant="outline"
+                      className="text-xs shrink-0 text-amber-600 border-amber-300"
+                    >
+                      pending
+                    </Badge>
+                  )}
                   {isSelf && (
                     <Badge variant="outline" className="text-xs shrink-0">
                       you
@@ -94,7 +115,7 @@ export default async function AdminUsersPage() {
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground truncate">
-                  {user.email}
+                  {isInvited ? `Plex: ${user.pendingPlexUsername}` : user.email}
                 </p>
               </div>
 
