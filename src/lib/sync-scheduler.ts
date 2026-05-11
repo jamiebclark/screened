@@ -1,6 +1,7 @@
 import cron from "node-cron";
 import { CronIntegration } from "@/generated/prisma";
 import { runSync } from "@/lib/sync-runner";
+import { sendConfirmationPrompts } from "@/lib/watch-party";
 
 const ALL_INTEGRATIONS = [
   CronIntegration.PLEX,
@@ -21,6 +22,19 @@ async function runAllSyncs() {
   }
 }
 
+async function runWatchPartyConfirm() {
+  try {
+    const notified = await sendConfirmationPrompts();
+    if (notified > 0) {
+      console.log(
+        `[sync-scheduler] watch-party-confirm: sent ${notified} confirmation prompts`,
+      );
+    }
+  } catch (err) {
+    console.error("[sync-scheduler] watch-party-confirm failed:", err);
+  }
+}
+
 let scheduled = false;
 
 export function scheduleSyncs() {
@@ -38,4 +52,9 @@ export function scheduleSyncs() {
 
   cron.schedule(schedule, runAllSyncs);
   console.log(`[sync-scheduler] Syncs scheduled: "${schedule}"`);
+
+  cron.schedule("*/15 * * * *", runWatchPartyConfirm);
+  console.log(
+    `[sync-scheduler] Watch party confirmations scheduled: every 15 minutes`,
+  );
 }
