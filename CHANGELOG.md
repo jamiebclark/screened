@@ -1,3 +1,13 @@
+## [1.45.0](https://github.com/jamiebclark/screened/compare/v1.44.0...v1.45.0) (2026-05-11)
+
+### Features
+
+* **cron:** migrate watch-party-confirm to internal scheduler, remove HTTP cron routes ([527b890](https://github.com/jamiebclark/screened/commit/527b890648abcee4b96b487b6013df9bc51c6f2c))
+
+### Bug Fixes
+
+* **docker:** restore indentation for STREAMING_COUNTRY env var ([8d9e9dd](https://github.com/jamiebclark/screened/commit/8d9e9ddb8075805766c4ecf2d8608f8533250f2b))
+
 ## [1.44.0](https://github.com/jamiebclark/screened/compare/v1.43.0...v1.44.0) (2026-05-11)
 
 ### Features
