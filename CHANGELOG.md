@@ -1,3 +1,13 @@
+## [1.44.0](https://github.com/jamiebclark/screened/compare/v1.43.0...v1.44.0) (2026-05-11)
+
+### Features
+
+* **lists:** switch to poster-centric MediaCard layout with metadata footer ([b900bc4](https://github.com/jamiebclark/screened/commit/b900bc45c9cd60063cc21e02516ffc9785e5fadd))
+
+### Bug Fixes
+
+* **docker:** pass SITE_ADMIN_EMAILS env var into app container ([d309db1](https://github.com/jamiebclark/screened/commit/d309db1526c65d8170405af5190b123a89c26579))
+
 ## [1.43.0](https://github.com/jamiebclark/screened/compare/v1.42.0...v1.43.0) (2026-05-10)
 
 ### Features
