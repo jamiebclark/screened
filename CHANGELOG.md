@@ -1,3 +1,9 @@
+## [1.45.3](https://github.com/jamiebclark/screened/compare/v1.45.2...v1.45.3) (2026-05-12)
+
+### Bug Fixes
+
+* **admin:** align breadcrumbs with page content containers ([95ef8d1](https://github.com/jamiebclark/screened/commit/95ef8d19c99e644de80ea46cf597419580ea2f48))
+
 ## [1.45.2](https://github.com/jamiebclark/screened/compare/v1.45.1...v1.45.2) (2026-05-12)
 
 ### Bug Fixes
