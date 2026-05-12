@@ -6,6 +6,7 @@ import { CronIntegration } from "@/generated/prisma";
 import { CheckCircle, XCircle, AlertCircle, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { TriggerCronButton } from "./trigger-button";
+import { AdminBreadcrumbs } from "@/components/admin-breadcrumbs";
 
 export const metadata = { title: "Cron status" };
 
@@ -64,6 +65,7 @@ export default async function CronStatusPage() {
 
   return (
     <div className="mx-auto max-w-2xl">
+      <AdminBreadcrumbs />
       <h1 className="text-2xl font-bold mb-2">Cron status</h1>
       <p className="text-muted-foreground mb-8">
         Sync job history across all integrations.

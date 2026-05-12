@@ -5,6 +5,7 @@ import { isSiteAdminEmail } from "@/lib/signup-invites";
 import { getRecentLogs } from "@/lib/logger";
 import { Badge } from "@/components/ui/badge";
 import { RefreshButton } from "./refresh-button";
+import { AdminBreadcrumbs } from "@/components/admin-breadcrumbs";
 
 export const metadata = { title: "Error logs" };
 
@@ -29,6 +30,7 @@ export default async function LogsPage() {
 
   return (
     <div className="mx-auto max-w-4xl">
+      <AdminBreadcrumbs />
       <div className="flex items-start justify-between mb-2">
         <div>
           <h1 className="text-2xl font-bold">Error logs</h1>

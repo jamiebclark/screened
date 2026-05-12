@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { AdminDeleteUserButton } from "@/components/admin-delete-user-button";
 import { AdminInviteUserForm } from "@/components/admin-invite-user-form";
+import { AdminBreadcrumbs } from "@/components/admin-breadcrumbs";
 
 export const metadata = { title: "Users | Admin" };
 
@@ -51,6 +52,7 @@ export default async function AdminUsersPage() {
 
   return (
     <div className="mx-auto max-w-4xl">
+      <AdminBreadcrumbs />
       <div className="flex items-baseline gap-3 mb-2">
         <h1 className="text-2xl font-bold">Users</h1>
         <span className="text-sm text-muted-foreground">{users.length}</span>
