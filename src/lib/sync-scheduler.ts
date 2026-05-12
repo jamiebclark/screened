@@ -1,4 +1,5 @@
 import cron from "node-cron";
+import type { ScheduledTask } from "node-cron";
 import { CronIntegration } from "@/generated/prisma";
 import { runSync } from "@/lib/sync-runner";
 import { sendConfirmationPrompts } from "@/lib/watch-party";
@@ -12,7 +13,7 @@ const ALL_INTEGRATIONS = [
 ];
 
 async function runAllSyncs() {
-  console.log("[sync-scheduler] Starting scheduled sync for all integrations");
+  console.warn("[sync-scheduler] Starting scheduled sync for all integrations");
   for (const integration of ALL_INTEGRATIONS) {
     try {
       await runSync(integration);
@@ -26,7 +27,7 @@ async function runWatchPartyConfirm() {
   try {
     const notified = await sendConfirmationPrompts();
     if (notified > 0) {
-      console.log(
+      console.warn(
         `[sync-scheduler] watch-party-confirm: sent ${notified} confirmation prompts`,
       );
     }
@@ -35,6 +36,8 @@ async function runWatchPartyConfirm() {
   }
 }
 
+let syncTask: ScheduledTask | null = null;
+let watchPartyTask: ScheduledTask | null = null;
 let scheduled = false;
 
 export function scheduleSyncs() {
@@ -50,11 +53,32 @@ export function scheduleSyncs() {
     return;
   }
 
-  cron.schedule(schedule, runAllSyncs);
-  console.log(`[sync-scheduler] Syncs scheduled: "${schedule}"`);
+  syncTask = cron.schedule(schedule, runAllSyncs);
+  console.warn(`[sync-scheduler] Syncs scheduled: "${schedule}"`);
 
-  cron.schedule("*/15 * * * *", runWatchPartyConfirm);
-  console.log(
+  watchPartyTask = cron.schedule("*/15 * * * *", runWatchPartyConfirm);
+  console.warn(
     `[sync-scheduler] Watch party confirmations scheduled: every 15 minutes`,
+  );
+
+  // Watchdog: restart stopped tasks every 5 minutes
+  setInterval(
+    () => {
+      const syncStatus = syncTask?.getStatus();
+      if (syncStatus === "stopped") {
+        console.warn(
+          "[sync-scheduler] watchdog: sync task was stopped, restarting",
+        );
+        syncTask!.start();
+      }
+      const watchPartyStatus = watchPartyTask?.getStatus();
+      if (watchPartyStatus === "stopped") {
+        console.warn(
+          "[sync-scheduler] watchdog: watch-party task was stopped, restarting",
+        );
+        watchPartyTask!.start();
+      }
+    },
+    5 * 60 * 1000,
   );
 }
