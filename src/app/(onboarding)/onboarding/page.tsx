@@ -7,14 +7,20 @@ import { isTraktConfigured } from "@/lib/trakt";
 import { discordFeatures } from "@/lib/discord";
 import { OnboardingClient } from "./onboarding-client";
 import { Skeleton } from "@/components/ui/skeleton";
+import { safeCallbackPath } from "@/lib/safe-callback-path";
 
 export const metadata: Metadata = { title: "Get started" };
 
-export default async function OnboardingPage() {
-  const session = await auth();
+export default async function OnboardingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ callbackUrl?: string }>;
+}) {
+  const [session, params] = await Promise.all([auth(), searchParams]);
   if (!session?.user?.id) {
     redirect("/login");
   }
+  const callbackUrl = safeCallbackPath(params.callbackUrl ?? null);
 
   const traktConfigured = isTraktConfigured();
   const features = discordFeatures();
@@ -83,6 +89,7 @@ export default async function OnboardingPage() {
           traktConfigured={traktConfigured}
           discordConnection={discord}
           discordFeatures={features}
+          callbackUrl={callbackUrl}
         />
       </Suspense>
     </div>

@@ -1,20 +1,24 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { Nav } from "@/components/nav";
 import { SiteFooter } from "@/components/site-footer";
 import { Toaster } from "@/components/toaster";
 import { prisma } from "@/lib/prisma";
 import { isSiteAdminEmail } from "@/lib/signup-invites";
+import { safeCallbackPath } from "@/lib/safe-callback-path";
 
 export default async function AppLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth();
+  const [session, headersList] = await Promise.all([auth(), headers()]);
+  const currentPath = safeCallbackPath(headersList.get("x-pathname"));
+  const callbackParam = `?callbackUrl=${encodeURIComponent(currentPath)}`;
 
   if (!session?.user) {
-    redirect("/login");
+    redirect(`/login${callbackParam}`);
   }
 
   const [user, unreadNotifications] = await Promise.all([
@@ -28,11 +32,11 @@ export default async function AppLayout({
   ]);
 
   if (!user) {
-    redirect("/login");
+    redirect(`/login${callbackParam}`);
   }
 
   if (!user.onboardingCompletedAt) {
-    redirect("/onboarding");
+    redirect(`/onboarding${callbackParam}`);
   }
 
   return (

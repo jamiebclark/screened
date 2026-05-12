@@ -24,9 +24,10 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const callbackPath = safeCallbackPath(searchParams.get("callbackUrl"));
   const invite = searchParams.get("invite");
-  const registerHref = invite
-    ? `/register?invite=${encodeURIComponent(invite)}`
-    : "/register";
+  const registerParams = new URLSearchParams();
+  if (invite) registerParams.set("invite", invite);
+  if (callbackPath !== "/") registerParams.set("callbackUrl", callbackPath);
+  const registerHref = `/register${registerParams.size > 0 ? `?${registerParams.toString()}` : ""}`;
   const pinId = searchParams.get("pinId");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);

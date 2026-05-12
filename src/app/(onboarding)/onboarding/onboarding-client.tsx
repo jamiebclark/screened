@@ -55,6 +55,7 @@ interface OnboardingClientProps {
   traktConfigured: boolean;
   discordConnection: DiscordConnection;
   discordFeatures: { bot: boolean; oauth: boolean };
+  callbackUrl?: string;
 }
 
 export function OnboardingClient({
@@ -66,6 +67,7 @@ export function OnboardingClient({
   traktConfigured,
   discordConnection,
   discordFeatures,
+  callbackUrl = "/",
 }: OnboardingClientProps) {
   const router = useRouter();
   const [finishing, setFinishing] = useState(false);
@@ -85,7 +87,7 @@ export function OnboardingClient({
         setFinishing(false);
         return;
       }
-      router.push("/");
+      router.push(callbackUrl);
       router.refresh();
     } catch {
       setError("Something went wrong.");

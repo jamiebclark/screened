@@ -4,6 +4,7 @@ import { useState, FormEvent, Suspense, useEffect } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { safeCallbackPath } from "@/lib/safe-callback-path";
 import { Film, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +30,10 @@ function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const inviteFromUrl = searchParams.get("invite");
+  const callbackPath = safeCallbackPath(searchParams.get("callbackUrl"));
+  const loginParams = new URLSearchParams();
+  if (callbackPath !== "/") loginParams.set("callbackUrl", callbackPath);
+  const loginHref = `/login${loginParams.size > 0 ? `?${loginParams.toString()}` : ""}`;
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [signupConfig, setSignupConfig] = useState<SignupConfig | null>(null);
@@ -91,7 +96,7 @@ function RegisterForm() {
       }
 
       await signIn("credentials", { email, password, redirect: false });
-      router.push("/");
+      router.push(callbackPath);
       router.refresh();
     } catch {
       setError("Something went wrong");
@@ -127,6 +132,7 @@ function RegisterForm() {
         )}
         <Suspense fallback={<Skeleton className="h-10 w-full rounded-md" />}>
           <PlexSignInButton
+            callbackUrl={callbackPath}
             disabled={configLoading || !!needsInviteInUrl}
             disabledReason="Open the invite link you were sent (it must include the invite in the address bar) before using Plex sign-in."
           />
@@ -199,7 +205,7 @@ function RegisterForm() {
           <p className="text-sm text-muted-foreground">
             Already have an account?{" "}
             <Link
-              href="/login"
+              href={loginHref}
               className="text-primary hover:underline font-medium"
             >
               Sign in

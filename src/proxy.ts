@@ -3,7 +3,10 @@ import { NextRequest, NextResponse } from "next/server";
 
 function nextWithPathname(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
-  requestHeaders.set("x-pathname", request.nextUrl.pathname);
+  requestHeaders.set(
+    "x-pathname",
+    request.nextUrl.pathname + request.nextUrl.search,
+  );
   return NextResponse.next({ request: { headers: requestHeaders } });
 }
 
@@ -28,7 +31,12 @@ export default auth((req) => {
   }
 
   if (!isLoggedIn && !isAuthPage) {
-    return NextResponse.redirect(new URL("/login", req.url));
+    const callbackUrl = encodeURIComponent(
+      req.nextUrl.pathname + req.nextUrl.search,
+    );
+    return NextResponse.redirect(
+      new URL(`/login?callbackUrl=${callbackUrl}`, req.url),
+    );
   }
 
   if (isLoggedIn && isAuthPage) {
