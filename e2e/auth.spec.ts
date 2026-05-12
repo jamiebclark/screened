@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { TEST_USER, login } from "./helpers";
+import { TEST_USER, login, logout } from "./helpers";
 
 const UNIQUE_EMAIL = `e2e_${Date.now()}@test.local`;
 
@@ -71,6 +71,47 @@ test.describe("Authentication", () => {
   test("unauthenticated user is redirected to login", async ({ page }) => {
     await page.goto("/");
     await page.waitForURL(/\/login/, { timeout: 5000 });
+  });
+
+  test("login redirects back to original protected URL", async ({ page }) => {
+    await logout(page);
+    await page.goto("/watchlist");
+    await page.waitForURL(/\/login\?callbackUrl=/, { timeout: 5000 });
+
+    await page.getByLabel("Email").fill(TEST_USER.email);
+    await page.getByLabel("Password").fill(TEST_USER.password);
+    await page.getByRole("button", { name: "Sign in", exact: true }).click();
+
+    await page.waitForURL("/watchlist", { timeout: 10000 });
+    await expect(page).toHaveURL("/watchlist");
+  });
+
+  test("register with deep link redirects back after onboarding", async ({
+    page,
+  }) => {
+    await logout(page);
+    const email = `e2e_callback_${Date.now()}@test.local`;
+
+    await page.goto("/watchlist");
+    await page.waitForURL(/\/login\?callbackUrl=/, { timeout: 5000 });
+
+    // Register link must carry callbackUrl through
+    await page.getByRole("link", { name: "Register" }).click();
+    await page.waitForURL(/\/register/, { timeout: 5000 });
+    expect(page.url()).toContain("callbackUrl");
+
+    await page.getByLabel("Name").fill("Callback Test User");
+    await page.getByLabel("Email").fill(email);
+    await page.getByLabel("Password").fill("testpassword123");
+    await page.getByRole("button", { name: "Create account" }).click();
+
+    // New user must pass through onboarding with callbackUrl intact
+    await page.waitForURL(/\/onboarding\?callbackUrl=/, { timeout: 10000 });
+
+    await page.getByRole("button", { name: "Continue to Screened" }).click();
+
+    await page.waitForURL("/watchlist", { timeout: 10000 });
+    await expect(page).toHaveURL("/watchlist");
   });
 
   test("logout via nav dropdown", async ({ page }) => {
