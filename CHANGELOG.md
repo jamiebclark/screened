@@ -1,3 +1,9 @@
+## [1.45.2](https://github.com/jamiebclark/screened/compare/v1.45.1...v1.45.2) (2026-05-12)
+
+### Bug Fixes
+
+* **cron:** fix instrumentation guard for standalone production ([ad85e7d](https://github.com/jamiebclark/screened/commit/ad85e7d14f3924265fc4b7f1824d6010d8fa9195))
+
 ## [1.45.1](https://github.com/jamiebclark/screened/compare/v1.45.0...v1.45.1) (2026-05-12)
 
 ### Bug Fixes
