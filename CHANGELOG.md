@@ -1,3 +1,9 @@
+## [1.45.4](https://github.com/jamiebclark/screened/compare/v1.45.3...v1.45.4) (2026-05-12)
+
+### Bug Fixes
+
+* **logger:** anchor ring buffer to globalThis to survive webpack chunk splits ([000af6d](https://github.com/jamiebclark/screened/commit/000af6d01b11e1d26a9d0953cca1acaa04d2bf54))
+
 ## [1.45.3](https://github.com/jamiebclark/screened/compare/v1.45.2...v1.45.3) (2026-05-12)
 
 ### Bug Fixes
