@@ -8,8 +8,17 @@ export interface LogEntry {
   stack?: string;
 }
 
-let nextId = 1;
-const buffer: LogEntry[] = [];
+// Anchored to globalThis so all webpack chunks share the same buffer and
+// nextId counter, even when logger.ts is evaluated in multiple bundle contexts.
+type LogGlobals = {
+  __logBuffer: LogEntry[];
+  __logNextId: number;
+  __logCaptureInstalled: boolean;
+};
+const g = globalThis as typeof globalThis & Partial<LogGlobals>;
+if (!g.__logBuffer) g.__logBuffer = [];
+if (!g.__logNextId) g.__logNextId = 1;
+if (g.__logCaptureInstalled === undefined) g.__logCaptureInstalled = false;
 
 function capture(level: "error" | "warn", args: unknown[]) {
   const firstError = args.find((a): a is Error => a instanceof Error);
@@ -28,26 +37,29 @@ function capture(level: "error" | "warn", args: unknown[]) {
     .join(" ");
 
   const entry: LogEntry = {
-    id: nextId++,
+    id: g.__logNextId!++,
     timestamp: new Date().toISOString(),
     level,
     message,
     stack: firstError?.stack,
   };
 
-  buffer.push(entry);
-  if (buffer.length > MAX_ENTRIES) buffer.shift();
+  g.__logBuffer!.push(entry);
+  if (g.__logBuffer!.length > MAX_ENTRIES) g.__logBuffer!.shift();
 }
 
 export function getRecentLogs(limit = 200): LogEntry[] {
-  return buffer.slice(-limit).reverse();
+  return g.__logBuffer!.slice(-limit).reverse();
 }
 
 export function clearLogs() {
-  buffer.length = 0;
+  g.__logBuffer!.length = 0;
 }
 
 export function installConsoleCapture() {
+  if (g.__logCaptureInstalled) return;
+  g.__logCaptureInstalled = true;
+
   const originalError = console.error.bind(console);
   const originalWarn = console.warn.bind(console);
 
