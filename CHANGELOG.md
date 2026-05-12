@@ -1,3 +1,9 @@
+## [1.45.5](https://github.com/jamiebclark/screened/compare/v1.45.4...v1.45.5) (2026-05-12)
+
+### Bug Fixes
+
+* **auth:** preserve destination URL through login, register, and onboarding ([ec39d24](https://github.com/jamiebclark/screened/commit/ec39d242970ee670959a960085f12794d12e2c0e))
+
 ## [1.45.4](https://github.com/jamiebclark/screened/compare/v1.45.3...v1.45.4) (2026-05-12)
 
 ### Bug Fixes
