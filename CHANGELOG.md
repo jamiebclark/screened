@@ -1,3 +1,10 @@
+## [1.45.1](https://github.com/jamiebclark/screened/compare/v1.45.0...v1.45.1) (2026-05-12)
+
+### Bug Fixes
+
+* **config:** add node-cron to serverExternalPackages ([a07aa30](https://github.com/jamiebclark/screened/commit/a07aa306501adde7f51d1ead97dbe5f4589a8307))
+* **cron:** improve scheduler reliability and observability ([9006046](https://github.com/jamiebclark/screened/commit/90060469b4423b021aa0042e39af679bddfb4bf9))
+
 ## [1.45.0](https://github.com/jamiebclark/screened/compare/v1.44.0...v1.45.0) (2026-05-11)
 
 ### Features
