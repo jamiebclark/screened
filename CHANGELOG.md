@@ -1,3 +1,9 @@
+## [1.45.6](https://github.com/jamiebclark/screened/compare/v1.45.5...v1.45.6) (2026-05-12)
+
+### Bug Fixes
+
+* **auth:** prevent redirect loop when signed-in user visits /login ([a8f469b](https://github.com/jamiebclark/screened/commit/a8f469ba8f8141f1b36bb011c2a881ef22bf00a9))
+
 ## [1.45.5](https://github.com/jamiebclark/screened/compare/v1.45.4...v1.45.5) (2026-05-12)
 
 ### Bug Fixes
