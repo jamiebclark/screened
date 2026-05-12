@@ -40,7 +40,9 @@ export default auth((req) => {
   }
 
   if (isLoggedIn && isAuthPage) {
-    return NextResponse.redirect(new URL("/", req.url));
+    const raw = req.nextUrl.searchParams.get("callbackUrl") ?? "";
+    const dest = raw.startsWith("/") && !raw.startsWith("//") ? raw : "/";
+    return NextResponse.redirect(new URL(dest, req.url));
   }
 
   return nextWithPathname(req);

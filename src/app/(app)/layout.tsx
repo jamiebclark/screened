@@ -13,7 +13,8 @@ export default async function AppLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [session, headersList] = await Promise.all([auth(), headers()]);
+  const session = await auth();
+  const headersList = await headers();
   const currentPath = safeCallbackPath(headersList.get("x-pathname"));
   const callbackParam = `?callbackUrl=${encodeURIComponent(currentPath)}`;
 
