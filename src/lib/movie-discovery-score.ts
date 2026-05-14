@@ -1,10 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import {
-  getMovie,
   getMovieRecommendations,
   getMovieSimilar,
-  getMovieCredits,
-  getMovieKeywords,
+  getMovieWithDetails,
 } from "@/lib/tmdb";
 import {
   buildEmbeddingText,
@@ -106,15 +104,7 @@ async function getReferenceVectors(
     if (!row) continue;
     if (row.embedding.length > 0) continue;
 
-    const [movie, credits, kws] = await Promise.all([
-      getMovie(row.tmdbId),
-      getMovieCredits(row.tmdbId).catch(() => ({
-        cast: [] as string[],
-        director: null,
-        directors: [] as string[],
-      })),
-      getMovieKeywords(row.tmdbId).catch(() => [] as string[]),
-    ]);
+    const { movie, credits, keywords } = await getMovieWithDetails(row.tmdbId);
     const title = movie.title;
     const year = movie.release_date
       ? new Date(movie.release_date).getFullYear()
@@ -123,7 +113,6 @@ async function getReferenceVectors(
     const genres = movie.genres.map((g) => g.name);
     const cast = credits.cast;
     const director = credits.director;
-    const keywords = kws;
     const text = buildEmbeddingText({
       title,
       year,
@@ -313,16 +302,8 @@ export async function scoreFromTmdbDiscovery(
     return [];
   }
 
-  const details = await mapPool(candidateTmdb, 8, async (tmdb) => {
-    const [movie, credits, kws] = await Promise.all([
-      getMovie(tmdb),
-      getMovieCredits(tmdb).catch(() => ({
-        cast: [] as string[],
-        director: null,
-        directors: [] as string[],
-      })),
-      getMovieKeywords(tmdb).catch(() => [] as string[]),
-    ]);
+  const details = await mapPool(candidateTmdb, 4, async (tmdb) => {
+    const { movie, credits, keywords: kws } = await getMovieWithDetails(tmdb);
     return { tmdb, movie, credits, kws };
   });
 

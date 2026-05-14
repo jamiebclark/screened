@@ -18,16 +18,31 @@ async function tmdbFetch<T>(
     Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
   }
 
-  const res = await fetch(url.toString(), {
-    headers: getHeaders(),
-    next: { revalidate },
-  });
+  let lastError: Error | null = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const res = await fetch(url.toString(), {
+      headers: getHeaders(),
+      next: { revalidate },
+    });
 
-  if (!res.ok) {
-    throw new Error(`TMDB error: ${res.status} ${res.statusText}`);
+    if (res.status === 429) {
+      const retryAfter = res.headers.get("Retry-After");
+      const waitMs = retryAfter
+        ? parseInt(retryAfter, 10) * 1000
+        : (attempt + 1) * 2000;
+      await new Promise((r) => setTimeout(r, waitMs));
+      lastError = new Error(`TMDB error: ${res.status} ${res.statusText}`);
+      continue;
+    }
+
+    if (!res.ok) {
+      throw new Error(`TMDB error: ${res.status} ${res.statusText}`);
+    }
+
+    return res.json() as Promise<T>;
   }
 
-  return res.json() as Promise<T>;
+  throw lastError ?? new Error("TMDB request failed after retries");
 }
 
 export function tmdbImage(
@@ -322,6 +337,62 @@ export async function getMovieKeywords(tmdbId: number): Promise<string[]> {
     `/movie/${tmdbId}/keywords`,
   );
   return data.keywords.map((k) => k.name);
+}
+
+type TmdbMovieWithDetailsResponse = TmdbMovie & {
+  credits: TmdbCreditsResponse;
+  keywords: TmdbMovieKeywordsResponse;
+};
+
+export type MovieWithDetails = {
+  movie: TmdbMovie;
+  credits: TmdbMovieCredits;
+  keywords: string[];
+};
+
+/** Fetches movie details, credits, and keywords in a single TMDB request. */
+export async function getMovieWithDetails(
+  tmdbId: number,
+): Promise<MovieWithDetails> {
+  const data = await tmdbFetch<TmdbMovieWithDetailsResponse>(
+    `/movie/${tmdbId}`,
+    {
+      append_to_response: "credits,keywords,external_ids",
+    },
+  );
+
+  const imdb_id = data.external_ids?.imdb_id ?? data.imdb_id ?? null;
+  const movie: TmdbMovie = { ...data, imdb_id, genres: data.genres ?? [] };
+
+  const rawCast = data.credits?.cast ?? [];
+  const rawCrew = data.credits?.crew ?? [];
+  const sortedCast = [...rawCast].sort((a, b) => a.order - b.order).slice(0, 8);
+  const cast = sortedCast.map((c) => c.name);
+  const castTmdbIds = sortedCast.map((c) => c.id);
+
+  const seen = new Set<string>();
+  const uniqueDirectors: { id: number; name: string }[] = [];
+  for (const c of rawCrew) {
+    if (DIRECTOR_JOBS.has(c.job) && !seen.has(c.name)) {
+      seen.add(c.name);
+      uniqueDirectors.push(c);
+    }
+  }
+  const directors = uniqueDirectors.map((c) => c.name);
+  const directorsTmdbIds = uniqueDirectors.map((c) => c.id);
+
+  return {
+    movie,
+    credits: {
+      cast,
+      castTmdbIds,
+      director: directors[0] ?? null,
+      directorTmdbId: directorsTmdbIds[0] ?? null,
+      directors,
+      directorsTmdbIds,
+    },
+    keywords: (data.keywords?.keywords ?? []).map((k) => k.name),
+  };
 }
 
 export type TmdbTvCredits = {
