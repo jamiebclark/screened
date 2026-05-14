@@ -7,9 +7,32 @@ function mockFetch(body: unknown, ok = true) {
       ok,
       status: ok ? 200 : 500,
       statusText: ok ? "OK" : "Internal Server Error",
+      headers: { get: () => null },
       json: () => Promise.resolve(body),
     }),
   );
+}
+
+function make429(retryAfter?: string) {
+  return {
+    ok: false,
+    status: 429,
+    statusText: "Too Many Requests",
+    headers: {
+      get: (h: string) => (h === "Retry-After" ? (retryAfter ?? null) : null),
+    },
+    json: () => Promise.resolve({}),
+  };
+}
+
+function make200(body: unknown) {
+  return {
+    ok: true,
+    status: 200,
+    statusText: "OK",
+    headers: { get: () => null },
+    json: () => Promise.resolve(body),
+  };
 }
 
 beforeEach(() => {
@@ -153,5 +176,117 @@ describe("getPersonDirectedCredits", () => {
     const { getPersonDirectedCredits } = await import("./tmdb");
     const credits = await getPersonDirectedCredits(1);
     expect(credits).toEqual([]);
+  });
+});
+
+describe("getMovieWithDetails", () => {
+  it("returns movie, processed credits, and keywords from a single fetch", async () => {
+    mockFetch({
+      id: 1,
+      title: "Avengers",
+      genres: [{ id: 28, name: "Action" }],
+      imdb_id: null,
+      external_ids: { imdb_id: "tt0848228" },
+      credits: {
+        cast: [
+          { id: 10, name: "Robert Downey Jr.", order: 0 },
+          { id: 20, name: "Chris Evans", order: 1 },
+        ],
+        crew: [{ id: 30, name: "Joss Whedon", job: "Director" }],
+      },
+      keywords: {
+        keywords: [
+          { id: 1, name: "superhero" },
+          { id: 2, name: "marvel" },
+        ],
+      },
+    });
+    const { getMovieWithDetails } = await import("./tmdb");
+    const result = await getMovieWithDetails(1);
+
+    expect(result.movie.title).toBe("Avengers");
+    expect(result.movie.imdb_id).toBe("tt0848228");
+    expect(result.credits.cast).toEqual(["Robert Downey Jr.", "Chris Evans"]);
+    expect(result.credits.director).toBe("Joss Whedon");
+    expect(result.keywords).toEqual(["superhero", "marvel"]);
+  });
+
+  it("makes a single fetch call (not three)", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      make200({
+        id: 1,
+        genres: [],
+        credits: { cast: [], crew: [] },
+        keywords: { keywords: [] },
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const { getMovieWithDetails } = await import("./tmdb");
+    await getMovieWithDetails(1);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0][0]).toContain(
+      "append_to_response=credits%2Ckeywords%2Cexternal_ids",
+    );
+  });
+
+  it("normalizes missing credits and keywords to empty arrays", async () => {
+    mockFetch({ id: 1, genres: [] });
+    const { getMovieWithDetails } = await import("./tmdb");
+    const result = await getMovieWithDetails(1);
+    expect(result.credits.cast).toEqual([]);
+    expect(result.credits.director).toBeNull();
+    expect(result.keywords).toEqual([]);
+  });
+});
+
+describe("tmdbFetch 429 retry", () => {
+  it("retries on 429 and returns the successful response", async () => {
+    vi.useFakeTimers();
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(make429())
+      .mockResolvedValueOnce(make200({ id: 1, genres: [], imdb_id: null }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { getMovie } = await import("./tmdb");
+    const promise = getMovie(1);
+    await vi.advanceTimersByTimeAsync(2000);
+    const result = await promise;
+
+    expect(result.id).toBe(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    vi.useRealTimers();
+  });
+
+  it("respects a Retry-After header", async () => {
+    vi.useFakeTimers();
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(make429("5"))
+      .mockResolvedValueOnce(make200({ id: 1, genres: [], imdb_id: null }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { getMovie } = await import("./tmdb");
+    const promise = getMovie(1);
+    await vi.advanceTimersByTimeAsync(5000);
+    await promise;
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    vi.useRealTimers();
+  });
+
+  it("throws after 3 consecutive 429s", async () => {
+    vi.useFakeTimers();
+    const fetchMock = vi.fn().mockResolvedValue(make429());
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { getMovie } = await import("./tmdb");
+    const promise = getMovie(1);
+    const assertion = expect(promise).rejects.toThrow("TMDB error: 429");
+    await vi.runAllTimersAsync();
+    await assertion;
+
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    vi.useRealTimers();
   });
 });
