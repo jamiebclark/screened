@@ -1,3 +1,9 @@
+## [1.45.7](https://github.com/jamiebclark/screened/compare/v1.45.6...v1.45.7) (2026-05-14)
+
+### Performance Improvements
+
+* **picker:** reduce TMDB calls 3x via append_to_response and add 429 retry ([eb172e8](https://github.com/jamiebclark/screened/commit/eb172e8ea5185d5c0cf602b4678a6e70e3034f15))
+
 ## [1.45.6](https://github.com/jamiebclark/screened/compare/v1.45.5...v1.45.6) (2026-05-12)
 
 ### Bug Fixes
