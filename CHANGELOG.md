@@ -1,3 +1,9 @@
+## [1.47.0](https://github.com/jamiebclark/screened/compare/v1.46.0...v1.47.0) (2026-05-15)
+
+### Features
+
+* **docker:** add PORT env var to configure host port binding ([b02def4](https://github.com/jamiebclark/screened/commit/b02def47715e7cde466a39e9dd0d05403ec6d9ec))
+
 ## [1.46.0](https://github.com/jamiebclark/screened/compare/v1.45.7...v1.46.0) (2026-05-15)
 
 ### Features
