@@ -23,12 +23,21 @@ import {
   Tag,
   UserCheck,
   UserX,
+  ThumbsUp,
+  ThumbsDown,
+  Calendar,
+  Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 import { filterTmdbMovieGenres } from "@/lib/tmdb-movie-genres";
@@ -119,21 +128,103 @@ type PersonResult = {
   profile: string | null;
 };
 
-// ─── MovieSearchInput ─────────────────────────────────────────────────────────
+// ─── Embed helper ─────────────────────────────────────────────────────────────
 
-function MovieSearchInput({
-  onAdd,
-  placeholder,
+async function fetchMovieEmbed(
+  result: SearchResult,
+): Promise<ReferenceMovieJson | null> {
+  try {
+    const res = await fetch("/api/media/embed", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tmdbId: result.tmdbId, type: result.type }),
+    });
+    const data = (await res.json()) as {
+      id: string;
+      tmdbId: number;
+      title: string;
+      poster: string | null;
+      year: number | null;
+      hasEmbedding: boolean;
+      genres?: string[];
+    };
+    if (!res.ok) return null;
+    return {
+      mediaItemId: data.id,
+      tmdbId: data.tmdbId,
+      title: data.title,
+      poster: data.poster,
+      year: data.year,
+      weight: 1.0,
+      saved: false,
+      hasEmbedding: data.hasEmbedding,
+      genres: data.genres ?? [],
+    };
+  } catch {
+    return null;
+  }
+}
+
+// ─── FilterPill ───────────────────────────────────────────────────────────────
+
+function FilterPill({
+  label,
+  onRemove,
+  colorClass,
+  icon,
+  byLine,
+}: {
+  label: string;
+  onRemove: () => void;
+  colorClass?: string;
+  icon?: React.ReactNode;
+  byLine?: string | null;
+}) {
+  return (
+    <span
+      className={cn(
+        "inline-flex flex-col rounded-full px-2.5 py-1 text-xs font-medium",
+        colorClass ?? "bg-muted text-muted-foreground",
+      )}
+    >
+      <span className="inline-flex items-center gap-1">
+        {icon}
+        {label}
+        <button
+          type="button"
+          onClick={onRemove}
+          className="hover:opacity-70 transition-opacity ml-0.5"
+        >
+          <X className="h-3 w-3" />
+        </button>
+      </span>
+      {byLine && (
+        <span className="text-2xs font-normal text-muted-foreground leading-tight mt-0.5 pl-0.5">
+          {byLine}
+        </span>
+      )}
+    </span>
+  );
+}
+
+// ─── MovieModalSearchInput ────────────────────────────────────────────────────
+
+function MovieModalSearchInput({
+  onAddAttractor,
+  onAddRepeller,
   existingIds,
 }: {
-  onAdd: (movie: ReferenceMovieJson) => void;
-  placeholder: string;
+  onAddAttractor: (movie: ReferenceMovieJson) => void;
+  onAddRepeller: (movie: ReferenceMovieJson) => void;
   existingIds: Set<string>;
 }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
-  const [adding, setAdding] = useState<number | null>(null);
+  const [adding, setAdding] = useState<{
+    id: number;
+    kind: "like" | "avoid";
+  } | null>(null);
   const [open, setOpen] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -191,52 +282,22 @@ function MovieSearchInput({
     debounceRef.current = setTimeout(() => search(val), 350);
   };
 
-  const handleSelect = async (result: SearchResult) => {
-    setAdding(result.tmdbId);
+  const handleAdd = async (result: SearchResult, kind: "like" | "avoid") => {
+    setAdding({ id: result.tmdbId, kind });
     setOpen(false);
     setQuery("");
     setResults([]);
-    try {
-      const res = await fetch("/api/media/embed", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tmdbId: result.tmdbId, type: result.type }),
-      });
-      const data = (await res.json()) as {
-        id: string;
-        tmdbId: number;
-        title: string;
-        poster: string | null;
-        year: number | null;
-        hasEmbedding: boolean;
-        genres?: string[];
-      };
-      if (res.ok) {
-        onAdd({
-          mediaItemId: data.id,
-          tmdbId: data.tmdbId,
-          title: data.title,
-          poster: data.poster,
-          year: data.year,
-          weight: 1.0,
-          saved: false,
-          hasEmbedding: data.hasEmbedding,
-          genres: data.genres ?? [],
-        });
-      } else {
-        toast({
-          variant: "destructive",
-          description: `Could not add "${result.title}". Please try again.`,
-        });
-      }
-    } catch {
+    const movie = await fetchMovieEmbed(result);
+    if (movie) {
+      if (kind === "like") onAddAttractor(movie);
+      else onAddRepeller(movie);
+    } else {
       toast({
         variant: "destructive",
         description: `Could not add "${result.title}". Please try again.`,
       });
-    } finally {
-      setAdding(null);
     }
+    setAdding(null);
   };
 
   return (
@@ -247,8 +308,9 @@ function MovieSearchInput({
           value={query}
           onChange={handleChange}
           onFocus={() => results.length > 0 && setOpen(true)}
-          placeholder={placeholder}
+          placeholder="Search for a film…"
           className="pl-9 pr-9"
+          autoFocus
         />
         {(loading || adding !== null) && (
           <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
@@ -256,46 +318,74 @@ function MovieSearchInput({
       </div>
 
       {open && results.length > 0 && (
-        <div className="absolute z-50 mt-1 w-full rounded-md border border-border bg-popover shadow-lg">
+        <div className="absolute z-50 mt-1 w-full rounded-md border border-border bg-popover shadow-lg max-h-72 overflow-y-auto">
           {results.map((r) => {
             const alreadyAdded = existingIds.has(String(r.tmdbId));
+            const isAdding = adding?.id === r.tmdbId;
             return (
-              <button
+              <div
                 key={r.tmdbId}
-                disabled={alreadyAdded || adding === r.tmdbId}
-                onClick={() => handleSelect(r)}
                 className={cn(
-                  "flex w-full items-center gap-3 px-3 py-2 text-left text-sm transition-colors",
-                  alreadyAdded
-                    ? "cursor-not-allowed opacity-50"
-                    : "hover:bg-accent cursor-pointer",
+                  "flex items-center gap-3 px-3 py-2 text-sm",
+                  alreadyAdded && "opacity-50",
                 )}
               >
                 {r.poster ? (
                   <Image
                     src={r.poster}
                     alt={r.title}
-                    width={32}
-                    height={48}
+                    width={28}
+                    height={42}
                     className="rounded object-cover shrink-0"
                   />
                 ) : (
-                  <div className="w-8 h-12 rounded bg-muted shrink-0 flex items-center justify-center">
-                    <Film className="h-4 w-4 text-muted-foreground" />
+                  <div className="w-7 h-10 rounded bg-muted shrink-0 flex items-center justify-center">
+                    <Film className="h-3.5 w-3.5 text-muted-foreground" />
                   </div>
                 )}
-                <div className="min-w-0">
+                <div className="flex-1 min-w-0">
                   <p className="font-medium truncate">{r.title}</p>
                   {r.year && (
                     <p className="text-xs text-muted-foreground">{r.year}</p>
                   )}
                 </div>
-                {alreadyAdded && (
-                  <span className="ml-auto text-xs text-muted-foreground shrink-0">
+                {alreadyAdded ? (
+                  <span className="text-xs text-muted-foreground shrink-0">
                     Added
                   </span>
+                ) : (
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      type="button"
+                      disabled={isAdding}
+                      onClick={() => handleAdd(r, "like")}
+                      title="Like this film"
+                      className="flex items-center gap-1 rounded px-2 py-1 text-xs font-medium bg-green-500/15 text-green-700 dark:text-green-400 hover:bg-green-500/25 transition-colors disabled:opacity-50"
+                    >
+                      {isAdding && adding?.kind === "like" ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <ThumbsUp className="h-3 w-3" />
+                      )}
+                      Like
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isAdding}
+                      onClick={() => handleAdd(r, "avoid")}
+                      title="Avoid this film"
+                      className="flex items-center gap-1 rounded px-2 py-1 text-xs font-medium bg-red-500/15 text-red-700 dark:text-red-400 hover:bg-red-500/25 transition-colors disabled:opacity-50"
+                    >
+                      {isAdding && adding?.kind === "avoid" ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <ThumbsDown className="h-3 w-3" />
+                      )}
+                      Avoid
+                    </button>
+                  </div>
                 )}
-              </button>
+              </div>
             );
           })}
         </div>
@@ -1002,13 +1092,22 @@ export function PickerForm({
     filterFieldEditors = {},
   } = roomState;
 
+  const [movieOpen, setMovieOpen] = useState(false);
+  const [personOpen, setPersonOpen] = useState(false);
+  const [genreOpen, setGenreOpen] = useState(false);
+  const [yearOpen, setYearOpen] = useState(false);
+  const [runtimeOpen, setRuntimeOpen] = useState(false);
+
   const addedByChipLine = useCallback(
     (userId: string) => `Added by ${participantLabel(userId)}`,
     [participantLabel],
   );
 
+  const multiParticipant = participants.length > 1;
+
   const attractorIds = new Set(attractors.map((a) => String(a.tmdbId)));
   const repellerIds = new Set(repellers.map((r) => String(r.tmdbId)));
+  const allMovieIds = new Set([...attractorIds, ...repellerIds]);
 
   const aggregatedAttractorGenres = useMemo(() => {
     const s = new Set<string>();
@@ -1064,495 +1163,720 @@ export function PickerForm({
     });
   };
 
-  const isFirstVisit = attractors.length === 0 && repellers.length === 0;
+  // Year button label
+  const yearLabel = (() => {
+    const from = minYear.trim();
+    const to = maxYear.trim();
+    if (from && to) return `${from}–${to}`;
+    if (from) return `From ${from}`;
+    if (to) return `Until ${to}`;
+    return null;
+  })();
+
+  const runtimeLabel = maxRuntime.trim() ? `≤ ${maxRuntime} min` : null;
+
+  const hasPills =
+    attractors.length > 0 ||
+    repellers.length > 0 ||
+    requirePeople.length > 0 ||
+    excludePeople.length > 0 ||
+    includeGenres.length > 0 ||
+    excludeGenres.length > 0;
 
   return (
-    <div className="space-y-6">
-      {isFirstVisit && (
-        <div className="rounded-xl border border-border bg-muted/30 p-5 space-y-3">
-          <h3 className="text-base font-semibold">How it works</h3>
-          <div className="grid gap-3 sm:grid-cols-2 text-sm text-muted-foreground">
-            <div className="flex gap-3">
-              <div className="h-2 w-2 rounded-full bg-green-500 shrink-0 mt-1.5" />
-              <div>
-                <p className="font-medium text-foreground">Like these</p>
-                <p>
-                  Add films that capture the mood you&apos;re after. The picker
-                  finds titles with similar vibes, themes, and style.
-                </p>
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <div className="h-2 w-2 rounded-full bg-red-500 shrink-0 mt-1.5" />
-              <div>
-                <p className="font-medium text-foreground">Not like these</p>
-                <p>
-                  Add films you want to steer away from. Each one pushes
-                  matching titles down the ranked list.
-                </p>
-              </div>
-            </div>
-          </div>
+    <div className="space-y-4">
+      {/* ── Filter button bar ──────────────────────────────────────────── */}
+      <div className="flex flex-wrap gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => setMovieOpen(true)}
+        >
+          <Film className="h-4 w-4" />
+          Movie
+          {(attractors.length > 0 || repellers.length > 0) && (
+            <span className="ml-1 rounded-full bg-primary/15 px-1.5 py-0.5 text-2xs font-semibold text-primary leading-none">
+              {attractors.length + repellers.length}
+            </span>
+          )}
+        </Button>
+
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => setPersonOpen(true)}
+        >
+          <User className="h-4 w-4" />
+          Person
+          {(requirePeople.length > 0 || excludePeople.length > 0) && (
+            <span className="ml-1 rounded-full bg-primary/15 px-1.5 py-0.5 text-2xs font-semibold text-primary leading-none">
+              {requirePeople.length + excludePeople.length}
+            </span>
+          )}
+        </Button>
+
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => setGenreOpen(true)}
+        >
+          <Tag className="h-4 w-4" />
+          Genre
+          {(includeGenres.length > 0 || excludeGenres.length > 0) && (
+            <span className="ml-1 rounded-full bg-primary/15 px-1.5 py-0.5 text-2xs font-semibold text-primary leading-none">
+              {includeGenres.length + excludeGenres.length}
+            </span>
+          )}
+        </Button>
+
+        <Button
+          type="button"
+          variant={yearLabel ? "secondary" : "outline"}
+          onClick={() => setYearOpen(true)}
+        >
+          <Calendar className="h-4 w-4" />
+          {yearLabel ?? "Year"}
+        </Button>
+
+        <Button
+          type="button"
+          variant={runtimeLabel ? "secondary" : "outline"}
+          onClick={() => setRuntimeOpen(true)}
+        >
+          <Clock className="h-4 w-4" />
+          {runtimeLabel ?? "Runtime"}
+        </Button>
+      </div>
+
+      {/* ── Active filter pills ────────────────────────────────────────── */}
+      {hasPills && (
+        <div className="flex flex-wrap gap-1.5 items-start">
+          {attractors.map((m) => (
+            <FilterPill
+              key={`attr-${m.mediaItemId}`}
+              label={m.title}
+              icon={<ThumbsUp className="h-3 w-3" />}
+              colorClass="bg-green-500/15 text-green-700 dark:text-green-400"
+              onRemove={() => remove("attractor", m.mediaItemId)}
+              byLine={
+                multiParticipant && m.addedByUserId
+                  ? addedByChipLine(m.addedByUserId)
+                  : null
+              }
+            />
+          ))}
+          {repellers.map((m) => (
+            <FilterPill
+              key={`rep-${m.mediaItemId}`}
+              label={m.title}
+              icon={<ThumbsDown className="h-3 w-3" />}
+              colorClass="bg-red-500/15 text-red-700 dark:text-red-400"
+              onRemove={() => remove("repeller", m.mediaItemId)}
+              byLine={
+                multiParticipant && m.addedByUserId
+                  ? addedByChipLine(m.addedByUserId)
+                  : null
+              }
+            />
+          ))}
+          {requirePeople.map((name) => (
+            <FilterPill
+              key={`rp-${name}`}
+              label={name}
+              icon={<UserCheck className="h-3 w-3" />}
+              colorClass="bg-green-500/15 text-green-700 dark:text-green-400"
+              onRemove={() =>
+                onStateChange((p) =>
+                  applyFilterListChange(
+                    p,
+                    "requirePeople",
+                    requirePeople.filter((n) => n !== name),
+                    currentUserId,
+                  ),
+                )
+              }
+              byLine={
+                multiParticipant && filterAttribution.requirePeople?.[name]
+                  ? addedByChipLine(filterAttribution.requirePeople[name]!)
+                  : null
+              }
+            />
+          ))}
+          {excludePeople.map((name) => (
+            <FilterPill
+              key={`ep-${name}`}
+              label={name}
+              icon={<UserX className="h-3 w-3" />}
+              colorClass="bg-red-500/15 text-red-700 dark:text-red-400"
+              onRemove={() =>
+                onStateChange((p) =>
+                  applyFilterListChange(
+                    p,
+                    "excludePeople",
+                    excludePeople.filter((n) => n !== name),
+                    currentUserId,
+                  ),
+                )
+              }
+              byLine={
+                multiParticipant && filterAttribution.excludePeople?.[name]
+                  ? addedByChipLine(filterAttribution.excludePeople[name]!)
+                  : null
+              }
+            />
+          ))}
+          {includeGenres.map((name) => (
+            <FilterPill
+              key={`ig-${name}`}
+              label={name}
+              icon={<Tag className="h-3 w-3" />}
+              colorClass="bg-emerald-500/15 text-emerald-800 dark:text-emerald-300"
+              onRemove={() =>
+                onStateChange((p) =>
+                  applyFilterListChange(
+                    p,
+                    "includeGenres",
+                    includeGenres.filter((n) => n !== name),
+                    currentUserId,
+                  ),
+                )
+              }
+              byLine={
+                multiParticipant && filterAttribution.includeGenres?.[name]
+                  ? addedByChipLine(filterAttribution.includeGenres[name]!)
+                  : null
+              }
+            />
+          ))}
+          {excludeGenres.map((name) => (
+            <FilterPill
+              key={`eg-${name}`}
+              label={name}
+              icon={<Tag className="h-3 w-3" />}
+              colorClass="bg-orange-500/15 text-orange-800 dark:text-orange-300"
+              onRemove={() =>
+                onStateChange((p) =>
+                  applyFilterListChange(
+                    p,
+                    "excludeGenres",
+                    excludeGenres.filter((n) => n !== name),
+                    currentUserId,
+                  ),
+                )
+              }
+              byLine={
+                multiParticipant && filterAttribution.excludeGenres?.[name]
+                  ? addedByChipLine(filterAttribution.excludeGenres[name]!)
+                  : null
+              }
+            />
+          ))}
+        </div>
+      )}
+
+      {/* ── Empty state ────────────────────────────────────────────────── */}
+      {!hasPills && !yearLabel && !runtimeLabel && (
+        <div className="rounded-xl border border-dashed border-border px-5 py-8 text-center space-y-1">
+          <p className="text-sm text-muted-foreground">
+            Add a movie you&apos;re in the mood for to get started.
+          </p>
           <p className="text-xs text-muted-foreground">
-            Add at least one film to &quot;Like these&quot;, then click
-            &quot;Find movies&quot; to get a ranked list of suggestions.
+            Use the buttons above to add movies, people, or genres to match
+            against.
           </p>
         </div>
       )}
 
-      <section className="space-y-3">
-        <h3 className="text-base font-semibold tracking-tight">Movies</h3>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:items-start">
-          {/* Like these */}
-          <Card className="min-w-0">
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-2">
-                <div className="h-2 w-2 rounded-full bg-green-500" />
-                <CardTitle className="text-base">Like these</CardTitle>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Films that capture the mood you&apos;re after tonight
-              </p>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <MovieSearchInput
-                onAdd={(movie) =>
-                  onStateChange((prev) => ({
-                    ...prev,
-                    attractors: [
-                      ...prev.attractors,
-                      { ...movie, addedByUserId: currentUserId },
-                    ],
-                  }))
-                }
-                placeholder="Search for a film..."
-                existingIds={new Set([...attractorIds, ...repellerIds])}
-              />
-              <div className="space-y-2">
-                {attractors.map((m) => (
-                  <ReferenceMovieCard
-                    key={m.mediaItemId}
-                    movie={m}
-                    onRemove={() => remove("attractor", m.mediaItemId)}
-                    onWeightChange={(w) =>
-                      updateWeight("attractor", m.mediaItemId, w)
-                    }
-                    onSaveToggle={() => onToggleSave("attractor", m)}
-                    addedByLabel={
-                      m.addedByUserId ? addedByChipLine(m.addedByUserId) : null
-                    }
-                  />
-                ))}
-                {attractors.length === 0 && (
-                  <div className="rounded-lg border border-dashed border-border p-4 text-center">
-                    <Plus className="h-5 w-5 text-muted-foreground mx-auto mb-1" />
-                    <p className="text-xs text-muted-foreground">
-                      Add at least one film to match against
-                    </p>
-                  </div>
-                )}
-              </div>
-              {aggregatedAttractorGenres.length > 0 && (
-                <div className="rounded-lg border border-border/60 bg-muted/15 px-3 py-2.5 space-y-1.5">
-                  <p className="text-xs font-medium text-muted-foreground">
-                    Genres across your &quot;Like these&quot; picks
-                  </p>
-                  <div className="flex flex-wrap gap-1">
-                    {aggregatedAttractorGenres.map((g) => (
-                      <span
-                        key={g}
-                        className="rounded border border-border/70 bg-background/50 px-1.5 py-0.5 text-2xs text-muted-foreground"
-                      >
-                        {g}
-                      </span>
-                    ))}
-                  </div>
-                  <p className="text-2xs text-muted-foreground leading-snug">
-                    For reference only. &quot;Must include&quot; / &quot;Exclude
-                    genres&quot; under Genres below apply to the ranked
-                    suggestions—they are not filled in from this list, and the
-                    scoring uses embeddings, not via these tags.
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Not like these */}
-          <Card className="min-w-0">
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-2">
-                <div className="h-2 w-2 rounded-full bg-red-500" />
-                <CardTitle className="text-base">Not like these</CardTitle>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Too intense, too slow, or not tonight
-              </p>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <MovieSearchInput
-                onAdd={(movie) =>
-                  onStateChange((prev) => ({
-                    ...prev,
-                    repellers: [
-                      ...prev.repellers,
-                      { ...movie, addedByUserId: currentUserId },
-                    ],
-                  }))
-                }
-                placeholder="Search for a film..."
-                existingIds={new Set([...attractorIds, ...repellerIds])}
-              />
-              <div className="space-y-2">
-                {repellers.map((m) => (
-                  <ReferenceMovieCard
-                    key={m.mediaItemId}
-                    movie={m}
-                    onRemove={() => remove("repeller", m.mediaItemId)}
-                    onWeightChange={(w) =>
-                      updateWeight("repeller", m.mediaItemId, w)
-                    }
-                    onSaveToggle={() => onToggleSave("repeller", m)}
-                    addedByLabel={
-                      m.addedByUserId ? addedByChipLine(m.addedByUserId) : null
-                    }
-                  />
-                ))}
-                {repellers.length === 0 && (
-                  <div className="rounded-lg border border-dashed border-border p-3 text-center">
-                    <X className="h-4 w-4 text-muted-foreground mx-auto mb-1" />
-                    <p className="text-xs text-muted-foreground">
-                      Add vibes to steer away from, or use ✕ on a suggestion
-                    </p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+      {/* ── Library & watchlist ────────────────────────────────────────── */}
+      <div className="space-y-2.5 rounded-lg border border-border/80 bg-muted/20 p-3">
+        <h3 className="text-base font-semibold tracking-tight">
+          Library &amp; watchlist
+        </h3>
+        <div className="flex items-center gap-2.5">
+          <Checkbox
+            id="hide-logged"
+            checked={hideAllLogged}
+            onCheckedChange={(v) =>
+              onStateChange((p) => ({
+                ...p,
+                hideAllLogged: !!v,
+                filterFieldEditors: {
+                  ...p.filterFieldEditors,
+                  hideAllLogged: currentUserId,
+                },
+              }))
+            }
+          />
+          <label
+            htmlFor="hide-logged"
+            className="text-xs font-medium cursor-pointer select-none"
+          >
+            Hide films participants have already logged (watchlist, watching,
+            dropped)
+          </label>
         </div>
-      </section>
-
-      {/* Filters */}
-      <Card>
-        <CardContent className="pt-6 pb-6">
-          <div className="space-y-6">
-            {/* Years */}
-            <section className="space-y-2">
-              <h3 className="text-base font-semibold tracking-tight">Years</h3>
-              <p className="text-xs text-muted-foreground">
-                Release year range (optional)
-              </p>
-              <div
-                role="group"
-                aria-label="Release year range"
-                className="flex h-9 w-fit max-w-full shrink-0 items-center gap-1.5 rounded-md border border-input bg-background px-2.5 text-sm shadow-sm transition-colors focus-within:ring-1 focus-within:ring-ring"
-              >
-                <Input
-                  type="text"
-                  inputMode="numeric"
-                  autoComplete="off"
-                  maxLength={4}
-                  placeholder="?"
-                  aria-label="From year (optional)"
-                  value={minYear}
-                  onChange={(e) =>
-                    onStateChange((p) => ({
-                      ...p,
-                      minYear: e.target.value,
-                      filterFieldEditors: {
-                        ...p.filterFieldEditors,
-                        minYear: currentUserId,
-                      },
-                    }))
-                  }
-                  className="h-9 w-14 shrink-0 border-0 bg-transparent px-1.5 text-center text-sm tabular-nums shadow-none focus-visible:ring-0"
-                />
-                <span
-                  className="shrink-0 select-none text-muted-foreground"
-                  aria-hidden
-                >
-                  –
-                </span>
-                <Input
-                  type="text"
-                  inputMode="numeric"
-                  autoComplete="off"
-                  maxLength={4}
-                  placeholder="?"
-                  aria-label="To year (optional)"
-                  value={maxYear}
-                  onChange={(e) =>
-                    onStateChange((p) => ({
-                      ...p,
-                      maxYear: e.target.value,
-                      filterFieldEditors: {
-                        ...p.filterFieldEditors,
-                        maxYear: currentUserId,
-                      },
-                    }))
-                  }
-                  className="h-9 w-14 shrink-0 border-0 bg-transparent px-1.5 text-center text-sm tabular-nums shadow-none focus-visible:ring-0"
-                />
-              </div>
-              {(filterFieldEditors.minYear || filterFieldEditors.maxYear) && (
-                <p className="text-2xs text-muted-foreground flex flex-wrap gap-x-3 gap-y-0.5">
-                  {filterFieldEditors.minYear ? (
-                    <span>
-                      From: {participantLabel(filterFieldEditors.minYear)}
-                    </span>
-                  ) : null}
-                  {filterFieldEditors.maxYear ? (
-                    <span>
-                      To: {participantLabel(filterFieldEditors.maxYear)}
-                    </span>
-                  ) : null}
-                </p>
+        {filterFieldEditors.hideAllLogged ? (
+          <p className="text-2xs text-muted-foreground pl-7">
+            Last toggled by {participantLabel(filterFieldEditors.hideAllLogged)}
+          </p>
+        ) : null}
+        <div className="flex items-start gap-2.5">
+          <Checkbox
+            id="plex-library-only"
+            disabled={plexFilterDisabled}
+            checked={!plexFilterDisabled && plexLibraryOnly}
+            onCheckedChange={(v) =>
+              onStateChange((p) => ({
+                ...p,
+                plexLibraryOnly: !!v,
+                filterFieldEditors: {
+                  ...p.filterFieldEditors,
+                  plexLibraryOnly: currentUserId,
+                },
+              }))
+            }
+            className="mt-0.5"
+          />
+          <div className="min-w-0 space-y-0.5">
+            <label
+              htmlFor="plex-library-only"
+              className={cn(
+                "text-xs font-medium select-none",
+                !plexFilterDisabled && "cursor-pointer",
               )}
-            </section>
-
-            {/* Actor / director */}
-            <section className="space-y-3">
-              <h3 className="text-base font-semibold tracking-tight">
-                Actor / director
-              </h3>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
-                <div className="space-y-1.5 min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <UserCheck className="h-3.5 w-3.5 shrink-0 text-green-500" />
-                    <span className="text-xs font-medium text-muted-foreground">
-                      Include
-                    </span>
-                  </div>
-                  <PersonTagInput
-                    values={requirePeople}
-                    onChange={(values) =>
-                      onStateChange((p) =>
-                        applyFilterListChange(
-                          p,
-                          "requirePeople",
-                          values,
-                          currentUserId,
-                        ),
-                      )
-                    }
-                    placeholder="Search for an actor or director…"
-                    colorClass="bg-green-500/15 text-green-700 dark:text-green-400"
-                    valueAddedBy={filterAttribution.requirePeople}
-                    formatAddedBy={addedByChipLine}
-                  />
-                </div>
-                <div className="space-y-1.5 min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <UserX className="h-3.5 w-3.5 shrink-0 text-red-500" />
-                    <span className="text-xs font-medium text-muted-foreground">
-                      Exclude
-                    </span>
-                  </div>
-                  <PersonTagInput
-                    values={excludePeople}
-                    onChange={(values) =>
-                      onStateChange((p) =>
-                        applyFilterListChange(
-                          p,
-                          "excludePeople",
-                          values,
-                          currentUserId,
-                        ),
-                      )
-                    }
-                    placeholder="Search for an actor or director…"
-                    colorClass="bg-red-500/15 text-red-700 dark:text-red-400"
-                    valueAddedBy={filterAttribution.excludePeople}
-                    formatAddedBy={addedByChipLine}
-                  />
-                </div>
-              </div>
-            </section>
-
-            {/* Genres */}
-            <section className="space-y-3">
-              <h3 className="text-base font-semibold tracking-tight">Genres</h3>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
-                <div className="space-y-1.5 min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <Tag className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
-                    <span className="text-xs font-medium text-muted-foreground">
-                      Include
-                    </span>
-                  </div>
-                  <GenreTagInput
-                    values={includeGenres}
-                    onChange={(values) =>
-                      onStateChange((p) =>
-                        applyFilterListChange(
-                          p,
-                          "includeGenres",
-                          values,
-                          currentUserId,
-                        ),
-                      )
-                    }
-                    placeholder="Type or pick a genre…"
-                    colorClass="bg-emerald-500/15 text-emerald-800 dark:text-emerald-300"
-                    hint='Applies to ranked suggestions only (not an extra vote from your "Like these" films). Choose from the TMDB list or type to filter it. A suggested film must match at least one tag (OR).'
-                    valueAddedBy={filterAttribution.includeGenres}
-                    formatAddedBy={addedByChipLine}
-                  />
-                </div>
-                <div className="space-y-1.5 min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <Tag className="h-3.5 w-3.5 shrink-0 text-orange-500" />
-                    <span className="text-xs font-medium text-muted-foreground">
-                      Exclude
-                    </span>
-                  </div>
-                  <GenreTagInput
-                    values={excludeGenres}
-                    onChange={(values) =>
-                      onStateChange((p) =>
-                        applyFilterListChange(
-                          p,
-                          "excludeGenres",
-                          values,
-                          currentUserId,
-                        ),
-                      )
-                    }
-                    placeholder="Type or pick a genre…"
-                    colorClass="bg-orange-500/15 text-orange-800 dark:text-orange-300"
-                    hint='Applies to suggestions only. Suggested titles with any matching genre are removed. Typing "horr" still matches Horror when you add a custom tag.'
-                    valueAddedBy={filterAttribution.excludeGenres}
-                    formatAddedBy={addedByChipLine}
-                  />
-                </div>
-              </div>
-            </section>
-
-            {/* Runtime */}
-            <section className="space-y-2">
-              <h3 className="text-base font-semibold tracking-tight">
-                Runtime
-              </h3>
-              <p className="text-xs text-muted-foreground">
-                Max length in minutes (optional)
-              </p>
-              <Input
-                type="number"
-                placeholder="e.g. 120"
-                value={maxRuntime}
-                onChange={(e) =>
-                  onStateChange((p) => ({
-                    ...p,
-                    maxRuntime: e.target.value,
-                    filterFieldEditors: {
-                      ...p.filterFieldEditors,
-                      maxRuntime: currentUserId,
-                    },
-                  }))
-                }
-                min={1}
-                className="max-w-xs"
-              />
-              {filterFieldEditors.maxRuntime ? (
-                <p className="text-2xs text-muted-foreground">
-                  Last set by {participantLabel(filterFieldEditors.maxRuntime)}
-                </p>
-              ) : null}
-            </section>
-
-            {/* Library & watchlist */}
-            <section className="space-y-2.5 rounded-lg border border-border/80 bg-muted/20 p-3">
-              <h3 className="text-base font-semibold tracking-tight">
-                Library &amp; watchlist
-              </h3>
-              <div className="flex items-center gap-2.5">
-                <Checkbox
-                  id="hide-logged"
-                  checked={hideAllLogged}
-                  onCheckedChange={(v) =>
-                    onStateChange((p) => ({
-                      ...p,
-                      hideAllLogged: !!v,
-                      filterFieldEditors: {
-                        ...p.filterFieldEditors,
-                        hideAllLogged: currentUserId,
-                      },
-                    }))
-                  }
-                />
-                <label
-                  htmlFor="hide-logged"
-                  className="text-xs font-medium cursor-pointer select-none"
+            >
+              {plexSolo
+                ? "Only suggest titles in my Plex library"
+                : "Only suggest titles in all linked participants' Plex (intersection)"}
+            </label>
+            {plexSolo && !hasPlexLinked && (
+              <p className="text-xs text-muted-foreground leading-snug">
+                <Link
+                  prefetch={false}
+                  href="/settings/plex"
+                  className="text-primary underline-offset-2 hover:underline"
                 >
-                  Hide films participants have already logged (watchlist,
-                  watching, dropped)
-                </label>
-              </div>
-              {filterFieldEditors.hideAllLogged ? (
-                <p className="text-2xs text-muted-foreground pl-7">
-                  Last toggled by{" "}
-                  {participantLabel(filterFieldEditors.hideAllLogged)}
-                </p>
-              ) : null}
-              <div className="flex items-start gap-2.5">
-                <Checkbox
-                  id="plex-library-only"
-                  disabled={plexFilterDisabled}
-                  checked={!plexFilterDisabled && plexLibraryOnly}
-                  onCheckedChange={(v) =>
-                    onStateChange((p) => ({
-                      ...p,
-                      plexLibraryOnly: !!v,
-                      filterFieldEditors: {
-                        ...p.filterFieldEditors,
-                        plexLibraryOnly: currentUserId,
-                      },
-                    }))
-                  }
-                  className="mt-0.5"
-                />
-                <div className="min-w-0 space-y-0.5">
-                  <label
-                    htmlFor="plex-library-only"
-                    className={cn(
-                      "text-xs font-medium select-none",
-                      !plexFilterDisabled && "cursor-pointer",
-                    )}
-                  >
-                    {plexSolo
-                      ? "Only suggest titles in my Plex library"
-                      : "Only suggest titles in all linked participants' Plex (intersection)"}
-                  </label>
-                  {plexSolo && !hasPlexLinked && (
-                    <p className="text-xs text-muted-foreground leading-snug">
-                      <Link
-                        prefetch={false}
-                        href="/settings/plex"
-                        className="text-primary underline-offset-2 hover:underline"
-                      >
-                        Link Plex in settings
-                      </Link>{" "}
-                      to use this filter.
-                    </p>
-                  )}
-                  {!plexSolo && (
-                    <p className="text-xs text-muted-foreground leading-snug">
-                      Only people who have linked Plex are included. Those
-                      without a link do not restrict the set.
-                    </p>
-                  )}
+                  Link Plex in settings
+                </Link>{" "}
+                to use this filter.
+              </p>
+            )}
+            {!plexSolo && (
+              <p className="text-xs text-muted-foreground leading-snug">
+                Only people who have linked Plex are included. Those without a
+                link do not restrict the set.
+              </p>
+            )}
+          </div>
+        </div>
+        {filterFieldEditors.plexLibraryOnly ? (
+          <p className="text-2xs text-muted-foreground pl-7">
+            Last toggled by{" "}
+            {participantLabel(filterFieldEditors.plexLibraryOnly)}
+          </p>
+        ) : null}
+      </div>
+
+      {/* ── Movie modal ────────────────────────────────────────────────── */}
+      <Dialog open={movieOpen} onOpenChange={setMovieOpen}>
+        <DialogContent className="max-w-xl max-h-[85vh] flex flex-col gap-0 p-0 overflow-hidden">
+          <DialogHeader className="px-6 pt-6 pb-4 shrink-0">
+            <DialogTitle>Movies</DialogTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              Search for a film and mark it as something you&apos;d like or want
+              to avoid.
+            </p>
+          </DialogHeader>
+
+          <div className="px-6 shrink-0">
+            <MovieModalSearchInput
+              onAddAttractor={(movie) =>
+                onStateChange((prev) => ({
+                  ...prev,
+                  attractors: [
+                    ...prev.attractors,
+                    { ...movie, addedByUserId: currentUserId },
+                  ],
+                }))
+              }
+              onAddRepeller={(movie) =>
+                onStateChange((prev) => ({
+                  ...prev,
+                  repellers: [
+                    ...prev.repellers,
+                    { ...movie, addedByUserId: currentUserId },
+                  ],
+                }))
+              }
+              existingIds={allMovieIds}
+            />
+          </div>
+
+          <div className="flex-1 overflow-y-auto px-6 pb-6 mt-4 space-y-4 min-h-0">
+            {attractors.length === 0 && repellers.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                No movies added yet. Search above to get started.
+              </p>
+            )}
+
+            {attractors.length > 0 && (
+              <section className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <ThumbsUp className="h-3.5 w-3.5 text-green-500 shrink-0" />
+                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                    Like these
+                  </span>
                 </div>
+                <div className="space-y-2">
+                  {attractors.map((m) => (
+                    <ReferenceMovieCard
+                      key={m.mediaItemId}
+                      movie={m}
+                      onRemove={() => remove("attractor", m.mediaItemId)}
+                      onWeightChange={(w) =>
+                        updateWeight("attractor", m.mediaItemId, w)
+                      }
+                      onSaveToggle={() => onToggleSave("attractor", m)}
+                      addedByLabel={
+                        multiParticipant && m.addedByUserId
+                          ? addedByChipLine(m.addedByUserId)
+                          : null
+                      }
+                    />
+                  ))}
+                </div>
+                {aggregatedAttractorGenres.length > 0 && (
+                  <div className="rounded-lg border border-border/60 bg-muted/15 px-3 py-2.5 space-y-1.5">
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Genres across your &quot;Like these&quot; picks
+                    </p>
+                    <div className="flex flex-wrap gap-1">
+                      {aggregatedAttractorGenres.map((g) => (
+                        <span
+                          key={g}
+                          className="rounded border border-border/70 bg-background/50 px-1.5 py-0.5 text-2xs text-muted-foreground"
+                        >
+                          {g}
+                        </span>
+                      ))}
+                    </div>
+                    <p className="text-2xs text-muted-foreground leading-snug">
+                      For reference only. Scoring uses embeddings, not genre
+                      tags. Use the Genre filter to hard-filter suggestions.
+                    </p>
+                  </div>
+                )}
+              </section>
+            )}
+
+            {repellers.length > 0 && (
+              <section className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <ThumbsDown className="h-3.5 w-3.5 text-red-500 shrink-0" />
+                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                    Avoid these
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  {repellers.map((m) => (
+                    <ReferenceMovieCard
+                      key={m.mediaItemId}
+                      movie={m}
+                      onRemove={() => remove("repeller", m.mediaItemId)}
+                      onWeightChange={(w) =>
+                        updateWeight("repeller", m.mediaItemId, w)
+                      }
+                      onSaveToggle={() => onToggleSave("repeller", m)}
+                      addedByLabel={
+                        multiParticipant && m.addedByUserId
+                          ? addedByChipLine(m.addedByUserId)
+                          : null
+                      }
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Person modal ───────────────────────────────────────────────── */}
+      <Dialog open={personOpen} onOpenChange={setPersonOpen}>
+        <DialogContent className="max-w-xl max-h-[85vh] flex flex-col gap-0 p-0 overflow-hidden">
+          <DialogHeader className="px-6 pt-6 pb-4 shrink-0">
+            <DialogTitle>Person</DialogTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              Filter suggestions by actor or director.
+            </p>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto px-6 pb-6 space-y-5 min-h-0">
+            <section className="space-y-2">
+              <div className="flex items-center gap-1.5">
+                <UserCheck className="h-3.5 w-3.5 text-green-500 shrink-0" />
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  Must include
+                </span>
               </div>
-              {filterFieldEditors.plexLibraryOnly ? (
-                <p className="text-2xs text-muted-foreground pl-7">
-                  Last toggled by{" "}
-                  {participantLabel(filterFieldEditors.plexLibraryOnly)}
-                </p>
-              ) : null}
+              <PersonTagInput
+                values={requirePeople}
+                onChange={(values) =>
+                  onStateChange((p) =>
+                    applyFilterListChange(
+                      p,
+                      "requirePeople",
+                      values,
+                      currentUserId,
+                    ),
+                  )
+                }
+                placeholder="Search for an actor or director…"
+                colorClass="bg-green-500/15 text-green-700 dark:text-green-400"
+                valueAddedBy={filterAttribution.requirePeople}
+                formatAddedBy={multiParticipant ? addedByChipLine : undefined}
+              />
+            </section>
+            <section className="space-y-2">
+              <div className="flex items-center gap-1.5">
+                <UserX className="h-3.5 w-3.5 text-red-500 shrink-0" />
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  Exclude
+                </span>
+              </div>
+              <PersonTagInput
+                values={excludePeople}
+                onChange={(values) =>
+                  onStateChange((p) =>
+                    applyFilterListChange(
+                      p,
+                      "excludePeople",
+                      values,
+                      currentUserId,
+                    ),
+                  )
+                }
+                placeholder="Search for an actor or director…"
+                colorClass="bg-red-500/15 text-red-700 dark:text-red-400"
+                valueAddedBy={filterAttribution.excludePeople}
+                formatAddedBy={multiParticipant ? addedByChipLine : undefined}
+              />
             </section>
           </div>
-        </CardContent>
-      </Card>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Genre modal ────────────────────────────────────────────────── */}
+      <Dialog open={genreOpen} onOpenChange={setGenreOpen}>
+        <DialogContent className="max-w-xl max-h-[85vh] flex flex-col gap-0 p-0 overflow-hidden">
+          <DialogHeader className="px-6 pt-6 pb-4 shrink-0">
+            <DialogTitle>Genre</DialogTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              Hard-filter suggestions by genre. A suggestion must match at least
+              one included genre (OR logic).
+            </p>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto px-6 pb-6 space-y-5 min-h-0">
+            <section className="space-y-2">
+              <div className="flex items-center gap-1.5">
+                <Tag className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  Must include
+                </span>
+              </div>
+              <GenreTagInput
+                values={includeGenres}
+                onChange={(values) =>
+                  onStateChange((p) =>
+                    applyFilterListChange(
+                      p,
+                      "includeGenres",
+                      values,
+                      currentUserId,
+                    ),
+                  )
+                }
+                placeholder="Type or pick a genre…"
+                colorClass="bg-emerald-500/15 text-emerald-800 dark:text-emerald-300"
+                valueAddedBy={filterAttribution.includeGenres}
+                formatAddedBy={multiParticipant ? addedByChipLine : undefined}
+              />
+            </section>
+            <section className="space-y-2">
+              <div className="flex items-center gap-1.5">
+                <Tag className="h-3.5 w-3.5 text-orange-500 shrink-0" />
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  Exclude
+                </span>
+              </div>
+              <GenreTagInput
+                values={excludeGenres}
+                onChange={(values) =>
+                  onStateChange((p) =>
+                    applyFilterListChange(
+                      p,
+                      "excludeGenres",
+                      values,
+                      currentUserId,
+                    ),
+                  )
+                }
+                placeholder="Type or pick a genre…"
+                colorClass="bg-orange-500/15 text-orange-800 dark:text-orange-300"
+                valueAddedBy={filterAttribution.excludeGenres}
+                formatAddedBy={multiParticipant ? addedByChipLine : undefined}
+              />
+            </section>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Year modal ─────────────────────────────────────────────────── */}
+      <Dialog open={yearOpen} onOpenChange={setYearOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Year range</DialogTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              Restrict suggestions to a release year range.
+            </p>
+          </DialogHeader>
+          <div
+            role="group"
+            aria-label="Release year range"
+            className="flex h-9 w-fit items-center gap-1.5 rounded-md border border-input bg-background px-2.5 text-sm shadow-sm transition-colors focus-within:ring-1 focus-within:ring-ring"
+          >
+            <Input
+              type="text"
+              inputMode="numeric"
+              autoComplete="off"
+              maxLength={4}
+              placeholder="?"
+              aria-label="From year"
+              value={minYear}
+              onChange={(e) =>
+                onStateChange((p) => ({
+                  ...p,
+                  minYear: e.target.value,
+                  filterFieldEditors: {
+                    ...p.filterFieldEditors,
+                    minYear: currentUserId,
+                  },
+                }))
+              }
+              className="h-9 w-14 shrink-0 border-0 bg-transparent px-1.5 text-center text-sm tabular-nums shadow-none focus-visible:ring-0"
+            />
+            <span
+              className="shrink-0 select-none text-muted-foreground"
+              aria-hidden
+            >
+              –
+            </span>
+            <Input
+              type="text"
+              inputMode="numeric"
+              autoComplete="off"
+              maxLength={4}
+              placeholder="?"
+              aria-label="To year"
+              value={maxYear}
+              onChange={(e) =>
+                onStateChange((p) => ({
+                  ...p,
+                  maxYear: e.target.value,
+                  filterFieldEditors: {
+                    ...p.filterFieldEditors,
+                    maxYear: currentUserId,
+                  },
+                }))
+              }
+              className="h-9 w-14 shrink-0 border-0 bg-transparent px-1.5 text-center text-sm tabular-nums shadow-none focus-visible:ring-0"
+            />
+          </div>
+          {(filterFieldEditors.minYear || filterFieldEditors.maxYear) && (
+            <p className="text-2xs text-muted-foreground flex flex-wrap gap-x-3 gap-y-0.5">
+              {filterFieldEditors.minYear ? (
+                <span>
+                  From: {participantLabel(filterFieldEditors.minYear)}
+                </span>
+              ) : null}
+              {filterFieldEditors.maxYear ? (
+                <span>To: {participantLabel(filterFieldEditors.maxYear)}</span>
+              ) : null}
+            </p>
+          )}
+          <div className="flex justify-between items-center pt-1">
+            {yearLabel ? (
+              <button
+                type="button"
+                onClick={() =>
+                  onStateChange((p) => ({
+                    ...p,
+                    minYear: "",
+                    maxYear: "",
+                  }))
+                }
+                className="text-xs text-muted-foreground hover:text-destructive transition-colors"
+              >
+                Clear
+              </button>
+            ) : (
+              <span />
+            )}
+            <Button size="sm" onClick={() => setYearOpen(false)}>
+              Done
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Runtime modal ──────────────────────────────────────────────── */}
+      <Dialog open={runtimeOpen} onOpenChange={setRuntimeOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Runtime</DialogTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              Maximum film length in minutes.
+            </p>
+          </DialogHeader>
+          <Input
+            type="number"
+            placeholder="e.g. 120"
+            value={maxRuntime}
+            onChange={(e) =>
+              onStateChange((p) => ({
+                ...p,
+                maxRuntime: e.target.value,
+                filterFieldEditors: {
+                  ...p.filterFieldEditors,
+                  maxRuntime: currentUserId,
+                },
+              }))
+            }
+            min={1}
+            className="max-w-xs"
+          />
+          {filterFieldEditors.maxRuntime ? (
+            <p className="text-2xs text-muted-foreground">
+              Last set by {participantLabel(filterFieldEditors.maxRuntime)}
+            </p>
+          ) : null}
+          <div className="flex justify-between items-center pt-1">
+            {runtimeLabel ? (
+              <button
+                type="button"
+                onClick={() => onStateChange((p) => ({ ...p, maxRuntime: "" }))}
+                className="text-xs text-muted-foreground hover:text-destructive transition-colors"
+              >
+                Clear
+              </button>
+            ) : (
+              <span />
+            )}
+            <Button size="sm" onClick={() => setRuntimeOpen(false)}>
+              Done
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
