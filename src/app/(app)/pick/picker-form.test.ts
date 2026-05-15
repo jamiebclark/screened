@@ -51,6 +51,7 @@ function baseState(overrides: Partial<PickerRoomState> = {}): PickerRoomState {
     filterFieldEditors: {},
     shortlist: [],
     votes: {},
+    filtersOpen: true,
     ...overrides,
   };
 }
