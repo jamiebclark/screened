@@ -653,7 +653,7 @@ export function PickerResults({
 
       {!canScore && (
         <p className="text-center text-sm text-muted-foreground">
-          {`Add at least one film to the "Like these" section.`}
+          Click &ldquo;Movie&rdquo; above and add at least one film to like.
         </p>
       )}
 
