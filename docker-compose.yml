@@ -2,7 +2,7 @@ services:
   app:
     image: jamiebclark/screened:latest
     ports:
-      - "3000:3000"
+      - "${PORT:-3000}:3000"
     environment:
       DATABASE_URL: "postgresql://movienight:movienight@db:5432/movienightdb?schema=public"
       AUTH_SECRET: "${AUTH_SECRET}"

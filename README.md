@@ -48,7 +48,7 @@ curl -o docker-compose.yml https://raw.githubusercontent.com/jamiebclark/screene
 docker compose up -d
 ```
 
-The app will be available at `http://localhost:3000`. The first user to register gets admin access.
+The app will be available at `http://localhost:3000` (or whatever `PORT` you set in `.env`). The first user to register gets admin access.
 
 **→ [Full deployment guide](docs/deployment.md)** — env var reference, sync scheduling, backup & restore, manual setup
 
