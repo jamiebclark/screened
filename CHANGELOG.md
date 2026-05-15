@@ -1,3 +1,13 @@
+## [1.46.0](https://github.com/jamiebclark/screened/compare/v1.45.7...v1.46.0) (2026-05-15)
+
+### Features
+
+* **picker:** replace dual-column layout with modal-based filter bar ([ab33d3a](https://github.com/jamiebclark/screened/commit/ab33d3aa3dc462ca1c45fff4b5c4ad8320628e54))
+
+### Bug Fixes
+
+* **picker:** update stale copy and remove 'optional' from filter modals ([8956622](https://github.com/jamiebclark/screened/commit/8956622d2e3267f261a8ca008d36906129c07a7f))
+
 ## [1.45.7](https://github.com/jamiebclark/screened/compare/v1.45.6...v1.45.7) (2026-05-14)
 
 ### Performance Improvements
