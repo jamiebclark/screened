@@ -1,3 +1,9 @@
+## [1.47.1](https://github.com/jamiebclark/screened/compare/v1.47.0...v1.47.1) (2026-05-15)
+
+### Bug Fixes
+
+* **picker:** add missing filtersOpen field to test fixture ([6764ae9](https://github.com/jamiebclark/screened/commit/6764ae90229a97adbc2e2548e6759a8c38c56b8a))
+
 ## [1.47.0](https://github.com/jamiebclark/screened/compare/v1.46.0...v1.47.0) (2026-05-15)
 
 ### Features
