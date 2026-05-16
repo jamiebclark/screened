@@ -1,5 +1,11 @@
 import { auth } from "@/lib/auth";
-import { getTvShow, getTvSeason, getTvSimilar, tmdbImage } from "@/lib/tmdb";
+import {
+  getTvShow,
+  getTvSeason,
+  getTvSimilar,
+  getTvCredits,
+  tmdbImage,
+} from "@/lib/tmdb";
 import { prisma } from "@/lib/prisma";
 import Image from "next/image";
 import { notFound } from "next/navigation";
@@ -46,7 +52,7 @@ export default async function TvPage({ params, searchParams }: Params) {
 
   const session = await auth();
 
-  const [show, userStatus, similar, mediaItem] = await Promise.all([
+  const [show, userStatus, similar, credits] = await Promise.all([
     getTvShow(tmdbId).catch(() => null),
     session?.user?.id
       ? prisma.userMediaStatus
@@ -61,18 +67,7 @@ export default async function TvPage({ params, searchParams }: Params) {
     getTvSimilar(tmdbId)
       .then((r) => r.results.filter((m) => m.poster_path).slice(0, 10))
       .catch(() => []),
-    prisma.mediaItem
-      .findUnique({
-        where: { tmdbId_type: { tmdbId, type: MediaType.TV } },
-        select: {
-          cast: true,
-          castTmdbIds: true,
-          director: true,
-          creatorName: true,
-          creatorTmdbId: true,
-        },
-      })
-      .catch(() => null),
+    getTvCredits(tmdbId).catch(() => null),
   ]);
 
   if (!show) notFound();
@@ -261,27 +256,16 @@ export default async function TvPage({ params, searchParams }: Params) {
           </div>
         </div>
 
-        {mediaItem &&
-          (mediaItem.cast.length > 0 ||
-            mediaItem.creatorName ||
-            mediaItem.director) && (
-            <Suspense
-              fallback={
-                <div className="mt-8 text-sm text-muted-foreground">
-                  Loading cast & crew…
-                </div>
-              }
-            >
-              <PersonCastCrewSection
-                cast={mediaItem.cast}
-                castTmdbIds={mediaItem.castTmdbIds}
-                directors={[]}
-                directorsTmdbIds={[]}
-                creatorName={mediaItem.creatorName ?? mediaItem.director}
-                creatorTmdbId={mediaItem.creatorTmdbId}
-              />
-            </Suspense>
-          )}
+        {credits && (credits.cast.length > 0 || credits.creatorName) && (
+          <PersonCastCrewSection
+            cast={credits.cast}
+            castTmdbIds={credits.castTmdbIds}
+            directors={[]}
+            directorsTmdbIds={[]}
+            creatorName={credits.creatorName}
+            creatorTmdbId={credits.creatorTmdbId}
+          />
+        )}
 
         <div className="mt-8">
           <Tabs defaultValue="episodes">

@@ -1,5 +1,10 @@
 import { auth } from "@/lib/auth";
-import { getMovie, getMovieSimilar, tmdbImage } from "@/lib/tmdb";
+import {
+  getMovie,
+  getMovieCredits,
+  getMovieSimilar,
+  tmdbImage,
+} from "@/lib/tmdb";
 import { prisma } from "@/lib/prisma";
 import Image from "next/image";
 import { notFound } from "next/navigation";
@@ -54,7 +59,7 @@ export default async function MoviePage({ params, searchParams }: Params) {
 
   const session = await auth();
 
-  const [movie, userStatus, titleWatchHistory, similar, mediaItem] =
+  const [movie, userStatus, titleWatchHistory, similar, credits] =
     await Promise.all([
       getMovie(tmdbId).catch(() => null),
       session?.user?.id
@@ -77,18 +82,7 @@ export default async function MoviePage({ params, searchParams }: Params) {
       getMovieSimilar(tmdbId)
         .then((r) => r.results.filter((m) => m.poster_path).slice(0, 10))
         .catch(() => []),
-      prisma.mediaItem
-        .findUnique({
-          where: { tmdbId_type: { tmdbId, type: MediaType.MOVIE } },
-          select: {
-            cast: true,
-            castTmdbIds: true,
-            director: true,
-            directors: true,
-            directorsTmdbIds: true,
-          },
-        })
-        .catch(() => null),
+      getMovieCredits(tmdbId).catch(() => null),
     ]);
 
   if (!movie) notFound();
@@ -283,32 +277,16 @@ export default async function MoviePage({ params, searchParams }: Params) {
               />
             )}
 
-            {mediaItem &&
-              (mediaItem.cast.length > 0 ||
-                mediaItem.directors.length > 0 ||
-                mediaItem.director) && (
-                <Suspense
-                  fallback={
-                    <div className="mt-8 text-sm text-muted-foreground">
-                      Loading cast & crew…
-                    </div>
-                  }
-                >
-                  <PersonCastCrewSection
-                    cast={mediaItem.cast}
-                    castTmdbIds={mediaItem.castTmdbIds}
-                    directors={
-                      mediaItem.directors.length > 0
-                        ? mediaItem.directors
-                        : mediaItem.director
-                          ? [mediaItem.director]
-                          : []
-                    }
-                    directorsTmdbIds={mediaItem.directorsTmdbIds}
-                    creatorName={null}
-                    creatorTmdbId={null}
-                  />
-                </Suspense>
+            {credits &&
+              (credits.cast.length > 0 || credits.directors.length > 0) && (
+                <PersonCastCrewSection
+                  cast={credits.cast}
+                  castTmdbIds={credits.castTmdbIds}
+                  directors={credits.directors}
+                  directorsTmdbIds={credits.directorsTmdbIds}
+                  creatorName={null}
+                  creatorTmdbId={null}
+                />
               )}
           </div>
         </div>
