@@ -1,3 +1,9 @@
+## [1.47.2](https://github.com/jamiebclark/screened/compare/v1.47.1...v1.47.2) (2026-05-16)
+
+### Bug Fixes
+
+* **titles:** fetch cast & crew from TMDB directly on movie and TV pages ([2da9d22](https://github.com/jamiebclark/screened/commit/2da9d22c92544e9e7f30cc91cc62ee17a790d1a8))
+
 ## [1.47.1](https://github.com/jamiebclark/screened/compare/v1.47.0...v1.47.1) (2026-05-15)
 
 ### Bug Fixes
