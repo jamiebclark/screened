@@ -1,3 +1,11 @@
+## [1.48.0](https://github.com/jamiebclark/screened/compare/v1.47.2...v1.48.0) (2026-05-16)
+
+### Features
+
+* **lists:** add ListItemVote schema and migration ([69e37b8](https://github.com/jamiebclark/screened/commit/69e37b850c4b6d38f6435914ee1caddb9f55f4c6))
+* **lists:** add vote API endpoint for list items ([ceafa2a](https://github.com/jamiebclark/screened/commit/ceafa2a7abdc1c25c6be7276da3a82fe60e4dc68))
+* **lists:** add voting and sort controls to list detail page ([b6ed947](https://github.com/jamiebclark/screened/commit/b6ed947465ce3ab4a3db171b465cd8bddc46572e))
+
 ## [1.47.2](https://github.com/jamiebclark/screened/compare/v1.47.1...v1.47.2) (2026-05-16)
 
 ### Bug Fixes

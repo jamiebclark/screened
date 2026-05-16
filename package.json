@@ -1,6 +1,6 @@
 {
   "name": "screened",
-  "version": "1.47.2",
+  "version": "1.48.0",
   "private": true,
   "description": "Self-hosted movie and TV tracker with Plex sync, collaborative lists, and a Movie Night Picker",
   "keywords": [
