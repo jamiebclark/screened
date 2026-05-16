@@ -139,6 +139,7 @@ model User {
   signupInvitesCreated   SignupInvite[]  @relation("SignupInviteCreatedBy")
   hostedWatchParties     WatchParty[]     @relation("WatchPartyHost")
   watchPartyInvites      WatchPartyInvite[]
+  listItemVotes          ListItemVote[]
 }
 
 /// Single- or multi-use token for self-service signup when public registration is disabled.
@@ -402,11 +403,25 @@ model ListItem {
   notes       String?
   addedAt     DateTime  @default(now())
 
-  list      List      @relation(fields: [listId], references: [id], onDelete: Cascade)
-  mediaItem MediaItem @relation(fields: [mediaItemId], references: [id], onDelete: Cascade)
-  addedBy   User      @relation(fields: [addedById], references: [id], onDelete: Cascade)
+  list      List           @relation(fields: [listId], references: [id], onDelete: Cascade)
+  mediaItem MediaItem      @relation(fields: [mediaItemId], references: [id], onDelete: Cascade)
+  addedBy   User           @relation(fields: [addedById], references: [id], onDelete: Cascade)
+  votes     ListItemVote[]
 
   @@unique([listId, mediaItemId])
+}
+
+model ListItemVote {
+  id         String   @id @default(cuid())
+  listItemId String
+  userId     String
+  value      Int
+  createdAt  DateTime @default(now())
+
+  listItem ListItem @relation(fields: [listItemId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([listItemId, userId])
 }
 
 model UserPreference {
