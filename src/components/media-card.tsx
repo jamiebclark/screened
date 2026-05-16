@@ -21,6 +21,8 @@ interface MediaCardProps {
   priority?: boolean;
   /** Appended as query string, e.g. `watchedDate=2026-04-26`. */
   hrefSearch?: string | null;
+  /** When provided, renders as a button instead of a link. */
+  onClick?: () => void;
 }
 
 const statusIcons = {
@@ -51,15 +53,15 @@ export function MediaCard({
   compact = false,
   priority = false,
   hrefSearch = null,
+  onClick,
 }: MediaCardProps) {
   const base = `/${type === "movie" ? "movies" : "tv"}/${tmdbId}`;
   const href = hrefSearch ? `${base}?${hrefSearch}` : base;
   const imageUrl = tmdbImageUrl(poster, "w342");
   const statusInfo = status ? statusIcons[status] : null;
-  const showListBadge = onList;
 
-  return (
-    <Link href={href} className={cn("group relative block", className)}>
+  const posterContent = (
+    <>
       <div
         className={cn(
           "relative overflow-hidden rounded-lg bg-card border border-border transition-all duration-200 group-hover:border-primary/50 group-hover:shadow-lg group-hover:shadow-primary/10",
@@ -85,7 +87,7 @@ export function MediaCard({
 
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
 
-        {(statusInfo || showListBadge) && (
+        {(statusInfo || onList) && (
           <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
             {statusInfo && (
               <div
@@ -95,7 +97,7 @@ export function MediaCard({
                 <statusInfo.icon className="h-3.5 w-3.5" />
               </div>
             )}
-            {showListBadge && (
+            {onList && (
               <div
                 className="rounded-full bg-black/70 p-1 text-amber-400"
                 title="On a list"
@@ -134,6 +136,31 @@ export function MediaCard({
           </div>
         </div>
       )}
+    </>
+  );
+
+  if (onClick) {
+    return (
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={onClick}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onClick();
+          }
+        }}
+        className={cn("group relative block cursor-pointer", className)}
+      >
+        {posterContent}
+      </div>
+    );
+  }
+
+  return (
+    <Link href={href} className={cn("group relative block", className)}>
+      {posterContent}
     </Link>
   );
 }
