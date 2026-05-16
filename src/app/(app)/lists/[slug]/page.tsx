@@ -23,10 +23,15 @@ import { DiscordWebhookForm } from "./discord-webhook-form";
 import { LetterboxdImportDialog } from "@/components/letterboxd-import-dialog";
 import { EditableListSearchAdd } from "@/components/editable-list-search-add";
 import { CopyButton } from "@/components/copy-button";
+import { ListSortControls, type SortField } from "./list-sort-controls";
+import { ListItemVoteControls } from "./list-item-vote-controls";
 import { discordFeatures } from "@/lib/discord";
 import { MediaType, WatchStatus } from "@/generated/prisma";
 
-type Params = { params: Promise<{ slug: string }> };
+type Params = {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ sort?: string }>;
+};
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { slug } = await params;
@@ -37,8 +42,61 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   return { title: list ? `${list.name}` : "List" };
 }
 
-export default async function ListPage({ params }: Params) {
+const VALID_SORTS: SortField[] = ["date_added", "title", "votes", "release"];
+
+function parseSort(raw: string | undefined): SortField {
+  return VALID_SORTS.includes(raw as SortField)
+    ? (raw as SortField)
+    : "date_added";
+}
+
+type ListItemWithVotes = {
+  id: string;
+  notes: string | null;
+  addedAt: Date;
+  mediaItemId: string;
+  addedBy: { id: string; name: string | null; avatarUrl: string | null };
+  mediaItem: {
+    tmdbId: number;
+    type: MediaType;
+    title: string;
+    poster: string | null;
+    year: number | null;
+    overview: string | null;
+  };
+  votes: { value: number; userId: string }[];
+};
+
+function sortItems(
+  items: ListItemWithVotes[],
+  sort: SortField,
+): ListItemWithVotes[] {
+  return [...items].sort((a, b) => {
+    switch (sort) {
+      case "title":
+        return a.mediaItem.title.localeCompare(b.mediaItem.title);
+      case "votes": {
+        const scoreA = a.votes.reduce((s, v) => s + v.value, 0);
+        const scoreB = b.votes.reduce((s, v) => s + v.value, 0);
+        if (scoreB !== scoreA) return scoreB - scoreA;
+        return b.addedAt.getTime() - a.addedAt.getTime();
+      }
+      case "release": {
+        const diff = (b.mediaItem.year ?? 0) - (a.mediaItem.year ?? 0);
+        if (diff !== 0) return diff;
+        return a.mediaItem.title.localeCompare(b.mediaItem.title);
+      }
+      default:
+        return b.addedAt.getTime() - a.addedAt.getTime();
+    }
+  });
+}
+
+export default async function ListPage({ params, searchParams }: Params) {
   const { slug } = await params;
+  const { sort: rawSort } = await searchParams;
+  const sort = parseSort(rawSort);
+
   const session = await auth();
 
   const list = await prisma.list.findUnique({
@@ -57,6 +115,7 @@ export default async function ListPage({ params }: Params) {
         include: {
           mediaItem: true,
           addedBy: { select: { id: true, name: true, avatarUrl: true } },
+          votes: { select: { value: true, userId: true } },
         },
         orderBy: { addedAt: "desc" },
       },
@@ -93,7 +152,9 @@ export default async function ListPage({ params }: Params) {
     ? `${appUrl}/api/lists/${slug}/radarr`
     : `${appUrl}/api/lists/${slug}/radarr?token=${list.radarrToken}`;
 
-  const mediaIds = list.items.map((i) => i.mediaItemId);
+  const sortedItems = sortItems(list.items, sort);
+
+  const mediaIds = sortedItems.map((i) => i.mediaItemId);
   const watchedIdSet =
     userId && mediaIds.length > 0
       ? new Set(
@@ -111,10 +172,10 @@ export default async function ListPage({ params }: Params) {
       : new Set<string>();
 
   const unwatchedItems = userId
-    ? list.items.filter((i) => !watchedIdSet.has(i.mediaItemId))
-    : list.items;
+    ? sortedItems.filter((i) => !watchedIdSet.has(i.mediaItemId))
+    : sortedItems;
   const watchedItems = userId
-    ? list.items.filter((i) => watchedIdSet.has(i.mediaItemId))
+    ? sortedItems.filter((i) => watchedIdSet.has(i.mediaItemId))
     : [];
 
   const memberUserIds = list.members.map((m) => m.userId);
@@ -175,6 +236,7 @@ export default async function ListPage({ params }: Params) {
   );
 
   const hasSidebar = isMember || isOwner;
+  const canVote = isMember || isOwner;
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
@@ -237,6 +299,8 @@ export default async function ListPage({ params }: Params) {
             />
           )}
 
+          {list.items.length > 0 && <ListSortControls currentSort={sort} />}
+
           {/* Items grid */}
           {list.items.length === 0 ? (
             <div className="text-center py-16 border border-dashed border-border rounded-xl">
@@ -262,6 +326,7 @@ export default async function ListPage({ params }: Params) {
                         currentUserId={userId}
                         watchedBy={watchedByMap.get(item.mediaItemId) ?? []}
                         watchingBy={watchingByMap.get(item.mediaItemId) ?? []}
+                        canVote={canVote}
                       />
                     ))}
                   </div>
@@ -285,6 +350,7 @@ export default async function ListPage({ params }: Params) {
                         currentUserId={userId}
                         watchedBy={watchedByMap.get(item.mediaItemId) ?? []}
                         watchingBy={watchingByMap.get(item.mediaItemId) ?? []}
+                        canVote={canVote}
                       />
                     ))}
                   </div>
@@ -318,6 +384,7 @@ export default async function ListPage({ params }: Params) {
                               watchingBy={
                                 watchingByMap.get(item.mediaItemId) ?? []
                               }
+                              canVote={canVote}
                             />
                           ))}
                         </div>
@@ -344,6 +411,7 @@ export default async function ListPage({ params }: Params) {
                               watchingBy={
                                 watchingByMap.get(item.mediaItemId) ?? []
                               }
+                              canVote={canVote}
                             />
                           ))}
                         </div>
@@ -466,28 +534,23 @@ function ListItemCard({
   currentUserId,
   watchedBy,
   watchingBy,
+  canVote,
 }: {
-  item: {
-    id: string;
-    notes: string | null;
-    addedBy: { id: string; name: string | null; avatarUrl: string | null };
-    mediaItem: {
-      tmdbId: number;
-      type: MediaType;
-      title: string;
-      poster: string | null;
-      year: number | null;
-      overview: string | null;
-    };
-  };
+  item: ListItemWithVotes;
   slug: string;
   canDelete: boolean;
   isOwner: boolean;
   currentUserId: string | undefined;
   watchedBy: MemberUser[];
   watchingBy: MemberUser[];
+  canVote: boolean;
 }) {
   const type = item.mediaItem.type === MediaType.MOVIE ? "movie" : "tv";
+  const upvotes = item.votes.filter((v) => v.value === 1).length;
+  const downvotes = item.votes.filter((v) => v.value === -1).length;
+  const userVote = currentUserId
+    ? (item.votes.find((v) => v.userId === currentUserId)?.value ?? null)
+    : null;
 
   return (
     <div className="relative">
@@ -517,6 +580,15 @@ function ListItemCard({
           <p className="text-xs text-muted-foreground line-clamp-2">
             {item.notes}
           </p>
+        )}
+        {canVote && (
+          <ListItemVoteControls
+            listSlug={slug}
+            itemId={item.id}
+            upvotes={upvotes}
+            downvotes={downvotes}
+            userVote={userVote}
+          />
         )}
         {(watchedBy.length > 0 || watchingBy.length > 0) && (
           <div className="flex items-center gap-2">
