@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, ThumbsUp, ThumbsDown } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { ListItemVoteControls } from "./list-item-vote-controls";
@@ -124,8 +124,12 @@ export function ListItemModal({
             )}
             {!canVote && (upvotes > 0 || downvotes > 0) && (
               <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                <span>👍 {upvotes}</span>
-                <span>👎 {downvotes}</span>
+                <span className="flex items-center gap-1">
+                  <ThumbsUp className="h-3 w-3" /> {upvotes}
+                </span>
+                <span className="flex items-center gap-1">
+                  <ThumbsDown className="h-3 w-3" /> {downvotes}
+                </span>
               </div>
             )}
 
