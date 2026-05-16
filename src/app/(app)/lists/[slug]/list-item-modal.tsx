@@ -1,0 +1,230 @@
+"use client";
+
+import Image from "next/image";
+import Link from "next/link";
+import { ExternalLink } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { ListItemVoteControls } from "./list-item-vote-controls";
+import { ListItemDeleteButton } from "./list-item-delete-button";
+import { tmdbImageUrl } from "@/lib/utils";
+import type { GridItem } from "./list-items-grid";
+
+interface ListItemModalProps {
+  item: GridItem | null;
+  isOpen: boolean;
+  onClose: () => void;
+  listSlug: string;
+  canVote: boolean;
+  currentUserId: string | undefined;
+}
+
+export function ListItemModal({
+  item,
+  isOpen,
+  onClose,
+  listSlug,
+  canVote,
+  currentUserId,
+}: ListItemModalProps) {
+  if (!item) return null;
+
+  const { mediaItem } = item;
+  const type = mediaItem.type;
+  const href = `/${type === "movie" ? "movies" : "tv"}/${mediaItem.tmdbId}`;
+  const posterUrl = tmdbImageUrl(mediaItem.poster, "w342");
+  const upvotes = item.votes.filter((v) => v.value === 1).length;
+  const downvotes = item.votes.filter((v) => v.value === -1).length;
+  const userVote = currentUserId
+    ? (item.votes.find((v) => v.userId === currentUserId)?.value ?? null)
+    : null;
+
+  const runtimeLabel = mediaItem.runtime
+    ? `${Math.floor(mediaItem.runtime / 60)}h ${mediaItem.runtime % 60}m`
+    : null;
+
+  const addedDate = new Date(item.addedAt).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-2xl p-0 overflow-hidden">
+        <DialogTitle className="sr-only">{mediaItem.title}</DialogTitle>
+        <div className="flex flex-col sm:flex-row">
+          {/* Poster */}
+          <div className="sm:w-48 shrink-0">
+            {posterUrl ? (
+              <div className="relative aspect-[2/3] sm:h-full w-full">
+                <Image
+                  src={posterUrl}
+                  alt={mediaItem.title}
+                  fill
+                  className="object-cover"
+                  sizes="192px"
+                />
+              </div>
+            ) : (
+              <div className="aspect-[2/3] sm:h-full bg-muted flex items-center justify-center">
+                <span className="text-xs text-muted-foreground text-center px-2">
+                  {mediaItem.title}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Details */}
+          <div className="flex-1 p-5 overflow-y-auto max-h-[80vh] space-y-4">
+            {/* Title + meta */}
+            <div>
+              <h2 className="text-lg font-semibold leading-tight">
+                {mediaItem.title}
+              </h2>
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1 text-xs text-muted-foreground">
+                {mediaItem.year && <span>{mediaItem.year}</span>}
+                <span>·</span>
+                <span>{type === "movie" ? "Movie" : "TV Show"}</span>
+                {runtimeLabel && (
+                  <>
+                    <span>·</span>
+                    <span>{runtimeLabel}</span>
+                  </>
+                )}
+              </div>
+              {mediaItem.genres.length > 0 && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  {mediaItem.genres.join(", ")}
+                </p>
+              )}
+            </div>
+
+            {/* Overview */}
+            {mediaItem.overview && (
+              <p className="text-sm text-muted-foreground leading-relaxed line-clamp-4">
+                {mediaItem.overview}
+              </p>
+            )}
+
+            <div className="border-t border-border" />
+
+            {/* Votes */}
+            {canVote && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">Vote:</span>
+                <ListItemVoteControls
+                  listSlug={listSlug}
+                  itemId={item.id}
+                  upvotes={upvotes}
+                  downvotes={downvotes}
+                  userVote={userVote}
+                />
+              </div>
+            )}
+            {!canVote && (upvotes > 0 || downvotes > 0) && (
+              <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                <span>👍 {upvotes}</span>
+                <span>👎 {downvotes}</span>
+              </div>
+            )}
+
+            {/* Notes */}
+            {item.notes && (
+              <div>
+                <p className="text-xs font-medium text-muted-foreground mb-1">
+                  Notes
+                </p>
+                <p className="text-sm">{item.notes}</p>
+              </div>
+            )}
+
+            {/* Added by */}
+            <div className="flex items-center gap-2">
+              <Avatar className="h-5 w-5 shrink-0">
+                <AvatarImage src={item.addedBy.avatarUrl ?? undefined} />
+                <AvatarFallback className="text-[9px]">
+                  {item.addedBy.name?.[0]?.toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <span className="text-xs text-muted-foreground">
+                Added by{" "}
+                <Link
+                  href={`/profile/${item.addedBy.id}`}
+                  className="hover:underline text-foreground"
+                  onClick={onClose}
+                >
+                  {item.addedBy.name}
+                </Link>{" "}
+                · {addedDate}
+              </span>
+            </div>
+
+            {/* Member watch status */}
+            {item.watchedBy.length > 0 && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">Watched:</span>
+                <div className="flex -space-x-1">
+                  {item.watchedBy.map((m) => (
+                    <Avatar
+                      key={m.id}
+                      className="h-5 w-5 border border-background"
+                      title={m.name ?? undefined}
+                    >
+                      <AvatarImage src={m.avatarUrl ?? undefined} />
+                      <AvatarFallback className="text-[8px]">
+                        {m.name?.[0]?.toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                  ))}
+                </div>
+              </div>
+            )}
+            {item.watchingBy.length > 0 && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">Watching:</span>
+                <div className="flex -space-x-1">
+                  {item.watchingBy.map((m) => (
+                    <Avatar
+                      key={m.id}
+                      className="h-5 w-5 border border-background"
+                      title={m.name ?? undefined}
+                    >
+                      <AvatarImage src={m.avatarUrl ?? undefined} />
+                      <AvatarFallback className="text-[8px]">
+                        {m.name?.[0]?.toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="border-t border-border" />
+
+            {/* Actions */}
+            <div className="flex items-center justify-between">
+              {item.canDelete ? (
+                <ListItemDeleteButton
+                  itemId={item.id}
+                  listSlug={listSlug}
+                  onDeleted={onClose}
+                />
+              ) : (
+                <span />
+              )}
+              <Link
+                href={href}
+                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                onClick={onClose}
+              >
+                View full details
+                <ExternalLink className="h-3 w-3" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}

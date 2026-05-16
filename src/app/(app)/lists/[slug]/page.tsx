@@ -3,28 +3,16 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import {
-  Globe,
-  Lock,
-  Users,
-  Film,
-  Tv,
-  Download,
-  UserPlus,
-  CheckCheck,
-  Popcorn,
-} from "lucide-react";
+import { Globe, Lock, Users, Film, Download, UserPlus } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MediaCard } from "@/components/media-card";
 import { InviteMemberForm } from "./invite-member-form";
 import { PrivateListGate } from "./private-list-gate";
-import { ListItemActions } from "./list-item-actions";
 import { DiscordWebhookForm } from "./discord-webhook-form";
 import { LetterboxdImportDialog } from "@/components/letterboxd-import-dialog";
 import { EditableListSearchAdd } from "@/components/editable-list-search-add";
 import { CopyButton } from "@/components/copy-button";
 import { ListSortControls, type SortField } from "./list-sort-controls";
-import { ListItemVoteControls } from "./list-item-vote-controls";
+import { ListItemsGrid, type GridItem } from "./list-items-grid";
 import { discordFeatures } from "@/lib/discord";
 import { MediaType, WatchStatus } from "@/generated/prisma";
 
@@ -50,7 +38,7 @@ function parseSort(raw: string | undefined): SortField {
     : "date_added";
 }
 
-type ListItemWithVotes = {
+type RawItem = {
   id: string;
   notes: string | null;
   addedAt: Date;
@@ -63,14 +51,13 @@ type ListItemWithVotes = {
     poster: string | null;
     year: number | null;
     overview: string | null;
+    runtime: number | null;
+    genres: string[];
   };
   votes: { value: number; userId: string }[];
 };
 
-function sortItems(
-  items: ListItemWithVotes[],
-  sort: SortField,
-): ListItemWithVotes[] {
+function sortItems(items: RawItem[], sort: SortField): RawItem[] {
   return [...items].sort((a, b) => {
     switch (sort) {
       case "title":
@@ -90,6 +77,34 @@ function sortItems(
         return b.addedAt.getTime() - a.addedAt.getTime();
     }
   });
+}
+
+function toGridItem(
+  item: RawItem,
+  canDelete: boolean,
+  watchedBy: { id: string; name: string | null; avatarUrl: string | null }[],
+  watchingBy: { id: string; name: string | null; avatarUrl: string | null }[],
+): GridItem {
+  return {
+    id: item.id,
+    notes: item.notes,
+    addedAt: item.addedAt.toISOString(),
+    canDelete,
+    addedBy: item.addedBy,
+    mediaItem: {
+      tmdbId: item.mediaItem.tmdbId,
+      type: item.mediaItem.type === MediaType.MOVIE ? "movie" : "tv",
+      title: item.mediaItem.title,
+      poster: item.mediaItem.poster,
+      year: item.mediaItem.year,
+      overview: item.mediaItem.overview,
+      runtime: item.mediaItem.runtime,
+      genres: item.mediaItem.genres,
+    },
+    votes: item.votes,
+    watchedBy,
+    watchingBy,
+  };
 }
 
 export default async function ListPage({ params, searchParams }: Params) {
@@ -153,8 +168,8 @@ export default async function ListPage({ params, searchParams }: Params) {
     : `${appUrl}/api/lists/${slug}/radarr?token=${list.radarrToken}`;
 
   const sortedItems = sortItems(list.items, sort);
-
   const mediaIds = sortedItems.map((i) => i.mediaItemId);
+
   const watchedIdSet =
     userId && mediaIds.length > 0
       ? new Set(
@@ -195,6 +210,7 @@ export default async function ListPage({ params, searchParams }: Params) {
     string,
     { id: string; name: string | null; avatarUrl: string | null }
   >(list.members.map((m) => [m.userId, m.user]));
+
   const watchedByMap = new Map<
     string,
     { id: string; name: string | null; avatarUrl: string | null }[]
@@ -217,17 +233,31 @@ export default async function ListPage({ params, searchParams }: Params) {
     }
   }
 
-  const movies = unwatchedItems.filter(
-    (i) => i.mediaItem.type === MediaType.MOVIE,
+  const canDelete = isMember || isOwner;
+  const canVote = isMember || isOwner;
+
+  function makeGridItems(items: RawItem[]): GridItem[] {
+    return items.map((item) =>
+      toGridItem(
+        item,
+        canDelete && (isOwner || item.addedBy.id === userId),
+        watchedByMap.get(item.mediaItemId) ?? [],
+        watchingByMap.get(item.mediaItemId) ?? [],
+      ),
+    );
+  }
+
+  const movies = makeGridItems(
+    unwatchedItems.filter((i) => i.mediaItem.type === MediaType.MOVIE),
   );
-  const tvShows = unwatchedItems.filter(
-    (i) => i.mediaItem.type === MediaType.TV,
+  const tvShows = makeGridItems(
+    unwatchedItems.filter((i) => i.mediaItem.type === MediaType.TV),
   );
-  const watchedMovies = watchedItems.filter(
-    (i) => i.mediaItem.type === MediaType.MOVIE,
+  const watchedMovies = makeGridItems(
+    watchedItems.filter((i) => i.mediaItem.type === MediaType.MOVIE),
   );
-  const watchedTv = watchedItems.filter(
-    (i) => i.mediaItem.type === MediaType.TV,
+  const watchedTv = makeGridItems(
+    watchedItems.filter((i) => i.mediaItem.type === MediaType.TV),
   );
 
   const existingListKeys = list.items.map(
@@ -236,7 +266,6 @@ export default async function ListPage({ params, searchParams }: Params) {
   );
 
   const hasSidebar = isMember || isOwner;
-  const canVote = isMember || isOwner;
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
@@ -301,126 +330,21 @@ export default async function ListPage({ params, searchParams }: Params) {
 
           {list.items.length > 0 && <ListSortControls currentSort={sort} />}
 
-          {/* Items grid */}
           {list.items.length === 0 ? (
             <div className="text-center py-16 border border-dashed border-border rounded-xl">
               <Film className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
               <p className="text-muted-foreground">No items yet</p>
             </div>
           ) : (
-            <div className="space-y-8">
-              {movies.length > 0 && (
-                <section>
-                  <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4 flex items-center gap-1.5">
-                    <Film className="h-4 w-4" />
-                    Movies ({movies.length})
-                  </h2>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                    {movies.map((item) => (
-                      <ListItemCard
-                        key={item.id}
-                        item={item}
-                        slug={slug}
-                        canDelete={isMember || isOwner}
-                        isOwner={isOwner}
-                        currentUserId={userId}
-                        watchedBy={watchedByMap.get(item.mediaItemId) ?? []}
-                        watchingBy={watchingByMap.get(item.mediaItemId) ?? []}
-                        canVote={canVote}
-                      />
-                    ))}
-                  </div>
-                </section>
-              )}
-
-              {tvShows.length > 0 && (
-                <section>
-                  <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4 flex items-center gap-1.5">
-                    <Tv className="h-4 w-4" />
-                    TV Shows ({tvShows.length})
-                  </h2>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                    {tvShows.map((item) => (
-                      <ListItemCard
-                        key={item.id}
-                        item={item}
-                        slug={slug}
-                        canDelete={isMember || isOwner}
-                        isOwner={isOwner}
-                        currentUserId={userId}
-                        watchedBy={watchedByMap.get(item.mediaItemId) ?? []}
-                        watchingBy={watchingByMap.get(item.mediaItemId) ?? []}
-                        canVote={canVote}
-                      />
-                    ))}
-                  </div>
-                </section>
-              )}
-
-              {userId && (watchedMovies.length > 0 || watchedTv.length > 0) && (
-                <section>
-                  <h2 className="text-sm font-semibold text-foreground border-b border-border pb-2 mb-4">
-                    Watched ({watchedItems.length})
-                  </h2>
-                  <div className="space-y-8">
-                    {watchedMovies.length > 0 && (
-                      <div>
-                        <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4 flex items-center gap-1.5">
-                          <Film className="h-4 w-4" />
-                          Movies ({watchedMovies.length})
-                        </h3>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                          {watchedMovies.map((item) => (
-                            <ListItemCard
-                              key={item.id}
-                              item={item}
-                              slug={slug}
-                              canDelete={isMember || isOwner}
-                              isOwner={isOwner}
-                              currentUserId={userId}
-                              watchedBy={
-                                watchedByMap.get(item.mediaItemId) ?? []
-                              }
-                              watchingBy={
-                                watchingByMap.get(item.mediaItemId) ?? []
-                              }
-                              canVote={canVote}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {watchedTv.length > 0 && (
-                      <div>
-                        <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4 flex items-center gap-1.5">
-                          <Tv className="h-4 w-4" />
-                          TV Shows ({watchedTv.length})
-                        </h3>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                          {watchedTv.map((item) => (
-                            <ListItemCard
-                              key={item.id}
-                              item={item}
-                              slug={slug}
-                              canDelete={isMember || isOwner}
-                              isOwner={isOwner}
-                              currentUserId={userId}
-                              watchedBy={
-                                watchedByMap.get(item.mediaItemId) ?? []
-                              }
-                              watchingBy={
-                                watchingByMap.get(item.mediaItemId) ?? []
-                              }
-                              canVote={canVote}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </section>
-              )}
-            </div>
+            <ListItemsGrid
+              movies={movies}
+              tvShows={tvShows}
+              watchedMovies={watchedMovies}
+              watchedTv={watchedTv}
+              listSlug={slug}
+              canVote={canVote}
+              currentUserId={userId}
+            />
           )}
         </div>
 
@@ -519,133 +443,6 @@ export default async function ListPage({ params, searchParams }: Params) {
             )}
           </div>
         )}
-      </div>
-    </div>
-  );
-}
-
-type MemberUser = { id: string; name: string | null; avatarUrl: string | null };
-
-function ListItemCard({
-  item,
-  slug,
-  canDelete,
-  isOwner,
-  currentUserId,
-  watchedBy,
-  watchingBy,
-  canVote,
-}: {
-  item: ListItemWithVotes;
-  slug: string;
-  canDelete: boolean;
-  isOwner: boolean;
-  currentUserId: string | undefined;
-  watchedBy: MemberUser[];
-  watchingBy: MemberUser[];
-  canVote: boolean;
-}) {
-  const type = item.mediaItem.type === MediaType.MOVIE ? "movie" : "tv";
-  const upvotes = item.votes.filter((v) => v.value === 1).length;
-  const downvotes = item.votes.filter((v) => v.value === -1).length;
-  const userVote = currentUserId
-    ? (item.votes.find((v) => v.userId === currentUserId)?.value ?? null)
-    : null;
-
-  return (
-    <div className="relative">
-      {canDelete && (isOwner || item.addedBy.id === currentUserId) && (
-        <ListItemActions itemId={item.id} slug={slug} />
-      )}
-      <MediaCard
-        tmdbId={item.mediaItem.tmdbId}
-        type={type}
-        title={item.mediaItem.title}
-        poster={item.mediaItem.poster}
-        year={item.mediaItem.year}
-        compact
-      />
-      <div className="mt-1.5 space-y-1">
-        <p className="text-sm font-medium line-clamp-1">
-          {item.mediaItem.title}
-        </p>
-        <div className="flex items-center gap-1.5">
-          {item.mediaItem.year && (
-            <span className="text-xs text-muted-foreground">
-              {item.mediaItem.year}
-            </span>
-          )}
-        </div>
-        {item.notes && (
-          <p className="text-xs text-muted-foreground line-clamp-2">
-            {item.notes}
-          </p>
-        )}
-        {canVote && (
-          <ListItemVoteControls
-            listSlug={slug}
-            itemId={item.id}
-            upvotes={upvotes}
-            downvotes={downvotes}
-            userVote={userVote}
-          />
-        )}
-        {(watchedBy.length > 0 || watchingBy.length > 0) && (
-          <div className="flex items-center gap-2">
-            {watchedBy.length > 0 && (
-              <div className="flex items-center gap-1">
-                <CheckCheck className="h-3 w-3 text-green-500 shrink-0" />
-                <div className="flex -space-x-1">
-                  {watchedBy.slice(0, 4).map((m) => (
-                    <Avatar
-                      key={m.id}
-                      className="h-4 w-4 border border-background"
-                      title={m.name ?? undefined}
-                    >
-                      <AvatarImage src={m.avatarUrl ?? undefined} />
-                      <AvatarFallback className="text-[7px]">
-                        {m.name?.[0]?.toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                  ))}
-                </div>
-              </div>
-            )}
-            {watchingBy.length > 0 && (
-              <div className="flex items-center gap-1">
-                <Popcorn className="h-3 w-3 text-yellow-500 shrink-0" />
-                <div className="flex -space-x-1">
-                  {watchingBy.slice(0, 4).map((m) => (
-                    <Avatar
-                      key={m.id}
-                      className="h-4 w-4 border border-background"
-                      title={m.name ?? undefined}
-                    >
-                      <AvatarImage src={m.avatarUrl ?? undefined} />
-                      <AvatarFallback className="text-[7px]">
-                        {m.name?.[0]?.toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-        <div className="flex items-center gap-1">
-          <Avatar className="h-4 w-4 shrink-0">
-            <AvatarImage src={item.addedBy.avatarUrl ?? undefined} />
-            <AvatarFallback className="text-[8px]">
-              {item.addedBy.name?.[0]?.toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
-          <Link
-            href={`/profile/${item.addedBy.id}`}
-            className="text-xs text-muted-foreground hover:underline truncate"
-          >
-            {item.addedBy.name}
-          </Link>
-        </div>
       </div>
     </div>
   );
