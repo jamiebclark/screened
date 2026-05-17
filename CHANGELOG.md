@@ -1,3 +1,22 @@
+## [1.51.0](https://github.com/jamiebclark/screened/compare/v1.50.0...v1.51.0) (2026-05-17)
+
+### Features
+
+* **browse:** add /browse discover page with genre, type, and user filters ([61455aa](https://github.com/jamiebclark/screened/commit/61455aa13df99765bf815d561483f8527da8d336))
+* **browse:** genre-linked badges and /browse discover page ([#005](https://github.com/jamiebclark/screened/issues/005)) ([8e0f675](https://github.com/jamiebclark/screened/commit/8e0f67587647a8d80cc2ce43ca97b59c12d03900))
+* **components:** replace Movie/TV text badge with Clapperboard/Tv icon badges ([341926b](https://github.com/jamiebclark/screened/commit/341926bf69e8cbf4f266403e839cf637fd5b6982))
+* **lists:** add comment CRUD and read-tracking API routes ([9a20799](https://github.com/jamiebclark/screened/commit/9a207992c881999b676789fd4b90a9902d28bfef))
+* **lists:** add ListItemComment and ListItemCommentRead schema models ([0845769](https://github.com/jamiebclark/screened/commit/0845769ad46c15b549c17126251fc1dde9c52784))
+* **lists:** comments section in item modal with unread badge on poster ([efcbc50](https://github.com/jamiebclark/screened/commit/efcbc5066a13fb8a14d2bb082d9215a1a8a0afe8))
+* **lists:** make genre tags in item modal link to browse page ([687ae58](https://github.com/jamiebclark/screened/commit/687ae5833bea99bacbfb8914fa010ac84c19b62d))
+* **movies,tv:** make genre badges link to browse page, remove title-page-top-nav ([f03c9cd](https://github.com/jamiebclark/screened/commit/f03c9cd6177ef0e00d89d1519fb2627cbcf49b3d))
+* **tmdb:** add genre list and discover API wrappers ([f112bce](https://github.com/jamiebclark/screened/commit/f112bce7cba43c3cf22df094d39ec8add46f16bf))
+
+### Bug Fixes
+
+* **browse:** flip library/seen/friends filters to DB-first queries ([feb9772](https://github.com/jamiebclark/screened/commit/feb9772e7513701c9fa35fb9685cb082a95a64bd))
+* **lists:** lock vote pill height and add global cursor-pointer for buttons ([9dad345](https://github.com/jamiebclark/screened/commit/9dad34530fc04b4acb115b808921eae80f3d9a42))
+
 ## [1.50.0](https://github.com/jamiebclark/screened/compare/v1.49.0...v1.50.0) (2026-05-17)
 
 ### Features
