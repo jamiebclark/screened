@@ -269,16 +269,23 @@ export default async function MoviePage({ params, searchParams }: Params) {
                 tmdbId={tmdbId}
                 type="movie"
                 viewerUserId={session.user.id}
-                initialEntries={titleWatchHistory.map((e) => ({
-                  id: e.id,
-                  userId: e.userId,
-                  isViewer: e.isViewer,
-                  watchedAt: e.watchedAt.toISOString(),
-                  review: e.review,
-                  rating: e.rating,
-                  letterboxdActivityUrl: e.letterboxdActivityUrl,
-                  user: e.user,
-                }))}
+                initialEntries={titleWatchHistory
+                  .filter(
+                    (e) =>
+                      e.isViewer ||
+                      e.review === null ||
+                      e.letterboxdActivityUrl === null,
+                  )
+                  .map((e) => ({
+                    id: e.id,
+                    userId: e.userId,
+                    isViewer: e.isViewer,
+                    watchedAt: e.watchedAt.toISOString(),
+                    review: e.review,
+                    rating: e.rating,
+                    letterboxdActivityUrl: e.letterboxdActivityUrl,
+                    user: e.user,
+                  }))}
                 hasStatus={!!userStatus}
                 prefillLogDate={prefillLogDate}
               />
