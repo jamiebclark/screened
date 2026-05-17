@@ -122,7 +122,9 @@ model User {
   episodeStatuses       EpisodeStatus[]
   ownedLists      List[]
   listMemberships ListMember[]
-  listItems       ListItem[]
+  listItems            ListItem[]
+  listItemComments     ListItemComment[]
+  listItemCommentReads ListItemCommentRead[]
   sessions        Session[]
   preferences     UserPreference[]
   pickerRooms     PickerRoom[]        @relation("PickerRoomOwner")
@@ -403,12 +405,38 @@ model ListItem {
   notes       String?
   addedAt     DateTime  @default(now())
 
-  list      List           @relation(fields: [listId], references: [id], onDelete: Cascade)
-  mediaItem MediaItem      @relation(fields: [mediaItemId], references: [id], onDelete: Cascade)
-  addedBy   User           @relation(fields: [addedById], references: [id], onDelete: Cascade)
-  votes     ListItemVote[]
+  list         List                  @relation(fields: [listId], references: [id], onDelete: Cascade)
+  mediaItem    MediaItem             @relation(fields: [mediaItemId], references: [id], onDelete: Cascade)
+  addedBy      User                  @relation(fields: [addedById], references: [id], onDelete: Cascade)
+  votes        ListItemVote[]
+  comments     ListItemComment[]
+  commentReads ListItemCommentRead[]
 
   @@unique([listId, mediaItemId])
+}
+
+model ListItemComment {
+  id         String   @id @default(cuid())
+  listItemId String
+  userId     String
+  content    String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  listItem ListItem @relation(fields: [listItemId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ListItemCommentRead {
+  id         String   @id @default(cuid())
+  userId     String
+  listItemId String
+  lastReadAt DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listItem ListItem @relation(fields: [listItemId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, listItemId])
 }
 
 model ListItemVote {
