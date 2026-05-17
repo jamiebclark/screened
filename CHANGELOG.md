@@ -1,3 +1,9 @@
+## [1.51.1](https://github.com/jamiebclark/screened/compare/v1.51.0...v1.51.1) (2026-05-17)
+
+### Bug Fixes
+
+* **person:** remove deleted TitlePageTopNav import ([1df2cf8](https://github.com/jamiebclark/screened/commit/1df2cf8730a9f78f1c8065072af6a2d1ae39875c))
+
 ## [1.51.0](https://github.com/jamiebclark/screened/compare/v1.50.0...v1.51.0) (2026-05-17)
 
 ### Features
