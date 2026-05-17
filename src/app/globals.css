@@ -66,6 +66,10 @@
   h1 {
     @apply tracking-tight;
   }
+
+  button:not(:disabled) {
+    cursor: pointer;
+  }
 }
 
 body {

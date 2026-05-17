@@ -75,7 +75,7 @@ export function ListItemVotePill({
   return (
     <div
       className={cn(
-        "flex items-center rounded-full bg-black/70 overflow-hidden text-[10px] font-medium",
+        "flex items-center h-5 rounded-full bg-black/70 overflow-hidden text-[10px] font-medium",
         !canVote && "pointer-events-none",
       )}
     >
@@ -83,7 +83,7 @@ export function ListItemVotePill({
         onClick={(e) => vote(1, e)}
         disabled={loading}
         className={cn(
-          "flex items-center gap-0.5 px-1.5 py-0.5 transition-colors",
+          "flex items-center gap-0.5 px-1.5 h-full transition-colors",
           canVote && "hover:bg-white/10",
           userVote === 1 ? "text-green-400" : "text-white/70",
         )}
@@ -98,7 +98,7 @@ export function ListItemVotePill({
         onClick={(e) => vote(-1, e)}
         disabled={loading}
         className={cn(
-          "flex items-center gap-0.5 px-1.5 py-0.5 transition-colors",
+          "flex items-center gap-0.5 px-1.5 h-full transition-colors",
           canVote && "hover:bg-white/10",
           userVote === -1 ? "text-red-400" : "text-white/70",
         )}
