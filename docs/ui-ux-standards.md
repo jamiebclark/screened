@@ -8,9 +8,32 @@ Living reference for page layout, typography, and component patterns so detail p
 2. **Primary actions** — Status, add to list, and rating: one clear row of controls next to the title block.
 3. **Sections** — Main blocks (e.g. “External links”, “Your lists”, “Watch history”) are peers: same heading level and weight. **Do not** wrap a whole stack of them in a single bordered “card” unless every peer on the page does the same.
 
+## Typography scale
+
+Work at the broad end of the scale. Don’t creep one step at a time — jump to where the visual intent is clear.
+
+| Role               | Classes                           | Notes                                           |
+| ------------------ | --------------------------------- | ----------------------------------------------- |
+| Page title (H1)    | `text-4xl font-bold`              | Every page’s primary identity anchor            |
+| Named section (H2) | `text-2xl font-bold`              | Major content blocks on a page                  |
+| Sub-section (H3)   | `text-xl font-semibold`           | Groups within a section                         |
+| Lead / intro copy  | `text-base text-muted-foreground` | Subtitle under H1; section overview paragraphs  |
+| Body               | `text-base`                       | Default prose and list content                  |
+| Supporting / meta  | `text-sm text-muted-foreground`   | Counts, timestamps, captions                    |
+| Micro labels       | `text-xs`                         | Use sparingly — chart ticks, icon-only controls |
+
+## Spacing and rhythm
+
+- **Page outer padding:** `py-12` top and bottom; `px-4` horizontal inside a `max-w-*` container.
+- **Section spacing:** `space-y-16` between major page sections.
+- **Stat / hero numbers:** `text-4xl font-bold` or larger — these are the data, give them room.
+- **Hero moments / empty states:** Center-align with `py-16`+ vertical padding and an icon at `h-16 w-16`.
+- **Page header icons:** icon containers in H1 headers use `p-3` padding, icons at `h-6 w-6`.
+- **Primary CTA buttons:** Use `size=”lg”` for the primary action on any page. Reserve `size=”sm”` for secondary actions within dense layouts (sidebars, empty-state cards).
+
 ## Section headings
 
-- **Primary section title:** `h3` with `text-base font-semibold` (e.g. “Watch history”, “External links”, “Your lists” when the user has list memberships to show).
+- **Primary section title:** `h3` with `text-xl font-semibold` (e.g. “Watch history”, “External links”, “Your lists” when the user has list memberships to show).
 - **Optional count** — Sibling `span` in `text-sm font-normal text-muted-foreground` (see Watch history).
 - **Plex (multiple people)** — Use a visible **`h3` “Plex”** for the group, then each item is a **small fixed-width card** with “Your Plex library” (you) or the friend’s name + “Plex library”. The row also has `aria-label` for redundancy. Do **not** use a vague umbrella like “On Screened” for unrelated groups.
 - **Avoid** mixing an **uppercase + tracking** label and icon for one section, then a **sentence-case `h3`** for another on the same page. Prefer one system per surface.
