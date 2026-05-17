@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Film, Tv } from "lucide-react";
+import { Film, Tv, ThumbsUp, ThumbsDown } from "lucide-react";
 import { MediaCard } from "@/components/media-card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { cn } from "@/lib/utils";
 import { ListItemModal } from "./list-item-modal";
 
 export type GridItem = {
@@ -45,29 +47,63 @@ function SectionGrid({
 }) {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-      {items.map((item) => (
-        <div key={item.id} className="relative">
-          <MediaCard
-            tmdbId={item.mediaItem.tmdbId}
-            type={item.mediaItem.type}
-            title={item.mediaItem.title}
-            poster={item.mediaItem.poster}
-            year={item.mediaItem.year}
-            compact
-            onClick={() => onSelect(item)}
-          />
-          <div className="mt-1.5">
-            <p className="text-sm font-medium line-clamp-1">
-              {item.mediaItem.title}
-            </p>
-            {item.mediaItem.year && (
-              <p className="text-xs text-muted-foreground">
-                {item.mediaItem.year}
-              </p>
+      {items.map((item) => {
+        const upvotes = item.votes.filter((v) => v.value === 1).length;
+        const downvotes = item.votes.filter((v) => v.value === -1).length;
+        const hasVotes = upvotes > 0 || downvotes > 0;
+
+        return (
+          <div key={item.id} className="relative">
+            <MediaCard
+              tmdbId={item.mediaItem.tmdbId}
+              type={item.mediaItem.type}
+              title={item.mediaItem.title}
+              poster={item.mediaItem.poster}
+              year={item.mediaItem.year}
+              compact
+              onClick={() => onSelect(item)}
+            />
+
+            {/* Added-by avatar — top left */}
+            <div className="absolute top-2 left-2 z-10 pointer-events-none">
+              <Avatar className="h-6 w-6 border-2 border-background shadow-sm">
+                <AvatarImage src={item.addedBy.avatarUrl ?? undefined} />
+                <AvatarFallback className="text-[9px]">
+                  {item.addedBy.name?.[0]?.toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+            </div>
+
+            {/* Vote counts — top right */}
+            {hasVotes && (
+              <div className="absolute top-2 right-2 z-10 pointer-events-none flex items-center gap-1">
+                {upvotes > 0 && (
+                  <span
+                    className={cn(
+                      "flex items-center gap-0.5 rounded-full bg-black/70 px-1.5 py-0.5 text-[10px] font-medium",
+                      downvotes === 0 ? "text-green-400" : "text-white",
+                    )}
+                  >
+                    <ThumbsUp className="h-2.5 w-2.5" />
+                    {upvotes}
+                  </span>
+                )}
+                {downvotes > 0 && (
+                  <span
+                    className={cn(
+                      "flex items-center gap-0.5 rounded-full bg-black/70 px-1.5 py-0.5 text-[10px] font-medium",
+                      upvotes === 0 ? "text-red-400" : "text-white",
+                    )}
+                  >
+                    <ThumbsDown className="h-2.5 w-2.5" />
+                    {downvotes}
+                  </span>
+                )}
+              </div>
             )}
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
