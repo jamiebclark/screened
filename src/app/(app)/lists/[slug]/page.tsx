@@ -14,6 +14,7 @@ import { CopyButton } from "@/components/copy-button";
 import { ListSortControls, type SortField } from "./list-sort-controls";
 import { ListItemsGrid, type GridItem } from "./list-items-grid";
 import { discordFeatures } from "@/lib/discord";
+import { computeUnreadCommentCount } from "@/lib/comment-utils";
 import { MediaType, WatchStatus } from "@/generated/prisma";
 
 type Params = {
@@ -88,10 +89,10 @@ function toGridItem(
   lastReadAt: Date | null,
 ): GridItem {
   const commentCount = item.comments.length;
-  const unreadCommentCount =
-    lastReadAt === null
-      ? commentCount
-      : item.comments.filter((c) => c.createdAt > lastReadAt).length;
+  const unreadCommentCount = computeUnreadCommentCount(
+    item.comments,
+    lastReadAt,
+  );
 
   return {
     id: item.id,
