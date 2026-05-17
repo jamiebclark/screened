@@ -2,8 +2,16 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Star, Eye, Clock, Bookmark, TvMinimal, List } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import {
+  Star,
+  Eye,
+  Clock,
+  Bookmark,
+  TvMinimal,
+  List,
+  Clapperboard,
+  Tv,
+} from "lucide-react";
 import { cn, tmdbImageUrl } from "@/lib/utils";
 
 interface MediaCardProps {
@@ -130,9 +138,15 @@ export function MediaCard({
             {year && (
               <span className="text-xs text-muted-foreground">{year}</span>
             )}
-            <Badge variant="outline" className="text-2xs px-1 py-0">
-              {type === "movie" ? "Movie" : "TV"}
-            </Badge>
+            {type === "movie" ? (
+              <span className="inline-flex items-center rounded-full bg-violet-500/15 px-1.5 py-0.5 text-violet-400">
+                <Clapperboard className="h-3 w-3" />
+              </span>
+            ) : (
+              <span className="inline-flex items-center rounded-full bg-sky-500/15 px-1.5 py-0.5 text-sky-400">
+                <Tv className="h-3 w-3" />
+              </span>
+            )}
           </div>
         </div>
       )}
