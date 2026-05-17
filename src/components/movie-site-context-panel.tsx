@@ -46,7 +46,7 @@ export function TitleCatalogLinks({ links }: { links: TitleCatalogLinks }) {
 
   return (
     <div className="min-w-0">
-      <h3 className="text-base font-semibold mb-3">External links</h3>
+      <h3 className="text-xl font-semibold mb-3">External links</h3>
       <div className="flex flex-wrap gap-2">
         {items.map((item) => {
           const brand = CATALOG_BRAND[item.label];
@@ -245,7 +245,7 @@ export function MovieScreenedContextBody({
       <Separator />
       {hasLists && (
         <div>
-          <h3 className="text-base font-semibold mb-3">Your lists</h3>
+          <h3 className="text-xl font-semibold mb-3">Your lists</h3>
           <ul className="flex flex-wrap gap-2">
             {context.lists.map((l) => (
               <li key={l.slug}>
@@ -262,7 +262,7 @@ export function MovieScreenedContextBody({
       )}
 
       <div className={hasLists ? "mt-6" : ""}>
-        <h3 className="text-base font-semibold mb-3">Plex</h3>
+        <h3 className="text-xl font-semibold mb-3">Plex</h3>
         <div
           className="flex flex-wrap gap-3"
           aria-label="Plex libraries for this title"

@@ -146,7 +146,7 @@ export default async function WatchlistPage({ searchParams }: PageProps) {
     <div className="mx-auto max-w-7xl px-4 py-12 space-y-8">
       <div className="flex items-center gap-4">
         <div className="rounded-full bg-muted p-3 text-status-watchlist">
-          <Bookmark className="h-6 w-6" />
+          <Bookmark className="h-8 w-8" />
         </div>
         <div>
           <h1 className="text-4xl font-bold">Watchlist</h1>

@@ -136,6 +136,21 @@ export default async function MoviePage({ params, searchParams }: Params) {
             <div className="mt-4 w-full">
               <TitleCatalogLinks links={catalogLinks} />
             </div>
+            <Suspense
+              fallback={
+                <div className="mt-3 flex flex-col gap-1.5">
+                  {Array.from({ length: 2 }).map((_, i) => (
+                    <div key={i} className="flex items-center gap-1.5">
+                      <Skeleton className="h-3 w-12 shrink-0" />
+                      <Skeleton className="h-7 w-7 rounded-md" />
+                      <Skeleton className="h-7 w-7 rounded-md" />
+                    </div>
+                  ))}
+                </div>
+              }
+            >
+              <StreamingProviders tmdbId={tmdbId} type="movie" />
+            </Suspense>
           </div>
 
           {/* Info */}
@@ -233,19 +248,6 @@ export default async function MoviePage({ params, searchParams }: Params) {
                     {movie.overview}
                   </p>
                 )}
-
-                <Suspense
-                  fallback={
-                    <div className="mt-3 flex items-center gap-1.5">
-                      <Skeleton className="h-3 w-12 shrink-0" />
-                      {Array.from({ length: 3 }).map((_, i) => (
-                        <Skeleton key={i} className="h-7 w-7 rounded-md" />
-                      ))}
-                    </div>
-                  }
-                >
-                  <StreamingProviders tmdbId={tmdbId} type="movie" />
-                </Suspense>
 
                 {session?.user?.id ? (
                   <TitleSiteContext>

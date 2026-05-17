@@ -79,7 +79,7 @@ export default async function ListsPage() {
             )}
           </p>
         </div>
-        <Button asChild className="shrink-0 gap-1.5">
+        <Button asChild size="lg" className="shrink-0 gap-1.5">
           <Link href="/lists/new">
             <Plus className="h-4 w-4" />
             New list

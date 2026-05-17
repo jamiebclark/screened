@@ -159,7 +159,7 @@ export default async function HistoryPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-12">
       <WatchingTabs />
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-8">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between mb-8">
         <div>
           <h1 className="text-4xl font-bold">Watch History</h1>
           <p className="text-base text-muted-foreground">

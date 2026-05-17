@@ -227,7 +227,7 @@ export default async function StatsPage() {
       <WatchingTabs />
       <div className="flex items-center gap-4 mb-10">
         <div className="rounded-full bg-muted p-3 text-muted-foreground">
-          <BarChart3 className="h-6 w-6" />
+          <BarChart3 className="h-8 w-8" />
         </div>
         <div>
           <h1 className="text-4xl font-bold">Your stats</h1>

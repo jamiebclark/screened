@@ -39,7 +39,7 @@ export async function PersonCastCrewSection({
 
   return (
     <section className="mt-8">
-      <h3 className="text-base font-semibold mb-4">Cast & Crew</h3>
+      <h3 className="text-xl font-semibold mb-4">Cast & Crew</h3>
 
       {resolvedDirectors.length > 0 && (
         <div className="mb-6">
