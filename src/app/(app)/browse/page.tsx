@@ -5,14 +5,16 @@ import {
   discoverMovies,
   discoverTv,
   getTrending,
+  type TmdbSearchResult,
 } from "@/lib/tmdb";
 import {
   getUserTmdbMediaStateByRef,
   tmdbRefKey,
+  type TmdbUserMediaState,
 } from "@/lib/tmdb-user-media-state";
 import { listFriendUserIds } from "@/lib/friendship";
 import { prisma } from "@/lib/prisma";
-import { MediaType } from "@/generated/prisma";
+import { MediaType, WatchStatus } from "@/generated/prisma";
 import { MediaCard } from "@/components/media-card";
 import { BrowseFilters } from "./browse-filters";
 import Link from "next/link";
@@ -29,6 +31,33 @@ interface BrowsePageProps {
     filter?: string;
     page?: string;
   }>;
+}
+
+const PAGE_SIZE = 20;
+
+/** Maps a stored MediaItem row into the shape the render section expects. */
+function dbItemToResult(
+  item: {
+    tmdbId: number;
+    title: string;
+    poster: string | null;
+    year: number | null;
+  },
+  mediaType: "movie" | "tv",
+): TmdbSearchResult {
+  const yearStr = item.year ? `${item.year}-01-01` : undefined;
+  return {
+    id: item.tmdbId,
+    media_type: mediaType,
+    title: mediaType === "movie" ? item.title : undefined,
+    name: mediaType === "tv" ? item.title : undefined,
+    overview: "",
+    poster_path: item.poster,
+    backdrop_path: null,
+    vote_average: 0,
+    release_date: mediaType === "movie" ? yearStr : undefined,
+    first_air_date: mediaType === "tv" ? yearStr : undefined,
+  };
 }
 
 export default async function BrowsePage({ searchParams }: BrowsePageProps) {
@@ -60,85 +89,155 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
     activeGenreId = findGenreByName(genres, genreName);
   }
 
-  type DiscoverResult = Awaited<
-    ReturnType<typeof discoverMovies>
-  >["results"][number];
-  let results: DiscoverResult[] = [];
-  let totalPages = 1;
+  // Genre name needed for DB string-array filtering (MediaItem.genres is String[])
+  const activeGenreName =
+    activeGenreId && genres.length > 0
+      ? (genres.find((g) => g.id === activeGenreId)?.name ?? null)
+      : null;
 
-  try {
-    if (type === "all") {
-      const data = await getTrending("all", "week");
-      results = data.results;
-    } else if (type === "tv") {
-      const data = await discoverTv(activeGenreId ?? undefined, page);
-      results = data.results;
-      totalPages = Math.min(data.total_pages, 500);
-    } else {
-      const data = await discoverMovies(activeGenreId ?? undefined, page);
-      results = data.results;
-      totalPages = Math.min(data.total_pages, 500);
+  let results: TmdbSearchResult[] = [];
+  let totalPages = 1;
+  // Pre-built state map for DB-first paths (library/seen); avoids a second DB round-trip.
+  let directStateMap: Map<string, TmdbUserMediaState> | null = null;
+
+  // DB-first: library/seen/friends queries span the whole DB so genre+filter combos work
+  // correctly regardless of which TMDB page we happen to be on.
+  // TMDB-first: unseen and unfiltered browsing — TMDB discover is the base dataset.
+  const useDbFirst =
+    !!session?.user?.id &&
+    type !== "all" &&
+    (activeFilter === "library" ||
+      activeFilter === "seen" ||
+      activeFilter === "friends");
+
+  if (useDbFirst && session?.user?.id) {
+    const userId = session.user.id;
+    const mediaType = type === "tv" ? MediaType.TV : MediaType.MOVIE;
+    const mediaItemWhere = {
+      type: mediaType,
+      ...(activeGenreName ? { genres: { has: activeGenreName } } : {}),
+    };
+    const itemSelect = {
+      tmdbId: true,
+      title: true,
+      poster: true,
+      year: true,
+    } as const;
+    const mt = type as "movie" | "tv";
+
+    if (activeFilter === "library") {
+      const [rows, total] = await Promise.all([
+        prisma.userMediaStatus.findMany({
+          where: { userId, mediaItem: mediaItemWhere },
+          select: { status: true, mediaItem: { select: itemSelect } },
+          orderBy: { updatedAt: "desc" },
+          skip: (page - 1) * PAGE_SIZE,
+          take: PAGE_SIZE,
+        }),
+        prisma.userMediaStatus.count({
+          where: { userId, mediaItem: mediaItemWhere },
+        }),
+      ]);
+      totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+      results = rows.map(({ mediaItem }) => dbItemToResult(mediaItem, mt));
+      directStateMap = new Map(
+        rows.map(({ mediaItem, status }) => [
+          tmdbRefKey(mt, mediaItem.tmdbId),
+          { status: status as WatchStatus | null, onList: false },
+        ]),
+      );
+    } else if (activeFilter === "seen") {
+      const [rows, total] = await Promise.all([
+        prisma.userMediaStatus.findMany({
+          where: { userId, status: "WATCHED", mediaItem: mediaItemWhere },
+          select: { status: true, mediaItem: { select: itemSelect } },
+          orderBy: { updatedAt: "desc" },
+          skip: (page - 1) * PAGE_SIZE,
+          take: PAGE_SIZE,
+        }),
+        prisma.userMediaStatus.count({
+          where: { userId, status: "WATCHED", mediaItem: mediaItemWhere },
+        }),
+      ]);
+      totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+      results = rows.map(({ mediaItem }) => dbItemToResult(mediaItem, mt));
+      directStateMap = new Map(
+        rows.map(({ mediaItem, status }) => [
+          tmdbRefKey(mt, mediaItem.tmdbId),
+          { status: status as WatchStatus | null, onList: false },
+        ]),
+      );
+    } else if (activeFilter === "friends") {
+      const friendIds = await listFriendUserIds(userId);
+      if (friendIds.length > 0) {
+        // Fetch all matching friend items then de-duplicate in JS (groupBy doesn't support
+        // relation filters in Prisma; friends' libraries are small enough for this).
+        const allRows = await prisma.userMediaStatus.findMany({
+          where: { userId: { in: friendIds }, mediaItem: mediaItemWhere },
+          select: { mediaItemId: true, mediaItem: { select: itemSelect } },
+          orderBy: { updatedAt: "desc" },
+        });
+        const seen = new Set<string>();
+        const unique = allRows.filter(({ mediaItemId }) => {
+          if (seen.has(mediaItemId)) return false;
+          seen.add(mediaItemId);
+          return true;
+        });
+        totalPages = Math.max(1, Math.ceil(unique.length / PAGE_SIZE));
+        const pageRows = unique.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+        results = pageRows.map(({ mediaItem }) =>
+          dbItemToResult(mediaItem, mt),
+        );
+        // Friends results still show the current user's own watch status (not friends').
+      }
     }
-  } catch {
-    // TMDB unavailable — show empty state below
+  } else {
+    // TMDB-first path
+    try {
+      if (type === "all") {
+        const data = await getTrending("all", "week");
+        results = data.results;
+      } else if (type === "tv") {
+        const data = await discoverTv(activeGenreId ?? undefined, page);
+        results = data.results;
+        totalPages = Math.min(data.total_pages, 500);
+      } else {
+        const data = await discoverMovies(activeGenreId ?? undefined, page);
+        results = data.results;
+        totalPages = Math.min(data.total_pages, 500);
+      }
+    } catch {
+      // TMDB unavailable — show empty state below
+    }
   }
 
-  const tmdbUserStateByKey =
-    results.length > 0 && session?.user?.id
+  // Watch-status overlay: use pre-built map for library/seen; call TMDB state helper otherwise.
+  const tmdbUserStateByKey: Map<string, TmdbUserMediaState> =
+    directStateMap ??
+    (results.length > 0 && session?.user?.id
       ? await getUserTmdbMediaStateByRef(
           session.user.id,
           results.map((r) => ({ tmdbId: r.id, type: r.media_type })),
         ).catch(() => new Map())
-      : new Map();
+      : new Map());
 
+  // Post-filter only needed for "unseen" (TMDB-first path).
   let filteredResults = results;
 
-  if (activeFilter && session?.user?.id) {
+  if (!useDbFirst && activeFilter === "unseen" && session?.user?.id) {
     const userId = session.user.id;
     const mediaType = type === "tv" ? MediaType.TV : MediaType.MOVIE;
     const resultTmdbIds = results.map((r) => r.id);
-
-    if (activeFilter === "seen" || activeFilter === "unseen") {
-      const watched = await prisma.userMediaStatus.findMany({
-        where: {
-          userId,
-          status: "WATCHED",
-          mediaItem: { type: mediaType, tmdbId: { in: resultTmdbIds } },
-        },
-        select: { mediaItem: { select: { tmdbId: true } } },
-      });
-      const watchedIds = new Set(watched.map((w) => w.mediaItem.tmdbId));
-      filteredResults = results.filter((r) =>
-        activeFilter === "seen" ? watchedIds.has(r.id) : !watchedIds.has(r.id),
-      );
-    } else if (activeFilter === "library") {
-      const inLibrary = await prisma.userMediaStatus.findMany({
-        where: {
-          userId,
-          mediaItem: { type: mediaType, tmdbId: { in: resultTmdbIds } },
-        },
-        select: { mediaItem: { select: { tmdbId: true } } },
-      });
-      const libraryIds = new Set(inLibrary.map((w) => w.mediaItem.tmdbId));
-      filteredResults = results.filter((r) => libraryIds.has(r.id));
-    } else if (activeFilter === "friends") {
-      const friendIds = await listFriendUserIds(userId);
-      if (friendIds.length === 0) {
-        filteredResults = [];
-      } else {
-        const friendItems = await prisma.userMediaStatus.findMany({
-          where: {
-            userId: { in: friendIds },
-            mediaItem: { type: mediaType, tmdbId: { in: resultTmdbIds } },
-          },
-          select: { mediaItem: { select: { tmdbId: true } } },
-        });
-        const friendTmdbIds = new Set(
-          friendItems.map((w) => w.mediaItem.tmdbId),
-        );
-        filteredResults = results.filter((r) => friendTmdbIds.has(r.id));
-      }
-    }
+    const watched = await prisma.userMediaStatus.findMany({
+      where: {
+        userId,
+        status: "WATCHED",
+        mediaItem: { type: mediaType, tmdbId: { in: resultTmdbIds } },
+      },
+      select: { mediaItem: { select: { tmdbId: true } } },
+    });
+    const watchedIds = new Set(watched.map((w) => w.mediaItem.tmdbId));
+    filteredResults = results.filter((r) => !watchedIds.has(r.id));
   }
 
   function buildPageUrl(pageNum: number): string {
@@ -150,11 +249,6 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
     const q = params.toString();
     return q ? `/browse?${q}` : "/browse";
   }
-
-  const noFriendsEmpty =
-    activeFilter === "friends" &&
-    filteredResults.length === 0 &&
-    results.length > 0;
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
@@ -171,8 +265,8 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
       {filteredResults.length === 0 ? (
         <div className="text-center py-16">
           <p className="text-muted-foreground">
-            {noFriendsEmpty
-              ? "None of your friends have tracked any of these titles yet."
+            {activeFilter === "friends"
+              ? "None of your friends have tracked any matching titles yet."
               : "No results found. Try adjusting your filters."}
           </p>
         </div>
