@@ -1,3 +1,14 @@
+## [1.49.0](https://github.com/jamiebclark/screened/compare/v1.48.0...v1.49.0) (2026-05-17)
+
+### Features
+
+* **lists:** open item detail modal instead of navigating to title page ([b015689](https://github.com/jamiebclark/screened/commit/b015689bc865cd75b68785d302fa9c748e169724))
+* **media-card:** add onClick prop to render as button instead of link ([c57a814](https://github.com/jamiebclark/screened/commit/c57a8148263da6f7c96ed885a27f43cfca831775))
+
+### Bug Fixes
+
+* **lists:** use Lucide icons for vote display in modal non-member view ([0c16a96](https://github.com/jamiebclark/screened/commit/0c16a96f4dc0967384beef1146b6d6a36f720a65))
+
 ## [1.48.0](https://github.com/jamiebclark/screened/compare/v1.47.2...v1.48.0) (2026-05-16)
 
 ### Features
