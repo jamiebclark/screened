@@ -1,3 +1,10 @@
+## [1.50.0](https://github.com/jamiebclark/screened/compare/v1.49.0...v1.50.0) (2026-05-17)
+
+### Features
+
+* **lists:** always-visible vote pill on cards, clickable for members ([ae5375e](https://github.com/jamiebclark/screened/commit/ae5375ea7ebe9fd356c4a106917026c7ed3bcb4d))
+* **lists:** replace below-poster text with always-visible card overlays ([13da1c0](https://github.com/jamiebclark/screened/commit/13da1c0b6e69bb6946e358fbd20054736bf21e54))
+
 ## [1.49.0](https://github.com/jamiebclark/screened/compare/v1.48.0...v1.49.0) (2026-05-17)
 
 ### Features
