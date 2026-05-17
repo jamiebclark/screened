@@ -82,19 +82,24 @@ export async function findMergeCandidateWatchEntry(
 export type LetterboxdDiaryFields = {
   rating: number | null;
   activityUrl: string | null;
+  review: string | null;
 };
 
 /**
  * Applies RSS diary data to an existing row (manual / Plex / unknown) without creating a duplicate.
  */
 export async function mergeLetterboxdDiaryIntoWatchEntry(
-  entry: Pick<WatchEntry, "id" | "rating" | "source" | "letterboxdActivityUrl">,
+  entry: Pick<
+    WatchEntry,
+    "id" | "rating" | "source" | "letterboxdActivityUrl" | "review"
+  >,
   diary: LetterboxdDiaryFields,
 ): Promise<void> {
   const data: {
     rating?: number;
     source?: WatchEntrySource;
     letterboxdActivityUrl?: string;
+    review?: string;
   } = {};
   if (diary.rating !== null && entry.rating === null) {
     data.rating = diary.rating;
@@ -104,6 +109,9 @@ export async function mergeLetterboxdDiaryIntoWatchEntry(
   }
   if (diary.activityUrl) {
     data.letterboxdActivityUrl = diary.activityUrl;
+  }
+  if (diary.review && !entry.review) {
+    data.review = diary.review;
   }
   if (Object.keys(data).length === 0) return;
   await prisma.watchEntry.update({ where: { id: entry.id }, data });

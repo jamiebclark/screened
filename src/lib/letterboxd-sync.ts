@@ -21,6 +21,7 @@ interface DiaryEntry {
   tmdbMovieId: number | null;
   /** RSS item link (user film / diary page on Letterboxd). */
   activityUrl: string | null;
+  review: string | null;
 }
 
 async function fetchRss(username: string): Promise<string> {
@@ -40,6 +41,32 @@ async function fetchRss(username: string): Promise<string> {
 function extractTag(xml: string, tag: string): string | null {
   const match = xml.match(new RegExp(`<${tag}[^>]*>([^<]*)<\/${tag}>`));
   return match ? match[1].trim() : null;
+}
+
+function extractCdata(block: string, tag: string): string | null {
+  const match = block.match(
+    new RegExp(`<${tag}[^>]*><!\\[CDATA\\[([\\s\\S]*?)\\]\\]><\\/${tag}>`),
+  );
+  return match ? (match[1] ?? null) : null;
+}
+
+function parseLetterboxdReview(description: string | null): string | null {
+  if (!description) return null;
+  const text = description
+    .replace(/<p>\s*<img[^>]*\/?>\s*<\/p>/gi, "")
+    .replace(/<p>\s*<small>[^<]*<\/small>\s*<\/p>/gi, "")
+    .replace(/<\/p>/gi, "\n\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&apos;/g, "'")
+    .replace(/&nbsp;/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+  return text || null;
 }
 
 function parseDiaryEntries(xml: string): DiaryEntry[] {
@@ -67,6 +94,9 @@ function parseDiaryEntries(xml: string): DiaryEntry[] {
     const linkRaw = extractTag(block, "link");
     const activityUrl = normalizeLetterboxdActivityUrl(linkRaw);
 
+    const descriptionCdata = extractCdata(block, "description");
+    const review = parseLetterboxdReview(descriptionCdata);
+
     entries.push({
       filmTitle,
       filmYear,
@@ -74,6 +104,7 @@ function parseDiaryEntries(xml: string): DiaryEntry[] {
       rating,
       tmdbMovieId,
       activityUrl,
+      review,
     });
   }
 
@@ -179,6 +210,7 @@ export async function syncLetterboxdUser(
             await mergeLetterboxdDiaryIntoWatchEntry(mergeTarget, {
               rating: entry.rating,
               activityUrl: entry.activityUrl,
+              review: entry.review,
             });
             alreadyWatched++;
             return;
@@ -195,6 +227,7 @@ export async function syncLetterboxdUser(
               ...(entry.activityUrl
                 ? { letterboxdActivityUrl: entry.activityUrl }
                 : {}),
+              ...(entry.review ? { review: entry.review } : {}),
             },
           });
 
