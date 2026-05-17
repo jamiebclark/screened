@@ -36,6 +36,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { TitleListsSection } from "@/components/title-lists-section";
 import { StreamingProviders } from "@/components/streaming-providers";
 import { PersonCastCrewSection } from "@/components/person-cast-crew-section";
+import { FriendsLetterboxdReviews } from "@/components/friends-letterboxd-reviews";
 
 type Params = {
   params: Promise<{ tmdbId: string }>;
@@ -282,6 +283,15 @@ export default async function MoviePage({ params, searchParams }: Params) {
                 prefillLogDate={prefillLogDate}
               />
             )}
+
+            <FriendsLetterboxdReviews
+              entries={titleWatchHistory.filter(
+                (e) =>
+                  !e.isViewer &&
+                  e.review !== null &&
+                  e.letterboxdActivityUrl !== null,
+              )}
+            />
 
             {credits &&
               (credits.cast.length > 0 || credits.directors.length > 0) && (
