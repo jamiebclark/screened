@@ -106,7 +106,6 @@ export default async function PersonPage({ params }: Params) {
                           ? new Date(item.releaseDate).getFullYear()
                           : null
                       }
-                      compact
                       status={item.watchStatus}
                       rating={item.userRating}
                     />
@@ -136,7 +135,6 @@ export default async function PersonPage({ params }: Params) {
                           ? new Date(item.releaseDate).getFullYear()
                           : null
                       }
-                      compact
                       status={item.watchStatus}
                       rating={item.userRating}
                     />
@@ -170,7 +168,6 @@ export default async function PersonPage({ params }: Params) {
                   year={
                     c.releaseDate ? new Date(c.releaseDate).getFullYear() : null
                   }
-                  compact
                 />
               ))}
             </div>
@@ -209,7 +206,6 @@ export default async function PersonPage({ params }: Params) {
                           ? new Date(c.releaseDate).getFullYear()
                           : null
                       }
-                      compact
                     />
                   ))}
                 </div>
@@ -234,7 +230,6 @@ export default async function PersonPage({ params }: Params) {
                           ? new Date(c.releaseDate).getFullYear()
                           : null
                       }
-                      compact
                     />
                   ))}
                 </div>

@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ExternalLink, ThumbsUp, ThumbsDown } from "lucide-react";
+import { ThumbsUp, ThumbsDown } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { ListItemVoteControls } from "./list-item-vote-controls";
@@ -83,7 +83,9 @@ export function ListItemModal({
             {/* Title + meta */}
             <div>
               <h2 className="text-lg font-semibold leading-tight">
-                {mediaItem.title}
+                <Link href={href} className="hover:underline" onClick={onClose}>
+                  {mediaItem.title}
+                </Link>
               </h2>
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1 text-xs text-muted-foreground">
                 {mediaItem.year && <span>{mediaItem.year}</span>}
@@ -97,9 +99,18 @@ export function ListItemModal({
                 )}
               </div>
               {mediaItem.genres.length > 0 && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  {mediaItem.genres.join(", ")}
-                </p>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {mediaItem.genres.map((g) => (
+                    <Link
+                      key={g}
+                      href={`/browse?genreName=${encodeURIComponent(g)}&type=${type}`}
+                      onClick={onClose}
+                      className="inline-flex items-center rounded-full border border-transparent bg-secondary px-2 py-0.5 text-xs text-secondary-foreground hover:bg-secondary/80 transition-colors"
+                    >
+                      {g}
+                    </Link>
+                  ))}
+                </div>
               )}
             </div>
 
@@ -221,25 +232,13 @@ export function ListItemModal({
             <div className="border-t border-border" />
 
             {/* Actions */}
-            <div className="flex items-center justify-between">
-              {item.canDelete ? (
-                <ListItemDeleteButton
-                  itemId={item.id}
-                  listSlug={listSlug}
-                  onDeleted={onClose}
-                />
-              ) : (
-                <span />
-              )}
-              <Link
-                href={href}
-                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                onClick={onClose}
-              >
-                View full details
-                <ExternalLink className="h-3 w-3" />
-              </Link>
-            </div>
+            {item.canDelete && (
+              <ListItemDeleteButton
+                itemId={item.id}
+                listSlug={listSlug}
+                onDeleted={onClose}
+              />
+            )}
           </div>
         </div>
       </DialogContent>

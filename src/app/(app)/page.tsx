@@ -161,7 +161,6 @@ export default async function HomePage() {
                 poster={activity.mediaItem.poster}
                 year={activity.mediaItem.year}
                 status={activity.status}
-                compact
                 priority={index < 3}
               />
             ))}
@@ -195,7 +194,6 @@ export default async function HomePage() {
                   }
                   status={st?.status ?? null}
                   onList={st?.onList ?? false}
-                  compact
                   priority={index < 3}
                 />
               );
@@ -230,7 +228,6 @@ export default async function HomePage() {
                   }
                   status={st?.status ?? null}
                   onList={st?.onList ?? false}
-                  compact
                 />
               );
             })}

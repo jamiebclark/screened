@@ -434,7 +434,6 @@ export default async function ProfilePage({ params }: Params) {
                       year={s.mediaItem.year}
                       rating={s.rating}
                       status={s.status}
-                      compact
                     />
                   ))}
                 </div>
@@ -461,7 +460,6 @@ export default async function ProfilePage({ params }: Params) {
                       year={s.mediaItem.year}
                       rating={s.rating}
                       status={s.status}
-                      compact
                     />
                   ))}
                 </div>
@@ -488,7 +486,6 @@ export default async function ProfilePage({ params }: Params) {
                       year={s.mediaItem.year}
                       rating={s.rating}
                       status={s.status}
-                      compact
                     />
                   ))}
                 </div>

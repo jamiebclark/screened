@@ -92,7 +92,6 @@ export default async function WatchingPage() {
                   poster={item.mediaItem.poster}
                   year={item.mediaItem.year}
                   status={item.status}
-                  compact
                 />
               </div>
             );

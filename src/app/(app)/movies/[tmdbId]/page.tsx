@@ -20,9 +20,9 @@ import {
   TitleCatalogLinks,
   MovieScreenedContextSkeleton,
 } from "@/components/movie-site-context-panel";
-import { TitlePageTopNav } from "@/components/title-page-top-nav";
 import { TitlePageMobilePoster } from "@/components/title-page-mobile-poster";
 import { Badge } from "@/components/ui/badge";
+import Link from "next/link";
 import { formatRuntime } from "@/lib/utils";
 import { buildMovieCatalogLinks } from "@/lib/movie-site-context";
 import { getCachedOmdbRatings } from "@/lib/omdb";
@@ -140,7 +140,6 @@ export default async function MoviePage({ params, searchParams }: Params) {
 
           {/* Info */}
           <div className="flex-1 pt-2 sm:pt-16 min-w-0">
-            <TitlePageTopNav />
             <div className="flex gap-3 sm:gap-0">
               <TitlePageMobilePoster
                 posterUrl={posterUrl}
@@ -149,9 +148,14 @@ export default async function MoviePage({ params, searchParams }: Params) {
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-start gap-2 mb-2">
                   {movie.genres.slice(0, 3).map((g) => (
-                    <Badge key={g.id} variant="secondary" className="text-xs">
-                      {g.name}
-                    </Badge>
+                    <Link key={g.id} href={`/browse?genre=${g.id}&type=movie`}>
+                      <Badge
+                        variant="secondary"
+                        className="text-xs cursor-pointer hover:bg-secondary/80 transition-colors"
+                      >
+                        {g.name}
+                      </Badge>
+                    </Link>
                   ))}
                 </div>
 
@@ -325,7 +329,6 @@ export default async function MoviePage({ params, searchParams }: Params) {
                       ? new Date(item.release_date).getFullYear()
                       : null
                   }
-                  compact
                 />
               ))}
             </div>
