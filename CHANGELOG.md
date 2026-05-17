@@ -1,3 +1,13 @@
+## [1.52.0](https://github.com/jamiebclark/screened/compare/v1.51.1...v1.52.0) (2026-05-17)
+
+### Features
+
+* **browse:** add BrowseFilter types, parse/serialize utils and vitest tests ([7cb9d68](https://github.com/jamiebclark/screened/commit/7cb9d68a61e9bbea8092aff4b5c62075dc9b4dfe))
+* **browse:** add sort and order helpers to browse-utils ([ac774bc](https://github.com/jamiebclark/screened/commit/ac774bc4ab32220c82a4fa3a3a5896bde80abf41))
+* **browse:** multi-genre, sort, year range, and person filters on browse page ([f5c4624](https://github.com/jamiebclark/screened/commit/f5c4624eda0d323dba68be5479ce7a08245509d3))
+* **browse:** refactor discover API to DiscoverOptions and add getPersonCreditTmdbIds ([4ef390f](https://github.com/jamiebclark/screened/commit/4ef390fc27c7940e5ebba4fbde4b9aba3dd11a80))
+* **browse:** replace BrowseFilters with collapsible BrowseFilterPanel and PersonTagInput ([9347405](https://github.com/jamiebclark/screened/commit/934740546b92d3c34d3107de6c24b2a27bdc6c58))
+
 ## [1.51.1](https://github.com/jamiebclark/screened/compare/v1.51.0...v1.51.1) (2026-05-17)
 
 ### Bug Fixes
