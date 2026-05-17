@@ -25,7 +25,6 @@ interface MediaCardProps {
   /** Shown when the title is on a list you belong to; can appear alongside `status`. */
   onList?: boolean;
   className?: string;
-  compact?: boolean;
   priority?: boolean;
   /** Appended as query string, e.g. `watchedDate=2026-04-26`. */
   hrefSearch?: string | null;
@@ -58,7 +57,6 @@ export function MediaCard({
   status,
   onList = false,
   className,
-  compact = false,
   priority = false,
   hrefSearch = null,
   onClick,
@@ -116,40 +114,37 @@ export function MediaCard({
           </div>
         )}
 
-        {rating && (
-          <div className="absolute top-2 left-2 flex items-center gap-0.5 rounded-full bg-black/70 px-1.5 py-0.5">
-            <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-            <span className="text-xs font-medium text-white">
-              {rating.toFixed(1)}
+        <div className="absolute top-2 left-2 flex flex-col items-start gap-1">
+          {type === "movie" ? (
+            <span
+              className="inline-flex items-center rounded-full bg-black/60 px-1.5 py-0.5 text-violet-400"
+              title="Movie"
+            >
+              <Clapperboard className="h-3 w-3" />
             </span>
-          </div>
-        )}
+          ) : (
+            <span
+              className="inline-flex items-center rounded-full bg-black/60 px-1.5 py-0.5 text-sky-400"
+              title="TV"
+            >
+              <Tv className="h-3 w-3" />
+            </span>
+          )}
+          {rating && (
+            <div className="flex items-center gap-0.5 rounded-full bg-black/60 px-1.5 py-0.5">
+              <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+              <span className="text-xs font-medium text-white">
+                {rating.toFixed(1)}
+              </span>
+            </div>
+          )}
+        </div>
 
         <div className="absolute bottom-0 left-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity">
           <p className="text-white text-xs font-medium line-clamp-2">{title}</p>
           {year && <p className="text-white/70 text-xs">{year}</p>}
         </div>
       </div>
-
-      {!compact && (
-        <div className="mt-2 space-y-0.5">
-          <p className="text-sm font-medium line-clamp-1">{title}</p>
-          <div className="flex items-center gap-2">
-            {year && (
-              <span className="text-xs text-muted-foreground">{year}</span>
-            )}
-            {type === "movie" ? (
-              <span className="inline-flex items-center rounded-full bg-violet-500/15 px-1.5 py-0.5 text-violet-400">
-                <Clapperboard className="h-3 w-3" />
-              </span>
-            ) : (
-              <span className="inline-flex items-center rounded-full bg-sky-500/15 px-1.5 py-0.5 text-sky-400">
-                <Tv className="h-3 w-3" />
-              </span>
-            )}
-          </div>
-        </div>
-      )}
     </>
   );
 

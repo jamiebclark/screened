@@ -337,7 +337,6 @@ export default async function TvPage({ params, searchParams }: Params) {
                       ? new Date(item.first_air_date).getFullYear()
                       : null
                   }
-                  compact
                 />
               ))}
             </div>

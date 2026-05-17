@@ -71,7 +71,6 @@ function SectionGrid({
               title={item.mediaItem.title}
               poster={item.mediaItem.poster}
               year={item.mediaItem.year}
-              compact
               onClick={() => onSelect(item.id)}
             />
 

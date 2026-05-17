@@ -63,7 +63,6 @@ export default async function DroppedPage() {
               poster={item.mediaItem.poster}
               year={item.mediaItem.year}
               status={item.status}
-              compact
             />
           ))}
         </div>

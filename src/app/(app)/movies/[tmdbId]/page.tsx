@@ -329,7 +329,6 @@ export default async function MoviePage({ params, searchParams }: Params) {
                       ? new Date(item.release_date).getFullYear()
                       : null
                   }
-                  compact
                 />
               ))}
             </div>
