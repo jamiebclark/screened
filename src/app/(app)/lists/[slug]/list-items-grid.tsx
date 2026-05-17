@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Film, Tv, ThumbsUp, ThumbsDown } from "lucide-react";
+import { Film, Tv } from "lucide-react";
 import { MediaCard } from "@/components/media-card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { cn } from "@/lib/utils";
+import { ListItemVotePill } from "./list-item-vote-pill";
 import { ListItemModal } from "./list-item-modal";
 
 export type GridItem = {
@@ -40,17 +40,25 @@ interface ListItemsGridProps {
 
 function SectionGrid({
   items,
+  listSlug,
+  canVote,
+  currentUserId,
   onSelect,
 }: {
   items: GridItem[];
-  onSelect: (item: GridItem) => void;
+  listSlug: string;
+  canVote: boolean;
+  currentUserId: string | undefined;
+  onSelect: (id: string) => void;
 }) {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
       {items.map((item) => {
         const upvotes = item.votes.filter((v) => v.value === 1).length;
         const downvotes = item.votes.filter((v) => v.value === -1).length;
-        const hasVotes = upvotes > 0 || downvotes > 0;
+        const userVote = currentUserId
+          ? (item.votes.find((v) => v.userId === currentUserId)?.value ?? null)
+          : null;
 
         return (
           <div key={item.id} className="relative">
@@ -61,7 +69,7 @@ function SectionGrid({
               poster={item.mediaItem.poster}
               year={item.mediaItem.year}
               compact
-              onClick={() => onSelect(item)}
+              onClick={() => onSelect(item.id)}
             />
 
             {/* Added-by avatar — top left */}
@@ -74,33 +82,17 @@ function SectionGrid({
               </Avatar>
             </div>
 
-            {/* Vote counts — top right */}
-            {hasVotes && (
-              <div className="absolute top-2 right-2 z-10 pointer-events-none flex items-center gap-1">
-                {upvotes > 0 && (
-                  <span
-                    className={cn(
-                      "flex items-center gap-0.5 rounded-full bg-black/70 px-1.5 py-0.5 text-[10px] font-medium",
-                      downvotes === 0 ? "text-green-400" : "text-white",
-                    )}
-                  >
-                    <ThumbsUp className="h-2.5 w-2.5" />
-                    {upvotes}
-                  </span>
-                )}
-                {downvotes > 0 && (
-                  <span
-                    className={cn(
-                      "flex items-center gap-0.5 rounded-full bg-black/70 px-1.5 py-0.5 text-[10px] font-medium",
-                      upvotes === 0 ? "text-red-400" : "text-white",
-                    )}
-                  >
-                    <ThumbsDown className="h-2.5 w-2.5" />
-                    {downvotes}
-                  </span>
-                )}
-              </div>
-            )}
+            {/* Vote pill — top right, always visible */}
+            <div className="absolute top-2 right-2 z-10">
+              <ListItemVotePill
+                listSlug={listSlug}
+                itemId={item.id}
+                upvotes={upvotes}
+                downvotes={downvotes}
+                userVote={userVote}
+                canVote={canVote}
+              />
+            </div>
           </div>
         );
       })}
@@ -117,10 +109,22 @@ export function ListItemsGrid({
   canVote,
   currentUserId,
 }: ListItemsGridProps) {
-  const [selectedItem, setSelectedItem] = useState<GridItem | null>(null);
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+
+  const allItems = [...movies, ...tvShows, ...watchedMovies, ...watchedTv];
+  const selectedItem = selectedItemId
+    ? (allItems.find((i) => i.id === selectedItemId) ?? null)
+    : null;
 
   const showWatched = watchedMovies.length > 0 || watchedTv.length > 0;
   const watchedCount = watchedMovies.length + watchedTv.length;
+
+  const sectionProps = {
+    listSlug,
+    canVote,
+    currentUserId,
+    onSelect: setSelectedItemId,
+  };
 
   return (
     <>
@@ -131,7 +135,7 @@ export function ListItemsGrid({
               <Film className="h-4 w-4" />
               Movies ({movies.length})
             </h2>
-            <SectionGrid items={movies} onSelect={setSelectedItem} />
+            <SectionGrid items={movies} {...sectionProps} />
           </section>
         )}
 
@@ -141,7 +145,7 @@ export function ListItemsGrid({
               <Tv className="h-4 w-4" />
               TV Shows ({tvShows.length})
             </h2>
-            <SectionGrid items={tvShows} onSelect={setSelectedItem} />
+            <SectionGrid items={tvShows} {...sectionProps} />
           </section>
         )}
 
@@ -157,10 +161,7 @@ export function ListItemsGrid({
                     <Film className="h-4 w-4" />
                     Movies ({watchedMovies.length})
                   </h3>
-                  <SectionGrid
-                    items={watchedMovies}
-                    onSelect={setSelectedItem}
-                  />
+                  <SectionGrid items={watchedMovies} {...sectionProps} />
                 </div>
               )}
               {watchedTv.length > 0 && (
@@ -169,7 +170,7 @@ export function ListItemsGrid({
                     <Tv className="h-4 w-4" />
                     TV Shows ({watchedTv.length})
                   </h3>
-                  <SectionGrid items={watchedTv} onSelect={setSelectedItem} />
+                  <SectionGrid items={watchedTv} {...sectionProps} />
                 </div>
               )}
             </div>
@@ -180,7 +181,7 @@ export function ListItemsGrid({
       <ListItemModal
         item={selectedItem}
         isOpen={selectedItem !== null}
-        onClose={() => setSelectedItem(null)}
+        onClose={() => setSelectedItemId(null)}
         listSlug={listSlug}
         canVote={canVote}
         currentUserId={currentUserId}
