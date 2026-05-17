@@ -1,3 +1,9 @@
+## [1.53.1](https://github.com/jamiebclark/screened/compare/v1.53.0...v1.53.1) (2026-05-17)
+
+### Bug Fixes
+
+* **movies:** deduplicate letterboxd reviews shown in watch history ([dc2c77d](https://github.com/jamiebclark/screened/commit/dc2c77daeaed44afbf23e492516aba963bf99f59))
+
 ## [1.53.0](https://github.com/jamiebclark/screened/compare/v1.52.0...v1.53.0) (2026-05-17)
 
 ### Features
