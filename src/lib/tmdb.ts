@@ -168,6 +168,70 @@ export async function getTvSeason(
   return tmdbFetch<TmdbSeasonDetail>(`/tv/${tvId}/season/${seasonNumber}`);
 }
 
+export type TmdbGenre = { id: number; name: string };
+
+export async function getMovieGenres(): Promise<TmdbGenre[]> {
+  const data = await tmdbFetch<{ genres: TmdbGenre[] }>(
+    "/genre/movie/list",
+    {},
+    86400,
+  );
+  return data.genres ?? [];
+}
+
+export async function getTvGenres(): Promise<TmdbGenre[]> {
+  const data = await tmdbFetch<{ genres: TmdbGenre[] }>(
+    "/genre/tv/list",
+    {},
+    86400,
+  );
+  return data.genres ?? [];
+}
+
+export async function discoverMovies(
+  genreId?: number,
+  page = 1,
+): Promise<TmdbSearchResponse> {
+  const params: Record<string, string> = {
+    sort_by: "popularity.desc",
+    page: String(page),
+    include_adult: "false",
+  };
+  if (genreId) params.with_genres = String(genreId);
+  const res = await tmdbFetch<{
+    results: TmdbSearchResult[];
+    total_results: number;
+    total_pages: number;
+    page: number;
+  }>("/discover/movie", params);
+  return {
+    ...res,
+    results: res.results.map((r) => ({ ...r, media_type: "movie" as const })),
+  };
+}
+
+export async function discoverTv(
+  genreId?: number,
+  page = 1,
+): Promise<TmdbSearchResponse> {
+  const params: Record<string, string> = {
+    sort_by: "popularity.desc",
+    page: String(page),
+    include_adult: "false",
+  };
+  if (genreId) params.with_genres = String(genreId);
+  const res = await tmdbFetch<{
+    results: TmdbSearchResult[];
+    total_results: number;
+    total_pages: number;
+    page: number;
+  }>("/discover/tv", params);
+  return {
+    ...res,
+    results: res.results.map((r) => ({ ...r, media_type: "tv" as const })),
+  };
+}
+
 export async function getTrending(
   type: "movie" | "tv" | "all" = "all",
   window: "day" | "week" = "week",
