@@ -188,16 +188,32 @@ export async function getTvGenres(): Promise<TmdbGenre[]> {
   return data.genres ?? [];
 }
 
+export interface DiscoverOptions {
+  /** Genre IDs — joined with commas for TMDB AND logic. */
+  genreIds?: number[];
+  /** TMDB sort_by string, e.g. "popularity.desc", "vote_average.desc". */
+  sortBy?: string;
+  yearMin?: number;
+  yearMax?: number;
+  /** Person IDs for TMDB `with_people` (covers cast + crew). */
+  withPersonIds?: number[];
+  page?: number;
+}
+
 export async function discoverMovies(
-  genreId?: number,
-  page = 1,
+  opts: DiscoverOptions = {},
 ): Promise<TmdbSearchResponse> {
+  const { genreIds, sortBy, yearMin, yearMax, withPersonIds, page = 1 } = opts;
   const params: Record<string, string> = {
-    sort_by: "popularity.desc",
+    sort_by: sortBy ?? "popularity.desc",
     page: String(page),
     include_adult: "false",
   };
-  if (genreId) params.with_genres = String(genreId);
+  if (genreIds?.length) params.with_genres = genreIds.join(",");
+  if (yearMin) params["primary_release_date.gte"] = `${yearMin}-01-01`;
+  if (yearMax) params["primary_release_date.lte"] = `${yearMax}-12-31`;
+  if (withPersonIds?.length)
+    params.with_people = withPersonIds.slice(0, 1).join(",");
   const res = await tmdbFetch<{
     results: TmdbSearchResult[];
     total_results: number;
@@ -211,15 +227,19 @@ export async function discoverMovies(
 }
 
 export async function discoverTv(
-  genreId?: number,
-  page = 1,
+  opts: DiscoverOptions = {},
 ): Promise<TmdbSearchResponse> {
+  const { genreIds, sortBy, yearMin, yearMax, withPersonIds, page = 1 } = opts;
   const params: Record<string, string> = {
-    sort_by: "popularity.desc",
+    sort_by: sortBy ?? "popularity.desc",
     page: String(page),
     include_adult: "false",
   };
-  if (genreId) params.with_genres = String(genreId);
+  if (genreIds?.length) params.with_genres = genreIds.join(",");
+  if (yearMin) params["first_air_date.gte"] = `${yearMin}-01-01`;
+  if (yearMax) params["first_air_date.lte"] = `${yearMax}-12-31`;
+  if (withPersonIds?.length)
+    params.with_people = withPersonIds.slice(0, 1).join(",");
   const res = await tmdbFetch<{
     results: TmdbSearchResult[];
     total_results: number;
@@ -813,4 +833,28 @@ export async function getPersonActingCredits(
     poster: c.poster,
     releaseDate: c.releaseDate,
   }));
+}
+
+/**
+ * Returns all TMDB IDs from a person's combined credits for the given media type.
+ * Includes both acting and crew credits. Used for reliable DB-side person filtering
+ * that doesn't depend on MediaItem enrichment status.
+ */
+export async function getPersonCreditTmdbIds(
+  personTmdbId: number,
+  mediaType: "movie" | "tv",
+): Promise<number[]> {
+  const data = await tmdbFetch<TmdbCombinedCreditsResponse>(
+    `/person/${personTmdbId}/combined_credits`,
+    {},
+    604800,
+  );
+  const ids = new Set<number>();
+  for (const c of data.cast ?? []) {
+    if (c.media_type === mediaType) ids.add(c.id);
+  }
+  for (const c of data.crew ?? []) {
+    if (c.media_type === mediaType) ids.add(c.id);
+  }
+  return [...ids];
 }

@@ -5,6 +5,7 @@ import {
   discoverMovies,
   discoverTv,
   getTrending,
+  getPersonCreditTmdbIds,
   type TmdbSearchResult,
 } from "@/lib/tmdb";
 import {
@@ -16,9 +17,16 @@ import { listFriendUserIds } from "@/lib/friendship";
 import { prisma } from "@/lib/prisma";
 import { MediaType, WatchStatus } from "@/generated/prisma";
 import { MediaCard } from "@/components/media-card";
-import { BrowseFilters } from "./browse-filters";
+import { BrowseFilterPanel } from "./browse-filter-panel";
 import Link from "next/link";
-import { findGenreByName } from "@/lib/browse-utils";
+import {
+  findGenreByName,
+  getDefaultSort,
+  buildTmdbSortBy,
+  buildPrismaOrderBy,
+  sortFriendsRows,
+} from "@/lib/browse-utils";
+import { parseBrowseFilter, serializeBrowseFilter } from "@/lib/browse-types";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Browse" };
@@ -26,8 +34,16 @@ export const metadata: Metadata = { title: "Browse" };
 interface BrowsePageProps {
   searchParams: Promise<{
     type?: string;
+    // Legacy single-genre params (still supported)
     genre?: string;
     genreName?: string;
+    // New filter params
+    genres?: string;
+    sort?: string;
+    yearMin?: string;
+    yearMax?: string;
+    includePersons?: string;
+    excludePersons?: string;
     filter?: string;
     page?: string;
   }>;
@@ -65,8 +81,6 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
 
   const type = sp.type === "tv" ? "tv" : sp.type === "all" ? "all" : "movie";
   const page = Math.max(1, parseInt(sp.page ?? "1") || 1);
-  const rawGenreId = parseInt(sp.genre ?? "") || null;
-  const genreName = sp.genreName?.trim() || null;
   const filterParam =
     (["seen", "unseen", "library", "friends"] as const).find(
       (f) => f === sp.filter,
@@ -74,8 +88,25 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
 
   const session = await auth();
   const isLoggedIn = !!session?.user?.id;
-  // User filters only apply when logged in and browsing a specific type
   const activeFilter = isLoggedIn && type !== "all" ? filterParam : null;
+
+  // Parse the full filter state from URL params
+  const browseFilter = parseBrowseFilter({
+    genres: sp.genres,
+    genre: sp.genre,
+    sort: sp.sort,
+    yearMin: sp.yearMin,
+    yearMax: sp.yearMax,
+    includePersons: sp.includePersons,
+    excludePersons: sp.excludePersons,
+  });
+
+  const yearError =
+    browseFilter.yearMin !== null &&
+    browseFilter.yearMax !== null &&
+    browseFilter.yearMin > browseFilter.yearMax;
+
+  const effectiveSort = browseFilter.sortOrder ?? getDefaultSort(activeFilter);
 
   const genres =
     type === "all"
@@ -84,25 +115,20 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
         ? await getTvGenres().catch(() => [])
         : await getMovieGenres().catch(() => []);
 
-  let activeGenreId: number | null = rawGenreId;
-  if (!activeGenreId && genreName && genres.length > 0) {
-    activeGenreId = findGenreByName(genres, genreName);
+  // Resolve genre IDs → names for DB filtering; fall back to legacy genreName param
+  let activeGenreIds = [...browseFilter.genreIds];
+  if (activeGenreIds.length === 0 && sp.genreName && genres.length > 0) {
+    const legacyId = findGenreByName(genres, sp.genreName);
+    if (legacyId) activeGenreIds = [legacyId];
   }
-
-  // Genre name needed for DB string-array filtering (MediaItem.genres is String[])
-  const activeGenreName =
-    activeGenreId && genres.length > 0
-      ? (genres.find((g) => g.id === activeGenreId)?.name ?? null)
-      : null;
+  const activeGenreNames = activeGenreIds
+    .map((id) => genres.find((g) => g.id === id)?.name)
+    .filter((n): n is string => !!n);
 
   let results: TmdbSearchResult[] = [];
   let totalPages = 1;
-  // Pre-built state map for DB-first paths (library/seen); avoids a second DB round-trip.
   let directStateMap: Map<string, TmdbUserMediaState> | null = null;
 
-  // DB-first: library/seen/friends queries span the whole DB so genre+filter combos work
-  // correctly regardless of which TMDB page we happen to be on.
-  // TMDB-first: unseen and unfiltered browsing — TMDB discover is the base dataset.
   const useDbFirst =
     !!session?.user?.id &&
     type !== "all" &&
@@ -110,108 +136,251 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
       activeFilter === "seen" ||
       activeFilter === "friends");
 
-  if (useDbFirst && session?.user?.id) {
-    const userId = session.user.id;
-    const mediaType = type === "tv" ? MediaType.TV : MediaType.MOVIE;
-    const mediaItemWhere = {
-      type: mediaType,
-      ...(activeGenreName ? { genres: { has: activeGenreName } } : {}),
-    };
-    const itemSelect = {
-      tmdbId: true,
-      title: true,
-      poster: true,
-      year: true,
-    } as const;
-    const mt = type as "movie" | "tv";
+  // Shared MediaItem where clause for DB-first paths
+  const mediaType = type === "tv" ? MediaType.TV : MediaType.MOVIE;
+  const mt = type as "movie" | "tv";
 
-    if (activeFilter === "library") {
-      const [rows, total] = await Promise.all([
-        prisma.userMediaStatus.findMany({
-          where: { userId, mediaItem: mediaItemWhere },
-          select: { status: true, mediaItem: { select: itemSelect } },
-          orderBy: { updatedAt: "desc" },
-          skip: (page - 1) * PAGE_SIZE,
-          take: PAGE_SIZE,
-        }),
-        prisma.userMediaStatus.count({
-          where: { userId, mediaItem: mediaItemWhere },
-        }),
-      ]);
-      totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-      results = rows.map(({ mediaItem }) => dbItemToResult(mediaItem, mt));
-      directStateMap = new Map(
-        rows.map(({ mediaItem, status }) => [
-          tmdbRefKey(mt, mediaItem.tmdbId),
-          { status: status as WatchStatus | null, onList: false },
-        ]),
+  // For DB-first paths, resolve person filters via TMDB filmography (works even for unenriched items)
+  let dbIncludeTmdbIds: number[] | null = null;
+  let dbExcludeTmdbIds: number[] | null = null;
+  if (useDbFirst) {
+    if (browseFilter.includePersons.length > 0) {
+      const sets = await Promise.all(
+        browseFilter.includePersons.map((p) =>
+          getPersonCreditTmdbIds(p.id, mt)
+            .then((ids) => new Set(ids))
+            .catch(() => new Set<number>()),
+        ),
       );
-    } else if (activeFilter === "seen") {
-      const [rows, total] = await Promise.all([
-        prisma.userMediaStatus.findMany({
-          where: { userId, status: "WATCHED", mediaItem: mediaItemWhere },
-          select: { status: true, mediaItem: { select: itemSelect } },
-          orderBy: { updatedAt: "desc" },
-          skip: (page - 1) * PAGE_SIZE,
-          take: PAGE_SIZE,
-        }),
-        prisma.userMediaStatus.count({
-          where: { userId, status: "WATCHED", mediaItem: mediaItemWhere },
-        }),
-      ]);
-      totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-      results = rows.map(({ mediaItem }) => dbItemToResult(mediaItem, mt));
-      directStateMap = new Map(
-        rows.map(({ mediaItem, status }) => [
-          tmdbRefKey(mt, mediaItem.tmdbId),
-          { status: status as WatchStatus | null, onList: false },
-        ]),
+      // AND logic: intersect all sets
+      const intersection = sets.reduce<Set<number>>(
+        (acc, set) => new Set([...acc].filter((id) => set.has(id))),
+        sets[0] ?? new Set(),
       );
-    } else if (activeFilter === "friends") {
-      const friendIds = await listFriendUserIds(userId);
-      if (friendIds.length > 0) {
-        // Fetch all matching friend items then de-duplicate in JS (groupBy doesn't support
-        // relation filters in Prisma; friends' libraries are small enough for this).
-        const allRows = await prisma.userMediaStatus.findMany({
-          where: { userId: { in: friendIds }, mediaItem: mediaItemWhere },
-          select: { mediaItemId: true, mediaItem: { select: itemSelect } },
-          orderBy: { updatedAt: "desc" },
-        });
-        const seen = new Set<string>();
-        const unique = allRows.filter(({ mediaItemId }) => {
-          if (seen.has(mediaItemId)) return false;
-          seen.add(mediaItemId);
-          return true;
-        });
-        totalPages = Math.max(1, Math.ceil(unique.length / PAGE_SIZE));
-        const pageRows = unique.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-        results = pageRows.map(({ mediaItem }) =>
-          dbItemToResult(mediaItem, mt),
-        );
-        // Friends results still show the current user's own watch status (not friends').
-      }
+      dbIncludeTmdbIds = [...intersection];
     }
-  } else {
-    // TMDB-first path
-    try {
-      if (type === "all") {
-        const data = await getTrending("all", "week");
-        results = data.results;
-      } else if (type === "tv") {
-        const data = await discoverTv(activeGenreId ?? undefined, page);
-        results = data.results;
-        totalPages = Math.min(data.total_pages, 500);
-      } else {
-        const data = await discoverMovies(activeGenreId ?? undefined, page);
-        results = data.results;
-        totalPages = Math.min(data.total_pages, 500);
-      }
-    } catch {
-      // TMDB unavailable — show empty state below
+    if (browseFilter.excludePersons.length > 0) {
+      const sets = await Promise.all(
+        browseFilter.excludePersons.map((p) =>
+          getPersonCreditTmdbIds(p.id, mt)
+            .then((ids) => new Set(ids))
+            .catch(() => new Set<number>()),
+        ),
+      );
+      const union = sets.reduce<Set<number>>((acc, set) => {
+        for (const id of set) acc.add(id);
+        return acc;
+      }, new Set());
+      dbExcludeTmdbIds = [...union];
     }
   }
 
-  // Watch-status overlay: use pre-built map for library/seen; call TMDB state helper otherwise.
+  const mediaItemWhere = {
+    type: mediaType,
+    ...(activeGenreNames.length > 0
+      ? { genres: { hasEvery: activeGenreNames } }
+      : {}),
+    ...(browseFilter.yearMin !== null || browseFilter.yearMax !== null
+      ? {
+          year: {
+            ...(browseFilter.yearMin !== null
+              ? { gte: browseFilter.yearMin }
+              : {}),
+            ...(browseFilter.yearMax !== null
+              ? { lte: browseFilter.yearMax }
+              : {}),
+          },
+        }
+      : {}),
+    // Filmography-based person filters (reliable regardless of enrichment status)
+    ...(dbIncludeTmdbIds !== null ||
+    (dbExcludeTmdbIds !== null && dbExcludeTmdbIds.length > 0)
+      ? {
+          tmdbId: {
+            ...(dbIncludeTmdbIds !== null ? { in: dbIncludeTmdbIds } : {}),
+            ...(dbExcludeTmdbIds !== null && dbExcludeTmdbIds.length > 0
+              ? { notIn: dbExcludeTmdbIds }
+              : {}),
+          },
+        }
+      : {}),
+  };
+
+  const itemSelect = {
+    tmdbId: true,
+    title: true,
+    poster: true,
+    year: true,
+  } as const;
+
+  const dbOrderBy = buildPrismaOrderBy(effectiveSort);
+
+  if (!yearError) {
+    if (useDbFirst && session?.user?.id) {
+      const userId = session.user.id;
+
+      if (activeFilter === "library") {
+        const [rows, total] = await Promise.all([
+          prisma.userMediaStatus.findMany({
+            where: { userId, mediaItem: mediaItemWhere },
+            select: {
+              status: true,
+              rating: true,
+              mediaItem: { select: itemSelect },
+            },
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            orderBy: dbOrderBy as any,
+            skip: (page - 1) * PAGE_SIZE,
+            take: PAGE_SIZE,
+          }),
+          prisma.userMediaStatus.count({
+            where: { userId, mediaItem: mediaItemWhere },
+          }),
+        ]);
+        totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+        results = rows.map(({ mediaItem }) => dbItemToResult(mediaItem, mt));
+        directStateMap = new Map(
+          rows.map(({ mediaItem, status }) => [
+            tmdbRefKey(mt, mediaItem.tmdbId),
+            { status: status as WatchStatus | null, onList: false },
+          ]),
+        );
+      } else if (activeFilter === "seen") {
+        const [rows, total] = await Promise.all([
+          prisma.userMediaStatus.findMany({
+            where: { userId, status: "WATCHED", mediaItem: mediaItemWhere },
+            select: {
+              status: true,
+              rating: true,
+              mediaItem: { select: itemSelect },
+            },
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            orderBy: dbOrderBy as any,
+            skip: (page - 1) * PAGE_SIZE,
+            take: PAGE_SIZE,
+          }),
+          prisma.userMediaStatus.count({
+            where: { userId, status: "WATCHED", mediaItem: mediaItemWhere },
+          }),
+        ]);
+        totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+        results = rows.map(({ mediaItem }) => dbItemToResult(mediaItem, mt));
+        directStateMap = new Map(
+          rows.map(({ mediaItem, status }) => [
+            tmdbRefKey(mt, mediaItem.tmdbId),
+            { status: status as WatchStatus | null, onList: false },
+          ]),
+        );
+      } else if (activeFilter === "friends") {
+        const friendIds = await listFriendUserIds(userId);
+        if (friendIds.length > 0) {
+          const allRows = await prisma.userMediaStatus.findMany({
+            where: { userId: { in: friendIds }, mediaItem: mediaItemWhere },
+            select: { mediaItemId: true, mediaItem: { select: itemSelect } },
+            orderBy: { updatedAt: "desc" },
+          });
+          const seen = new Set<string>();
+          const unique = allRows.filter(({ mediaItemId }) => {
+            if (seen.has(mediaItemId)) return false;
+            seen.add(mediaItemId);
+            return true;
+          });
+          const sorted = sortFriendsRows(unique, effectiveSort);
+          totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
+          const pageRows = sorted.slice(
+            (page - 1) * PAGE_SIZE,
+            page * PAGE_SIZE,
+          );
+          results = pageRows.map(({ mediaItem }) =>
+            dbItemToResult(mediaItem, mt),
+          );
+        }
+      }
+    } else {
+      // TMDB-first path
+      try {
+        if (type === "all") {
+          const data = await getTrending("all", "week");
+          results = data.results;
+        } else if (type === "tv") {
+          const data = await discoverTv({
+            genreIds: activeGenreIds.length > 0 ? activeGenreIds : undefined,
+            sortBy: buildTmdbSortBy(effectiveSort, "tv"),
+            yearMin: browseFilter.yearMin ?? undefined,
+            yearMax: browseFilter.yearMax ?? undefined,
+            withPersonIds:
+              browseFilter.includePersons.length > 0
+                ? browseFilter.includePersons.map((p) => p.id)
+                : undefined,
+            page,
+          });
+          results = data.results;
+          totalPages = Math.min(data.total_pages, 500);
+        } else {
+          const data = await discoverMovies({
+            genreIds: activeGenreIds.length > 0 ? activeGenreIds : undefined,
+            sortBy: buildTmdbSortBy(effectiveSort, "movie"),
+            yearMin: browseFilter.yearMin ?? undefined,
+            yearMax: browseFilter.yearMax ?? undefined,
+            withPersonIds:
+              browseFilter.includePersons.length > 0
+                ? browseFilter.includePersons.map((p) => p.id)
+                : undefined,
+            page,
+          });
+          results = data.results;
+          totalPages = Math.min(data.total_pages, 500);
+        }
+      } catch {
+        // TMDB unavailable — show empty state below
+      }
+
+      // Person post-filter for TMDB-first path (multi-include AND + all excludes)
+      const needsPersonPostFilter =
+        browseFilter.includePersons.length > 1 ||
+        browseFilter.excludePersons.length > 0;
+      if (needsPersonPostFilter && results.length > 0) {
+        const tmdbIds = results.map((r) => r.id);
+        const mediaItems = await prisma.mediaItem.findMany({
+          where: {
+            tmdbId: { in: tmdbIds },
+            type: type === "tv" ? MediaType.TV : MediaType.MOVIE,
+          },
+          select: {
+            tmdbId: true,
+            castTmdbIds: true,
+            directorsTmdbIds: true,
+            cast: true,
+            directors: true,
+          },
+        });
+        const miMap = new Map(mediaItems.map((m) => [m.tmdbId, m]));
+
+        results = results.filter((r) => {
+          const mi = miMap.get(r.id);
+          if (!mi) return true; // not in local DB — pass through
+
+          // AND-check additional include persons (first was handled by TMDB)
+          for (const p of browseFilter.includePersons.slice(1)) {
+            const byId =
+              mi.castTmdbIds.includes(p.id) ||
+              mi.directorsTmdbIds.includes(p.id);
+            const byName =
+              mi.cast.includes(p.name) || mi.directors.includes(p.name);
+            if (!byId && !byName) return false;
+          }
+
+          // Exclude any person whose name appears in cast/directors
+          if (matchesExcludePerson(mi, browseFilter.excludePersons))
+            return false;
+
+          return true;
+        });
+      }
+    }
+  }
+
+  // Watch-status overlay
   const tmdbUserStateByKey: Map<string, TmdbUserMediaState> =
     directStateMap ??
     (results.length > 0 && session?.user?.id
@@ -221,12 +390,10 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
         ).catch(() => new Map())
       : new Map());
 
-  // Post-filter only needed for "unseen" (TMDB-first path).
+  // "Unseen" post-filter on TMDB-first path
   let filteredResults = results;
-
   if (!useDbFirst && activeFilter === "unseen" && session?.user?.id) {
     const userId = session.user.id;
-    const mediaType = type === "tv" ? MediaType.TV : MediaType.MOVIE;
     const resultTmdbIds = results.map((r) => r.id);
     const watched = await prisma.userMediaStatus.findMany({
       where: {
@@ -241,28 +408,35 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
   }
 
   function buildPageUrl(pageNum: number): string {
-    const params = new URLSearchParams();
-    if (type !== "movie") params.set("type", type);
-    if (activeGenreId) params.set("genre", String(activeGenreId));
-    if (filterParam) params.set("filter", filterParam);
-    if (pageNum > 1) params.set("page", String(pageNum));
-    const q = params.toString();
-    return q ? `/browse?${q}` : "/browse";
+    const base = serializeBrowseFilter(browseFilter, {
+      type,
+      filter: filterParam ?? undefined,
+    });
+    if (pageNum <= 1) return base;
+    const sep = base.includes("?") ? "&" : "?";
+    return `${base}${sep}page=${pageNum}`;
   }
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
       <h1 className="text-2xl font-bold mb-6">Browse</h1>
 
-      <BrowseFilters
+      <BrowseFilterPanel
         genres={genres}
-        activeGenreId={activeGenreId}
+        filter={{ ...browseFilter, genreIds: activeGenreIds }}
         type={type}
-        filter={activeFilter}
+        filterParam={activeFilter}
         isLoggedIn={isLoggedIn}
+        yearError={yearError}
       />
 
-      {filteredResults.length === 0 ? (
+      {yearError ? (
+        <div className="text-center py-16">
+          <p className="text-muted-foreground">
+            Fix the year range to see results.
+          </p>
+        </div>
+      ) : filteredResults.length === 0 ? (
         <div className="text-center py-16">
           <p className="text-muted-foreground">
             {activeFilter === "friends"
@@ -325,4 +499,20 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
       )}
     </div>
   );
+}
+
+/** Check if a media item matches any excluded person (case-insensitive substring). */
+function matchesExcludePerson(
+  item: { cast?: string[]; directors?: string[] },
+  excludePersons: { name: string }[],
+): boolean {
+  const cast = item.cast ?? [];
+  const directors = item.directors ?? [];
+  return excludePersons.some((p) => {
+    const lower = p.name.toLowerCase();
+    return (
+      cast.some((c) => c.toLowerCase().includes(lower)) ||
+      directors.some((d) => d.toLowerCase().includes(lower))
+    );
+  });
 }
