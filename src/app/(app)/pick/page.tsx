@@ -117,10 +117,10 @@ export default async function PickPage({ searchParams }: PageProps) {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold">Movie Night Picker</h1>
-        <p className="text-sm text-muted-foreground mt-1">
+    <div className="mx-auto max-w-7xl px-4 py-12">
+      <div className="mb-10">
+        <h1 className="text-4xl font-bold">Movie Night Picker</h1>
+        <p className="text-base text-muted-foreground mt-2">
           Tell us what you&apos;re in the mood for and we&apos;ll find the best
           match from your library.{" "}
           {pickerUrl && (

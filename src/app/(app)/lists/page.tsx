@@ -59,11 +59,11 @@ export default async function ListsPage() {
   ]);
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 space-y-10">
+    <div className="mx-auto max-w-7xl px-4 py-12 space-y-16">
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-1.5">
-          <h1 className="text-2xl font-bold">Lists</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-4xl font-bold">Lists</h1>
+          <p className="text-base text-muted-foreground">
             Curate and share watchlists with friends. Connect a list to Radarr
             to auto-download new additions.{" "}
             {listsUrl && (
@@ -88,7 +88,7 @@ export default async function ListsPage() {
       </div>
 
       <section>
-        <h3 className="text-base font-semibold mb-4">My lists</h3>
+        <h3 className="text-xl font-semibold mb-5">My lists</h3>
         {myLists.length === 0 ? (
           <div className="text-center py-12 border border-dashed border-border rounded-xl">
             <ListVideo className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
@@ -108,7 +108,7 @@ export default async function ListsPage() {
 
       {publicLists.length > 0 && (
         <section>
-          <h3 className="text-base font-semibold mb-4">Discover</h3>
+          <h3 className="text-xl font-semibold mb-5">Discover</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
             {publicLists.map((list) => (
               <ListCard key={list.id} list={list} />

@@ -222,11 +222,13 @@ export default function RegisterPage() {
     <div className="min-h-screen flex items-center justify-center p-4 bg-background">
       <div className="w-full max-w-sm space-y-6">
         <div className="flex flex-col items-center gap-2 text-center">
-          <div className="flex items-center gap-2 text-primary">
-            <Film className="h-8 w-8" />
-            <span className="text-2xl font-bold tracking-tight">Screened</span>
+          <div className="flex items-center gap-3 text-primary">
+            <Film className="h-12 w-12" />
+            <span className="text-4xl font-bold tracking-tight">Screened</span>
           </div>
-          <p className="text-muted-foreground text-sm">Track movies together</p>
+          <p className="text-muted-foreground text-base">
+            Track movies together
+          </p>
         </div>
 
         <Suspense

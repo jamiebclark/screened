@@ -418,8 +418,8 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Browse</h1>
+    <div className="mx-auto max-w-7xl px-4 py-12">
+      <h1 className="text-4xl font-bold mb-8">Browse</h1>
 
       <BrowseFilterPanel
         genres={genres}
@@ -477,7 +477,7 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
               {page > 1 && (
                 <Link
                   href={buildPageUrl(page - 1)}
-                  className="rounded-md bg-muted px-4 py-2 text-sm hover:bg-accent transition-colors"
+                  className="rounded-md bg-muted px-6 py-3 hover:bg-accent transition-colors"
                 >
                   Previous
                 </Link>
@@ -488,7 +488,7 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
               {page < totalPages && (
                 <Link
                   href={buildPageUrl(page + 1)}
-                  className="rounded-md bg-muted px-4 py-2 text-sm hover:bg-accent transition-colors"
+                  className="rounded-md bg-muted px-6 py-3 hover:bg-accent transition-colors"
                 >
                   Next
                 </Link>

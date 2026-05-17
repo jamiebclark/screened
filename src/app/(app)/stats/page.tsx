@@ -33,13 +33,13 @@ function StatCard({
   sub?: string;
 }) {
   return (
-    <div className="rounded-lg border border-border bg-card p-4">
-      <div className="flex items-center gap-2 text-muted-foreground mb-2">
-        <Icon className="h-4 w-4" />
-        <span className="text-xs font-medium">{label}</span>
+    <div className="rounded-lg border border-border bg-card p-6">
+      <div className="flex items-center gap-2 text-muted-foreground mb-3">
+        <Icon className="h-5 w-5" />
+        <span className="text-sm font-medium">{label}</span>
       </div>
-      <p className="text-2xl font-bold">{value}</p>
-      {sub && <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>}
+      <p className="text-4xl font-bold">{value}</p>
+      {sub && <p className="text-sm text-muted-foreground mt-1">{sub}</p>}
     </div>
   );
 }
@@ -189,7 +189,7 @@ export default async function StatsPage() {
 
   if (!hasAnyData) {
     return (
-      <div className="mx-auto max-w-5xl px-4 py-8">
+      <div className="mx-auto max-w-5xl px-4 py-12">
         <WatchingTabs />
         <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed border-border p-12 text-center">
           <BarChart3 className="h-10 w-10 text-muted-foreground" />
@@ -225,13 +225,13 @@ export default async function StatsPage() {
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
       <WatchingTabs />
-      <div className="flex items-center gap-3 mb-8">
-        <div className="rounded-full bg-muted p-2 text-muted-foreground">
-          <BarChart3 className="h-5 w-5" />
+      <div className="flex items-center gap-4 mb-10">
+        <div className="rounded-full bg-muted p-3 text-muted-foreground">
+          <BarChart3 className="h-6 w-6" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold">Your stats</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-4xl font-bold">Your stats</h1>
+          <p className="text-base text-muted-foreground">
             Your personal watch analytics
           </p>
         </div>
@@ -266,12 +266,12 @@ export default async function StatsPage() {
       {/* Genres + Ratings side by side */}
       <div className="grid md:grid-cols-2 gap-6 mb-6">
         <section>
-          <h3 className="text-base font-semibold mb-4">Top genres</h3>
+          <h3 className="text-xl font-semibold mb-5">Top genres</h3>
           <BarList items={genreItems} />
         </section>
 
         <section>
-          <h3 className="text-base font-semibold mb-4">Ratings</h3>
+          <h3 className="text-xl font-semibold mb-5">Ratings</h3>
           <RatingsDistribution ratings={stats.ratings} />
         </section>
       </div>
@@ -287,12 +287,12 @@ export default async function StatsPage() {
       {/* Decades + Directors side by side */}
       <div className="grid md:grid-cols-2 gap-6 mb-6">
         <section>
-          <h3 className="text-base font-semibold mb-4">By decade</h3>
+          <h3 className="text-xl font-semibold mb-5">By decade</h3>
           <BarList items={decadeItems} />
         </section>
 
         <section>
-          <h3 className="text-base font-semibold mb-4">Directors</h3>
+          <h3 className="text-xl font-semibold mb-5">Directors</h3>
           <RankedList items={stats.topDirectors} />
         </section>
       </div>

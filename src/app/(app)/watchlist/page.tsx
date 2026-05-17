@@ -143,14 +143,14 @@ export default async function WatchlistPage({ searchParams }: PageProps) {
   }));
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 space-y-6">
-      <div className="flex items-center gap-3">
-        <div className="rounded-full bg-muted p-2 text-status-watchlist">
-          <Bookmark className="h-5 w-5" />
+    <div className="mx-auto max-w-7xl px-4 py-12 space-y-8">
+      <div className="flex items-center gap-4">
+        <div className="rounded-full bg-muted p-3 text-status-watchlist">
+          <Bookmark className="h-6 w-6" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold">Watchlist</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-4xl font-bold">Watchlist</h1>
+          <p className="text-base text-muted-foreground">
             {rows.length} title{rows.length !== 1 ? "s" : ""} saved
           </p>
         </div>
@@ -161,7 +161,7 @@ export default async function WatchlistPage({ searchParams }: PageProps) {
       {/* Releasing soon */}
       {upcomingRows.length > 0 && (
         <section>
-          <h3 className="text-base font-semibold mb-3 flex items-center gap-2">
+          <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
             <CalendarDays className="h-4 w-4 text-muted-foreground" />
             Releasing soon
           </h3>

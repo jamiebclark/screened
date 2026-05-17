@@ -132,35 +132,37 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center p-4 bg-background">
       <div className="w-full max-w-sm space-y-6">
         <div className="flex flex-col items-center gap-2 text-center">
-          <div className="flex items-center gap-2 text-primary">
-            <Film className="h-8 w-8" />
-            <span className="text-2xl font-bold tracking-tight">Screened</span>
+          <div className="flex items-center gap-3 text-primary">
+            <Film className="h-12 w-12" />
+            <span className="text-4xl font-bold tracking-tight">Screened</span>
           </div>
-          <p className="text-muted-foreground text-sm">Track movies together</p>
+          <p className="text-muted-foreground text-base">
+            Track movies together
+          </p>
         </div>
 
-        <div className="grid grid-cols-3 gap-3 text-center">
-          <div className="flex flex-col items-center gap-1.5">
-            <div className="rounded-full bg-muted p-2">
-              <Eye className="h-4 w-4 text-muted-foreground" />
+        <div className="grid grid-cols-3 gap-4 text-center">
+          <div className="flex flex-col items-center gap-2">
+            <div className="rounded-full bg-muted p-3">
+              <Eye className="h-6 w-6 text-muted-foreground" />
             </div>
-            <p className="text-xs text-muted-foreground leading-tight">
+            <p className="text-sm text-muted-foreground leading-tight">
               Track what you&apos;ve watched
             </p>
           </div>
-          <div className="flex flex-col items-center gap-1.5">
-            <div className="rounded-full bg-muted p-2">
-              <Sparkles className="h-4 w-4 text-muted-foreground" />
+          <div className="flex flex-col items-center gap-2">
+            <div className="rounded-full bg-muted p-3">
+              <Sparkles className="h-6 w-6 text-muted-foreground" />
             </div>
-            <p className="text-xs text-muted-foreground leading-tight">
+            <p className="text-sm text-muted-foreground leading-tight">
               Discover what to watch next
             </p>
           </div>
-          <div className="flex flex-col items-center gap-1.5">
-            <div className="rounded-full bg-muted p-2">
-              <Users className="h-4 w-4 text-muted-foreground" />
+          <div className="flex flex-col items-center gap-2">
+            <div className="rounded-full bg-muted p-3">
+              <Users className="h-6 w-6 text-muted-foreground" />
             </div>
-            <p className="text-xs text-muted-foreground leading-tight">
+            <p className="text-sm text-muted-foreground leading-tight">
               Pick movies with friends
             </p>
           </div>

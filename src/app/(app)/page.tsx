@@ -113,7 +113,7 @@ export default async function HomePage() {
   };
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 space-y-10">
+    <div className="mx-auto max-w-7xl px-4 py-12 space-y-16">
       {/* Stats */}
       <section>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -124,14 +124,20 @@ export default async function HomePage() {
                 <Link
                   key={status}
                   href={href}
-                  className="rounded-xl border border-border bg-card p-4 flex items-center gap-3 transition-colors hover:bg-muted/50"
+                  className="rounded-xl border border-border bg-card p-6 flex flex-col gap-3 transition-colors hover:bg-muted/50"
                 >
-                  <div className={`rounded-full bg-muted p-2 ${color}`}>
+                  <div
+                    className={`rounded-full bg-muted p-3 self-start ${color}`}
+                  >
                     <Icon className="h-5 w-5" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold">{statMap[status] ?? 0}</p>
-                    <p className="text-xs text-muted-foreground">{label}</p>
+                    <p className="text-4xl font-bold leading-none">
+                      {statMap[status] ?? 0}
+                    </p>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      {label}
+                    </p>
                   </div>
                 </Link>
               );
@@ -144,7 +150,7 @@ export default async function HomePage() {
       {recentActivity.length > 0 && (
         <section>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">Recently watched</h2>
+            <h2 className="text-2xl font-bold">Recently watched</h2>
             <Button variant="ghost" size="sm" asChild>
               <Link href="/history">See all</Link>
             </Button>
@@ -172,7 +178,7 @@ export default async function HomePage() {
       {trendingMovies.length > 0 && (
         <section>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">Trending movies</h2>
+            <h2 className="text-2xl font-bold">Trending movies</h2>
             <Button variant="ghost" size="sm" asChild>
               <Link href="/search?type=movie">See all</Link>
             </Button>
@@ -206,7 +212,7 @@ export default async function HomePage() {
       {trendingTv.length > 0 && (
         <section>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">Trending TV shows</h2>
+            <h2 className="text-2xl font-bold">Trending TV shows</h2>
             <Button variant="ghost" size="sm" asChild>
               <Link href="/search?type=tv">See all</Link>
             </Button>
