@@ -12,7 +12,6 @@ import { notFound } from "next/navigation";
 import { PersonAvatar } from "@/components/person-avatar";
 import { PersonBiography } from "@/components/person-biography";
 import { MediaCard } from "@/components/media-card";
-import { TitlePageTopNav } from "@/components/title-page-top-nav";
 import type { Metadata } from "next";
 
 type Params = {
@@ -53,8 +52,6 @@ export default async function PersonPage({ params }: Params) {
   return (
     <div className="min-h-screen">
       <div className="mx-auto max-w-7xl px-4 py-8">
-        <TitlePageTopNav />
-
         <div className="flex flex-col sm:flex-row gap-6 mb-8">
           <PersonAvatar name={person.name} photoUrl={profileUrl} size="lg" />
 
