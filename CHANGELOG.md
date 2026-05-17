@@ -1,3 +1,15 @@
+## [1.53.0](https://github.com/jamiebclark/screened/compare/v1.52.0...v1.53.0) (2026-05-17)
+
+### Features
+
+* **letterboxd:** extract and store review text from RSS diary entries ([e442eed](https://github.com/jamiebclark/screened/commit/e442eed284c2f81f1dcef786a98d1edc9dc2ed69))
+* **movies:** show friends' letterboxd reviews on movie page ([3a84e36](https://github.com/jamiebclark/screened/commit/3a84e363efb3037faa16cc2ac6667cd1d005bdb4))
+* **ui:** apply bold typography scale across all pages and nav ([bf2fa87](https://github.com/jamiebclark/screened/commit/bf2fa8799b648a861008e693a158e7b6264c4ffa))
+
+### Bug Fixes
+
+* **ui:** correct visual inconsistencies from typography scale update ([af1cf29](https://github.com/jamiebclark/screened/commit/af1cf29dacfc2b028bbccfb281768c3186b153f6))
+
 ## [1.52.0](https://github.com/jamiebclark/screened/compare/v1.51.1...v1.52.0) (2026-05-17)
 
 ### Features
