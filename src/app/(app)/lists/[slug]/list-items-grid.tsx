@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Film, Tv } from "lucide-react";
+import { Film, Tv, MessageSquare } from "lucide-react";
 import { MediaCard } from "@/components/media-card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ListItemVotePill } from "./list-item-vote-pill";
@@ -12,6 +12,8 @@ export type GridItem = {
   notes: string | null;
   addedAt: string;
   canDelete: boolean;
+  commentCount: number;
+  unreadCommentCount: number;
   addedBy: { id: string; name: string | null; avatarUrl: string | null };
   mediaItem: {
     tmdbId: number;
@@ -36,6 +38,7 @@ interface ListItemsGridProps {
   listSlug: string;
   canVote: boolean;
   currentUserId: string | undefined;
+  isListOwner: boolean;
 }
 
 function SectionGrid({
@@ -93,6 +96,24 @@ function SectionGrid({
                 canVote={canVote}
               />
             </div>
+
+            {/* Comment badge — bottom right */}
+            {item.commentCount > 0 && (
+              <div className="absolute bottom-2 right-2 z-10 pointer-events-none">
+                <div
+                  className={`flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium shadow-sm ${
+                    item.unreadCommentCount > 0
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-black/60 text-white"
+                  }`}
+                >
+                  <MessageSquare className="h-2.5 w-2.5" />
+                  {item.unreadCommentCount > 0
+                    ? item.unreadCommentCount
+                    : item.commentCount}
+                </div>
+              </div>
+            )}
           </div>
         );
       })}
@@ -108,6 +129,7 @@ export function ListItemsGrid({
   listSlug,
   canVote,
   currentUserId,
+  isListOwner,
 }: ListItemsGridProps) {
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
 
@@ -185,6 +207,7 @@ export function ListItemsGrid({
         listSlug={listSlug}
         canVote={canVote}
         currentUserId={currentUserId}
+        isListOwner={isListOwner}
       />
     </>
   );

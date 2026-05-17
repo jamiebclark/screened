@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { ListItemVoteControls } from "./list-item-vote-controls";
 import { ListItemDeleteButton } from "./list-item-delete-button";
+import { ListItemComments } from "./list-item-comments";
 import { tmdbImageUrl } from "@/lib/utils";
 import type { GridItem } from "./list-items-grid";
 
@@ -17,6 +18,7 @@ interface ListItemModalProps {
   listSlug: string;
   canVote: boolean;
   currentUserId: string | undefined;
+  isListOwner: boolean;
 }
 
 export function ListItemModal({
@@ -26,6 +28,7 @@ export function ListItemModal({
   listSlug,
   canVote,
   currentUserId,
+  isListOwner,
 }: ListItemModalProps) {
   if (!item) return null;
 
@@ -203,6 +206,17 @@ export function ListItemModal({
                 </div>
               </div>
             )}
+
+            <div className="border-t border-border" />
+
+            {/* Comments */}
+            <ListItemComments
+              listSlug={listSlug}
+              itemId={item.id}
+              currentUserId={currentUserId}
+              isListOwner={isListOwner}
+              canComment={canVote}
+            />
 
             <div className="border-t border-border" />
 

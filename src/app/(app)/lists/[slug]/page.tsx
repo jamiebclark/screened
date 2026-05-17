@@ -55,6 +55,7 @@ type RawItem = {
     genres: string[];
   };
   votes: { value: number; userId: string }[];
+  comments: { id: string; createdAt: Date }[];
 };
 
 function sortItems(items: RawItem[], sort: SortField): RawItem[] {
@@ -84,12 +85,21 @@ function toGridItem(
   canDelete: boolean,
   watchedBy: { id: string; name: string | null; avatarUrl: string | null }[],
   watchingBy: { id: string; name: string | null; avatarUrl: string | null }[],
+  lastReadAt: Date | null,
 ): GridItem {
+  const commentCount = item.comments.length;
+  const unreadCommentCount =
+    lastReadAt === null
+      ? commentCount
+      : item.comments.filter((c) => c.createdAt > lastReadAt).length;
+
   return {
     id: item.id,
     notes: item.notes,
     addedAt: item.addedAt.toISOString(),
     canDelete,
+    commentCount,
+    unreadCommentCount,
     addedBy: item.addedBy,
     mediaItem: {
       tmdbId: item.mediaItem.tmdbId,
@@ -131,6 +141,7 @@ export default async function ListPage({ params, searchParams }: Params) {
           mediaItem: true,
           addedBy: { select: { id: true, name: true, avatarUrl: true } },
           votes: { select: { value: true, userId: true } },
+          comments: { select: { id: true, createdAt: true } },
         },
         orderBy: { addedAt: "desc" },
       },
@@ -233,6 +244,19 @@ export default async function ListPage({ params, searchParams }: Params) {
     }
   }
 
+  const itemIds = list.items.map((i) => i.id);
+  const commentReadMap =
+    userId && itemIds.length > 0
+      ? new Map(
+          (
+            await prisma.listItemCommentRead.findMany({
+              where: { userId, listItemId: { in: itemIds } },
+              select: { listItemId: true, lastReadAt: true },
+            })
+          ).map((r) => [r.listItemId, r.lastReadAt]),
+        )
+      : new Map<string, Date>();
+
   const canDelete = isMember || isOwner;
   const canVote = isMember || isOwner;
 
@@ -243,6 +267,7 @@ export default async function ListPage({ params, searchParams }: Params) {
         canDelete && (isOwner || item.addedBy.id === userId),
         watchedByMap.get(item.mediaItemId) ?? [],
         watchingByMap.get(item.mediaItemId) ?? [],
+        userId ? (commentReadMap.get(item.id) ?? null) : null,
       ),
     );
   }
@@ -344,6 +369,7 @@ export default async function ListPage({ params, searchParams }: Params) {
               listSlug={slug}
               canVote={canVote}
               currentUserId={userId}
+              isListOwner={isOwner}
             />
           )}
         </div>
