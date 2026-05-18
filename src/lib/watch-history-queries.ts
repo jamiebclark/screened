@@ -317,6 +317,174 @@ export async function fetchFriendsWatchHistoryInRange(
   return mergeFriendWatchHistoryRows(fromEntries, fromEpisodes).slice(0, take);
 }
 
+export type FriendWatcher = {
+  id: string;
+  name: string;
+  avatarUrl: string | null;
+};
+
+export type FriendRecentWatch = {
+  mediaItem: {
+    tmdbId: number;
+    type: MediaType;
+    title: string;
+    poster: string | null;
+    year: number | null;
+  };
+  watcher: FriendWatcher;
+  watchedAt: Date;
+};
+
+/** Most recent N distinct titles watched by friends, one entry per title (latest watcher). */
+export async function fetchFriendsRecentWatched(
+  viewerId: string,
+  take: number,
+): Promise<FriendRecentWatch[]> {
+  const friendIds = await listFriendUserIds(viewerId);
+  if (friendIds.length === 0) return [];
+
+  const friends = await prisma.user.findMany({
+    where: { id: { in: friendIds } },
+    select: {
+      id: true,
+      name: true,
+      avatarUrl: true,
+      watchHistoryVisibility: true,
+    },
+  });
+
+  const visibleFriends = friends.filter((f) =>
+    canViewProfileContent({
+      isOwner: false,
+      visibility: f.watchHistoryVisibility,
+      isFriend: true,
+    }),
+  );
+  if (visibleFriends.length === 0) return [];
+
+  const visibleIds = visibleFriends.map((f) => f.id);
+  const friendById = new Map(visibleFriends.map((f) => [f.id, f]));
+
+  const entries = await prisma.watchEntry.findMany({
+    where: { userId: { in: visibleIds } },
+    orderBy: { watchedAt: "desc" },
+    take: take * 5,
+    select: {
+      userId: true,
+      watchedAt: true,
+      mediaItem: {
+        select: {
+          tmdbId: true,
+          type: true,
+          title: true,
+          poster: true,
+          year: true,
+        },
+      },
+    },
+  });
+
+  const seen = new Set<string>();
+  const out: FriendRecentWatch[] = [];
+  for (const e of entries) {
+    const key = `${e.mediaItem.type}-${e.mediaItem.tmdbId}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const friend = friendById.get(e.userId)!;
+    out.push({
+      mediaItem: e.mediaItem,
+      watcher: {
+        id: friend.id,
+        name: friend.name,
+        avatarUrl: friend.avatarUrl,
+      },
+      watchedAt: e.watchedAt,
+    });
+    if (out.length >= take) break;
+  }
+  return out;
+}
+
+/**
+ * For each given tmdb item, returns the list of visible friends who have watched it.
+ * Result is keyed by `"movie-{tmdbId}"` or `"tv-{tmdbId}"`.
+ */
+export async function fetchFriendWatchersForTmdbItems(
+  viewerId: string,
+  items: { tmdbId: number; type: "movie" | "tv" }[],
+): Promise<Map<string, FriendWatcher[]>> {
+  if (items.length === 0) return new Map();
+
+  const friendIds = await listFriendUserIds(viewerId);
+  if (friendIds.length === 0) return new Map();
+
+  const friends = await prisma.user.findMany({
+    where: { id: { in: friendIds } },
+    select: {
+      id: true,
+      name: true,
+      avatarUrl: true,
+      watchHistoryVisibility: true,
+    },
+  });
+
+  const visibleFriends = friends.filter((f) =>
+    canViewProfileContent({
+      isOwner: false,
+      visibility: f.watchHistoryVisibility,
+      isFriend: true,
+    }),
+  );
+  if (visibleFriends.length === 0) return new Map();
+
+  const visibleIds = visibleFriends.map((f) => f.id);
+  const friendById = new Map(visibleFriends.map((f) => [f.id, f]));
+
+  const movieTmdbIds = items
+    .filter((i) => i.type === "movie")
+    .map((i) => i.tmdbId);
+  const tvTmdbIds = items.filter((i) => i.type === "tv").map((i) => i.tmdbId);
+
+  const orConditions = [
+    ...(movieTmdbIds.length > 0
+      ? [{ tmdbId: { in: movieTmdbIds }, type: MediaType.MOVIE }]
+      : []),
+    ...(tvTmdbIds.length > 0
+      ? [{ tmdbId: { in: tvTmdbIds }, type: MediaType.TV }]
+      : []),
+  ];
+
+  const entries = await prisma.watchEntry.findMany({
+    where: { userId: { in: visibleIds }, mediaItem: { OR: orConditions } },
+    select: {
+      userId: true,
+      mediaItemId: true,
+      mediaItem: { select: { tmdbId: true, type: true } },
+    },
+  });
+
+  const result = new Map<string, FriendWatcher[]>();
+  const deduped = new Set<string>();
+  for (const e of entries) {
+    const dedupeKey = `${e.userId}-${e.mediaItemId}`;
+    if (deduped.has(dedupeKey)) continue;
+    deduped.add(dedupeKey);
+
+    const mediaType = e.mediaItem.type === MediaType.MOVIE ? "movie" : "tv";
+    const key = `${mediaType}-${e.mediaItem.tmdbId}`;
+    const friend = friendById.get(e.userId);
+    if (!friend) continue;
+    const watchers = result.get(key) ?? [];
+    watchers.push({
+      id: friend.id,
+      name: friend.name,
+      avatarUrl: friend.avatarUrl,
+    });
+    result.set(key, watchers);
+  }
+  return result;
+}
+
 /** @deprecated Use fetchMyWatchHistoryInRange */
 export async function fetchMyWatchEntriesInRange(
   userId: string,
