@@ -23,7 +23,6 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 import {
   usePickerRoomSync,
@@ -732,284 +731,276 @@ export function PickSession({
   // ─── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-6">
-      {/* Session header */}
-      <div
-        className={cn(
-          "flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between rounded-lg border border-border bg-card/50 px-4 py-3",
-        )}
-      >
-        {roomId ? (
-          <>
-            <div className="flex items-center gap-2 min-w-0">
-              {isPollFallback ? (
-                <span
-                  className="flex items-center gap-1 text-xs text-amber-600 dark:text-amber-500 shrink-0"
-                  title="Live stream unavailable — updates are polling every ~2.5s"
-                >
-                  <WifiOff className="h-3.5 w-3.5" />
-                  Polling
-                </span>
-              ) : (
-                <span
-                  className="flex items-center gap-1 text-xs text-green-600 dark:text-green-500 shrink-0"
-                  title="Connected via live stream"
-                >
-                  <Radio className="h-3.5 w-3.5" />
-                  Live
-                </span>
-              )}
-              <p className="text-xs text-muted-foreground truncate">
-                Criteria and last ranked list are shared with everyone in this
-                room.
-              </p>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <Button type="button" variant="ghost" size="sm" asChild>
-                <Link href="/pick/history">
-                  <History className="h-4 w-4" />
-                  History
-                </Link>
-              </Button>
-              {scoringResults !== null && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={saveSession}
-                  disabled={savingSession}
-                >
-                  {savingSession ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Save className="h-4 w-4" />
-                  )}
-                  Save session
-                </Button>
-              )}
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={copyShareLink}
-              >
-                <Link2 className="h-4 w-4" />
-                Copy link
-              </Button>
-            </div>
-          </>
-        ) : (
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3 w-full sm:justify-between">
-            <p className="text-xs text-muted-foreground max-w-xl">
-              Share one screen: start a room and send the link so everyone can
-              edit together in real time.
-            </p>
-            <div className="flex items-center gap-2 shrink-0">
-              <Button type="button" variant="ghost" size="sm" asChild>
-                <Link href="/pick/history">
-                  <History className="h-4 w-4" />
-                  History
-                </Link>
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                onClick={startSharedSession}
-                disabled={startingRoom}
-              >
-                {startingRoom ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Share2 className="h-4 w-4" />
-                )}
-                Start shared session
-              </Button>
-            </div>
-          </div>
-        )}
+    <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_21rem] items-start">
+      {/* ── Main content ──────────────────────────────────────────────────── */}
+      <div className="min-w-0 space-y-6">
+        <PickerForm
+          roomState={roomState}
+          currentUserId={currentUserId}
+          hasPlexLinked={hasPlexLinked}
+          participantLabel={participantLabel}
+          onStateChange={setRoomState}
+          onToggleSave={toggleSave}
+        />
+
+        <PickerResults
+          scoringResults={scoringResults}
+          visibleScoringResults={visibleScoringResults}
+          scoringInProgress={scoringInProgress}
+          scoringError={scoringError}
+          emptyScoreHint={emptyScoreHint}
+          hasCompletedListRun={hasCompletedListRun}
+          canScore={canScore}
+          criteriaDirty={criteriaDirty}
+          firstRunReady={firstRunReady}
+          pickerStatusByTmdb={pickerStatusByTmdb}
+          shortlist={roomState.shortlist ?? []}
+          votes={roomState.votes ?? {}}
+          currentUserId={currentUser.id}
+          participantCount={participants.length}
+          savingPick={savingPick}
+          onFindMovies={findMovies}
+          onDismiss={dismissResult}
+          onUndoDismiss={undoDismiss}
+          onPickerStatusesInvalidate={invalidatePickerStatuses}
+          onToggleShortlist={toggleShortlist}
+          onVote={castVote}
+          onRecordPick={recordPick}
+          lastSavedPick={lastSavedPick}
+        />
       </div>
 
-      {/* Who's watching */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Who&apos;s watching?</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ParticipantSearch
-            participants={participants}
-            currentUserId={currentUserId}
-            onAdd={addParticipant}
-            onRemove={removeParticipant}
-          />
-        </CardContent>
-      </Card>
-
-      {/* Presets */}
-      {(localPresets.length > 0 || attractors.length > 0) && (
+      {/* ── Right sidebar ─────────────────────────────────────────────────── */}
+      <aside className="min-w-0 space-y-4 lg:sticky lg:top-4 lg:self-start">
+        {/* Session panel */}
         <Card>
           <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base">Saved presets</CardTitle>
-              {!showPresetForm && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 gap-1 text-xs"
-                  onClick={() => setShowPresetForm(true)}
-                  disabled={attractors.length === 0}
-                  title={
-                    attractors.length === 0
-                      ? "Add attractors before saving a preset"
-                      : "Save current participants and attractors as a preset"
-                  }
-                >
-                  <Bookmark className="h-3.5 w-3.5" />
-                  Save as preset
-                </Button>
-              )}
+            <div className="flex items-center justify-between gap-2">
+              <CardTitle className="text-base">Watch together</CardTitle>
+              {roomId &&
+                (isPollFallback ? (
+                  <span
+                    className="flex items-center gap-1 text-xs text-amber-600 dark:text-amber-500 shrink-0"
+                    title="Live stream unavailable — polling every ~2.5s"
+                  >
+                    <WifiOff className="h-3.5 w-3.5" />
+                    Polling
+                  </span>
+                ) : (
+                  <span
+                    className="flex items-center gap-1 text-xs text-green-600 dark:text-green-500 shrink-0"
+                    title="Connected via live stream"
+                  >
+                    <Radio className="h-3.5 w-3.5" />
+                    Live
+                  </span>
+                ))}
             </div>
           </CardHeader>
-          <CardContent className="space-y-3">
-            {showPresetForm && (
-              <div className="flex items-center gap-2">
-                <Input
-                  placeholder="Preset name…"
-                  value={presetName}
-                  onChange={(e) => setPresetName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") void savePreset();
-                    if (e.key === "Escape") {
-                      setShowPresetForm(false);
-                      setPresetName("");
-                    }
-                  }}
-                  className="h-8 text-sm"
-                  autoFocus
+          <CardContent className="space-y-4">
+            {roomId ? (
+              <>
+                <ParticipantSearch
+                  participants={participants}
+                  currentUserId={currentUserId}
+                  onAdd={addParticipant}
+                  onRemove={removeParticipant}
                 />
-                <Button
-                  type="button"
-                  size="sm"
-                  className="h-8 shrink-0"
-                  onClick={savePreset}
-                  disabled={savingPreset || !presetName.trim()}
-                >
-                  {savingPreset ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    "Save"
-                  )}
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 shrink-0"
-                  onClick={() => {
-                    setShowPresetForm(false);
-                    setPresetName("");
-                  }}
-                >
-                  Cancel
-                </Button>
-              </div>
-            )}
-            {localPresets.length === 0 ? (
-              <p className="text-xs text-muted-foreground">
-                Save your current setup to quickly reload it next time.
-              </p>
-            ) : (
-              <div className="space-y-1">
-                {localPresets.map((preset) => {
-                  type AttrJson = { title: string };
-                  const presetAttractors =
-                    (preset.attractors as AttrJson[]) ?? [];
-                  return (
-                    <div
-                      key={preset.id}
-                      className="flex items-center justify-between gap-2 rounded-md px-2 py-1.5 hover:bg-muted/50 transition-colors"
+                <p className="text-xs text-muted-foreground">
+                  Criteria and rankings are shared with everyone in this room.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={copyShareLink}
+                  >
+                    <Link2 className="h-4 w-4" />
+                    Copy link
+                  </Button>
+                  {scoringResults !== null && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={saveSession}
+                      disabled={savingSession}
                     >
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium truncate">
-                          {preset.name}
-                        </p>
-                        {presetAttractors.length > 0 && (
-                          <p className="text-xs text-muted-foreground truncate">
-                            {presetAttractors.map((a) => a.title).join(", ")}
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1 shrink-0">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="h-7 text-xs"
-                          onClick={() => applyPreset(preset)}
-                        >
-                          Load
-                        </Button>
-                        <button
-                          type="button"
-                          className="text-muted-foreground hover:text-destructive transition-colors p-1 rounded"
-                          onClick={() => void deletePreset(preset.id)}
-                          aria-label={`Delete preset ${preset.name}`}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                      {savingSession ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Save className="h-4 w-4" />
+                      )}
+                      Save session
+                    </Button>
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-muted-foreground">
+                  Start a shared session so friends can join and edit picks with
+                  you in real time.
+                </p>
+                <Button
+                  type="button"
+                  className="w-full"
+                  onClick={startSharedSession}
+                  disabled={startingRoom}
+                >
+                  {startingRoom ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Share2 className="h-4 w-4" />
+                  )}
+                  Start shared session
+                </Button>
+              </>
             )}
           </CardContent>
         </Card>
-      )}
 
-      {/* Main content grid */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_18.5rem] xl:grid-cols-[1fr_20rem] items-start">
-        <div className="min-w-0 space-y-6">
-          <PickerForm
-            roomState={roomState}
-            currentUserId={currentUserId}
-            hasPlexLinked={hasPlexLinked}
-            participantLabel={participantLabel}
-            onStateChange={setRoomState}
-            onToggleSave={toggleSave}
-          />
+        {/* Presets */}
+        {(localPresets.length > 0 || attractors.length > 0) && (
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base">Saved presets</CardTitle>
+                {!showPresetForm && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 gap-1 text-xs"
+                    onClick={() => setShowPresetForm(true)}
+                    disabled={attractors.length === 0}
+                    title={
+                      attractors.length === 0
+                        ? "Add attractors before saving a preset"
+                        : "Save current participants and attractors as a preset"
+                    }
+                  >
+                    <Bookmark className="h-3.5 w-3.5" />
+                    Save as preset
+                  </Button>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {showPresetForm && (
+                <div className="flex items-center gap-2">
+                  <Input
+                    placeholder="Preset name…"
+                    value={presetName}
+                    onChange={(e) => setPresetName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") void savePreset();
+                      if (e.key === "Escape") {
+                        setShowPresetForm(false);
+                        setPresetName("");
+                      }
+                    }}
+                    className="h-8 text-sm"
+                    autoFocus
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="h-8 shrink-0"
+                    onClick={savePreset}
+                    disabled={savingPreset || !presetName.trim()}
+                  >
+                    {savingPreset ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      "Save"
+                    )}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 shrink-0"
+                    onClick={() => {
+                      setShowPresetForm(false);
+                      setPresetName("");
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              )}
+              {localPresets.length === 0 ? (
+                <p className="text-xs text-muted-foreground">
+                  Save your current setup to quickly reload it next time.
+                </p>
+              ) : (
+                <div className="space-y-1">
+                  {localPresets.map((preset) => {
+                    type AttrJson = { title: string };
+                    const presetAttractors =
+                      (preset.attractors as AttrJson[]) ?? [];
+                    return (
+                      <div
+                        key={preset.id}
+                        className="flex items-center justify-between gap-2 rounded-md px-2 py-1.5 hover:bg-muted/50 transition-colors"
+                      >
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate">
+                            {preset.name}
+                          </p>
+                          {presetAttractors.length > 0 && (
+                            <p className="text-xs text-muted-foreground truncate">
+                              {presetAttractors.map((a) => a.title).join(", ")}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs"
+                            onClick={() => applyPreset(preset)}
+                          >
+                            Load
+                          </Button>
+                          <button
+                            type="button"
+                            className="text-muted-foreground hover:text-destructive transition-colors p-1 rounded"
+                            onClick={() => void deletePreset(preset.id)}
+                            aria-label={`Delete preset ${preset.name}`}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
-          <PickerResults
-            scoringResults={scoringResults}
-            visibleScoringResults={visibleScoringResults}
-            scoringInProgress={scoringInProgress}
-            scoringError={scoringError}
-            emptyScoreHint={emptyScoreHint}
-            hasCompletedListRun={hasCompletedListRun}
-            canScore={canScore}
-            criteriaDirty={criteriaDirty}
-            firstRunReady={firstRunReady}
-            pickerStatusByTmdb={pickerStatusByTmdb}
-            shortlist={roomState.shortlist ?? []}
-            votes={roomState.votes ?? {}}
-            currentUserId={currentUser.id}
-            participantCount={participants.length}
-            savingPick={savingPick}
-            onFindMovies={findMovies}
-            onDismiss={dismissResult}
-            onUndoDismiss={undoDismiss}
-            onPickerStatusesInvalidate={invalidatePickerStatuses}
-            onToggleShortlist={toggleShortlist}
-            onVote={castVote}
-            onRecordPick={recordPick}
-            lastSavedPick={lastSavedPick}
-          />
-        </div>
+        {/* History link */}
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          asChild
+          className="w-full justify-start"
+        >
+          <Link href="/pick/history">
+            <History className="h-4 w-4" />
+            Pick history
+          </Link>
+        </Button>
 
-        <aside className="min-w-0 space-y-4 lg:sticky lg:top-4 lg:self-start">
-          <PickerActivity activityLines={activityLines} roomId={roomId} />
-        </aside>
-      </div>
+        {/* Activity feed */}
+        <PickerActivity activityLines={activityLines} roomId={roomId} />
+      </aside>
     </div>
   );
 }

@@ -1053,6 +1053,48 @@ function GenreTagInput({
   );
 }
 
+// ─── FilterTile ───────────────────────────────────────────────────────────────
+
+function FilterTile({
+  icon: Icon,
+  label,
+  activeLabel,
+  onClick,
+  active,
+  badge,
+}: {
+  icon: React.ElementType;
+  label: string;
+  activeLabel?: string | null;
+  onClick: () => void;
+  active?: boolean;
+  badge?: number;
+}) {
+  const displayLabel = active && activeLabel ? activeLabel : label;
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "relative flex flex-col items-center justify-center gap-2.5 rounded-xl border-2 px-6 py-5 min-w-[96px] transition-all select-none",
+        active
+          ? "border-primary bg-primary/8 text-primary"
+          : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground hover:bg-accent/50",
+      )}
+    >
+      <Icon className="h-8 w-8 shrink-0" />
+      <span className="text-sm font-semibold text-center max-w-[90px] truncate leading-tight">
+        {displayLabel}
+      </span>
+      {badge !== undefined && badge > 0 && (
+        <span className="absolute -top-2 -right-2 h-5 min-w-5 rounded-full bg-primary text-primary-foreground text-2xs font-bold flex items-center justify-center px-1">
+          {badge}
+        </span>
+      )}
+    </button>
+  );
+}
+
 // ─── PickerForm ───────────────────────────────────────────────────────────────
 
 export interface PickerFormProps {
@@ -1185,67 +1227,43 @@ export function PickerForm({
 
   return (
     <div className="space-y-4">
-      {/* ── Filter button bar ──────────────────────────────────────────── */}
-      <div className="flex flex-wrap gap-2">
-        <Button
-          type="button"
-          variant="outline"
+      {/* ── Filter tiles ───────────────────────────────────────────────── */}
+      <div className="flex flex-wrap justify-center gap-3">
+        <FilterTile
+          icon={Film}
+          label="Movie"
           onClick={() => setMovieOpen(true)}
-        >
-          <Film className="h-4 w-4" />
-          Movie
-          {(attractors.length > 0 || repellers.length > 0) && (
-            <span className="ml-1 rounded-full bg-primary/15 px-1.5 py-0.5 text-2xs font-semibold text-primary leading-none">
-              {attractors.length + repellers.length}
-            </span>
-          )}
-        </Button>
-
-        <Button
-          type="button"
-          variant="outline"
+          active={attractors.length > 0 || repellers.length > 0}
+          badge={attractors.length + repellers.length || undefined}
+        />
+        <FilterTile
+          icon={User}
+          label="Person"
           onClick={() => setPersonOpen(true)}
-        >
-          <User className="h-4 w-4" />
-          Person
-          {(requirePeople.length > 0 || excludePeople.length > 0) && (
-            <span className="ml-1 rounded-full bg-primary/15 px-1.5 py-0.5 text-2xs font-semibold text-primary leading-none">
-              {requirePeople.length + excludePeople.length}
-            </span>
-          )}
-        </Button>
-
-        <Button
-          type="button"
-          variant="outline"
+          active={requirePeople.length > 0 || excludePeople.length > 0}
+          badge={requirePeople.length + excludePeople.length || undefined}
+        />
+        <FilterTile
+          icon={Tag}
+          label="Genre"
           onClick={() => setGenreOpen(true)}
-        >
-          <Tag className="h-4 w-4" />
-          Genre
-          {(includeGenres.length > 0 || excludeGenres.length > 0) && (
-            <span className="ml-1 rounded-full bg-primary/15 px-1.5 py-0.5 text-2xs font-semibold text-primary leading-none">
-              {includeGenres.length + excludeGenres.length}
-            </span>
-          )}
-        </Button>
-
-        <Button
-          type="button"
-          variant={yearLabel ? "secondary" : "outline"}
+          active={includeGenres.length > 0 || excludeGenres.length > 0}
+          badge={includeGenres.length + excludeGenres.length || undefined}
+        />
+        <FilterTile
+          icon={Calendar}
+          label="Year"
+          activeLabel={yearLabel}
           onClick={() => setYearOpen(true)}
-        >
-          <Calendar className="h-4 w-4" />
-          {yearLabel ?? "Year"}
-        </Button>
-
-        <Button
-          type="button"
-          variant={runtimeLabel ? "secondary" : "outline"}
+          active={!!yearLabel}
+        />
+        <FilterTile
+          icon={Clock}
+          label="Runtime"
+          activeLabel={runtimeLabel}
           onClick={() => setRuntimeOpen(true)}
-        >
-          <Clock className="h-4 w-4" />
-          {runtimeLabel ?? "Runtime"}
-        </Button>
+          active={!!runtimeLabel}
+        />
       </div>
 
       {/* ── Active filter pills ────────────────────────────────────────── */}
