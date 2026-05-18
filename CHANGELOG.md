@@ -1,3 +1,9 @@
+## [1.55.0](https://github.com/jamiebclark/screened/compare/v1.54.0...v1.55.0) (2026-05-18)
+
+### Features
+
+* **pick:** redesign session controls and filter tile layout ([44ce4f7](https://github.com/jamiebclark/screened/commit/44ce4f717172cfeaedfe77c30e12bc406f2ba702))
+
 ## [1.54.0](https://github.com/jamiebclark/screened/compare/v1.53.1...v1.54.0) (2026-05-18)
 
 ### Features
