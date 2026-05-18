@@ -3,7 +3,11 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { getTrending } from "@/lib/tmdb";
 import { getUserTmdbMediaStateForTmdbIds } from "@/lib/tmdb-user-media-state";
-import { fetchHomeRecentWatchedTitles } from "@/lib/watch-history-queries";
+import {
+  fetchHomeRecentWatchedTitles,
+  fetchFriendsRecentWatched,
+  fetchFriendWatchersForTmdbItems,
+} from "@/lib/watch-history-queries";
 import { MediaCard } from "@/components/media-card";
 import { Eye, Clock, Bookmark, ListVideo, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,18 +16,20 @@ import { MediaType, WatchStatus } from "@/generated/prisma";
 export default async function HomePage() {
   const session = await auth();
 
-  const [trending, recentMediaIdsOrdered, stats] = await Promise.all([
-    getTrending("all", "week").catch(() => ({ results: [] })),
-    fetchHomeRecentWatchedTitles(session!.user.id, {
-      titleLimit: 10,
-      fetchPerSource: 80,
-    }),
-    prisma.userMediaStatus.groupBy({
-      by: ["status"],
-      where: { userId: session!.user.id },
-      _count: true,
-    }),
-  ]);
+  const [trending, recentMediaIdsOrdered, stats, friendActivity] =
+    await Promise.all([
+      getTrending("all", "week").catch(() => ({ results: [] })),
+      fetchHomeRecentWatchedTitles(session!.user.id, {
+        titleLimit: 10,
+        fetchPerSource: 80,
+      }),
+      prisma.userMediaStatus.groupBy({
+        by: ["status"],
+        where: { userId: session!.user.id },
+        _count: true,
+      }),
+      fetchFriendsRecentWatched(session!.user.id, 10),
+    ]);
 
   const trendingMovies = trending.results
     .filter((r) => r.media_type === "movie")
@@ -37,6 +43,7 @@ export default async function HomePage() {
     statusRows,
     trendingMovieTmdbState,
     trendingTvTmdbState,
+    trendingFriendWatchers,
   ] = await Promise.all([
     recentMediaIdsOrdered.length > 0
       ? prisma.mediaItem.findMany({
@@ -61,6 +68,10 @@ export default async function HomePage() {
       "tv",
       trendingTv.map((t) => t.id),
     ),
+    fetchFriendWatchersForTmdbItems(session!.user.id, [
+      ...trendingMovies.map((m) => ({ tmdbId: m.id, type: "movie" as const })),
+      ...trendingTv.map((t) => ({ tmdbId: t.id, type: "tv" as const })),
+    ]),
   ]);
 
   const mediaById = new Map(recentMediaRows.map((m) => [m.id, m]));
@@ -174,6 +185,31 @@ export default async function HomePage() {
         </section>
       )}
 
+      {/* Friends recently watched */}
+      {friendActivity.length > 0 && (
+        <section>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-bold">Friends recently watched</h2>
+            <Button variant="ghost" size="sm" asChild>
+              <Link href="/activity">See all</Link>
+            </Button>
+          </div>
+          <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-10 gap-3">
+            {friendActivity.map((item) => (
+              <MediaCard
+                key={`${item.mediaItem.type}-${item.mediaItem.tmdbId}`}
+                tmdbId={item.mediaItem.tmdbId}
+                type={item.mediaItem.type === MediaType.MOVIE ? "movie" : "tv"}
+                title={item.mediaItem.title}
+                poster={item.mediaItem.poster}
+                year={item.mediaItem.year}
+                friendWatchers={[item.watcher]}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Trending Movies */}
       {trendingMovies.length > 0 && (
         <section>
@@ -201,6 +237,9 @@ export default async function HomePage() {
                   status={st?.status ?? null}
                   onList={st?.onList ?? false}
                   priority={index < 3}
+                  friendWatchers={trendingFriendWatchers.get(
+                    `movie-${movie.id}`,
+                  )}
                 />
               );
             })}
@@ -234,6 +273,7 @@ export default async function HomePage() {
                   }
                   status={st?.status ?? null}
                   onList={st?.onList ?? false}
+                  friendWatchers={trendingFriendWatchers.get(`tv-${show.id}`)}
                 />
               );
             })}
