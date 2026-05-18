@@ -14,6 +14,7 @@ import {
   type TmdbUserMediaState,
 } from "@/lib/tmdb-user-media-state";
 import { listFriendUserIds } from "@/lib/friendship";
+import { fetchFriendWatchersForTmdbItems } from "@/lib/watch-history-queries";
 import { prisma } from "@/lib/prisma";
 import { MediaType, WatchStatus } from "@/generated/prisma";
 import { MediaCard } from "@/components/media-card";
@@ -407,6 +408,22 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
     filteredResults = results.filter((r) => !watchedIds.has(r.id));
   }
 
+  const friendWatchers =
+    session?.user?.id && filteredResults.length > 0
+      ? await fetchFriendWatchersForTmdbItems(
+          session.user.id,
+          filteredResults
+            .filter((r) => r.media_type === "movie" || r.media_type === "tv")
+            .map((r) => ({
+              tmdbId: r.id,
+              type: r.media_type as "movie" | "tv",
+            })),
+        )
+      : new Map<
+          string,
+          { id: string; name: string; avatarUrl: string | null }[]
+        >();
+
   function buildPageUrl(pageNum: number): string {
     const base = serializeBrowseFilter(browseFilter, {
       type,
@@ -467,6 +484,9 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
                   }
                   status={st?.status ?? null}
                   onList={st?.onList ?? false}
+                  friendWatchers={friendWatchers.get(
+                    `${item.media_type}-${item.id}`,
+                  )}
                 />
               );
             })}
