@@ -9,18 +9,27 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
 </p>
 
-<p align="center">A self-hosted web app for tracking movies and TV shows with friends, Plex sync, and Radarr integration.</p>
+<p align="center">A self-hosted home for your shared watchlist. Track, pick, and plan what to watch with friends — with Plex, Letterboxd, and Radarr integration for home media server users.</p>
+
+---
+
+## Why Screened?
+
+Most tracking apps are built for solo use. Letterboxd is great for logging what you've watched, but there's no way to build a list with friends. Tools like Watcharr add collaborative lists, but the list lives in a silo — it can't drive your download client or help you actually decide what to watch next.
+
+Screened was built to close that gap: a shared watchlist that feeds your Picker, your Watch Parties, and — for home server users — your Radarr queue automatically.
 
 ---
 
 ## Features
 
+- **Collaborative lists** — shared watchlists with member invites; each list exports a live Radarr endpoint for home media server users
+- **Movie Night Picker** — collaborative "what should we watch?" sessions with reference-title scoring
+- **Watch Parties** — schedule viewings and invite friends; everyone gets notified and can RSVP
 - **Personal tracking** — watchlist, watching, watched, dropped status with star ratings and reviews
 - **Episode tracking** — per-episode progress for TV shows with notes and watch timestamps
-- **Collaborative lists** — shared movie lists with member invites; each list exports a live Radarr endpoint
 - **Plex sync** — import your watch history automatically; manual and scheduled sync supported
 - **Letterboxd** — connect your public profile to import diary entries and ratings
-- **Movie Night Picker** — collaborative "what should we watch?" sessions with reference-title scoring
 - **Watch history** — unified log across Plex, Letterboxd, and manual entries with a calendar view
 - **Discord integration** — channel webhooks, slash commands, and DM notifications (optional)
 
