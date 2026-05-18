@@ -34,6 +34,7 @@ export type WatchlistItem = {
     genres: string[];
     runtime: number | null;
   };
+  friendWatchers?: { id: string; name: string; avatarUrl: string | null }[];
 };
 
 type TypeFilter = "all" | "movie" | "tv";
@@ -357,6 +358,7 @@ export function WatchlistClient({
                   poster={item.mediaItem.poster}
                   year={item.mediaItem.year}
                   status={item.status}
+                  friendWatchers={item.friendWatchers}
                 />
               </div>
             );

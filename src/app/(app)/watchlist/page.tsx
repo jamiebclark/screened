@@ -10,6 +10,7 @@ import { CopyButton } from "@/components/copy-button";
 import { Button } from "@/components/ui/button";
 import { MediaType } from "@/generated/prisma";
 import { ensureWatchlistRadarrToken } from "@/lib/ensure-watchlist-radarr-token";
+import { fetchFriendWatchersForTmdbItems } from "@/lib/watch-history-queries";
 import { WatchlistClient, type WatchlistItem } from "./watchlist-client";
 
 const SORT_ORDERS = {
@@ -109,6 +110,14 @@ export default async function WatchlistPage({ searchParams }: PageProps) {
     `),
   ]);
 
+  const watchlistFriendWatchers = await fetchFriendWatchersForTmdbItems(
+    session!.user.id,
+    rows.map((r) => ({
+      tmdbId: r.mediaItem.tmdbId,
+      type: r.mediaItem.type === MediaType.MOVIE ? "movie" : ("tv" as const),
+    })),
+  );
+
   const movies = rows.filter((r) => r.mediaItem.type === MediaType.MOVIE);
   const radarrToken =
     movies.length > 0
@@ -128,19 +137,25 @@ export default async function WatchlistPage({ searchParams }: PageProps) {
     ...new Set(rows.flatMap((r) => r.mediaItem.genres)),
   ].sort();
 
-  const items: WatchlistItem[] = rows.map((r) => ({
-    id: r.id,
-    status: "WATCHLIST",
-    mediaItem: {
-      tmdbId: r.mediaItem.tmdbId,
-      type: r.mediaItem.type as "MOVIE" | "TV",
-      title: r.mediaItem.title,
-      poster: r.mediaItem.poster,
-      year: r.mediaItem.year,
-      genres: r.mediaItem.genres,
-      runtime: r.mediaItem.runtime,
-    },
-  }));
+  const items: WatchlistItem[] = rows.map((r) => {
+    const type = r.mediaItem.type === MediaType.MOVIE ? "movie" : "tv";
+    return {
+      id: r.id,
+      status: "WATCHLIST",
+      mediaItem: {
+        tmdbId: r.mediaItem.tmdbId,
+        type: r.mediaItem.type as "MOVIE" | "TV",
+        title: r.mediaItem.title,
+        poster: r.mediaItem.poster,
+        year: r.mediaItem.year,
+        genres: r.mediaItem.genres,
+        runtime: r.mediaItem.runtime,
+      },
+      friendWatchers: watchlistFriendWatchers.get(
+        `${type}-${r.mediaItem.tmdbId}`,
+      ),
+    };
+  });
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-12 space-y-8">
