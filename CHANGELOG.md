@@ -1,3 +1,17 @@
+## [1.54.0](https://github.com/jamiebclark/screened/compare/v1.53.1...v1.54.0) (2026-05-18)
+
+### Features
+
+* **browse:** show friend watcher overlays on browse cards ([d19de86](https://github.com/jamiebclark/screened/commit/d19de86131057d476c662c18c24ef7da1264248c))
+* **components:** add friend watcher avatar overlay to MediaCard ([c95828e](https://github.com/jamiebclark/screened/commit/c95828e4c31745809c943a2c5155d091e1cb5235))
+* **home:** add friends recently watched rail ([38e6977](https://github.com/jamiebclark/screened/commit/38e69772ba3001075b7b32ad939cb121693a6707))
+* **lib:** add friend watch query helpers ([ac2d05f](https://github.com/jamiebclark/screened/commit/ac2d05fc3dc6be1744d5b068814ec921496ec587))
+* **watchlist:** show friend watcher overlays on watchlist cards ([603a64b](https://github.com/jamiebclark/screened/commit/603a64bfbeb6b09de7f9cf8e001c51d2070ae68e))
+
+### Bug Fixes
+
+* **movies:** rename "Friends on Letterboxd" to "Users on Letterboxd" ([b0f5d67](https://github.com/jamiebclark/screened/commit/b0f5d678930be2ceec6a41671b309674a2febeef))
+
 ## [1.53.1](https://github.com/jamiebclark/screened/compare/v1.53.0...v1.53.1) (2026-05-17)
 
 ### Bug Fixes
