@@ -13,6 +13,18 @@
 
 ---
 
+- [Why Screened?](#why-screened)
+- [Features](#features)
+- [Screenshots](#screenshots)
+- [Quick Start](#quick-start)
+- [Documentation](#documentation)
+- [Getting Help](#getting-help)
+- [Contributing](#contributing)
+- [Tech Stack](#tech-stack)
+- [Development](#development)
+
+---
+
 ## Why Screened?
 
 Most tracking apps are built for solo use. Letterboxd is great for logging what you've watched, but there's no way to build a list with friends. Tools like Watcharr add collaborative lists, but the list lives in a silo — it can't drive your download client or help you actually decide what to watch next.
@@ -74,7 +86,19 @@ The app will be available at `http://localhost:3000` (or whatever `PORT` you set
 | [Movie Night Picker](docs/picker.md)   | How the Picker and scoring work                        |
 | [Watch Parties](docs/watch-parties.md) | Scheduling and inviting friends to watch together      |
 | [Discord](docs/discord-integration.md) | Webhooks, slash commands, and DM notifications         |
-| [Contributing](CONTRIBUTING.md)        | Local dev setup, commit conventions, PR checklist      |
+
+---
+
+## Getting Help
+
+- **[GitHub Discussions](https://github.com/jamiebclark/screened/discussions)** — questions, ideas, and general conversation
+- **[GitHub Issues](https://github.com/jamiebclark/screened/issues)** — bug reports and feature requests only
+
+---
+
+## Contributing
+
+Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for local dev setup, commit conventions, and the PR checklist.
 
 ---
 
