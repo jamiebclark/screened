@@ -14,6 +14,12 @@ import {
 } from "lucide-react";
 import { cn, tmdbImageUrl } from "@/lib/utils";
 
+export type FriendWatcherOverlay = {
+  id: string;
+  name: string;
+  avatarUrl: string | null;
+};
+
 interface MediaCardProps {
   tmdbId: number;
   type: "movie" | "tv";
@@ -30,6 +36,8 @@ interface MediaCardProps {
   hrefSearch?: string | null;
   /** When provided, renders as a button instead of a link. */
   onClick?: () => void;
+  /** Friends who have watched this title; renders avatar stack at bottom of poster. */
+  friendWatchers?: FriendWatcherOverlay[];
 }
 
 const statusIcons = {
@@ -60,6 +68,7 @@ export function MediaCard({
   priority = false,
   hrefSearch = null,
   onClick,
+  friendWatchers,
 }: MediaCardProps) {
   const base = `/${type === "movie" ? "movies" : "tv"}/${tmdbId}`;
   const href = hrefSearch ? `${base}?${hrefSearch}` : base;
@@ -144,6 +153,44 @@ export function MediaCard({
           <p className="text-white text-xs font-medium line-clamp-2">{title}</p>
           {year && <p className="text-white/70 text-xs">{year}</p>}
         </div>
+
+        {friendWatchers && friendWatchers.length > 0 && (
+          <div className="absolute bottom-2 left-2 flex -space-x-1.5">
+            {friendWatchers.slice(0, 3).map((w) => (
+              <div
+                key={w.id}
+                title={w.name}
+                className="h-6 w-6 rounded-full border-2 border-background overflow-hidden bg-muted flex items-center justify-center flex-shrink-0 shadow-sm"
+              >
+                {w.avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={w.avatarUrl}
+                    alt={w.name}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <span className="text-[9px] font-semibold text-foreground leading-none">
+                    {w.name
+                      .trim()
+                      .split(/\s+/)
+                      .map((p) => p[0])
+                      .slice(0, 2)
+                      .join("")
+                      .toUpperCase()}
+                  </span>
+                )}
+              </div>
+            ))}
+            {friendWatchers.length > 3 && (
+              <div className="h-6 w-6 rounded-full border-2 border-background bg-muted flex items-center justify-center flex-shrink-0 shadow-sm">
+                <span className="text-[9px] font-medium text-muted-foreground leading-none">
+                  +{friendWatchers.length - 3}
+                </span>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </>
   );
