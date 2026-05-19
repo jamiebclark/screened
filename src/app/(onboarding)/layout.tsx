@@ -19,7 +19,7 @@ export default async function OnboardingLayout({
   });
 
   if (!user) {
-    redirect("/login");
+    redirect("/api/auth/sign-out-redirect");
   }
 
   if (user.onboardingCompletedAt) {

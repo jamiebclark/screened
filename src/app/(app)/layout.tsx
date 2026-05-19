@@ -33,7 +33,11 @@ export default async function AppLayout({
   ]);
 
   if (!user) {
-    redirect(`/login${callbackParam}`);
+    // JWT is valid but account no longer exists — sign out to clear the cookie
+    // before redirecting, otherwise the middleware loops: login → app → login.
+    redirect(
+      `/api/auth/sign-out-redirect?callbackUrl=${encodeURIComponent(currentPath)}`,
+    );
   }
 
   if (!user.onboardingCompletedAt) {
