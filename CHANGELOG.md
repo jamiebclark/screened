@@ -1,3 +1,9 @@
+## [1.55.3](https://github.com/jamiebclark/screened/compare/v1.55.2...v1.55.3) (2026-05-19)
+
+### Bug Fixes
+
+* **auth:** break redirect loop for deleted accounts with stale JWT ([4948f66](https://github.com/jamiebclark/screened/commit/4948f66ae881aa74b8c6b9d58eb804ce1859bc41))
+
 ## [1.55.2](https://github.com/jamiebclark/screened/compare/v1.55.1...v1.55.2) (2026-05-19)
 
 ### Bug Fixes
