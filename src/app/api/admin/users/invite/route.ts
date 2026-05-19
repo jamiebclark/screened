@@ -36,13 +36,18 @@ export async function POST(req: NextRequest) {
 
   const username = plexUsername.trim();
 
-  const existing = await prisma.user.findUnique({
-    where: { pendingPlexUsername: username },
+  const existing = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { pendingPlexUsername: username },
+        { email: `invited:${username.toLowerCase()}@invited.local` },
+      ],
+    },
     select: { id: true },
   });
   if (existing) {
     return NextResponse.json(
-      { error: "An invited user with that Plex username already exists" },
+      { error: "A user with that Plex username already exists" },
       { status: 409 },
     );
   }
@@ -50,16 +55,25 @@ export async function POST(req: NextRequest) {
   const displayName =
     typeof name === "string" && name.trim() ? name.trim() : username;
 
-  const user = await prisma.user.create({
-    data: {
-      email: `invited:${username.toLowerCase()}@invited.local`,
-      name: displayName,
-      passwordHash: randomBytes(32).toString("hex"),
-      status: "INVITED",
-      pendingPlexUsername: username,
-    },
-    select: { id: true, name: true, pendingPlexUsername: true, status: true },
-  });
+  let user;
+  try {
+    user = await prisma.user.create({
+      data: {
+        email: `invited:${username.toLowerCase()}@invited.local`,
+        name: displayName,
+        passwordHash: randomBytes(32).toString("hex"),
+        status: "INVITED",
+        pendingPlexUsername: username,
+      },
+      select: { id: true, name: true, pendingPlexUsername: true, status: true },
+    });
+  } catch (err) {
+    console.error("[admin/users/invite] create failed:", err);
+    return NextResponse.json(
+      { error: "Failed to create user" },
+      { status: 500 },
+    );
+  }
 
   return NextResponse.json(user, { status: 201 });
 }
