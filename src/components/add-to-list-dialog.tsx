@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect, useTransition } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Plus, Check, ListVideo } from "lucide-react";
+import { Plus, Check, ListVideo, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -40,7 +40,7 @@ export function AddToListDialog({
   const [lists, setLists] = useState<List[]>([]);
   const [loading, setLoading] = useState(false);
   const [addedTo, setAddedTo] = useState<Set<string>>(new Set());
-  const [isPending, startTransition] = useTransition();
+  const [pendingLists, setPendingLists] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!open) return;
@@ -61,22 +61,27 @@ export function AddToListDialog({
   }, [open]);
 
   const addToList = (listSlug: string) => {
-    startTransition(async () => {
-      try {
-        const res = await fetch(`/api/lists/${listSlug}/items`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ tmdbId, type }),
-        });
+    setPendingLists((prev) => new Set([...prev, listSlug]));
+    void fetch(`/api/lists/${listSlug}/items`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tmdbId, type }),
+    })
+      .then((res) => {
         if (res.ok) {
           setAddedTo((prev) => new Set([...prev, listSlug]));
           onAddedToList?.();
           router.refresh();
         }
-      } catch {
-        // ignore
-      }
-    });
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        setPendingLists((prev) => {
+          const next = new Set(prev);
+          next.delete(listSlug);
+          return next;
+        });
+      });
   };
 
   return (
@@ -111,21 +116,28 @@ export function AddToListDialog({
           <div className="space-y-2 max-h-64 overflow-y-auto">
             {lists.map((list) => {
               const isAdded = addedTo.has(list.slug);
+              const isPendingThis = pendingLists.has(list.slug);
               return (
                 <button
                   key={list.id}
-                  onClick={() => !isAdded && addToList(list.slug)}
-                  disabled={isPending || isAdded}
+                  onClick={() =>
+                    !isAdded && !isPendingThis && addToList(list.slug)
+                  }
+                  disabled={isPendingThis || isAdded}
                   className={cn(
                     "w-full flex items-center justify-between rounded-md border border-border px-3 py-2.5 text-sm transition-colors",
                     isAdded
                       ? "bg-green-500/10 border-green-500/30 text-green-400"
-                      : "hover:bg-accent cursor-pointer",
+                      : isPendingThis
+                        ? "opacity-60 cursor-wait"
+                        : "hover:bg-accent cursor-pointer",
                   )}
                 >
                   <span className="font-medium">{list.name}</span>
                   {isAdded ? (
                     <Check className="h-4 w-4 text-green-400" />
+                  ) : isPendingThis ? (
+                    <Loader2 className="h-4 w-4 text-muted-foreground animate-spin" />
                   ) : (
                     <Plus className="h-4 w-4 text-muted-foreground" />
                   )}
