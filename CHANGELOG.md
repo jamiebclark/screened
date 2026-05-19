@@ -1,3 +1,9 @@
+## [1.55.1](https://github.com/jamiebclark/screened/compare/v1.55.0...v1.55.1) (2026-05-19)
+
+### Bug Fixes
+
+* **admin:** handle duplicate email when inviting existing Plex username ([9c6c0b8](https://github.com/jamiebclark/screened/commit/9c6c0b8bf68d42c777b8590caf6456a5264e8890))
+
 ## [1.55.0](https://github.com/jamiebclark/screened/compare/v1.54.0...v1.55.0) (2026-05-18)
 
 ### Features
