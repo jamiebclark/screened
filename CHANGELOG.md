@@ -1,3 +1,9 @@
+## [1.55.2](https://github.com/jamiebclark/screened/compare/v1.55.1...v1.55.2) (2026-05-19)
+
+### Bug Fixes
+
+* **lists:** track per-list pending state and fix page refresh after add ([f2e26a5](https://github.com/jamiebclark/screened/commit/f2e26a50c2328e412f28c32b1cf2032f147b9fe7))
+
 ## [1.55.1](https://github.com/jamiebclark/screened/compare/v1.55.0...v1.55.1) (2026-05-19)
 
 ### Bug Fixes
