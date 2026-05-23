@@ -128,6 +128,17 @@ export function ListItemReorder({
     [items, listSlug, router],
   );
 
+  const handleNoteSaved = useCallback(
+    (itemId: string, note: string | null, isSpoiler: boolean) => {
+      setItems((prev) =>
+        prev.map((i) =>
+          i.id === itemId ? { ...i, notes: note, noteIsSpoiler: isSpoiler } : i,
+        ),
+      );
+    },
+    [],
+  );
+
   const modal = (
     <ListItemModal
       item={selectedItem}
@@ -139,6 +150,7 @@ export function ListItemReorder({
       commentsEnabled={commentsEnabled}
       currentUserId={currentUserId}
       isListOwner={isListOwner}
+      onNoteSaved={handleNoteSaved}
     />
   );
 

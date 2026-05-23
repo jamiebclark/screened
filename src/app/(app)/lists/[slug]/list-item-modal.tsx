@@ -27,6 +27,11 @@ interface ListItemModalProps {
   commentsEnabled: boolean;
   currentUserId: string | undefined;
   isListOwner: boolean;
+  onNoteSaved?: (
+    itemId: string,
+    note: string | null,
+    isSpoiler: boolean,
+  ) => void;
 }
 
 function NoteDisplay({
@@ -57,6 +62,7 @@ function NoteSection({
   listSlug,
   canEdit,
   overview,
+  onSaved,
 }: {
   initialNote: string | null;
   initialIsSpoiler: boolean;
@@ -64,6 +70,7 @@ function NoteSection({
   listSlug: string;
   canEdit: boolean;
   overview: string | null;
+  onSaved?: (note: string | null, isSpoiler: boolean) => void;
 }) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
@@ -91,9 +98,12 @@ function NoteSection({
         setSaveError(j.error ?? "Failed to save");
         return;
       }
-      setDisplayNote(noteText.trim() || null);
-      setDisplayIsSpoiler(noteText.trim() ? isSpoiler : false);
+      const savedNote = noteText.trim() || null;
+      const savedIsSpoiler = noteText.trim() ? isSpoiler : false;
+      setDisplayNote(savedNote);
+      setDisplayIsSpoiler(savedIsSpoiler);
       setEditing(false);
+      onSaved?.(savedNote, savedIsSpoiler);
       router.refresh();
     } catch {
       setSaveError("Something went wrong");
@@ -192,6 +202,7 @@ export function ListItemModal({
   commentsEnabled,
   currentUserId,
   isListOwner,
+  onNoteSaved,
 }: ListItemModalProps) {
   if (!item) return null;
 
@@ -288,6 +299,9 @@ export function ListItemModal({
                 (isListOwner || item.addedBy.id === currentUserId)
               }
               overview={mediaItem.overview}
+              onSaved={(note, isSpoiler) =>
+                onNoteSaved?.(item.id, note, isSpoiler)
+              }
             />
 
             <div className="border-t border-border" />
