@@ -9,7 +9,7 @@ import { InviteMemberForm } from "./invite-member-form";
 import { PrivateListGate } from "./private-list-gate";
 import { DiscordWebhookForm } from "./discord-webhook-form";
 import { LetterboxdImportDialog } from "@/components/letterboxd-import-dialog";
-import { EditableListSearchAdd } from "@/components/editable-list-search-add";
+import { ListAddFab } from "./list-add-fab";
 import { CopyButton } from "@/components/copy-button";
 import { ListSortControls, type SortField } from "./list-sort-controls";
 import { ListItemsGrid, type GridItem } from "./list-items-grid";
@@ -361,14 +361,6 @@ export default async function ListPage({ params, searchParams }: Params) {
       <div className="flex flex-col lg:flex-row gap-8 items-start">
         {/* Main content */}
         <div className="flex-1 min-w-0">
-          {isMember && (
-            <EditableListSearchAdd
-              variant="list"
-              listSlug={slug}
-              existingKeys={existingListKeys}
-            />
-          )}
-
           {list.items.length > 0 && !list.rankingEnabled && (
             <ListSortControls
               currentSort={sort}
@@ -515,6 +507,10 @@ export default async function ListPage({ params, searchParams }: Params) {
           </div>
         )}
       </div>
+
+      {isMember && (
+        <ListAddFab listSlug={slug} existingKeys={existingListKeys} />
+      )}
     </div>
   );
 }
