@@ -3,9 +3,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
-import { ThumbsUp, ThumbsDown, Eye } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ThumbsUp, ThumbsDown, Eye, Pencil, Loader2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ListItemVoteControls } from "./list-item-vote-controls";
 import { ListItemDeleteButton } from "./list-item-delete-button";
 import { ListItemComments } from "./list-item-comments";
@@ -25,7 +29,7 @@ interface ListItemModalProps {
   isListOwner: boolean;
 }
 
-function SpoilerNote({
+function NoteDisplay({
   notes,
   isSpoiler,
 }: {
@@ -43,6 +47,139 @@ function SpoilerNote({
       <Eye className="h-3 w-3" />
       Spoiler — reveal
     </button>
+  );
+}
+
+function NoteSection({
+  initialNote,
+  initialIsSpoiler,
+  itemId,
+  listSlug,
+  canEdit,
+  overview,
+}: {
+  initialNote: string | null;
+  initialIsSpoiler: boolean;
+  itemId: string;
+  listSlug: string;
+  canEdit: boolean;
+  overview: string | null;
+}) {
+  const router = useRouter();
+  const [editing, setEditing] = useState(false);
+  const [noteText, setNoteText] = useState(initialNote ?? "");
+  const [isSpoiler, setIsSpoiler] = useState(initialIsSpoiler);
+  const [displayNote, setDisplayNote] = useState(initialNote);
+  const [displayIsSpoiler, setDisplayIsSpoiler] = useState(initialIsSpoiler);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  const handleSave = async () => {
+    setSaving(true);
+    setSaveError(null);
+    try {
+      const res = await fetch(`/api/lists/${listSlug}/items/${itemId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          notes: noteText.trim() || null,
+          noteIsSpoiler: noteText.trim() ? isSpoiler : false,
+        }),
+      });
+      if (!res.ok) {
+        const j = (await res.json().catch(() => ({}))) as { error?: string };
+        setSaveError(j.error ?? "Failed to save");
+        return;
+      }
+      setDisplayNote(noteText.trim() || null);
+      setDisplayIsSpoiler(noteText.trim() ? isSpoiler : false);
+      setEditing(false);
+      router.refresh();
+    } catch {
+      setSaveError("Something went wrong");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setNoteText(displayNote ?? "");
+    setIsSpoiler(displayIsSpoiler);
+    setSaveError(null);
+    setEditing(false);
+  };
+
+  if (editing) {
+    return (
+      <div className="space-y-2">
+        <Textarea
+          value={noteText}
+          onChange={(e) => setNoteText(e.target.value)}
+          placeholder="Why are you adding this? Any thoughts… (markdown supported)"
+          rows={4}
+          className="resize-none text-sm"
+          autoFocus
+        />
+        {noteText.trim() && (
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <Checkbox
+              checked={isSpoiler}
+              onCheckedChange={(v) => setIsSpoiler(v === true)}
+            />
+            <span className="text-xs text-muted-foreground flex items-center gap-1">
+              <Eye className="h-3 w-3" />
+              Mark note as spoiler
+            </span>
+          </label>
+        )}
+        {saveError && <p className="text-xs text-destructive">{saveError}</p>}
+        <div className="flex gap-2">
+          <Button size="sm" onClick={handleSave} disabled={saving}>
+            {saving && <Loader2 className="h-3 w-3 animate-spin" />}
+            Save
+          </Button>
+          <Button size="sm" variant="outline" onClick={handleCancel}>
+            Cancel
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      {displayNote ? (
+        <div className="space-y-1">
+          <NoteDisplay notes={displayNote} isSpoiler={displayIsSpoiler} />
+          {canEdit && (
+            <button
+              onClick={() => setEditing(true)}
+              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Pencil className="h-3 w-3" />
+              Edit note
+            </button>
+          )}
+        </div>
+      ) : (
+        <div>
+          {overview && (
+            <p className="text-sm text-muted-foreground leading-relaxed line-clamp-4">
+              {overview}
+            </p>
+          )}
+          {canEdit && (
+            <button
+              onClick={() => setEditing(true)}
+              className="mt-1 flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Pencil className="h-3 w-3" />
+              Add note
+            </button>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -141,14 +278,18 @@ export function ListItemModal({
               )}
             </div>
 
-            {/* Note (replaces overview when present) */}
-            {item.notes ? (
-              <SpoilerNote notes={item.notes} isSpoiler={item.noteIsSpoiler} />
-            ) : mediaItem.overview ? (
-              <p className="text-sm text-muted-foreground leading-relaxed line-clamp-4">
-                {mediaItem.overview}
-              </p>
-            ) : null}
+            {/* Note / overview */}
+            <NoteSection
+              initialNote={item.notes}
+              initialIsSpoiler={item.noteIsSpoiler}
+              itemId={item.id}
+              listSlug={listSlug}
+              canEdit={
+                !!currentUserId &&
+                (isListOwner || item.addedBy.id === currentUserId)
+              }
+              overview={mediaItem.overview}
+            />
 
             <div className="border-t border-border" />
 
