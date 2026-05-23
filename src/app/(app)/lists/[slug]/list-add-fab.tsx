@@ -272,7 +272,7 @@ export function ListAddFab({ listSlug, existingKeys }: ListAddFabProps) {
               )}
             </div>
           ) : (
-            <div className="px-5 pb-5 pt-3 space-y-4">
+            <div className="px-5 pb-5 pt-3 space-y-4 min-w-0">
               {/* Selected item preview */}
               <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/40 p-3 overflow-hidden">
                 {selected.poster ? (
