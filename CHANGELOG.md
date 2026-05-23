@@ -1,3 +1,29 @@
+## [1.56.0](https://github.com/jamiebclark/screened/compare/v1.55.3...v1.56.0) (2026-05-23)
+
+### Features
+
+* **lists:** add inline note editing to item modal ([8e2e4ae](https://github.com/jamiebclark/screened/commit/8e2e4ae6a05ebef3c33c521d007499b88d3078ad))
+* **lists:** add list mode API routes and feature flag gating ([dad3e1b](https://github.com/jamiebclark/screened/commit/dad3e1bdc99fe78a65f50778629421f703538543))
+* **lists:** add list mode fields and migration ([ceb850d](https://github.com/jamiebclark/screened/commit/ceb850d3db0074f373643456b6104e08bf1f0ff4))
+* **lists:** add list modes UI — ranked view, settings panel, preset selector ([0f8dd1f](https://github.com/jamiebclark/screened/commit/0f8dd1fe64fadaf7b42a40c0effb1297244f5ec6))
+* **lists:** add list presets library with applyPreset helper ([a1351c4](https://github.com/jamiebclark/screened/commit/a1351c4d0008423483c143ba3389bb59e529390a))
+* **lists:** add spoiler toggle to FAB add modal ([a3ce626](https://github.com/jamiebclark/screened/commit/a3ce626760060f9d460c562cdb6ae31d7ed4f427))
+* **lists:** add WYSIWYG markdown editor for notes and comments ([10f71e5](https://github.com/jamiebclark/screened/commit/10f71e5f186d6c996425aba1b1c42a509869bd2f))
+* **lists:** highlight Add button with primary background ([717ce6a](https://github.com/jamiebclark/screened/commit/717ce6a5302662ccb6047d6e0a4bc7e1ee56540c))
+* **lists:** larger posters and always-visible notes in list view ([38e504b](https://github.com/jamiebclark/screened/commit/38e504b56fea9ffdcadc6bf48fdf59fe48a29514))
+* **lists:** render item notes as markdown with spoiler support ([e7b6730](https://github.com/jamiebclark/screened/commit/e7b6730d57faa110d26b5d2027c9b37261428d8d))
+* **lists:** replace FAB with header icon buttons; wire members link to members tab ([15a3c42](https://github.com/jamiebclark/screened/commit/15a3c4289409c5986e34cc4c3cc3af7edd0f912e))
+* **lists:** replace inline search bar with FAB + add modal ([7489e11](https://github.com/jamiebclark/screened/commit/7489e119576bd91ba9a6dcf9eb2f7f2a69fdaf56))
+* **lists:** replace sidebar with settings modal ([9f6a5d3](https://github.com/jamiebclark/screened/commit/9f6a5d33413ce38f518326919c127fac05366248))
+
+### Bug Fixes
+
+* **lists:** accept noteIsSpoiler on POST /items ([83ff78c](https://github.com/jamiebclark/screened/commit/83ff78c7436ba048485d3f90df3d99696281fe36))
+* **lists:** correct note display position in modal and list view ([f814aaf](https://github.com/jamiebclark/screened/commit/f814aafc5867cd5a265d230a36e153440239545b))
+* **lists:** fix FAB confirm step title overflow ([6aa71a6](https://github.com/jamiebclark/screened/commit/6aa71a643f1ce76007c3cdea8c79fd6883e19928))
+* **lists:** prevent title overflow in FAB confirm step ([6cc25ba](https://github.com/jamiebclark/screened/commit/6cc25bad96476ad1f6e6732a69ac1738dc9d6a6a))
+* **lists:** sync item note state in list after save to prevent stale modal ([148d6f3](https://github.com/jamiebclark/screened/commit/148d6f3353f032aa2d9c228e05f12fdea7f83252))
+
 ## [1.55.3](https://github.com/jamiebclark/screened/compare/v1.55.2...v1.55.3) (2026-05-19)
 
 ### Bug Fixes
