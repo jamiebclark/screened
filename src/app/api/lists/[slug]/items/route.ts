@@ -64,8 +64,9 @@ export async function POST(req: NextRequest, { params }: Params) {
     tmdbId?: number;
     type?: string;
     notes?: string;
+    noteIsSpoiler?: boolean;
   };
-  const { tmdbId, type, notes } = body;
+  const { tmdbId, type, notes, noteIsSpoiler } = body;
 
   if (!tmdbId || !type || !["movie", "tv"].includes(type)) {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
@@ -102,12 +103,17 @@ export async function POST(req: NextRequest, { params }: Params) {
     where: {
       listId_mediaItemId: { listId: list.id, mediaItemId: mediaItem.id },
     },
-    update: { notes: notes ?? null, addedById: session.user.id },
+    update: {
+      notes: notes ?? null,
+      noteIsSpoiler: noteIsSpoiler ?? false,
+      addedById: session.user.id,
+    },
     create: {
       listId: list.id,
       mediaItemId: mediaItem.id,
       addedById: session.user.id,
       notes: notes ?? null,
+      noteIsSpoiler: noteIsSpoiler ?? false,
       position: nextPosition,
     },
     include: { mediaItem: true, addedBy: { select: { id: true, name: true } } },
