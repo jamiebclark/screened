@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState, useRef, useCallback, useMemo, useEffect } from "react";
-import { Plus, Search, Loader2, Film, Tv, ArrowLeft, Eye } from "lucide-react";
+import { Search, Loader2, Film, Tv, ArrowLeft, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,13 +30,19 @@ function itemKey(tmdbId: number, type: string): string {
 }
 
 interface ListAddFabProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   listSlug: string;
   existingKeys: string[];
 }
 
-export function ListAddFab({ listSlug, existingKeys }: ListAddFabProps) {
+export function ListAddFab({
+  open,
+  onOpenChange,
+  listSlug,
+  existingKeys,
+}: ListAddFabProps) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [searching, setSearching] = useState(false);
@@ -70,7 +76,7 @@ export function ListAddFab({ listSlug, existingKeys }: ListAddFabProps) {
   };
 
   const handleOpenChange = (val: boolean) => {
-    setOpen(val);
+    onOpenChange(val);
     if (!val) resetModal();
   };
 
@@ -165,191 +171,176 @@ export function ListAddFab({ listSlug, existingKeys }: ListAddFabProps) {
   }, [open, selected]);
 
   return (
-    <>
-      <div className="fixed bottom-6 inset-x-0 z-40 mx-auto max-w-5xl px-4 pointer-events-none flex justify-end">
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          className="pointer-events-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-          aria-label="Add item to list"
-        >
-          <Plus className="h-6 w-6" />
-        </button>
-      </div>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent className="max-w-md p-0 overflow-hidden">
+        <DialogHeader className="px-5 pt-5 pb-0">
+          <DialogTitle>
+            {selected ? "Add to list" : "Search to add"}
+          </DialogTitle>
+        </DialogHeader>
 
-      <Dialog open={open} onOpenChange={handleOpenChange}>
-        <DialogContent className="max-w-md p-0 overflow-hidden">
-          <DialogHeader className="px-5 pt-5 pb-0">
-            <DialogTitle>
-              {selected ? "Add to list" : "Search to add"}
-            </DialogTitle>
-          </DialogHeader>
-
-          {!selected ? (
-            <div className="px-5 pb-5 pt-3 space-y-3">
-              {/* Search input */}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  ref={inputRef}
-                  value={query}
-                  onChange={handleQueryChange}
-                  onFocus={() => results.length > 0 && setDropdownOpen(true)}
-                  placeholder="Search movies and TV shows…"
-                  className="pl-9 pr-9"
-                  autoComplete="off"
-                />
-                {searching && (
-                  <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
-                )}
-              </div>
-
-              {searchError && (
-                <p className="text-sm text-destructive">{searchError}</p>
+        {!selected ? (
+          <div className="px-5 pb-5 pt-3 space-y-3">
+            {/* Search input */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                ref={inputRef}
+                value={query}
+                onChange={handleQueryChange}
+                onFocus={() => results.length > 0 && setDropdownOpen(true)}
+                placeholder="Search movies and TV shows…"
+                className="pl-9 pr-9"
+                autoComplete="off"
+              />
+              {searching && (
+                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
               )}
+            </div>
 
-              {/* Results */}
-              {dropdownOpen && results.length > 0 && (
-                <ul className="max-h-64 overflow-y-auto rounded-md border border-border divide-y divide-border">
-                  {results.map((r) => {
-                    const t = r.type === "tv" ? "tv" : "movie";
-                    const k = itemKey(r.tmdbId, t);
-                    const isOnList = existing.has(k);
-                    return (
-                      <li key={k}>
-                        <button
-                          type="button"
-                          disabled={isOnList}
-                          onClick={() => handleSelect(r)}
-                          className={cn(
-                            "flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm transition-colors",
-                            isOnList
-                              ? "cursor-not-allowed opacity-50"
-                              : "hover:bg-accent cursor-pointer",
-                          )}
-                        >
-                          {r.poster ? (
-                            <Image
-                              src={r.poster}
-                              alt=""
-                              width={28}
-                              height={42}
-                              className="rounded object-cover shrink-0"
-                            />
-                          ) : (
-                            <div className="w-7 h-10 rounded bg-muted shrink-0 flex items-center justify-center">
-                              {t === "tv" ? (
-                                <Tv className="h-3.5 w-3.5 text-muted-foreground" />
-                              ) : (
-                                <Film className="h-3.5 w-3.5 text-muted-foreground" />
-                              )}
-                            </div>
-                          )}
-                          <div className="min-w-0 flex-1">
-                            <p className="font-medium truncate">{r.title}</p>
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                              {r.year != null && <span>{r.year}</span>}
-                              <span className="inline-flex items-center gap-0.5">
-                                {t === "tv" ? (
-                                  <Tv className="h-3 w-3" />
-                                ) : (
-                                  <Film className="h-3 w-3" />
-                                )}
-                                {t === "tv" ? "TV" : "Movie"}
-                              </span>
-                            </div>
+            {searchError && (
+              <p className="text-sm text-destructive">{searchError}</p>
+            )}
+
+            {/* Results */}
+            {dropdownOpen && results.length > 0 && (
+              <ul className="max-h-64 overflow-y-auto rounded-md border border-border divide-y divide-border">
+                {results.map((r) => {
+                  const t = r.type === "tv" ? "tv" : "movie";
+                  const k = itemKey(r.tmdbId, t);
+                  const isOnList = existing.has(k);
+                  return (
+                    <li key={k}>
+                      <button
+                        type="button"
+                        disabled={isOnList}
+                        onClick={() => handleSelect(r)}
+                        className={cn(
+                          "flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm transition-colors",
+                          isOnList
+                            ? "cursor-not-allowed opacity-50"
+                            : "hover:bg-accent cursor-pointer",
+                        )}
+                      >
+                        {r.poster ? (
+                          <Image
+                            src={r.poster}
+                            alt=""
+                            width={28}
+                            height={42}
+                            className="rounded object-cover shrink-0"
+                          />
+                        ) : (
+                          <div className="w-7 h-10 rounded bg-muted shrink-0 flex items-center justify-center">
+                            {t === "tv" ? (
+                              <Tv className="h-3.5 w-3.5 text-muted-foreground" />
+                            ) : (
+                              <Film className="h-3.5 w-3.5 text-muted-foreground" />
+                            )}
                           </div>
-                          {isOnList && (
-                            <span className="text-xs text-muted-foreground shrink-0">
-                              Added
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium truncate">{r.title}</p>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            {r.year != null && <span>{r.year}</span>}
+                            <span className="inline-flex items-center gap-0.5">
+                              {t === "tv" ? (
+                                <Tv className="h-3 w-3" />
+                              ) : (
+                                <Film className="h-3 w-3" />
+                              )}
+                              {t === "tv" ? "TV" : "Movie"}
                             </span>
-                          )}
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </div>
-          ) : (
-            <div className="px-5 pb-5 pt-3 space-y-4 min-w-0">
-              {/* Selected item preview */}
-              <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/40 p-3 overflow-hidden">
-                {selected.poster ? (
-                  <Image
-                    src={selected.poster}
-                    alt=""
-                    width={40}
-                    height={60}
-                    className="rounded object-cover shrink-0"
-                  />
-                ) : (
-                  <div className="w-10 h-15 rounded bg-muted shrink-0 flex items-center justify-center">
-                    {selected.type === "tv" ? (
-                      <Tv className="h-4 w-4 text-muted-foreground" />
-                    ) : (
-                      <Film className="h-4 w-4 text-muted-foreground" />
-                    )}
-                  </div>
-                )}
-                <div className="min-w-0 flex-1">
-                  <p className="font-medium truncate">{selected.title}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {selected.year != null && `${selected.year} · `}
-                    {selected.type === "tv" ? "TV Show" : "Movie"}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleBack}
-                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors shrink-0"
-                >
-                  <ArrowLeft className="h-3.5 w-3.5" />
-                  Change
-                </button>
-              </div>
-
-              {/* Notes */}
-              <div className="space-y-2">
-                <Label className="text-sm">
-                  Note{" "}
-                  <span className="text-muted-foreground font-normal">
-                    (optional)
-                  </span>
-                </Label>
-                <MarkdownEditor
-                  value={notes}
-                  onChange={setNotes}
-                  placeholder="Why are you adding this? Any thoughts…"
-                  height={160}
+                          </div>
+                        </div>
+                        {isOnList && (
+                          <span className="text-xs text-muted-foreground shrink-0">
+                            Added
+                          </span>
+                        )}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        ) : (
+          <div className="px-5 pb-5 pt-3 space-y-4 min-w-0">
+            {/* Selected item preview */}
+            <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/40 p-3 overflow-hidden">
+              {selected.poster ? (
+                <Image
+                  src={selected.poster}
+                  alt=""
+                  width={40}
+                  height={60}
+                  className="rounded object-cover shrink-0"
                 />
-                {notes.trim() && (
-                  <label className="flex items-center gap-2 cursor-pointer select-none">
-                    <Checkbox
-                      id="add-spoiler"
-                      checked={noteIsSpoiler}
-                      onCheckedChange={(v) => setNoteIsSpoiler(v === true)}
-                    />
-                    <span className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Eye className="h-3 w-3" />
-                      Mark note as spoiler
-                    </span>
-                  </label>
-                )}
-              </div>
-
-              {addError && (
-                <p className="text-sm text-destructive">{addError}</p>
+              ) : (
+                <div className="w-10 h-15 rounded bg-muted shrink-0 flex items-center justify-center">
+                  {selected.type === "tv" ? (
+                    <Tv className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <Film className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </div>
               )}
-
-              <Button onClick={handleAdd} disabled={adding} className="w-full">
-                {adding && <Loader2 className="h-4 w-4 animate-spin" />}
-                Add to list
-              </Button>
+              <div className="min-w-0 flex-1">
+                <p className="font-medium truncate">{selected.title}</p>
+                <p className="text-xs text-muted-foreground">
+                  {selected.year != null && `${selected.year} · `}
+                  {selected.type === "tv" ? "TV Show" : "Movie"}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleBack}
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors shrink-0"
+              >
+                <ArrowLeft className="h-3.5 w-3.5" />
+                Change
+              </button>
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
-    </>
+
+            {/* Notes */}
+            <div className="space-y-2">
+              <Label className="text-sm">
+                Note{" "}
+                <span className="text-muted-foreground font-normal">
+                  (optional)
+                </span>
+              </Label>
+              <MarkdownEditor
+                value={notes}
+                onChange={setNotes}
+                placeholder="Why are you adding this? Any thoughts…"
+                height={160}
+              />
+              {notes.trim() && (
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <Checkbox
+                    id="add-spoiler"
+                    checked={noteIsSpoiler}
+                    onCheckedChange={(v) => setNoteIsSpoiler(v === true)}
+                  />
+                  <span className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Eye className="h-3 w-3" />
+                    Mark note as spoiler
+                  </span>
+                </label>
+              )}
+            </div>
+
+            {addError && <p className="text-sm text-destructive">{addError}</p>}
+
+            <Button onClick={handleAdd} disabled={adding} className="w-full">
+              {adding && <Loader2 className="h-4 w-4 animate-spin" />}
+              Add to list
+            </Button>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }

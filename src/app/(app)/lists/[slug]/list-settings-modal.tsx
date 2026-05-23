@@ -1,9 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { Settings, Film, UserPlus, Download } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Film, UserPlus, Download } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -31,6 +29,10 @@ type MemberRecord = {
 };
 
 interface ListSettingsModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  activeTab: string;
+  onTabChange: (tab: string) => void;
   listSlug: string;
   isOwner: boolean;
   // Feature flags (owner settings)
@@ -107,6 +109,10 @@ function IntegrationsSection({
 }
 
 export function ListSettingsModal({
+  open,
+  onOpenChange,
+  activeTab,
+  onTabChange,
   listSlug,
   isOwner,
   rankingEnabled,
@@ -120,138 +126,124 @@ export function ListSettingsModal({
   connectedChannelName,
   connectedGuildName,
 }: ListSettingsModalProps) {
-  const [open, setOpen] = useState(false);
-
   return (
-    <>
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => setOpen(true)}
-        className="gap-1.5 shrink-0"
-      >
-        <Settings className="h-4 w-4" />
-        {isOwner ? "Settings" : "Integrations"}
-      </Button>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg max-h-[85vh] overflow-hidden flex flex-col p-0">
+        <DialogHeader className="px-5 pt-5 pb-0 shrink-0">
+          <DialogTitle>
+            {isOwner ? "List settings" : "Integrations"}
+          </DialogTitle>
+        </DialogHeader>
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-lg max-h-[85vh] overflow-hidden flex flex-col p-0">
-          <DialogHeader className="px-5 pt-5 pb-0 shrink-0">
-            <DialogTitle>
-              {isOwner ? "List settings" : "Integrations"}
-            </DialogTitle>
-          </DialogHeader>
+        <div className="flex-1 overflow-y-auto px-5 pb-5 pt-3">
+          {isOwner ? (
+            <Tabs value={activeTab} onValueChange={onTabChange}>
+              <TabsList className="w-full mb-4">
+                <TabsTrigger value="settings" className="flex-1">
+                  Settings
+                </TabsTrigger>
+                <TabsTrigger value="members" className="flex-1">
+                  Members
+                </TabsTrigger>
+                <TabsTrigger value="integrations" className="flex-1">
+                  Integrations
+                </TabsTrigger>
+              </TabsList>
 
-          <div className="flex-1 overflow-y-auto px-5 pb-5 pt-3">
-            {isOwner ? (
-              <Tabs defaultValue="settings">
-                <TabsList className="w-full mb-4">
-                  <TabsTrigger value="settings" className="flex-1">
-                    Settings
-                  </TabsTrigger>
-                  <TabsTrigger value="members" className="flex-1">
-                    Members
-                  </TabsTrigger>
-                  <TabsTrigger value="integrations" className="flex-1">
-                    Integrations
-                  </TabsTrigger>
-                </TabsList>
+              <TabsContent value="settings">
+                <ListSettingsPanel
+                  listSlug={listSlug}
+                  rankingEnabled={rankingEnabled}
+                  votingEnabled={votingEnabled}
+                  commentsEnabled={commentsEnabled}
+                  displayMode={displayMode}
+                  itemCap={itemCap}
+                />
+              </TabsContent>
 
-                <TabsContent value="settings">
-                  <ListSettingsPanel
-                    listSlug={listSlug}
-                    rankingEnabled={rankingEnabled}
-                    votingEnabled={votingEnabled}
-                    commentsEnabled={commentsEnabled}
-                    displayMode={displayMode}
-                    itemCap={itemCap}
-                  />
-                </TabsContent>
-
-                <TabsContent value="members">
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-sm font-medium mb-1 flex items-center gap-1.5">
-                        <UserPlus className="h-4 w-4 text-primary" />
-                        Invite collaborators
-                      </p>
-                      <p className="text-xs text-muted-foreground mb-3">
-                        Members can add items and vote.
-                      </p>
-                      <InviteMemberForm slug={listSlug} />
-                    </div>
-
-                    {members.length > 0 && (
-                      <ul className="space-y-2 border-t border-border pt-4">
-                        {members.map((m) => {
-                          const isInvited = m.user.status === "INVITED";
-                          return (
-                            <li
-                              key={m.id}
-                              className="flex items-center gap-2 text-sm"
-                            >
-                              <Avatar className="h-6 w-6 shrink-0">
-                                <AvatarImage
-                                  src={m.user.avatarUrl ?? undefined}
-                                />
-                                <AvatarFallback className="text-[9px]">
-                                  {m.user.name?.[0]?.toUpperCase()}
-                                </AvatarFallback>
-                              </Avatar>
-                              {isInvited ? (
-                                <span className="flex-1 truncate text-sm text-muted-foreground">
-                                  {m.user.name}
-                                </span>
-                              ) : (
-                                <Link
-                                  href={`/profile/${m.user.id}`}
-                                  className="flex-1 truncate text-sm hover:underline"
-                                  onClick={() => setOpen(false)}
-                                >
-                                  {m.user.name}
-                                </Link>
-                              )}
-                              {isInvited ? (
-                                <span className="text-xs font-medium text-amber-600 shrink-0">
-                                  pending
-                                </span>
-                              ) : (
-                                <span className="text-xs text-muted-foreground capitalize shrink-0">
-                                  {m.role.toLowerCase()}
-                                </span>
-                              )}
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    )}
+              <TabsContent value="members">
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-sm font-medium mb-1 flex items-center gap-1.5">
+                      <UserPlus className="h-4 w-4 text-primary" />
+                      Invite collaborators
+                    </p>
+                    <p className="text-xs text-muted-foreground mb-3">
+                      Members can add items and vote.
+                    </p>
+                    <InviteMemberForm slug={listSlug} />
                   </div>
-                </TabsContent>
 
-                <TabsContent value="integrations">
-                  <IntegrationsSection
-                    listSlug={listSlug}
-                    radarrUrl={radarrUrl}
-                    discordEnabled={discordEnabled}
-                    connectedChannelName={connectedChannelName}
-                    connectedGuildName={connectedGuildName}
-                    isOwner={isOwner}
-                  />
-                </TabsContent>
-              </Tabs>
-            ) : (
-              <IntegrationsSection
-                listSlug={listSlug}
-                radarrUrl={radarrUrl}
-                discordEnabled={discordEnabled}
-                connectedChannelName={connectedChannelName}
-                connectedGuildName={connectedGuildName}
-                isOwner={false}
-              />
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
+                  {members.length > 0 && (
+                    <ul className="space-y-2 border-t border-border pt-4">
+                      {members.map((m) => {
+                        const isInvited = m.user.status === "INVITED";
+                        return (
+                          <li
+                            key={m.id}
+                            className="flex items-center gap-2 text-sm"
+                          >
+                            <Avatar className="h-6 w-6 shrink-0">
+                              <AvatarImage
+                                src={m.user.avatarUrl ?? undefined}
+                              />
+                              <AvatarFallback className="text-[9px]">
+                                {m.user.name?.[0]?.toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            {isInvited ? (
+                              <span className="flex-1 truncate text-sm text-muted-foreground">
+                                {m.user.name}
+                              </span>
+                            ) : (
+                              <Link
+                                href={`/profile/${m.user.id}`}
+                                className="flex-1 truncate text-sm hover:underline"
+                                onClick={() => onOpenChange(false)}
+                              >
+                                {m.user.name}
+                              </Link>
+                            )}
+                            {isInvited ? (
+                              <span className="text-xs font-medium text-amber-600 shrink-0">
+                                pending
+                              </span>
+                            ) : (
+                              <span className="text-xs text-muted-foreground capitalize shrink-0">
+                                {m.role.toLowerCase()}
+                              </span>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="integrations">
+                <IntegrationsSection
+                  listSlug={listSlug}
+                  radarrUrl={radarrUrl}
+                  discordEnabled={discordEnabled}
+                  connectedChannelName={connectedChannelName}
+                  connectedGuildName={connectedGuildName}
+                  isOwner={isOwner}
+                />
+              </TabsContent>
+            </Tabs>
+          ) : (
+            <IntegrationsSection
+              listSlug={listSlug}
+              radarrUrl={radarrUrl}
+              discordEnabled={discordEnabled}
+              connectedChannelName={connectedChannelName}
+              connectedGuildName={connectedGuildName}
+              isOwner={false}
+            />
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
