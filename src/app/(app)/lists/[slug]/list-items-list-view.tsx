@@ -57,7 +57,7 @@ function ListRow({
   rankingEnabled: boolean;
   onSelect: (id: string) => void;
 }) {
-  const posterUrl = tmdbImageUrl(item.mediaItem.poster, "w92");
+  const posterUrl = tmdbImageUrl(item.mediaItem.poster, "w154");
   const upvotes = item.votes.filter((v) => v.value === 1).length;
   const downvotes = item.votes.filter((v) => v.value === -1).length;
   const userVote = currentUserId
@@ -79,13 +79,13 @@ function ListRow({
       )}
 
       {/* Poster thumbnail */}
-      <div className="shrink-0 w-10 h-[60px] rounded overflow-hidden bg-muted">
+      <div className="shrink-0 w-16 h-24 rounded overflow-hidden bg-muted">
         {posterUrl ? (
           <Image
             src={posterUrl}
             alt={item.mediaItem.title}
-            width={40}
-            height={60}
+            width={64}
+            height={96}
             className="object-cover w-full h-full"
           />
         ) : (
@@ -121,7 +121,7 @@ function ListRow({
       </div>
 
       {/* Note — right-side column */}
-      <div className="flex-1 min-w-0 hidden sm:block">
+      <div className="flex-1 min-w-0">
         {item.notes &&
           (item.noteIsSpoiler ? (
             <SpoilerNote notes={item.notes} />
