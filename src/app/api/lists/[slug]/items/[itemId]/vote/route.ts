@@ -23,9 +23,20 @@ export async function POST(req: NextRequest, { params }: Params) {
 
   const list = await prisma.list.findUnique({
     where: { slug },
-    select: { id: true, members: { select: { userId: true } } },
+    select: {
+      id: true,
+      votingEnabled: true,
+      members: { select: { userId: true } },
+    },
   });
   if (!list) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  if (!list.votingEnabled) {
+    return NextResponse.json(
+      { error: "Voting is disabled for this list" },
+      { status: 403 },
+    );
+  }
 
   const isMember = list.members.some((m) => m.userId === session.user.id);
   if (!isMember)

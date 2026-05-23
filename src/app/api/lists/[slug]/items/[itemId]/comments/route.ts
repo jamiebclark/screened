@@ -7,7 +7,12 @@ type Params = { params: Promise<{ slug: string; itemId: string }> };
 async function getMemberItem(slug: string, itemId: string, userId: string) {
   const list = await prisma.list.findUnique({
     where: { slug },
-    select: { id: true, ownerId: true, members: { select: { userId: true } } },
+    select: {
+      id: true,
+      ownerId: true,
+      commentsEnabled: true,
+      members: { select: { userId: true } },
+    },
   });
   if (!list) return null;
 
@@ -61,6 +66,13 @@ export async function POST(req: NextRequest, { params }: Params) {
   const result = await getMemberItem(slug, itemId, session.user.id);
   if (!result) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  if (!result.list.commentsEnabled) {
+    return NextResponse.json(
+      { error: "Comments are disabled for this list" },
+      { status: 403 },
+    );
   }
 
   const body = (await req.json()) as { content?: string };

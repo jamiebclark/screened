@@ -73,7 +73,13 @@ export async function POST(req: NextRequest, { params }: Params) {
 
   const list = await prisma.list.findUnique({
     where: { slug },
-    include: { members: true },
+    include: {
+      members: true,
+      items: {
+        select: { id: true, position: true },
+        orderBy: { addedAt: "desc" },
+      },
+    },
   });
 
   if (!list) return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -82,7 +88,15 @@ export async function POST(req: NextRequest, { params }: Params) {
   if (!isMember)
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
+  if (list.itemCap !== null && list.items.length >= list.itemCap) {
+    return NextResponse.json({ error: "List is at capacity" }, { status: 403 });
+  }
+
   const mediaItem = await getOrCreateMediaItem(tmdbId, type as "movie" | "tv");
+
+  const nextPosition = list.rankingEnabled
+    ? Math.max(0, ...list.items.map((i) => i.position ?? 0)) + 1
+    : null;
 
   const item = await prisma.listItem.upsert({
     where: {
@@ -94,6 +108,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       mediaItemId: mediaItem.id,
       addedById: session.user.id,
       notes: notes ?? null,
+      position: nextPosition,
     },
     include: { mediaItem: true, addedBy: { select: { id: true, name: true } } },
   });
