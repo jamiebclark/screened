@@ -5,6 +5,7 @@ import Image from "next/image";
 import { MessageSquare, Eye } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ListItemVotePill } from "./list-item-vote-pill";
+import { MarkdownContent } from "@/components/markdown-content";
 import { tmdbImageUrl } from "@/lib/utils";
 import type { GridItem } from "./list-items-grid";
 
@@ -21,7 +22,11 @@ interface ListItemsListViewProps {
 function SpoilerNote({ notes }: { notes: string }) {
   const [revealed, setRevealed] = useState(false);
   if (revealed) {
-    return <span className="text-sm text-muted-foreground">{notes}</span>;
+    return (
+      <div className="line-clamp-2">
+        <MarkdownContent content={notes} />
+      </div>
+    );
   }
   return (
     <button
@@ -141,9 +146,9 @@ function ListRow({
             {item.noteIsSpoiler ? (
               <SpoilerNote notes={item.notes} />
             ) : (
-              <p className="text-sm text-muted-foreground line-clamp-2">
-                {item.notes}
-              </p>
+              <div className="line-clamp-2">
+                <MarkdownContent content={item.notes} />
+              </div>
             )}
           </div>
         )}

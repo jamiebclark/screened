@@ -10,6 +10,7 @@ import { ListItemVoteControls } from "./list-item-vote-controls";
 import { ListItemDeleteButton } from "./list-item-delete-button";
 import { ListItemComments } from "./list-item-comments";
 import { tmdbImageUrl } from "@/lib/utils";
+import { MarkdownContent } from "@/components/markdown-content";
 import type { GridItem } from "./list-items-grid";
 
 interface ListItemModalProps {
@@ -32,8 +33,8 @@ function SpoilerNote({
   isSpoiler: boolean;
 }) {
   const [revealed, setRevealed] = useState(false);
-  if (!isSpoiler) return <p className="text-sm">{notes}</p>;
-  if (revealed) return <p className="text-sm">{notes}</p>;
+  if (!isSpoiler) return <MarkdownContent content={notes} />;
+  if (revealed) return <MarkdownContent content={notes} />;
   return (
     <button
       onClick={() => setRevealed(true)}
