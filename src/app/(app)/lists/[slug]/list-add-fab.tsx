@@ -3,11 +3,12 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState, useRef, useCallback, useMemo, useEffect } from "react";
-import { Plus, Search, Loader2, Film, Tv, ArrowLeft } from "lucide-react";
+import { Plus, Search, Loader2, Film, Tv, ArrowLeft, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -45,6 +46,7 @@ export function ListAddFab({ listSlug, existingKeys }: ListAddFabProps) {
 
   const [selected, setSelected] = useState<SearchResult | null>(null);
   const [notes, setNotes] = useState("");
+  const [noteIsSpoiler, setNoteIsSpoiler] = useState(false);
   const [adding, setAdding] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
 
@@ -63,6 +65,7 @@ export function ListAddFab({ listSlug, existingKeys }: ListAddFabProps) {
     setDropdownOpen(false);
     setSelected(null);
     setNotes("");
+    setNoteIsSpoiler(false);
     setAddError(null);
   };
 
@@ -118,6 +121,7 @@ export function ListAddFab({ listSlug, existingKeys }: ListAddFabProps) {
   const handleBack = () => {
     setSelected(null);
     setNotes("");
+    setNoteIsSpoiler(false);
     setAddError(null);
     setTimeout(() => inputRef.current?.focus(), 50);
   };
@@ -134,6 +138,7 @@ export function ListAddFab({ listSlug, existingKeys }: ListAddFabProps) {
           tmdbId: selected.tmdbId,
           type: selected.type,
           notes: notes.trim() || undefined,
+          noteIsSpoiler: notes.trim() ? noteIsSpoiler : undefined,
         }),
       });
       if (!res.ok) {
@@ -161,14 +166,16 @@ export function ListAddFab({ listSlug, existingKeys }: ListAddFabProps) {
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-        aria-label="Add item to list"
-      >
-        <Plus className="h-6 w-6" />
-      </button>
+      <div className="fixed bottom-6 inset-x-0 z-40 mx-auto max-w-5xl px-4 pointer-events-none flex justify-end">
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="pointer-events-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          aria-label="Add item to list"
+        >
+          <Plus className="h-6 w-6" />
+        </button>
+      </div>
 
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent className="max-w-md p-0 overflow-hidden">
@@ -303,11 +310,11 @@ export function ListAddFab({ listSlug, existingKeys }: ListAddFabProps) {
               </div>
 
               {/* Notes */}
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label htmlFor="add-notes" className="text-sm">
                   Note{" "}
                   <span className="text-muted-foreground font-normal">
-                    (optional)
+                    (optional · markdown supported)
                   </span>
                 </Label>
                 <Textarea
@@ -318,6 +325,19 @@ export function ListAddFab({ listSlug, existingKeys }: ListAddFabProps) {
                   rows={3}
                   className="resize-none"
                 />
+                {notes.trim() && (
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <Checkbox
+                      id="add-spoiler"
+                      checked={noteIsSpoiler}
+                      onCheckedChange={(v) => setNoteIsSpoiler(v === true)}
+                    />
+                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Eye className="h-3 w-3" />
+                      Mark note as spoiler
+                    </span>
+                  </label>
+                )}
               </div>
 
               {addError && (
