@@ -7,8 +7,8 @@ import { Plus, Search, Loader2, Film, Tv, ArrowLeft, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { MarkdownEditor } from "@/components/markdown-editor";
 import {
   Dialog,
   DialogContent,
@@ -311,19 +311,17 @@ export function ListAddFab({ listSlug, existingKeys }: ListAddFabProps) {
 
               {/* Notes */}
               <div className="space-y-2">
-                <Label htmlFor="add-notes" className="text-sm">
+                <Label className="text-sm">
                   Note{" "}
                   <span className="text-muted-foreground font-normal">
-                    (optional · markdown supported)
+                    (optional)
                   </span>
                 </Label>
-                <Textarea
-                  id="add-notes"
+                <MarkdownEditor
                   value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
+                  onChange={setNotes}
                   placeholder="Why are you adding this? Any thoughts…"
-                  rows={3}
-                  className="resize-none"
+                  height={160}
                 />
                 {notes.trim() && (
                   <label className="flex items-center gap-2 cursor-pointer select-none">

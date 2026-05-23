@@ -8,8 +8,8 @@ import { ThumbsUp, ThumbsDown, Eye, Pencil, Loader2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { MarkdownEditor } from "@/components/markdown-editor";
 import { ListItemVoteControls } from "./list-item-vote-controls";
 import { ListItemDeleteButton } from "./list-item-delete-button";
 import { ListItemComments } from "./list-item-comments";
@@ -112,12 +112,11 @@ function NoteSection({
   if (editing) {
     return (
       <div className="space-y-2">
-        <Textarea
+        <MarkdownEditor
           value={noteText}
-          onChange={(e) => setNoteText(e.target.value)}
-          placeholder="Why are you adding this? Any thoughts… (markdown supported)"
-          rows={4}
-          className="resize-none text-sm"
+          onChange={setNoteText}
+          placeholder="Why are you adding this? Any thoughts…"
+          height={180}
           autoFocus
         />
         {noteText.trim() && (
