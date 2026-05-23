@@ -1,0 +1,236 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>Screened</Name>
+  <Repository>jamiebclark/screened</Repository>
+  <Registry>https://hub.docker.com/r/jamiebclark/screened</Registry>
+  <Network>bridge</Network>
+  <Shell>sh</Shell>
+  <Privileged>false</Privileged>
+  <Support>https://github.com/jamiebclark/screened/discussions</Support>
+  <Project>https://github.com/jamiebclark/screened</Project>
+  <Overview>
+    Screened is a self-hosted collaborative watchlist and movie night planner.&#xA;&#xA;
+    Track, rate, and review films and TV shows. Build shared watchlists with friends, run Movie Night Picker sessions to agree on what to watch, schedule Watch Parties, and sync your history from Plex and Letterboxd.&#xA;&#xA;
+    Requires an external PostgreSQL database. Install the official postgres template from Community Applications first, create a database and user, then paste the connection string into DATABASE_URL below.
+  </Overview>
+  <Category>MediaApp:Video</Category>
+  <WebUI>http://[IP]:[PORT:3000]/</WebUI>
+  <TemplateURL>https://raw.githubusercontent.com/jamiebclark/screened/main/unraid/screened.xml</TemplateURL>
+  <Icon>https://raw.githubusercontent.com/jamiebclark/screened/main/docs/logo.svg</Icon>
+  <ExtraParams>--restart=unless-stopped</ExtraParams>
+  <Requires>PostgreSQL 14+ container. Install the official "postgres" template from Community Applications, create a database named "screened" with a dedicated user, and paste the resulting connection string into the DATABASE_URL variable below.</Requires>
+
+  <!-- ── Ports ──────────────────────────────────────────────── -->
+  <Config
+    Name="Web UI Port"
+    Target="3000"
+    Default="3000"
+    Mode="tcp"
+    Description="Host port to access the Screened web UI."
+    Type="Port"
+    Display="always"
+    Required="true"
+    Mask="false">3000</Config>
+
+  <!-- ── Required variables ─────────────────────────────────── -->
+  <Config
+    Name="Database URL"
+    Target="DATABASE_URL"
+    Default=""
+    Mode=""
+    Description="PostgreSQL connection string for your Screened database. Example: postgresql://screened:password@192.168.1.100:5432/screened?schema=public"
+    Type="Variable"
+    Display="always"
+    Required="true"
+    Mask="false"></Config>
+
+  <Config
+    Name="Auth Secret"
+    Target="AUTH_SECRET"
+    Default=""
+    Mode=""
+    Description="Random secret used to sign sessions. Generate one at https://generate-secret.vercel.app/32 — must be at least 32 characters."
+    Type="Variable"
+    Display="always"
+    Required="true"
+    Mask="true"></Config>
+
+  <Config
+    Name="App URL"
+    Target="NEXTAUTH_URL"
+    Default="http://localhost:3000"
+    Mode=""
+    Description="Full URL where Screened is reachable (used for OAuth callbacks and Plex linking). Example: http://192.168.1.100:3000 or https://screened.yourdomain.com"
+    Type="Variable"
+    Display="always"
+    Required="true"
+    Mask="false">http://localhost:3000</Config>
+
+  <Config
+    Name="Public App URL"
+    Target="NEXT_PUBLIC_APP_URL"
+    Default="http://localhost:3000"
+    Mode=""
+    Description="Same value as App URL above — must match exactly."
+    Type="Variable"
+    Display="always"
+    Required="true"
+    Mask="false">http://localhost:3000</Config>
+
+  <Config
+    Name="TMDB API Key"
+    Target="TMDB_API_KEY"
+    Default=""
+    Mode=""
+    Description="The Movie Database read access token — required for movie/TV metadata and artwork. Get a free key at https://www.themoviedb.org/settings/api"
+    Type="Variable"
+    Display="always"
+    Required="true"
+    Mask="true"></Config>
+
+  <!-- ── App settings ───────────────────────────────────────── -->
+  <Config
+    Name="Allow Public Signup"
+    Target="ALLOW_PUBLIC_SIGNUP"
+    Default="true"
+    Mode=""
+    Description="Set to false to require invite links for all new accounts (except the very first user on an empty database)."
+    Type="Variable"
+    Display="always"
+    Required="false"
+    Mask="false">true</Config>
+
+  <Config
+    Name="Admin Emails"
+    Target="SITE_ADMIN_EMAILS"
+    Default=""
+    Mode=""
+    Description="Comma-separated list of email addresses granted admin access (can generate invite links and manage the app). Example: you@example.com,partner@example.com"
+    Type="Variable"
+    Display="always"
+    Required="false"
+    Mask="false"></Config>
+
+  <Config
+    Name="Sync Schedule"
+    Target="SYNC_CRON_SCHEDULE"
+    Default="0 */6 * * *"
+    Mode=""
+    Description="Cron expression for automatic Plex and Letterboxd sync. Default is every 6 hours. Example: 0 23 * * * = daily at 11 pm."
+    Type="Variable"
+    Display="advanced"
+    Required="false"
+    Mask="false">0 */6 * * *</Config>
+
+  <Config
+    Name="Streaming Country"
+    Target="STREAMING_COUNTRY"
+    Default="US"
+    Mode=""
+    Description="Two-letter country code for streaming availability data (e.g. US, GB, CA, AU)."
+    Type="Variable"
+    Display="advanced"
+    Required="false"
+    Mask="false">US</Config>
+
+  <!-- ── Optional integrations ──────────────────────────────── -->
+  <Config
+    Name="OMDb API Key"
+    Target="OMDB_API_KEY"
+    Default=""
+    Mode=""
+    Description="Optional. Adds Rotten Tomatoes and Metacritic scores to title pages. Get a free key at https://www.omdbapi.com"
+    Type="Variable"
+    Display="advanced"
+    Required="false"
+    Mask="true"></Config>
+
+  <Config
+    Name="OpenAI API Key"
+    Target="OPENAI_API_KEY"
+    Default=""
+    Mode=""
+    Description="Optional. Enables AI-powered discovery scoring in the Movie Night Picker."
+    Type="Variable"
+    Display="advanced"
+    Required="false"
+    Mask="true"></Config>
+
+  <Config
+    Name="Trakt Client ID"
+    Target="TRAKT_CLIENT_ID"
+    Default=""
+    Mode=""
+    Description="Optional. Trakt.tv integration. Register an app at https://trakt.tv/oauth/applications to obtain credentials."
+    Type="Variable"
+    Display="advanced"
+    Required="false"
+    Mask="false"></Config>
+
+  <Config
+    Name="Trakt Client Secret"
+    Target="TRAKT_CLIENT_SECRET"
+    Default=""
+    Mode=""
+    Description="Optional. Trakt.tv integration client secret."
+    Type="Variable"
+    Display="advanced"
+    Required="false"
+    Mask="true"></Config>
+
+  <Config
+    Name="Discord Application ID"
+    Target="DISCORD_APPLICATION_ID"
+    Default=""
+    Mode=""
+    Description="Optional. Discord integration — application ID for slash commands and webhooks. See docs/discord-integration.md in the repo."
+    Type="Variable"
+    Display="advanced"
+    Required="false"
+    Mask="false"></Config>
+
+  <Config
+    Name="Discord Public Key"
+    Target="DISCORD_PUBLIC_KEY"
+    Default=""
+    Mode=""
+    Description="Optional. Discord integration — public key for verifying interaction requests."
+    Type="Variable"
+    Display="advanced"
+    Required="false"
+    Mask="false"></Config>
+
+  <Config
+    Name="Discord Bot Token"
+    Target="DISCORD_BOT_TOKEN"
+    Default=""
+    Mode=""
+    Description="Optional. Discord bot token — required for sending DMs and in-channel notifications."
+    Type="Variable"
+    Display="advanced"
+    Required="false"
+    Mask="true"></Config>
+
+  <Config
+    Name="Discord Client ID"
+    Target="DISCORD_CLIENT_ID"
+    Default=""
+    Mode=""
+    Description="Optional. Discord OAuth client ID — required for user-linked DM notifications (Tier 3)."
+    Type="Variable"
+    Display="advanced"
+    Required="false"
+    Mask="false"></Config>
+
+  <Config
+    Name="Discord Client Secret"
+    Target="DISCORD_CLIENT_SECRET"
+    Default=""
+    Mode=""
+    Description="Optional. Discord OAuth client secret."
+    Type="Variable"
+    Display="advanced"
+    Required="false"
+    Mask="true"></Config>
+
+</Container>
