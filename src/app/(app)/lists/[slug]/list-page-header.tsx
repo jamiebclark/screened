@@ -140,7 +140,7 @@ export function ListPageHeader({
         <div className="flex items-center gap-1 shrink-0">
           {isMember && (
             <Button
-              variant="ghost"
+              variant="default"
               size="icon"
               className="h-9 w-9"
               onClick={() => setAddOpen(true)}
