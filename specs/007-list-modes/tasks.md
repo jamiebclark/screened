@@ -129,8 +129,8 @@
 ## Phase 9: Polish & Cross-Cutting Concerns
 
 - [x] T031 [P] Write Vitest unit tests in `src/lib/list-presets.test.ts` — 9 tests, all passing
-- [ ] T032 [P] Write Playwright E2E spec `e2e/lists-ranked.spec.ts`: create a list using the Ranked preset, add 3 items, drag to reorder, verify numbered positions persisted on reload
-- [ ] T033 [P] Write Playwright E2E spec `e2e/lists-poll.spec.ts`: create a list using the Poll preset, verify vote controls present; disable voting in settings, verify vote controls absent and sort option hidden
+- [x] T032 [P] Write Playwright E2E spec `e2e/lists-ranked.spec.ts`: create a list using the Ranked preset, add 3 items, drag to reorder, verify numbered positions persisted on reload
+- [x] T033 [P] Write Playwright E2E spec `e2e/lists-poll.spec.ts`: create a list using the Poll preset, verify vote controls present; disable voting in settings, verify vote controls absent and sort option hidden
 - [x] T034 Run `yarn ci:check` — lint clean, unit tests pass, build succeeds
 
 ---
