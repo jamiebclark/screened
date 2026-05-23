@@ -82,3 +82,11 @@ jobs:
             jamiebclark/screened:${{ needs.release.outputs.new-version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Update Docker Hub description
+        uses: peter-evans/dockerhub-description@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          repository: jamiebclark/screened
+          readme-filepath: ./README.md
