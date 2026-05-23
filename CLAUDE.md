@@ -139,6 +139,6 @@ These `.cursor/rules/` files contain full detail behind the summaries above — 
 
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan
-at specs/006-browse-sort-filter/plan.md
+at specs/007-list-modes/plan.md
 
 <!-- SPECKIT END -->
