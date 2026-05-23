@@ -97,65 +97,18 @@ function ListRow({
         )}
       </div>
 
-      {/* Content */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <p className="text-sm font-medium leading-tight truncate">
-              {item.mediaItem.title}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              {item.mediaItem.year}
-              {item.mediaItem.year && " · "}
-              {item.mediaItem.type === "movie" ? "Movie" : "TV"}
-            </p>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            {canVote && (
-              <div onClick={(e) => e.stopPropagation()}>
-                <ListItemVotePill
-                  listSlug={listSlug}
-                  itemId={item.id}
-                  upvotes={upvotes}
-                  downvotes={downvotes}
-                  userVote={userVote}
-                  canVote={canVote}
-                />
-              </div>
-            )}
-            {item.commentCount > 0 && (
-              <div
-                className={`flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
-                  item.unreadCommentCount > 0
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground"
-                }`}
-              >
-                <MessageSquare className="h-2.5 w-2.5" />
-                {item.unreadCommentCount > 0
-                  ? item.unreadCommentCount
-                  : item.commentCount}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Inline notes */}
-        {item.notes && (
-          <div className="mt-1">
-            {item.noteIsSpoiler ? (
-              <SpoilerNote notes={item.notes} />
-            ) : (
-              <div className="line-clamp-2">
-                <MarkdownContent content={item.notes} />
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Added-by */}
+      {/* Title + meta + avatar */}
+      <div className="w-36 sm:w-44 shrink-0 min-w-0">
+        <p className="text-sm font-medium leading-tight line-clamp-2">
+          {item.mediaItem.title}
+        </p>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          {item.mediaItem.year}
+          {item.mediaItem.year && " · "}
+          {item.mediaItem.type === "movie" ? "Movie" : "TV"}
+        </p>
         <div className="flex items-center gap-1 mt-1.5">
-          <Avatar className="h-4 w-4">
+          <Avatar className="h-4 w-4 shrink-0">
             <AvatarImage src={item.addedBy.avatarUrl ?? undefined} />
             <AvatarFallback className="text-[8px]">
               {item.addedBy.name?.[0]?.toUpperCase()}
@@ -165,6 +118,48 @@ function ListRow({
             {item.addedBy.name}
           </span>
         </div>
+      </div>
+
+      {/* Note — right-side column */}
+      <div className="flex-1 min-w-0 hidden sm:block">
+        {item.notes &&
+          (item.noteIsSpoiler ? (
+            <SpoilerNote notes={item.notes} />
+          ) : (
+            <div className="line-clamp-3">
+              <MarkdownContent content={item.notes} />
+            </div>
+          ))}
+      </div>
+
+      {/* Badges */}
+      <div className="flex items-center gap-2 shrink-0">
+        {canVote && (
+          <div onClick={(e) => e.stopPropagation()}>
+            <ListItemVotePill
+              listSlug={listSlug}
+              itemId={item.id}
+              upvotes={upvotes}
+              downvotes={downvotes}
+              userVote={userVote}
+              canVote={canVote}
+            />
+          </div>
+        )}
+        {item.commentCount > 0 && (
+          <div
+            className={`flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
+              item.unreadCommentCount > 0
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-muted-foreground"
+            }`}
+          >
+            <MessageSquare className="h-2.5 w-2.5" />
+            {item.unreadCommentCount > 0
+              ? item.unreadCommentCount
+              : item.commentCount}
+          </div>
+        )}
       </div>
     </div>
   );

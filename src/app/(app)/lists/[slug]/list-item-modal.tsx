@@ -141,12 +141,14 @@ export function ListItemModal({
               )}
             </div>
 
-            {/* Overview */}
-            {mediaItem.overview && (
+            {/* Note (replaces overview when present) */}
+            {item.notes ? (
+              <SpoilerNote notes={item.notes} isSpoiler={item.noteIsSpoiler} />
+            ) : mediaItem.overview ? (
               <p className="text-sm text-muted-foreground leading-relaxed line-clamp-4">
                 {mediaItem.overview}
               </p>
-            )}
+            ) : null}
 
             <div className="border-t border-border" />
 
@@ -171,19 +173,6 @@ export function ListItemModal({
                 <span className="flex items-center gap-1">
                   <ThumbsDown className="h-3 w-3" /> {downvotes}
                 </span>
-              </div>
-            )}
-
-            {/* Notes */}
-            {item.notes && (
-              <div>
-                <p className="text-xs font-medium text-muted-foreground mb-1">
-                  Notes
-                </p>
-                <SpoilerNote
-                  notes={item.notes}
-                  isSpoiler={item.noteIsSpoiler}
-                />
               </div>
             )}
 
