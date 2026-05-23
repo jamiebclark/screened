@@ -2,7 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ThumbsUp, ThumbsDown } from "lucide-react";
+import { useState } from "react";
+import { ThumbsUp, ThumbsDown, Eye } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { ListItemVoteControls } from "./list-item-vote-controls";
@@ -17,8 +18,31 @@ interface ListItemModalProps {
   onClose: () => void;
   listSlug: string;
   canVote: boolean;
+  votingEnabled: boolean;
+  commentsEnabled: boolean;
   currentUserId: string | undefined;
   isListOwner: boolean;
+}
+
+function SpoilerNote({
+  notes,
+  isSpoiler,
+}: {
+  notes: string;
+  isSpoiler: boolean;
+}) {
+  const [revealed, setRevealed] = useState(false);
+  if (!isSpoiler) return <p className="text-sm">{notes}</p>;
+  if (revealed) return <p className="text-sm">{notes}</p>;
+  return (
+    <button
+      onClick={() => setRevealed(true)}
+      className="inline-flex items-center gap-1 text-xs text-amber-600 hover:text-amber-500 transition-colors"
+    >
+      <Eye className="h-3 w-3" />
+      Spoiler — reveal
+    </button>
+  );
 }
 
 export function ListItemModal({
@@ -27,6 +51,8 @@ export function ListItemModal({
   onClose,
   listSlug,
   canVote,
+  votingEnabled,
+  commentsEnabled,
   currentUserId,
   isListOwner,
 }: ListItemModalProps) {
@@ -124,7 +150,7 @@ export function ListItemModal({
             <div className="border-t border-border" />
 
             {/* Votes */}
-            {canVote && (
+            {votingEnabled && canVote && (
               <div className="flex items-center gap-2">
                 <span className="text-xs text-muted-foreground">Vote:</span>
                 <ListItemVoteControls
@@ -136,7 +162,7 @@ export function ListItemModal({
                 />
               </div>
             )}
-            {!canVote && (upvotes > 0 || downvotes > 0) && (
+            {votingEnabled && !canVote && (upvotes > 0 || downvotes > 0) && (
               <div className="flex items-center gap-3 text-xs text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <ThumbsUp className="h-3 w-3" /> {upvotes}
@@ -153,7 +179,10 @@ export function ListItemModal({
                 <p className="text-xs font-medium text-muted-foreground mb-1">
                   Notes
                 </p>
-                <p className="text-sm">{item.notes}</p>
+                <SpoilerNote
+                  notes={item.notes}
+                  isSpoiler={item.noteIsSpoiler}
+                />
               </div>
             )}
 
@@ -218,16 +247,20 @@ export function ListItemModal({
               </div>
             )}
 
-            <div className="border-t border-border" />
+            {commentsEnabled && (
+              <>
+                <div className="border-t border-border" />
 
-            {/* Comments */}
-            <ListItemComments
-              listSlug={listSlug}
-              itemId={item.id}
-              currentUserId={currentUserId}
-              isListOwner={isListOwner}
-              canComment={canVote}
-            />
+                {/* Comments */}
+                <ListItemComments
+                  listSlug={listSlug}
+                  itemId={item.id}
+                  currentUserId={currentUserId}
+                  isListOwner={isListOwner}
+                  canComment={canVote}
+                />
+              </>
+            )}
 
             <div className="border-t border-border" />
 

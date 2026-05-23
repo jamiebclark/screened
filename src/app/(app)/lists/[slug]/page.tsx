@@ -13,6 +13,8 @@ import { EditableListSearchAdd } from "@/components/editable-list-search-add";
 import { CopyButton } from "@/components/copy-button";
 import { ListSortControls, type SortField } from "./list-sort-controls";
 import { ListItemsGrid, type GridItem } from "./list-items-grid";
+import { ListItemReorder } from "./list-item-reorder";
+import { ListSettingsPanel } from "./list-settings-panel";
 import { discordFeatures } from "@/lib/discord";
 import { computeUnreadCommentCount } from "@/lib/comment-utils";
 import { MediaType, WatchStatus } from "@/generated/prisma";
@@ -33,7 +35,8 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 
 const VALID_SORTS: SortField[] = ["date_added", "title", "votes", "release"];
 
-function parseSort(raw: string | undefined): SortField {
+function parseSort(raw: string | undefined, votingEnabled: boolean): SortField {
+  if (raw === "votes" && !votingEnabled) return "date_added";
   return VALID_SORTS.includes(raw as SortField)
     ? (raw as SortField)
     : "date_added";
@@ -42,6 +45,8 @@ function parseSort(raw: string | undefined): SortField {
 type RawItem = {
   id: string;
   notes: string | null;
+  noteIsSpoiler: boolean;
+  position: number | null;
   addedAt: Date;
   mediaItemId: string;
   addedBy: { id: string; name: string | null; avatarUrl: string | null };
@@ -97,6 +102,8 @@ function toGridItem(
   return {
     id: item.id,
     notes: item.notes,
+    noteIsSpoiler: item.noteIsSpoiler,
+    position: item.position,
     addedAt: item.addedAt.toISOString(),
     canDelete,
     commentCount,
@@ -121,7 +128,6 @@ function toGridItem(
 export default async function ListPage({ params, searchParams }: Params) {
   const { slug } = await params;
   const { sort: rawSort } = await searchParams;
-  const sort = parseSort(rawSort);
 
   const session = await auth();
 
@@ -144,7 +150,7 @@ export default async function ListPage({ params, searchParams }: Params) {
           votes: { select: { value: true, userId: true } },
           comments: { select: { id: true, createdAt: true } },
         },
-        orderBy: { addedAt: "desc" },
+        orderBy: [{ position: "asc" }, { addedAt: "desc" }],
       },
     },
   });
@@ -152,10 +158,15 @@ export default async function ListPage({ params, searchParams }: Params) {
   if (!list) notFound();
 
   const userId = session?.user?.id;
-  const isMember = userId
-    ? list.members.some((m) => m.userId === userId)
-    : false;
+  const memberRecord = userId
+    ? list.members.find((m) => m.userId === userId)
+    : null;
+  const isMember = memberRecord !== null && memberRecord !== undefined;
   const isOwner = userId === list.ownerId;
+  const isContributor =
+    isOwner ||
+    memberRecord?.role === "OWNER" ||
+    memberRecord?.role === "CONTRIBUTOR";
 
   if (!list.isPublic && !isMember) {
     if (!userId) {
@@ -179,7 +190,10 @@ export default async function ListPage({ params, searchParams }: Params) {
     ? `${appUrl}/api/lists/${slug}/radarr`
     : `${appUrl}/api/lists/${slug}/radarr?token=${list.radarrToken}`;
 
-  const sortedItems = sortItems(list.items, sort);
+  const sort = parseSort(rawSort, list.votingEnabled);
+  const sortedItems = list.rankingEnabled
+    ? list.items
+    : sortItems(list.items, sort);
   const mediaIds = sortedItems.map((i) => i.mediaItemId);
 
   const watchedIdSet =
@@ -259,7 +273,8 @@ export default async function ListPage({ params, searchParams }: Params) {
       : new Map<string, Date>();
 
   const canDelete = isMember || isOwner;
-  const canVote = isMember || isOwner;
+  const canVote = (isMember || isOwner) && list.votingEnabled;
+  const canReorder = list.rankingEnabled && isContributor;
 
   function makeGridItems(items: RawItem[]): GridItem[] {
     return items.map((item) =>
@@ -354,13 +369,30 @@ export default async function ListPage({ params, searchParams }: Params) {
             />
           )}
 
-          {list.items.length > 0 && <ListSortControls currentSort={sort} />}
+          {list.items.length > 0 && !list.rankingEnabled && (
+            <ListSortControls
+              currentSort={sort}
+              showVoteSort={list.votingEnabled}
+            />
+          )}
 
           {list.items.length === 0 ? (
             <div className="text-center py-16 border border-dashed border-border rounded-xl">
               <Film className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
               <p className="text-muted-foreground">No items yet</p>
             </div>
+          ) : list.displayMode === "LIST" ? (
+            <ListItemReorder
+              items={[...movies, ...tvShows, ...watchedMovies, ...watchedTv]}
+              listSlug={slug}
+              canVote={canVote}
+              votingEnabled={list.votingEnabled}
+              commentsEnabled={list.commentsEnabled}
+              currentUserId={userId}
+              rankingEnabled={list.rankingEnabled}
+              canReorder={canReorder}
+              isListOwner={isOwner}
+            />
           ) : (
             <ListItemsGrid
               movies={movies}
@@ -369,6 +401,8 @@ export default async function ListPage({ params, searchParams }: Params) {
               watchedTv={watchedTv}
               listSlug={slug}
               canVote={canVote}
+              votingEnabled={list.votingEnabled}
+              commentsEnabled={list.commentsEnabled}
               currentUserId={userId}
               isListOwner={isOwner}
             />
@@ -378,6 +412,16 @@ export default async function ListPage({ params, searchParams }: Params) {
         {/* Sidebar — integrations */}
         {hasSidebar && (
           <div className="lg:w-72 shrink-0 space-y-4">
+            {isOwner && (
+              <ListSettingsPanel
+                listSlug={slug}
+                rankingEnabled={list.rankingEnabled}
+                votingEnabled={list.votingEnabled}
+                commentsEnabled={list.commentsEnabled}
+                displayMode={list.displayMode}
+                itemCap={list.itemCap}
+              />
+            )}
             {isOwner && (
               <div className="rounded-lg border border-border bg-card p-4">
                 <p className="text-sm font-medium mb-1 flex items-center gap-1.5">
