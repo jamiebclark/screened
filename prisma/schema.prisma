@@ -87,6 +87,11 @@ enum UserStatus {
   INVITED
 }
 
+enum DisplayMode {
+  GRID
+  LIST
+}
+
 model User {
   id            String     @id @default(cuid())
   email         String     @unique
@@ -364,19 +369,24 @@ model EpisodeStatus {
 }
 
 model List {
-  id                 String   @id @default(cuid())
+  id                 String      @id @default(cuid())
   name               String
   description        String?
-  slug               String   @unique
-  isPublic           Boolean  @default(true)
+  slug               String      @unique
+  isPublic           Boolean     @default(true)
   ownerId            String
-  radarrToken        String?  @unique
+  radarrToken        String?     @unique
   discordWebhookUrl  String?
   discordWebhookId   String?
   discordChannelName String?
   discordGuildName   String?
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  rankingEnabled     Boolean     @default(false)
+  votingEnabled      Boolean     @default(true)
+  commentsEnabled    Boolean     @default(true)
+  displayMode        DisplayMode @default(GRID)
+  itemCap            Int?
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
 
   owner          User                @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   members        ListMember[]
@@ -398,12 +408,14 @@ model ListMember {
 }
 
 model ListItem {
-  id          String    @id @default(cuid())
-  listId      String
-  mediaItemId String
-  addedById   String
-  notes       String?
-  addedAt     DateTime  @default(now())
+  id            String   @id @default(cuid())
+  listId        String
+  mediaItemId   String
+  addedById     String
+  notes         String?
+  noteIsSpoiler Boolean  @default(false)
+  position      Int?
+  addedAt       DateTime @default(now())
 
   list         List                  @relation(fields: [listId], references: [id], onDelete: Cascade)
   mediaItem    MediaItem             @relation(fields: [mediaItemId], references: [id], onDelete: Cascade)

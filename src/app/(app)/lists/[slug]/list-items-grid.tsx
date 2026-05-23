@@ -10,6 +10,8 @@ import { ListItemModal } from "./list-item-modal";
 export type GridItem = {
   id: string;
   notes: string | null;
+  noteIsSpoiler: boolean;
+  position: number | null;
   addedAt: string;
   canDelete: boolean;
   commentCount: number;
@@ -37,6 +39,8 @@ interface ListItemsGridProps {
   watchedTv: GridItem[];
   listSlug: string;
   canVote: boolean;
+  votingEnabled: boolean;
+  commentsEnabled: boolean;
   currentUserId: string | undefined;
   isListOwner: boolean;
 }
@@ -45,12 +49,14 @@ function SectionGrid({
   items,
   listSlug,
   canVote,
+  votingEnabled,
   currentUserId,
   onSelect,
 }: {
   items: GridItem[];
   listSlug: string;
   canVote: boolean;
+  votingEnabled: boolean;
   currentUserId: string | undefined;
   onSelect: (id: string) => void;
 }) {
@@ -84,17 +90,19 @@ function SectionGrid({
               </Avatar>
             </div>
 
-            {/* Vote pill — top right, always visible */}
-            <div className="absolute top-2 right-2 z-10">
-              <ListItemVotePill
-                listSlug={listSlug}
-                itemId={item.id}
-                upvotes={upvotes}
-                downvotes={downvotes}
-                userVote={userVote}
-                canVote={canVote}
-              />
-            </div>
+            {/* Vote pill — top right, only shown when voting is enabled */}
+            {votingEnabled && (
+              <div className="absolute top-2 right-2 z-10">
+                <ListItemVotePill
+                  listSlug={listSlug}
+                  itemId={item.id}
+                  upvotes={upvotes}
+                  downvotes={downvotes}
+                  userVote={userVote}
+                  canVote={canVote}
+                />
+              </div>
+            )}
 
             {/* Comment badge — bottom right */}
             {item.commentCount > 0 && (
@@ -127,6 +135,8 @@ export function ListItemsGrid({
   watchedTv,
   listSlug,
   canVote,
+  votingEnabled,
+  commentsEnabled,
   currentUserId,
   isListOwner,
 }: ListItemsGridProps) {
@@ -143,6 +153,7 @@ export function ListItemsGrid({
   const sectionProps = {
     listSlug,
     canVote,
+    votingEnabled,
     currentUserId,
     onSelect: setSelectedItemId,
   };
@@ -205,6 +216,8 @@ export function ListItemsGrid({
         onClose={() => setSelectedItemId(null)}
         listSlug={listSlug}
         canVote={canVote}
+        votingEnabled={votingEnabled}
+        commentsEnabled={commentsEnabled}
         currentUserId={currentUserId}
         isListOwner={isListOwner}
       />

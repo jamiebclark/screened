@@ -2,13 +2,19 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ThumbsUp, ThumbsDown } from "lucide-react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { ThumbsUp, ThumbsDown, Eye, Pencil, Loader2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { MarkdownEditor } from "@/components/markdown-editor";
 import { ListItemVoteControls } from "./list-item-vote-controls";
 import { ListItemDeleteButton } from "./list-item-delete-button";
 import { ListItemComments } from "./list-item-comments";
 import { tmdbImageUrl } from "@/lib/utils";
+import { MarkdownContent } from "@/components/markdown-content";
 import type { GridItem } from "./list-items-grid";
 
 interface ListItemModalProps {
@@ -17,8 +23,173 @@ interface ListItemModalProps {
   onClose: () => void;
   listSlug: string;
   canVote: boolean;
+  votingEnabled: boolean;
+  commentsEnabled: boolean;
   currentUserId: string | undefined;
   isListOwner: boolean;
+  onNoteSaved?: (
+    itemId: string,
+    note: string | null,
+    isSpoiler: boolean,
+  ) => void;
+}
+
+function NoteDisplay({
+  notes,
+  isSpoiler,
+}: {
+  notes: string;
+  isSpoiler: boolean;
+}) {
+  const [revealed, setRevealed] = useState(false);
+  if (!isSpoiler) return <MarkdownContent content={notes} />;
+  if (revealed) return <MarkdownContent content={notes} />;
+  return (
+    <button
+      onClick={() => setRevealed(true)}
+      className="inline-flex items-center gap-1 text-xs text-amber-600 hover:text-amber-500 transition-colors"
+    >
+      <Eye className="h-3 w-3" />
+      Spoiler — reveal
+    </button>
+  );
+}
+
+function NoteSection({
+  initialNote,
+  initialIsSpoiler,
+  itemId,
+  listSlug,
+  canEdit,
+  overview,
+  onSaved,
+}: {
+  initialNote: string | null;
+  initialIsSpoiler: boolean;
+  itemId: string;
+  listSlug: string;
+  canEdit: boolean;
+  overview: string | null;
+  onSaved?: (note: string | null, isSpoiler: boolean) => void;
+}) {
+  const router = useRouter();
+  const [editing, setEditing] = useState(false);
+  const [noteText, setNoteText] = useState(initialNote ?? "");
+  const [isSpoiler, setIsSpoiler] = useState(initialIsSpoiler);
+  const [displayNote, setDisplayNote] = useState(initialNote);
+  const [displayIsSpoiler, setDisplayIsSpoiler] = useState(initialIsSpoiler);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  const handleSave = async () => {
+    setSaving(true);
+    setSaveError(null);
+    try {
+      const res = await fetch(`/api/lists/${listSlug}/items/${itemId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          notes: noteText.trim() || null,
+          noteIsSpoiler: noteText.trim() ? isSpoiler : false,
+        }),
+      });
+      if (!res.ok) {
+        const j = (await res.json().catch(() => ({}))) as { error?: string };
+        setSaveError(j.error ?? "Failed to save");
+        return;
+      }
+      const savedNote = noteText.trim() || null;
+      const savedIsSpoiler = noteText.trim() ? isSpoiler : false;
+      setDisplayNote(savedNote);
+      setDisplayIsSpoiler(savedIsSpoiler);
+      setEditing(false);
+      onSaved?.(savedNote, savedIsSpoiler);
+      router.refresh();
+    } catch {
+      setSaveError("Something went wrong");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setNoteText(displayNote ?? "");
+    setIsSpoiler(displayIsSpoiler);
+    setSaveError(null);
+    setEditing(false);
+  };
+
+  if (editing) {
+    return (
+      <div className="space-y-2">
+        <MarkdownEditor
+          value={noteText}
+          onChange={setNoteText}
+          placeholder="Why are you adding this? Any thoughts…"
+          height={180}
+          autoFocus
+        />
+        {noteText.trim() && (
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <Checkbox
+              checked={isSpoiler}
+              onCheckedChange={(v) => setIsSpoiler(v === true)}
+            />
+            <span className="text-xs text-muted-foreground flex items-center gap-1">
+              <Eye className="h-3 w-3" />
+              Mark note as spoiler
+            </span>
+          </label>
+        )}
+        {saveError && <p className="text-xs text-destructive">{saveError}</p>}
+        <div className="flex gap-2">
+          <Button size="sm" onClick={handleSave} disabled={saving}>
+            {saving && <Loader2 className="h-3 w-3 animate-spin" />}
+            Save
+          </Button>
+          <Button size="sm" variant="outline" onClick={handleCancel}>
+            Cancel
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      {displayNote ? (
+        <div className="space-y-1">
+          <NoteDisplay notes={displayNote} isSpoiler={displayIsSpoiler} />
+          {canEdit && (
+            <button
+              onClick={() => setEditing(true)}
+              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Pencil className="h-3 w-3" />
+              Edit note
+            </button>
+          )}
+        </div>
+      ) : (
+        <div>
+          {overview && (
+            <p className="text-sm text-muted-foreground leading-relaxed line-clamp-4">
+              {overview}
+            </p>
+          )}
+          {canEdit && (
+            <button
+              onClick={() => setEditing(true)}
+              className="mt-1 flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Pencil className="h-3 w-3" />
+              Add note
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function ListItemModal({
@@ -27,8 +198,11 @@ export function ListItemModal({
   onClose,
   listSlug,
   canVote,
+  votingEnabled,
+  commentsEnabled,
   currentUserId,
   isListOwner,
+  onNoteSaved,
 }: ListItemModalProps) {
   if (!item) return null;
 
@@ -114,17 +288,26 @@ export function ListItemModal({
               )}
             </div>
 
-            {/* Overview */}
-            {mediaItem.overview && (
-              <p className="text-sm text-muted-foreground leading-relaxed line-clamp-4">
-                {mediaItem.overview}
-              </p>
-            )}
+            {/* Note / overview */}
+            <NoteSection
+              initialNote={item.notes}
+              initialIsSpoiler={item.noteIsSpoiler}
+              itemId={item.id}
+              listSlug={listSlug}
+              canEdit={
+                !!currentUserId &&
+                (isListOwner || item.addedBy.id === currentUserId)
+              }
+              overview={mediaItem.overview}
+              onSaved={(note, isSpoiler) =>
+                onNoteSaved?.(item.id, note, isSpoiler)
+              }
+            />
 
             <div className="border-t border-border" />
 
             {/* Votes */}
-            {canVote && (
+            {votingEnabled && canVote && (
               <div className="flex items-center gap-2">
                 <span className="text-xs text-muted-foreground">Vote:</span>
                 <ListItemVoteControls
@@ -136,7 +319,7 @@ export function ListItemModal({
                 />
               </div>
             )}
-            {!canVote && (upvotes > 0 || downvotes > 0) && (
+            {votingEnabled && !canVote && (upvotes > 0 || downvotes > 0) && (
               <div className="flex items-center gap-3 text-xs text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <ThumbsUp className="h-3 w-3" /> {upvotes}
@@ -144,16 +327,6 @@ export function ListItemModal({
                 <span className="flex items-center gap-1">
                   <ThumbsDown className="h-3 w-3" /> {downvotes}
                 </span>
-              </div>
-            )}
-
-            {/* Notes */}
-            {item.notes && (
-              <div>
-                <p className="text-xs font-medium text-muted-foreground mb-1">
-                  Notes
-                </p>
-                <p className="text-sm">{item.notes}</p>
               </div>
             )}
 
@@ -218,16 +391,20 @@ export function ListItemModal({
               </div>
             )}
 
-            <div className="border-t border-border" />
+            {commentsEnabled && (
+              <>
+                <div className="border-t border-border" />
 
-            {/* Comments */}
-            <ListItemComments
-              listSlug={listSlug}
-              itemId={item.id}
-              currentUserId={currentUserId}
-              isListOwner={isListOwner}
-              canComment={canVote}
-            />
+                {/* Comments */}
+                <ListItemComments
+                  listSlug={listSlug}
+                  itemId={item.id}
+                  currentUserId={currentUserId}
+                  isListOwner={isListOwner}
+                  canComment={canVote}
+                />
+              </>
+            )}
 
             <div className="border-t border-border" />
 

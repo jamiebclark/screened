@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { slugify, generateToken } from "@/lib/utils";
+import { applyPreset, type ListPreset } from "@/lib/list-presets";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -55,11 +56,31 @@ export async function POST(req: NextRequest) {
     name?: string;
     description?: string;
     isPublic?: boolean;
+    preset?: ListPreset;
+    rankingEnabled?: boolean;
+    votingEnabled?: boolean;
+    commentsEnabled?: boolean;
+    displayMode?: "GRID" | "LIST";
+    itemCap?: number | null;
   };
-  const { name, description, isPublic = true } = body;
+  const { name, description, isPublic = true, preset } = body;
 
   if (!name?.trim()) {
     return NextResponse.json({ error: "Name required" }, { status: 400 });
+  }
+
+  const flags = applyPreset(preset ?? "custom", {
+    rankingEnabled: body.rankingEnabled,
+    votingEnabled: body.votingEnabled,
+    commentsEnabled: body.commentsEnabled,
+    displayMode: body.displayMode,
+  });
+
+  if (flags.rankingEnabled && flags.votingEnabled) {
+    return NextResponse.json(
+      { error: "rankingEnabled and votingEnabled cannot both be true" },
+      { status: 400 },
+    );
   }
 
   let slug = slugify(name);
@@ -76,6 +97,11 @@ export async function POST(req: NextRequest) {
       isPublic,
       ownerId: session.user.id,
       radarrToken: generateToken(24),
+      rankingEnabled: flags.rankingEnabled,
+      votingEnabled: flags.votingEnabled,
+      commentsEnabled: flags.commentsEnabled,
+      displayMode: flags.displayMode,
+      itemCap: body.itemCap ?? null,
       members: {
         create: { userId: session.user.id, role: "OWNER" },
       },

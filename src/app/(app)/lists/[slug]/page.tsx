@@ -2,17 +2,12 @@ import type { Metadata } from "next";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notFound, redirect } from "next/navigation";
-import Link from "next/link";
-import { Globe, Lock, Users, Film, Download, UserPlus } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { InviteMemberForm } from "./invite-member-form";
+import { Film } from "lucide-react";
 import { PrivateListGate } from "./private-list-gate";
-import { DiscordWebhookForm } from "./discord-webhook-form";
-import { LetterboxdImportDialog } from "@/components/letterboxd-import-dialog";
-import { EditableListSearchAdd } from "@/components/editable-list-search-add";
-import { CopyButton } from "@/components/copy-button";
+import { ListPageHeader } from "./list-page-header";
 import { ListSortControls, type SortField } from "./list-sort-controls";
 import { ListItemsGrid, type GridItem } from "./list-items-grid";
+import { ListItemReorder } from "./list-item-reorder";
 import { discordFeatures } from "@/lib/discord";
 import { computeUnreadCommentCount } from "@/lib/comment-utils";
 import { MediaType, WatchStatus } from "@/generated/prisma";
@@ -33,7 +28,8 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 
 const VALID_SORTS: SortField[] = ["date_added", "title", "votes", "release"];
 
-function parseSort(raw: string | undefined): SortField {
+function parseSort(raw: string | undefined, votingEnabled: boolean): SortField {
+  if (raw === "votes" && !votingEnabled) return "date_added";
   return VALID_SORTS.includes(raw as SortField)
     ? (raw as SortField)
     : "date_added";
@@ -42,6 +38,8 @@ function parseSort(raw: string | undefined): SortField {
 type RawItem = {
   id: string;
   notes: string | null;
+  noteIsSpoiler: boolean;
+  position: number | null;
   addedAt: Date;
   mediaItemId: string;
   addedBy: { id: string; name: string | null; avatarUrl: string | null };
@@ -97,6 +95,8 @@ function toGridItem(
   return {
     id: item.id,
     notes: item.notes,
+    noteIsSpoiler: item.noteIsSpoiler,
+    position: item.position,
     addedAt: item.addedAt.toISOString(),
     canDelete,
     commentCount,
@@ -121,7 +121,6 @@ function toGridItem(
 export default async function ListPage({ params, searchParams }: Params) {
   const { slug } = await params;
   const { sort: rawSort } = await searchParams;
-  const sort = parseSort(rawSort);
 
   const session = await auth();
 
@@ -144,7 +143,7 @@ export default async function ListPage({ params, searchParams }: Params) {
           votes: { select: { value: true, userId: true } },
           comments: { select: { id: true, createdAt: true } },
         },
-        orderBy: { addedAt: "desc" },
+        orderBy: [{ position: "asc" }, { addedAt: "desc" }],
       },
     },
   });
@@ -152,10 +151,15 @@ export default async function ListPage({ params, searchParams }: Params) {
   if (!list) notFound();
 
   const userId = session?.user?.id;
-  const isMember = userId
-    ? list.members.some((m) => m.userId === userId)
-    : false;
+  const memberRecord = userId
+    ? list.members.find((m) => m.userId === userId)
+    : null;
+  const isMember = memberRecord !== null && memberRecord !== undefined;
   const isOwner = userId === list.ownerId;
+  const isContributor =
+    isOwner ||
+    memberRecord?.role === "OWNER" ||
+    memberRecord?.role === "CONTRIBUTOR";
 
   if (!list.isPublic && !isMember) {
     if (!userId) {
@@ -179,7 +183,10 @@ export default async function ListPage({ params, searchParams }: Params) {
     ? `${appUrl}/api/lists/${slug}/radarr`
     : `${appUrl}/api/lists/${slug}/radarr?token=${list.radarrToken}`;
 
-  const sortedItems = sortItems(list.items, sort);
+  const sort = parseSort(rawSort, list.votingEnabled);
+  const sortedItems = list.rankingEnabled
+    ? list.items
+    : sortItems(list.items, sort);
   const mediaIds = sortedItems.map((i) => i.mediaItemId);
 
   const watchedIdSet =
@@ -259,7 +266,8 @@ export default async function ListPage({ params, searchParams }: Params) {
       : new Map<string, Date>();
 
   const canDelete = isMember || isOwner;
-  const canVote = isMember || isOwner;
+  const canVote = (isMember || isOwner) && list.votingEnabled;
+  const canReorder = list.rankingEnabled && isContributor;
 
   function makeGridItems(items: RawItem[]): GridItem[] {
     return items.map((item) =>
@@ -291,186 +299,85 @@ export default async function ListPage({ params, searchParams }: Params) {
       `${i.mediaItem.type === MediaType.MOVIE ? "movie" : "tv"}-${i.mediaItem.tmdbId}`,
   );
 
-  const hasSidebar = isMember || isOwner;
-
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-start gap-4 mb-8">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            {list.isPublic ? (
-              <Globe className="h-4 w-4 text-muted-foreground" />
-            ) : (
-              <Lock className="h-4 w-4 text-muted-foreground" />
-            )}
-            <span className="text-xs text-muted-foreground">
-              {list.isPublic ? "Public" : "Private"} list
-            </span>
-          </div>
-          <h1 className="text-3xl font-bold">{list.name}</h1>
-          {list.description && (
-            <p className="text-muted-foreground mt-1">{list.description}</p>
-          )}
-          <div className="flex items-center gap-3 mt-3">
-            <div className="flex -space-x-2">
-              {list.members.slice(0, 5).map((m) => (
-                <Avatar
-                  key={m.id}
-                  className="h-7 w-7 border-2 border-background"
-                >
-                  <AvatarImage src={m.user.avatarUrl ?? undefined} />
-                  <AvatarFallback className="text-[10px]">
-                    {m.user.name?.[0]?.toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-              ))}
-            </div>
-            <span className="text-sm text-muted-foreground">
-              <Users className="h-3.5 w-3.5 inline mr-1" />
-              {list.members.length} member{list.members.length !== 1 ? "s" : ""}
-            </span>
-            <span className="text-sm text-muted-foreground">
-              {list.items.length} items
-            </span>
-            {userId && watchedItems.length > 0 && (
-              <span className="text-sm text-muted-foreground">
-                · {watchedItems.length} in your watched history
-              </span>
-            )}
-          </div>
+    <div className="mx-auto max-w-5xl px-4 py-8">
+      <ListPageHeader
+        listSlug={slug}
+        isOwner={isOwner}
+        isMember={isMember}
+        isPublic={list.isPublic}
+        name={list.name}
+        description={list.description ?? null}
+        memberCount={list.members.length}
+        itemCount={list.items.length}
+        watchedCount={userId ? watchedItems.length : 0}
+        memberAvatars={list.members.slice(0, 5).map((m) => ({
+          id: m.id,
+          name: m.user.name,
+          avatarUrl: m.user.avatarUrl,
+        }))}
+        existingKeys={existingListKeys}
+        rankingEnabled={list.rankingEnabled}
+        votingEnabled={list.votingEnabled}
+        commentsEnabled={list.commentsEnabled}
+        displayMode={list.displayMode}
+        itemCap={list.itemCap}
+        members={list.members.map((m) => ({
+          id: m.id,
+          userId: m.userId,
+          role: m.role,
+          user: {
+            id: m.user.id,
+            name: m.user.name,
+            avatarUrl: m.user.avatarUrl,
+            status: m.user.status,
+          },
+        }))}
+        radarrUrl={radarrUrl}
+        discordEnabled={discordFeatures().bot}
+        connectedChannelName={list.discordChannelName}
+        connectedGuildName={list.discordGuildName}
+      />
+
+      {/* Main content */}
+      {list.items.length > 0 && !list.rankingEnabled && (
+        <ListSortControls
+          currentSort={sort}
+          showVoteSort={list.votingEnabled}
+        />
+      )}
+
+      {list.items.length === 0 ? (
+        <div className="text-center py-16 border border-dashed border-border rounded-xl">
+          <Film className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+          <p className="text-muted-foreground">No items yet</p>
         </div>
-      </div>
-
-      {/* Two-column layout */}
-      <div className="flex flex-col lg:flex-row gap-8 items-start">
-        {/* Main content */}
-        <div className="flex-1 min-w-0">
-          {isMember && (
-            <EditableListSearchAdd
-              variant="list"
-              listSlug={slug}
-              existingKeys={existingListKeys}
-            />
-          )}
-
-          {list.items.length > 0 && <ListSortControls currentSort={sort} />}
-
-          {list.items.length === 0 ? (
-            <div className="text-center py-16 border border-dashed border-border rounded-xl">
-              <Film className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-              <p className="text-muted-foreground">No items yet</p>
-            </div>
-          ) : (
-            <ListItemsGrid
-              movies={movies}
-              tvShows={tvShows}
-              watchedMovies={watchedMovies}
-              watchedTv={watchedTv}
-              listSlug={slug}
-              canVote={canVote}
-              currentUserId={userId}
-              isListOwner={isOwner}
-            />
-          )}
-        </div>
-
-        {/* Sidebar — integrations */}
-        {hasSidebar && (
-          <div className="lg:w-72 shrink-0 space-y-4">
-            {isOwner && (
-              <div className="rounded-lg border border-border bg-card p-4">
-                <p className="text-sm font-medium mb-1 flex items-center gap-1.5">
-                  <UserPlus className="h-4 w-4 text-primary" />
-                  Members
-                </p>
-                <p className="text-xs text-muted-foreground mb-3">
-                  Invite collaborators to this list.
-                </p>
-                <InviteMemberForm slug={slug} />
-                {list.members.length > 0 && (
-                  <ul className="mt-3 space-y-1.5 border-t border-border pt-3">
-                    {list.members.map((m) => {
-                      const isInvited = m.user.status === "INVITED";
-                      return (
-                        <li
-                          key={m.id}
-                          className="flex items-center gap-2 text-sm"
-                        >
-                          <Avatar className="h-5 w-5 shrink-0">
-                            <AvatarImage src={m.user.avatarUrl ?? undefined} />
-                            <AvatarFallback className="text-[9px]">
-                              {m.user.name?.[0]?.toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          {isInvited ? (
-                            <span className="flex-1 truncate text-xs text-muted-foreground">
-                              {m.user.name}
-                            </span>
-                          ) : (
-                            <Link
-                              href={`/profile/${m.user.id}`}
-                              className="flex-1 truncate text-xs hover:underline"
-                            >
-                              {m.user.name}
-                            </Link>
-                          )}
-                          {isInvited ? (
-                            <span className="text-[10px] font-medium text-amber-600 shrink-0">
-                              pending
-                            </span>
-                          ) : (
-                            <span className="text-[10px] text-muted-foreground capitalize shrink-0">
-                              {m.role.toLowerCase()}
-                            </span>
-                          )}
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
-              </div>
-            )}
-            {isMember && (
-              <div className="rounded-lg border border-border bg-card p-4">
-                <p className="text-sm font-medium mb-1 flex items-center gap-1.5">
-                  <Download className="h-4 w-4 text-primary" />
-                  Letterboxd
-                </p>
-                <p className="text-xs text-muted-foreground mb-3">
-                  Import films from your Letterboxd watchlist.
-                </p>
-                <LetterboxdImportDialog slug={slug} />
-              </div>
-            )}
-            {isOwner && discordFeatures().bot && (
-              <DiscordWebhookForm
-                slug={slug}
-                connectedChannelName={list.discordChannelName}
-                connectedGuildName={list.discordGuildName}
-              />
-            )}
-            {(isMember || isOwner) && (
-              <div className="rounded-lg border border-border bg-card p-4">
-                <p className="text-sm font-medium mb-1 flex items-center gap-1.5">
-                  <Film className="h-4 w-4 text-primary" />
-                  Radarr import URL
-                </p>
-                <p className="text-xs text-muted-foreground mb-2">
-                  Add this URL as a &quot;Custom List&quot; in Radarr to
-                  auto-import movies from this list.
-                </p>
-                <div className="flex items-center gap-2">
-                  <code className="text-xs bg-muted px-2 py-1 rounded font-mono break-all block flex-1 min-w-0">
-                    {radarrUrl}
-                  </code>
-                  <CopyButton text={radarrUrl} />
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+      ) : list.displayMode === "LIST" ? (
+        <ListItemReorder
+          items={[...movies, ...tvShows, ...watchedMovies, ...watchedTv]}
+          listSlug={slug}
+          canVote={canVote}
+          votingEnabled={list.votingEnabled}
+          commentsEnabled={list.commentsEnabled}
+          currentUserId={userId}
+          rankingEnabled={list.rankingEnabled}
+          canReorder={canReorder}
+          isListOwner={isOwner}
+        />
+      ) : (
+        <ListItemsGrid
+          movies={movies}
+          tvShows={tvShows}
+          watchedMovies={watchedMovies}
+          watchedTv={watchedTv}
+          listSlug={slug}
+          canVote={canVote}
+          votingEnabled={list.votingEnabled}
+          commentsEnabled={list.commentsEnabled}
+          currentUserId={userId}
+          isListOwner={isOwner}
+        />
+      )}
     </div>
   );
 }

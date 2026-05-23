@@ -4,7 +4,8 @@ import { useEffect, useState, useRef } from "react";
 import { Trash2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { MarkdownEditor } from "@/components/markdown-editor";
+import { MarkdownContent } from "@/components/markdown-content";
 
 type Comment = {
   id: string;
@@ -165,9 +166,12 @@ export function ListItemComments({
                       </button>
                     )}
                   </div>
-                  <p className="text-xs text-foreground leading-relaxed mt-0.5 whitespace-pre-wrap break-words">
-                    {comment.content}
-                  </p>
+                  <div className="mt-0.5">
+                    <MarkdownContent
+                      content={comment.content}
+                      className="text-xs text-foreground"
+                    />
+                  </div>
                 </div>
               </li>
             );
@@ -177,11 +181,11 @@ export function ListItemComments({
 
       {canComment && (
         <div className="space-y-2">
-          <Textarea
+          <MarkdownEditor
             value={draft}
-            onChange={(e) => setDraft(e.target.value)}
+            onChange={setDraft}
             placeholder="Add a comment…"
-            className="text-xs resize-none min-h-[60px]"
+            height={120}
             maxLength={1000}
             onKeyDown={(e) => {
               if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {

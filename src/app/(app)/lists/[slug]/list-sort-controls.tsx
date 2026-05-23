@@ -12,7 +12,13 @@ const SORT_OPTIONS: { value: SortField; label: string }[] = [
   { value: "release", label: "Release year" },
 ];
 
-export function ListSortControls({ currentSort }: { currentSort: SortField }) {
+export function ListSortControls({
+  currentSort,
+  showVoteSort = true,
+}: {
+  currentSort: SortField;
+  showVoteSort?: boolean;
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -22,10 +28,14 @@ export function ListSortControls({ currentSort }: { currentSort: SortField }) {
     router.push(`?${params.toString()}`);
   }
 
+  const options = showVoteSort
+    ? SORT_OPTIONS
+    : SORT_OPTIONS.filter((o) => o.value !== "votes");
+
   return (
     <div className="flex items-center gap-2 flex-wrap mb-6">
       <span className="text-xs text-muted-foreground">Sort:</span>
-      {SORT_OPTIONS.map((opt) => (
+      {options.map((opt) => (
         <button
           key={opt.value}
           onClick={() => setSort(opt.value)}

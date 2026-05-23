@@ -56,22 +56,99 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     name?: string;
     description?: string;
     isPublic?: boolean;
+    rankingEnabled?: boolean;
+    votingEnabled?: boolean;
+    commentsEnabled?: boolean;
+    displayMode?: "GRID" | "LIST";
+    itemCap?: number | null;
   };
 
-  const list = await prisma.list.findUnique({ where: { slug } });
+  const list = await prisma.list.findUnique({
+    where: { slug },
+    include: { items: { select: { id: true }, orderBy: { addedAt: "asc" } } },
+  });
   if (!list || list.ownerId !== session.user.id) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const updated = await prisma.list.update({
-    where: { slug },
-    data: {
-      name: body.name ?? list.name,
-      description:
-        body.description !== undefined ? body.description : list.description,
-      isPublic: body.isPublic ?? list.isPublic,
-    },
-  });
+  // Resolve ranking/voting mutex
+  let rankingEnabled = body.rankingEnabled ?? list.rankingEnabled;
+  let votingEnabled = body.votingEnabled ?? list.votingEnabled;
+  if (body.rankingEnabled === true) votingEnabled = false;
+  if (body.votingEnabled === true) rankingEnabled = false;
+
+  const rankingTurnedOn = rankingEnabled && !list.rankingEnabled;
+  const rankingTurnedOff = !rankingEnabled && list.rankingEnabled;
+
+  let updated;
+  if (rankingTurnedOn) {
+    // Assign sequential positions based on current addedAt ASC order
+    updated = await prisma.$transaction(async (tx) => {
+      await Promise.all(
+        list.items.map((item, idx) =>
+          tx.listItem.update({
+            where: { id: item.id },
+            data: { position: idx + 1 },
+          }),
+        ),
+      );
+      return tx.list.update({
+        where: { slug },
+        data: {
+          name: body.name ?? list.name,
+          description:
+            body.description !== undefined
+              ? body.description
+              : list.description,
+          isPublic: body.isPublic ?? list.isPublic,
+          rankingEnabled,
+          votingEnabled,
+          commentsEnabled: body.commentsEnabled ?? list.commentsEnabled,
+          displayMode: body.displayMode ?? list.displayMode,
+          itemCap: body.itemCap !== undefined ? body.itemCap : list.itemCap,
+        },
+      });
+    });
+  } else if (rankingTurnedOff) {
+    // Clear all positions
+    updated = await prisma.$transaction(async (tx) => {
+      await tx.listItem.updateMany({
+        where: { listId: list.id },
+        data: { position: null },
+      });
+      return tx.list.update({
+        where: { slug },
+        data: {
+          name: body.name ?? list.name,
+          description:
+            body.description !== undefined
+              ? body.description
+              : list.description,
+          isPublic: body.isPublic ?? list.isPublic,
+          rankingEnabled,
+          votingEnabled,
+          commentsEnabled: body.commentsEnabled ?? list.commentsEnabled,
+          displayMode: body.displayMode ?? list.displayMode,
+          itemCap: body.itemCap !== undefined ? body.itemCap : list.itemCap,
+        },
+      });
+    });
+  } else {
+    updated = await prisma.list.update({
+      where: { slug },
+      data: {
+        name: body.name ?? list.name,
+        description:
+          body.description !== undefined ? body.description : list.description,
+        isPublic: body.isPublic ?? list.isPublic,
+        rankingEnabled,
+        votingEnabled,
+        commentsEnabled: body.commentsEnabled ?? list.commentsEnabled,
+        displayMode: body.displayMode ?? list.displayMode,
+        itemCap: body.itemCap !== undefined ? body.itemCap : list.itemCap,
+      },
+    });
+  }
 
   return NextResponse.json(updated);
 }
