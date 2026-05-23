@@ -2,14 +2,12 @@ import type { Metadata } from "next";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notFound, redirect } from "next/navigation";
-import { Globe, Lock, Users, Film } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Film } from "lucide-react";
 import { PrivateListGate } from "./private-list-gate";
-import { ListAddFab } from "./list-add-fab";
+import { ListPageHeader } from "./list-page-header";
 import { ListSortControls, type SortField } from "./list-sort-controls";
 import { ListItemsGrid, type GridItem } from "./list-items-grid";
 import { ListItemReorder } from "./list-item-reorder";
-import { ListSettingsModal } from "./list-settings-modal";
 import { discordFeatures } from "@/lib/discord";
 import { computeUnreadCommentCount } from "@/lib/comment-utils";
 import { MediaType, WatchStatus } from "@/generated/prisma";
@@ -301,83 +299,45 @@ export default async function ListPage({ params, searchParams }: Params) {
       `${i.mediaItem.type === MediaType.MOVIE ? "movie" : "tv"}-${i.mediaItem.tmdbId}`,
   );
 
-  const hasSidebar = isMember || isOwner;
-
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-start gap-4 mb-8">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            {list.isPublic ? (
-              <Globe className="h-4 w-4 text-muted-foreground" />
-            ) : (
-              <Lock className="h-4 w-4 text-muted-foreground" />
-            )}
-            <span className="text-xs text-muted-foreground">
-              {list.isPublic ? "Public" : "Private"} list
-            </span>
-          </div>
-          <h1 className="text-3xl font-bold">{list.name}</h1>
-          {list.description && (
-            <p className="text-muted-foreground mt-1">{list.description}</p>
-          )}
-          <div className="flex items-center gap-3 mt-3">
-            <div className="flex -space-x-2">
-              {list.members.slice(0, 5).map((m) => (
-                <Avatar
-                  key={m.id}
-                  className="h-7 w-7 border-2 border-background"
-                >
-                  <AvatarImage src={m.user.avatarUrl ?? undefined} />
-                  <AvatarFallback className="text-[10px]">
-                    {m.user.name?.[0]?.toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-              ))}
-            </div>
-            <span className="text-sm text-muted-foreground">
-              <Users className="h-3.5 w-3.5 inline mr-1" />
-              {list.members.length} member{list.members.length !== 1 ? "s" : ""}
-            </span>
-            <span className="text-sm text-muted-foreground">
-              {list.items.length} items
-            </span>
-            {userId && watchedItems.length > 0 && (
-              <span className="text-sm text-muted-foreground">
-                · {watchedItems.length} in your watched history
-              </span>
-            )}
-          </div>
-        </div>
-
-        {hasSidebar && (
-          <ListSettingsModal
-            listSlug={slug}
-            isOwner={isOwner}
-            rankingEnabled={list.rankingEnabled}
-            votingEnabled={list.votingEnabled}
-            commentsEnabled={list.commentsEnabled}
-            displayMode={list.displayMode}
-            itemCap={list.itemCap}
-            members={list.members.map((m) => ({
-              id: m.id,
-              userId: m.userId,
-              role: m.role,
-              user: {
-                id: m.user.id,
-                name: m.user.name,
-                avatarUrl: m.user.avatarUrl,
-                status: m.user.status,
-              },
-            }))}
-            radarrUrl={radarrUrl}
-            discordEnabled={discordFeatures().bot}
-            connectedChannelName={list.discordChannelName}
-            connectedGuildName={list.discordGuildName}
-          />
-        )}
-      </div>
+      <ListPageHeader
+        listSlug={slug}
+        isOwner={isOwner}
+        isMember={isMember}
+        isPublic={list.isPublic}
+        name={list.name}
+        description={list.description ?? null}
+        memberCount={list.members.length}
+        itemCount={list.items.length}
+        watchedCount={userId ? watchedItems.length : 0}
+        memberAvatars={list.members.slice(0, 5).map((m) => ({
+          id: m.id,
+          name: m.user.name,
+          avatarUrl: m.user.avatarUrl,
+        }))}
+        existingKeys={existingListKeys}
+        rankingEnabled={list.rankingEnabled}
+        votingEnabled={list.votingEnabled}
+        commentsEnabled={list.commentsEnabled}
+        displayMode={list.displayMode}
+        itemCap={list.itemCap}
+        members={list.members.map((m) => ({
+          id: m.id,
+          userId: m.userId,
+          role: m.role,
+          user: {
+            id: m.user.id,
+            name: m.user.name,
+            avatarUrl: m.user.avatarUrl,
+            status: m.user.status,
+          },
+        }))}
+        radarrUrl={radarrUrl}
+        discordEnabled={discordFeatures().bot}
+        connectedChannelName={list.discordChannelName}
+        connectedGuildName={list.discordGuildName}
+      />
 
       {/* Main content */}
       {list.items.length > 0 && !list.rankingEnabled && (
@@ -417,10 +377,6 @@ export default async function ListPage({ params, searchParams }: Params) {
           currentUserId={userId}
           isListOwner={isOwner}
         />
-      )}
-
-      {isMember && (
-        <ListAddFab listSlug={slug} existingKeys={existingListKeys} />
       )}
     </div>
   );
