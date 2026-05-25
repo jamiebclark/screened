@@ -17,7 +17,6 @@ const baseIntegrations = [
 const generalItems = [
   { href: "/settings/account", label: "Account" },
   { href: "/settings/privacy", label: "Privacy" },
-  { href: "/settings/friends", label: "Friends" },
   { href: "/settings/preferences", label: "Saved preferences" },
   { href: "/settings/watch-history", label: "Watch history & imports" },
   { href: "/settings/calendar", label: "Calendar feed" },

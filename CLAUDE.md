@@ -118,6 +118,7 @@ Follow `docs/ui-ux-standards.md` for any visible changes. Key rules:
 
 - **Content hierarchy:** hero/identity → primary actions → peer sections. Don't wrap unrelated sections in one bordered card.
 - **Section headings:** `h3` with `text-base font-semibold`. Optional count in `text-sm font-normal text-muted-foreground`. Be consistent — don't mix uppercase+tracking labels with sentence-case `h3` on the same page.
+- **Card vs. list density:** match visual weight to expected item count. Few items (≤ ~8 typical): spacious cards (`rounded-xl border p-5`–`p-6`, `h-16 w-16` avatars). Long feeds/results: compact rows (`rounded-lg border p-3`, `h-10 w-10` avatars). When planning a new list, explicitly name the expected count and choose the pattern before writing tasks.
 - **Loading:** route-level `loading.tsx` or section-level skeletons that mirror final layout.
 - **Empty:** short human copy, one primary action when appropriate. Same typography as section body text.
 - **Error:** user-safe message + optional retry. No stack traces. Reuse existing `Alert` / toast patterns.
@@ -139,6 +140,6 @@ These `.cursor/rules/` files contain full detail behind the summaries above — 
 
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan
-at specs/007-list-modes/plan.md
+at specs/008-friends-hub/plan.md
 
 <!-- SPECKIT END -->

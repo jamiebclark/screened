@@ -95,7 +95,16 @@ not wrap unrelated sections in one bordered card. Section headings MUST use `h3`
 `text-base font-semibold`; do not mix uppercase-tracking labels with sentence-case `h3` on the
 same page. Loading states MUST use route-level `loading.tsx` or section-level skeletons that mirror
 final layout. Error states MUST show a user-safe message (no stack traces) and optionally a retry
-action using existing `Alert`/toast patterns. Full guidance is in `docs/ui-ux-standards.md`.
+action using existing `Alert`/toast patterns.
+
+Card vs. list density MUST be decided explicitly during planning, not during implementation:
+when a spec introduces a new list or collection, name the expected item count and choose the
+pattern before tasks are written. Few items (≤ ~8 typical per user): spacious cards
+(`rounded-xl border p-5`–`p-6`, `h-16 w-16` avatars). Long feeds/results: compact rows
+(`rounded-lg border p-3`, `h-10 w-10` avatars). A task description that says "render each X as
+a row" has already made a density decision — it MUST be conscious.
+
+Full guidance is in `docs/ui-ux-standards.md`.
 
 ## Governance
 
@@ -107,4 +116,4 @@ redefinitions, MINOR for additions or material expansions, PATCH for clarificati
 `.cursor/rules/` directory contains authoritative detail behind the summaries above — read them
 when a situation is not covered here.
 
-**Version**: 1.0.0 | **Ratified**: 2026-05-05 | **Last Amended**: 2026-05-05
+**Version**: 1.1.0 | **Ratified**: 2026-05-05 | **Last Amended**: 2026-05-25
