@@ -66,13 +66,6 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  if (scheduledFor < new Date()) {
-    return NextResponse.json(
-      { error: "scheduledFor must be in the future" },
-      { status: 400 },
-    );
-  }
-
   if (
     !Array.isArray(inviteeIds) ||
     inviteeIds.some((id) => typeof id !== "string")

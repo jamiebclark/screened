@@ -116,11 +116,6 @@ export function CreateWatchPartyDialog({
     }
   };
 
-  // Compute the minimum allowed datetime when the dialog opens, not every render
-  const [minDateTime] = useState(() =>
-    new Date(Date.now() + 60_000).toISOString().slice(0, 16),
-  );
-
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -147,7 +142,6 @@ export function CreateWatchPartyDialog({
             <Input
               id="wp-datetime"
               type="datetime-local"
-              min={minDateTime}
               value={scheduledFor}
               onChange={(e) => setScheduledFor(e.target.value)}
             />
