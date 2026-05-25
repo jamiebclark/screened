@@ -68,6 +68,20 @@ Work at the broad end of the scale. Don’t creep one step at a time — jump to
 - **Movie detail** — “External links” is a **plain section** (no outer card). **Your lists** (when any) and **Plex** sit in **`TitleSiteContext`**; **Watch history** uses the same column tokens below.
 - **TV detail** — Same **External links** / lists / Plex pattern. Episode-level watched dates and logging use the **Episodes** tab (`EpisodeTracker`, `EpisodeLogDialog`), not a second Watch history section beside the hero.
 
+## Card vs. list density
+
+Match visual weight to expected item count. The same data can be right as a compact row or a spacious card depending on how many items a typical user will have.
+
+| Context                     | Pattern                                           | When                                               |
+| --------------------------- | ------------------------------------------------- | -------------------------------------------------- |
+| Few items (≤ ~8)            | `rounded-xl border p-5`–`p-6`, `h-16 w-16` avatar | Friends, team members, saved searches, connections |
+| Many items (scrolling list) | `rounded-lg border p-3`, `h-10 w-10` avatar       | Watch history, activity feed, search results       |
+| Grid of media               | Poster cards with `aspect-[2/3]`                  | Title browsing, watchlists, lists                  |
+
+**Rule**: If a reasonable user is likely to see fewer than ~8 items on screen at once, default to the spacious card pattern. Compact rows save space for long feeds — they make sparse screens feel thin and under-designed.
+
+**During planning**: When a spec introduces a new list or collection, explicitly name the expected item count range and choose the card/row pattern before writing tasks. A task that says "render each X as a row" has already made a density decision — make it consciously.
+
 ## Loading, empty, and error states
 
 - **Loading** — Prefer route-level `loading.tsx` or section-level skeletons that mirror the final layout (avoid a generic spinner-only page when the screen has a known structure). Keep skeleton density calm; match **Letterboxd-style** lightness.
