@@ -1,3 +1,11 @@
+## [1.57.0](https://github.com/jamiebclark/screened/compare/v1.56.2...v1.57.0) (2026-05-25)
+
+### Features
+
+* **friends:** add /friends RSC page with loading skeleton ([d36edee](https://github.com/jamiebclark/screened/commit/d36edeee700a88775acb02d29c59b7bd7690b489))
+* **friends:** add Friends hub to main nav; redirect settings/friends ([3d7043f](https://github.com/jamiebclark/screened/commit/3d7043fc03de9d9b991d37e0a23b383e3d0ce77f))
+* **friends:** add server-side queries and client panels for friends hub ([903b802](https://github.com/jamiebclark/screened/commit/903b802c0e952daeccdb7e6cf9aa12f87b6935fb))
+
 ## [1.56.2](https://github.com/jamiebclark/screened/compare/v1.56.1...v1.56.2) (2026-05-25)
 
 ### Bug Fixes
