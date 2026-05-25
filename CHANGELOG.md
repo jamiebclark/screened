@@ -1,3 +1,9 @@
+## [1.56.1](https://github.com/jamiebclark/screened/compare/v1.56.0...v1.56.1) (2026-05-25)
+
+### Bug Fixes
+
+* **watch-parties:** allow creating a party with no invitees ([387de71](https://github.com/jamiebclark/screened/commit/387de71a88972d3a1abb44bd2374e17a1b6bc451))
+
 ## [1.56.0](https://github.com/jamiebclark/screened/compare/v1.55.3...v1.56.0) (2026-05-23)
 
 ### Features
