@@ -1,6 +1,6 @@
 {
   "name": "screened",
-  "version": "1.56.1",
+  "version": "1.56.2",
   "private": true,
   "description": "A self-hosted home for your shared watchlist. Track, pick, and plan what to watch with friends — with Plex, Letterboxd, and Radarr integration for home media server users.",
   "keywords": [

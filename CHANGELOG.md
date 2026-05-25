@@ -1,3 +1,9 @@
+## [1.56.2](https://github.com/jamiebclark/screened/compare/v1.56.1...v1.56.2) (2026-05-25)
+
+### Bug Fixes
+
+* **watch-parties:** allow scheduling parties in the past for historic entries ([c8d4ff1](https://github.com/jamiebclark/screened/commit/c8d4ff182d81c5278371f742c1ce24f8353a97e3))
+
 ## [1.56.1](https://github.com/jamiebclark/screened/compare/v1.56.0...v1.56.1) (2026-05-25)
 
 ### Bug Fixes
