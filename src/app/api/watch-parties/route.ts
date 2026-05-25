@@ -75,11 +75,10 @@ export async function POST(req: NextRequest) {
 
   if (
     !Array.isArray(inviteeIds) ||
-    inviteeIds.length === 0 ||
     inviteeIds.some((id) => typeof id !== "string")
   ) {
     return NextResponse.json(
-      { error: "inviteeIds must be a non-empty array of strings" },
+      { error: "inviteeIds must be an array of strings" },
       { status: 400 },
     );
   }
@@ -103,8 +102,7 @@ export async function POST(req: NextRequest) {
     const message = err instanceof Error ? err.message : "Unknown error";
     if (
       message === "All invitees must be friends" ||
-      message === "Host cannot be an invitee" ||
-      message === "At least one invitee is required"
+      message === "Host cannot be an invitee"
     ) {
       return NextResponse.json({ error: message }, { status: 400 });
     }

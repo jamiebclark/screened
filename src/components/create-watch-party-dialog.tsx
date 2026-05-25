@@ -88,7 +88,7 @@ export function CreateWatchPartyDialog({
   };
 
   const submit = async () => {
-    if (!scheduledFor || selectedIds.size === 0) return;
+    if (!scheduledFor) return;
     setSubmitting(true);
     setError(null);
     try {
@@ -163,7 +163,8 @@ export function CreateWatchPartyDialog({
               </div>
             ) : friends.length === 0 ? (
               <p className="text-sm text-muted-foreground py-2">
-                You don&apos;t have any friends on Screened yet.
+                You don&apos;t have any friends on Screened yet — you can still
+                create the party and invite people later.
               </p>
             ) : (
               <div className="space-y-1 max-h-52 overflow-y-auto rounded-md border border-border p-1">
@@ -215,7 +216,7 @@ export function CreateWatchPartyDialog({
           </Button>
           <Button
             onClick={submit}
-            disabled={submitting || !scheduledFor || selectedIds.size === 0}
+            disabled={submitting || !scheduledFor}
             className="gap-1.5"
           >
             {submitting ? (

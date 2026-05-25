@@ -96,9 +96,6 @@ export async function createWatchParty(
   inviteeIds: string[],
   pickerSessionId?: string,
 ) {
-  if (inviteeIds.length === 0) {
-    throw new Error("At least one invitee is required");
-  }
   if (inviteeIds.includes(hostId)) {
     throw new Error("Host cannot be an invitee");
   }
