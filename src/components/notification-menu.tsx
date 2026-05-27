@@ -116,8 +116,6 @@ export function NotificationMenu({
     return () => clearTimeout(id);
   }, [open, load]);
 
-  const unread = data?.unreadCount ?? initialUnreadCount;
-
   const markAllRead = async () => {
     setMarkingAllRead(true);
     try {
@@ -175,7 +173,23 @@ export function NotificationMenu({
     }
   };
 
-  const items = data?.items ?? [];
+  const allItems = data?.items ?? [];
+  const items = allItems.filter((n) => {
+    if (n.type === NotificationType.LIST_ACCESS_REQUEST)
+      return n.listAccessRequest != null;
+    if (n.type === NotificationType.FRIEND_REQUEST)
+      return n.friendRequest != null;
+    if (n.type === NotificationType.FRIEND_WATCHED_YOUR_WATCHLIST)
+      return n.watchEntry != null;
+    if (
+      n.type === NotificationType.WATCH_PARTY_INVITE ||
+      n.type === NotificationType.WATCH_PARTY_CONFIRM
+    )
+      return n.watchPartyInvite != null;
+    return false;
+  });
+  const unreadValidCount = items.filter((n) => !n.readAt).length;
+  const unread = data ? unreadValidCount : initialUnreadCount;
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
