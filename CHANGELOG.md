@@ -1,3 +1,13 @@
+## [1.58.0](https://github.com/jamiebclark/screened/compare/v1.57.0...v1.58.0) (2026-05-27)
+
+### Features
+
+* **upcoming:** switch to poster grid layout ([f192b37](https://github.com/jamiebclark/screened/commit/f192b378d42f700256f90d918a626f88c169f0df))
+
+### Bug Fixes
+
+* **notifications:** filter orphaned notifications from badge and list ([2a3ee17](https://github.com/jamiebclark/screened/commit/2a3ee17e6c6b27379ed85e1a44515f2a3fd193cb))
+
 ## [1.57.0](https://github.com/jamiebclark/screened/compare/v1.56.2...v1.57.0) (2026-05-25)
 
 ### Features
