@@ -5,6 +5,7 @@ export type UpcomingItem = {
   type: "MOVIE" | "TV";
   title: string;
   poster: string | null;
+  year: number | null;
   releaseDate: Date;
 };
 
@@ -33,6 +34,7 @@ export async function getUpcomingWatchlistItems(
             type: true,
             title: true,
             poster: true,
+            year: true,
             releaseDate: true,
           },
         },
@@ -52,6 +54,7 @@ export async function getUpcomingWatchlistItems(
             type: true,
             title: true,
             poster: true,
+            year: true,
             releaseDate: true,
           },
         },
@@ -65,6 +68,7 @@ export async function getUpcomingWatchlistItems(
     type: row.mediaItem.type as "MOVIE" | "TV",
     title: row.mediaItem.title,
     poster: row.mediaItem.poster,
+    year: row.mediaItem.year,
     releaseDate: row.mediaItem.releaseDate!,
   });
 

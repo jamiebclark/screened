@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { auth } from "@/lib/auth";
 import Link from "next/link";
-import Image from "next/image";
 import { CalendarDays, Bookmark } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { MediaCard } from "@/components/media-card";
 import {
   getUpcomingWatchlistItems,
   type UpcomingItem,
@@ -29,44 +29,24 @@ function formatReleaseDate(date: Date): string {
   });
 }
 
-function posterUrl(path: string | null): string | null {
-  if (!path) return null;
-  if (path.startsWith("http")) return path;
-  return `https://image.tmdb.org/t/p/w92${path}`;
-}
-
-function ItemRow({ item }: { item: UpcomingItem }) {
-  const type = item.type === "MOVIE" ? "movie" : "tv";
-  const href = `/${type === "movie" ? "movies" : "tv"}/${item.tmdbId}`;
-  const thumb = posterUrl(item.poster);
-
+function PosterGrid({ items }: { items: UpcomingItem[] }) {
   return (
-    <Link
-      href={href}
-      className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-muted/50 transition-colors"
-    >
-      {thumb ? (
-        <Image
-          src={thumb}
-          alt={item.title}
-          width={28}
-          height={42}
-          className="rounded object-cover shrink-0"
-          unoptimized
-        />
-      ) : (
-        <div className="w-7 h-10 rounded bg-muted shrink-0" />
-      )}
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium truncate">{item.title}</p>
-        <p className="text-xs text-muted-foreground">
-          {item.type === "MOVIE" ? "Movie" : "TV"}
-        </p>
-      </div>
-      <span className="text-sm text-muted-foreground shrink-0">
-        {formatReleaseDate(item.releaseDate)}
-      </span>
-    </Link>
+    <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5">
+      {items.map((item) => (
+        <div key={`${item.type}-${item.tmdbId}`} className="space-y-1.5">
+          <MediaCard
+            tmdbId={item.tmdbId}
+            type={item.type === "MOVIE" ? "movie" : "tv"}
+            title={item.title}
+            poster={item.poster}
+            year={item.year}
+          />
+          <p className="text-xs text-muted-foreground text-center truncate">
+            {formatReleaseDate(item.releaseDate)}
+          </p>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -79,7 +59,7 @@ export default async function UpcomingPage() {
   const isEmpty = comingSoon.length === 0 && justReleased.length === 0;
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8 space-y-8">
+    <div className="mx-auto max-w-3xl px-4 py-8 space-y-8">
       <div className="flex items-center gap-3">
         <div className="rounded-full bg-muted p-2 text-muted-foreground">
           <CalendarDays className="h-5 w-5" />
@@ -110,23 +90,25 @@ export default async function UpcomingPage() {
         <>
           {comingSoon.length > 0 && (
             <section>
-              <h3 className="text-base font-semibold mb-3">Coming Soon</h3>
-              <div className="space-y-1">
-                {comingSoon.map((item) => (
-                  <ItemRow key={`${item.type}-${item.tmdbId}`} item={item} />
-                ))}
-              </div>
+              <h3 className="text-base font-semibold mb-3">
+                Coming Soon{" "}
+                <span className="text-sm font-normal text-muted-foreground">
+                  {comingSoon.length}
+                </span>
+              </h3>
+              <PosterGrid items={comingSoon} />
             </section>
           )}
 
           {justReleased.length > 0 && (
             <section>
-              <h3 className="text-base font-semibold mb-3">Just Released</h3>
-              <div className="space-y-1">
-                {justReleased.map((item) => (
-                  <ItemRow key={`${item.type}-${item.tmdbId}`} item={item} />
-                ))}
-              </div>
+              <h3 className="text-base font-semibold mb-3">
+                Just Released{" "}
+                <span className="text-sm font-normal text-muted-foreground">
+                  {justReleased.length}
+                </span>
+              </h3>
+              <PosterGrid items={justReleased} />
             </section>
           )}
         </>
