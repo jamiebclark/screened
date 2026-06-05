@@ -1,3 +1,9 @@
+## [1.60.0](https://github.com/jamiebclark/screened/compare/v1.59.0...v1.60.0) (2026-06-05)
+
+### Features
+
+* **nav:** support optional user prop for guest-facing pages ([b0c705d](https://github.com/jamiebclark/screened/commit/b0c705d76ff1f9c507c14da3582d7150f8f49acf))
+
 ## [1.59.0](https://github.com/jamiebclark/screened/compare/v1.58.0...v1.59.0) (2026-06-05)
 
 ### Features
