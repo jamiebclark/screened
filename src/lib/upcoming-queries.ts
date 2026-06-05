@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { MediaType } from "@/generated/prisma";
 
 export type UpcomingItem = {
   tmdbId: number;
@@ -76,4 +77,19 @@ export async function getUpcomingWatchlistItems(
     comingSoon: comingSoonRows.map(toItem),
     justReleased: justReleasedRows.map(toItem),
   };
+}
+
+export async function getListMembershipsForTmdbIds(
+  userId: string,
+  tmdbIds: number[],
+): Promise<Set<number>> {
+  if (tmdbIds.length === 0) return new Set();
+  const rows = await prisma.listItem.findMany({
+    where: {
+      mediaItem: { tmdbId: { in: tmdbIds }, type: MediaType.MOVIE },
+      list: { members: { some: { userId } } },
+    },
+    select: { mediaItem: { select: { tmdbId: true } } },
+  });
+  return new Set(rows.map((r) => r.mediaItem.tmdbId));
 }

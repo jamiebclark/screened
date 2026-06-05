@@ -259,6 +259,28 @@ export async function getTrending(
   return tmdbFetch<TmdbSearchResponse>(`/trending/${type}/${window}`);
 }
 
+export async function getUpcomingReleasesPage(
+  fromDate: string,
+  page = 1,
+): Promise<{ results: TmdbSearchResult[]; total_pages: number }> {
+  const res = await tmdbFetch<{
+    results: TmdbSearchResult[];
+    total_pages: number;
+    total_results: number;
+  }>("/discover/movie", {
+    sort_by: "popularity.desc",
+    "primary_release_date.gte": fromDate,
+    with_original_language: "en",
+    region: "US",
+    include_adult: "false",
+    page: String(page),
+  });
+  return {
+    results: res.results.map((r) => ({ ...r, media_type: "movie" as const })),
+    total_pages: res.total_pages,
+  };
+}
+
 export async function searchMovie(
   query: string,
   year?: number,
