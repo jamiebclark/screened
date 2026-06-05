@@ -17,6 +17,7 @@ import {
   PartyPopper,
   CalendarDays,
   Users,
+  Clapperboard,
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -50,6 +51,7 @@ const navLinks = [
   { href: "/history", label: "History", icon: History },
   { href: "/friends", label: "Friends", icon: Users },
   { href: "/upcoming", label: "Upcoming", icon: CalendarDays },
+  { href: "/releases", label: "Releases", icon: Clapperboard },
 ];
 
 export function Nav({ user, initialUnreadNotifications, isAdmin }: NavProps) {
