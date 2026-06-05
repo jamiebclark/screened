@@ -22,6 +22,7 @@ import {
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { NotificationMenu } from "@/components/notification-menu";
+import { signIn } from "next-auth/react";
 import { SearchModal } from "@/components/search-modal";
 import {
   DropdownMenu,
@@ -34,13 +35,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 
 interface NavProps {
-  user: {
+  user?: {
     id: string;
     name?: string | null;
     email?: string | null;
     image?: string | null;
-  };
-  initialUnreadNotifications: number;
+  } | null;
+  initialUnreadNotifications?: number;
   isAdmin?: boolean;
 }
 
@@ -58,14 +59,14 @@ export function Nav({ user, initialUnreadNotifications, isAdmin }: NavProps) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const initials = user.name
+  const initials = user?.name
     ? user.name
         .split(" ")
         .map((n) => n[0])
         .join("")
         .toUpperCase()
         .slice(0, 2)
-    : (user.email?.[0]?.toUpperCase() ?? "U");
+    : (user?.email?.[0]?.toUpperCase() ?? "U");
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -105,65 +106,80 @@ export function Nav({ user, initialUnreadNotifications, isAdmin }: NavProps) {
 
         <div className="flex items-center gap-2">
           <SearchModal />
-          <NotificationMenu initialUnreadCount={initialUnreadNotifications} />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="rounded-full"
-                aria-label="Open user menu"
-              >
-                <Avatar className="h-8 w-8">
-                  <AvatarImage
-                    src={user.image ?? undefined}
-                    alt={user.name ?? ""}
-                  />
-                  <AvatarFallback className="text-xs">
-                    {initials}
-                  </AvatarFallback>
-                </Avatar>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <div className="px-2 py-1.5">
-                <p className="text-sm font-medium">{user.name}</p>
-                <p className="text-xs text-muted-foreground">{user.email}</p>
-              </div>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link href={`/profile/${user.id}`} className="cursor-pointer">
-                  <User className="mr-2 h-4 w-4" />
-                  Profile
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/settings" className="cursor-pointer">
-                  <Settings className="mr-2 h-4 w-4" />
-                  Settings
-                </Link>
-              </DropdownMenuItem>
-              {isAdmin && (
-                <>
+          {user ? (
+            <>
+              <NotificationMenu
+                initialUnreadCount={initialUnreadNotifications ?? 0}
+              />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="rounded-full"
+                    aria-label="Open user menu"
+                  >
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage
+                        src={user.image ?? undefined}
+                        alt={user.name ?? ""}
+                      />
+                      <AvatarFallback className="text-xs">
+                        {initials}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <div className="px-2 py-1.5">
+                    <p className="text-sm font-medium">{user.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {user.email}
+                    </p>
+                  </div>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <Link href="/admin" className="cursor-pointer">
-                      <ShieldCheck className="mr-2 h-4 w-4" />
-                      Admin
+                    <Link
+                      href={`/profile/${user.id}`}
+                      className="cursor-pointer"
+                    >
+                      <User className="mr-2 h-4 w-4" />
+                      Profile
                     </Link>
                   </DropdownMenuItem>
-                </>
-              )}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                className="text-destructive focus:text-destructive cursor-pointer"
-                onClick={() => signOut({ callbackUrl: "/login" })}
-              >
-                <LogOut className="mr-2 h-4 w-4" />
-                Sign out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                  <DropdownMenuItem asChild>
+                    <Link href="/settings" className="cursor-pointer">
+                      <Settings className="mr-2 h-4 w-4" />
+                      Settings
+                    </Link>
+                  </DropdownMenuItem>
+                  {isAdmin && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild>
+                        <Link href="/admin" className="cursor-pointer">
+                          <ShieldCheck className="mr-2 h-4 w-4" />
+                          Admin
+                        </Link>
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="text-destructive focus:text-destructive cursor-pointer"
+                    onClick={() => signOut({ callbackUrl: "/login" })}
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sign out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
+          ) : (
+            <Button variant="ghost" size="sm" onClick={() => signIn()}>
+              Sign in
+            </Button>
+          )}
 
           <Button
             variant="ghost"

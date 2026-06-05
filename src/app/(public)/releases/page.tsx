@@ -80,10 +80,9 @@ export default async function ReleasesPage() {
 
   const allResults = pages.flatMap((p) => p.results);
   const tmdbIds = allResults.map((r) => r.id);
-  const onListIds = await getListMembershipsForTmdbIds(
-    session!.user.id,
-    tmdbIds,
-  );
+  const onListIds = session?.user?.id
+    ? await getListMembershipsForTmdbIds(session.user.id, tmdbIds)
+    : new Set<number>();
 
   const items = allResults
     .map((r) => toReleaseItem(r, onListIds))

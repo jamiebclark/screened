@@ -20,12 +20,14 @@ export default auth((req) => {
   const isDiscordInteractionsEndpoint =
     req.nextUrl.pathname === "/api/discord/interactions";
   const isRadarrEndpoint = req.nextUrl.pathname.includes("/radarr");
+  const isPublicRoute = req.nextUrl.pathname.startsWith("/releases");
 
   if (
     isApiAuth ||
     isPlexAuthEndpoint ||
     isDiscordInteractionsEndpoint ||
-    isRadarrEndpoint
+    isRadarrEndpoint ||
+    isPublicRoute
   ) {
     return nextWithPathname(req);
   }
