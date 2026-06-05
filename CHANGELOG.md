@@ -1,3 +1,11 @@
+## [1.59.0](https://github.com/jamiebclark/screened/compare/v1.58.0...v1.59.0) (2026-06-05)
+
+### Features
+
+* **nav:** add Releases link ([862312d](https://github.com/jamiebclark/screened/commit/862312deff3fdd954c28341759b34ae12315e89d))
+* **releases:** add releases calendar page ([25fe253](https://github.com/jamiebclark/screened/commit/25fe2533ed0501025ea662da9ce36530af1fef29))
+* **releases:** add TMDB and DB query functions for release calendar ([b5e320d](https://github.com/jamiebclark/screened/commit/b5e320d4a08efecefd3793dba2b517eef8b6a496))
+
 ## [1.58.0](https://github.com/jamiebclark/screened/compare/v1.57.0...v1.58.0) (2026-05-27)
 
 ### Features
