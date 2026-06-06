@@ -32,7 +32,7 @@ export function TrailerEmbed({
             aria-label={`Play ${title} trailer`}
           >
             <Image
-              src={`https://img.youtube.com/vi/${youtubeKey}/maxresdefault.jpg`}
+              src={`https://img.youtube.com/vi/${youtubeKey}/hqdefault.jpg`}
               alt={`${title} trailer thumbnail`}
               fill
               className="object-cover"
