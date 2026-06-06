@@ -1,5 +1,12 @@
+import { Agent } from "undici";
 import { prisma } from "@/lib/prisma";
 import { extractTmdbIdFromGuid } from "@/lib/plex-metadata-utils";
+
+// Plex direct-server connections use *.plex.direct certs that don't match raw
+// IP addresses, causing ERR_TLS_CERT_ALTNAME_INVALID.  Scope the bypass to
+// these requests only via an undici dispatcher — avoids touching the
+// process-wide NODE_TLS_REJECT_UNAUTHORIZED flag and its race-condition risk.
+const plexAgent = new Agent({ connect: { rejectUnauthorized: false } });
 
 export {
   extractTmdbIdFromGuid,
@@ -170,11 +177,6 @@ export async function getPlexServers(token: string): Promise<PlexServer[]> {
 }
 
 async function plexServerFetch(url: string): Promise<Response> {
-  // Disable TLS cert validation for direct Plex server connections.
-  // Plex issues certs for *.plex.direct DNS names, but local connections use raw IPs,
-  // causing ERR_TLS_CERT_ALTNAME_INVALID. This is safe since we're talking to our own server.
-  const origReject = process.env.NODE_TLS_REJECT_UNAUTHORIZED;
-  process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
   let res: Response;
   try {
     res = await fetch(url, {
@@ -182,6 +184,8 @@ async function plexServerFetch(url: string): Promise<Response> {
         Accept: "application/json",
         "X-Plex-Client-Identifier": PLEX_CLIENT_IDENTIFIER,
       },
+      // @ts-expect-error undici dispatcher — scopes TLS bypass to this request only
+      dispatcher: plexAgent,
     });
   } catch {
     const host = (() => {
@@ -194,12 +198,6 @@ async function plexServerFetch(url: string): Promise<Response> {
     throw new Error(
       `fetch failed: could not reach Plex server at ${host} — ensure remote access is enabled`,
     );
-  } finally {
-    if (origReject === undefined) {
-      delete process.env.NODE_TLS_REJECT_UNAUTHORIZED;
-    } else {
-      process.env.NODE_TLS_REJECT_UNAUTHORIZED = origReject;
-    }
   }
 
   if (!res.ok)
