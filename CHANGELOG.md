@@ -1,3 +1,14 @@
+## [1.61.0](https://github.com/jamiebclark/screened/compare/v1.60.0...v1.61.0) (2026-06-06)
+
+### Features
+
+* **movies:** add YouTube trailer embed to movie detail page ([faf30ae](https://github.com/jamiebclark/screened/commit/faf30aed7451e99f2245ea300d4a053c6494ee77))
+* **releases:** add load-more pagination and date-range filtering ([9ed8e06](https://github.com/jamiebclark/screened/commit/9ed8e066894f61dbe2dc98d0ed40cb32d85bfc01))
+
+### Bug Fixes
+
+* **plex:** scope TLS cert bypass per-request via undici dispatcher ([6405094](https://github.com/jamiebclark/screened/commit/6405094d8a60c56afcf8158e22e7361b0dc9bd53))
+
 ## [1.60.0](https://github.com/jamiebclark/screened/compare/v1.59.0...v1.60.0) (2026-06-05)
 
 ### Features
