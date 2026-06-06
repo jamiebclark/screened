@@ -3,6 +3,7 @@ import {
   getMovie,
   getMovieCredits,
   getMovieSimilar,
+  getMovieTrailerKey,
   tmdbImage,
 } from "@/lib/tmdb";
 import { prisma } from "@/lib/prisma";
@@ -37,6 +38,7 @@ import { TitleListsSection } from "@/components/title-lists-section";
 import { StreamingProviders } from "@/components/streaming-providers";
 import { PersonCastCrewSection } from "@/components/person-cast-crew-section";
 import { FriendsLetterboxdReviews } from "@/components/friends-letterboxd-reviews";
+import { TrailerEmbed } from "@/components/trailer-embed";
 
 type Params = {
   params: Promise<{ tmdbId: string }>;
@@ -60,7 +62,7 @@ export default async function MoviePage({ params, searchParams }: Params) {
 
   const session = await auth();
 
-  const [movie, userStatus, titleWatchHistory, similar, credits] =
+  const [movie, userStatus, titleWatchHistory, similar, credits, trailerKey] =
     await Promise.all([
       getMovie(tmdbId).catch(() => null),
       session?.user?.id
@@ -84,6 +86,7 @@ export default async function MoviePage({ params, searchParams }: Params) {
         .then((r) => r.results.filter((m) => m.poster_path).slice(0, 10))
         .catch(() => []),
       getMovieCredits(tmdbId).catch(() => null),
+      getMovieTrailerKey(tmdbId),
     ]);
 
   if (!movie) notFound();
@@ -248,6 +251,10 @@ export default async function MoviePage({ params, searchParams }: Params) {
                   <p className="text-muted-foreground leading-relaxed max-w-2xl">
                     {movie.overview}
                   </p>
+                )}
+
+                {trailerKey && (
+                  <TrailerEmbed youtubeKey={trailerKey} title={movie.title} />
                 )}
 
                 {session?.user?.id ? (

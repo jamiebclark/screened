@@ -508,6 +508,32 @@ export type TmdbTvCredits = {
   creatorTmdbId: number | null;
 };
 
+type TmdbVideo = {
+  key: string;
+  site: string;
+  type: string;
+  official: boolean;
+};
+
+export async function getMovieTrailerKey(
+  tmdbId: number,
+): Promise<string | null> {
+  const data = await tmdbFetch<{ results: TmdbVideo[] }>(
+    `/movie/${tmdbId}/videos`,
+  ).catch(() => null);
+  if (!data) return null;
+
+  const youtube = data.results.filter((v) => v.site === "YouTube");
+  const pick =
+    youtube.find((v) => v.type === "Trailer" && v.official) ??
+    youtube.find((v) => v.type === "Trailer") ??
+    youtube.find((v) => v.type === "Teaser" && v.official) ??
+    youtube.find((v) => v.type === "Teaser") ??
+    null;
+
+  return pick?.key ?? null;
+}
+
 export async function getTvCredits(tmdbId: number): Promise<TmdbTvCredits> {
   const data = await tmdbFetch<TmdbCreditsResponse>(`/tv/${tmdbId}/credits`);
   const sortedCast = data.cast.sort((a, b) => a.order - b.order).slice(0, 8);
