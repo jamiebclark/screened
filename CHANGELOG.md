@@ -1,3 +1,9 @@
+## [1.62.1](https://github.com/jamiebclark/screened/compare/v1.62.0...v1.62.1) (2026-06-06)
+
+### Bug Fixes
+
+* **trailer:** use hqdefault thumbnail instead of maxresdefault ([d1d0def](https://github.com/jamiebclark/screened/commit/d1d0defbe34d4962cda356bac04db57359513982))
+
 ## [1.62.0](https://github.com/jamiebclark/screened/compare/v1.61.0...v1.62.0) (2026-06-06)
 
 ### Features
