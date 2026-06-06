@@ -1,3 +1,9 @@
+## [1.62.0](https://github.com/jamiebclark/screened/compare/v1.61.0...v1.62.0) (2026-06-06)
+
+### Features
+
+* **tv:** add YouTube trailer embed to TV show detail page ([313cbfe](https://github.com/jamiebclark/screened/commit/313cbfe5e466e66306e70dc12b160d8d818a0f6d))
+
 ## [1.61.0](https://github.com/jamiebclark/screened/compare/v1.60.0...v1.61.0) (2026-06-06)
 
 ### Features
