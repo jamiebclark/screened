@@ -23,7 +23,7 @@
     "url": "https://github.com/jamiebclark/screened"
   },
   "scripts": {
-    "dev": "next dev",
+    "dev": "PORT=3003 next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
