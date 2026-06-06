@@ -4,6 +4,7 @@ import {
   getTvSeason,
   getTvSimilar,
   getTvCredits,
+  getTvTrailerKey,
   tmdbImage,
 } from "@/lib/tmdb";
 import { prisma } from "@/lib/prisma";
@@ -31,6 +32,7 @@ import { StreamingProviders } from "@/components/streaming-providers";
 import { parseDateOnlyIso } from "@/lib/history-calendar";
 import { PersonCastCrewSection } from "@/components/person-cast-crew-section";
 import { Skeleton } from "@/components/ui/skeleton";
+import { TrailerEmbed } from "@/components/trailer-embed";
 type Params = {
   params: Promise<{ tmdbId: string }>;
   searchParams: Promise<{ partyDate?: string }>;
@@ -52,7 +54,7 @@ export default async function TvPage({ params, searchParams }: Params) {
 
   const session = await auth();
 
-  const [show, userStatus, similar, credits] = await Promise.all([
+  const [show, userStatus, similar, credits, trailerKey] = await Promise.all([
     getTvShow(tmdbId).catch(() => null),
     session?.user?.id
       ? prisma.userMediaStatus
@@ -68,6 +70,7 @@ export default async function TvPage({ params, searchParams }: Params) {
       .then((r) => r.results.filter((m) => m.poster_path).slice(0, 10))
       .catch(() => []),
     getTvCredits(tmdbId).catch(() => null),
+    getTvTrailerKey(tmdbId),
   ]);
 
   if (!show) notFound();
@@ -241,6 +244,10 @@ export default async function TvPage({ params, searchParams }: Params) {
                   <p className="text-muted-foreground leading-relaxed max-w-2xl">
                     {show.overview}
                   </p>
+                )}
+
+                {trailerKey && (
+                  <TrailerEmbed youtubeKey={trailerKey} title={show.name} />
                 )}
 
                 <Suspense
