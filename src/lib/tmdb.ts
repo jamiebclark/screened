@@ -262,19 +262,22 @@ export async function getTrending(
 export async function getUpcomingReleasesPage(
   fromDate: string,
   page = 1,
+  toDate?: string,
 ): Promise<{ results: TmdbSearchResult[]; total_pages: number }> {
-  const res = await tmdbFetch<{
-    results: TmdbSearchResult[];
-    total_pages: number;
-    total_results: number;
-  }>("/discover/movie", {
+  const params: Record<string, string> = {
     sort_by: "popularity.desc",
     "primary_release_date.gte": fromDate,
     with_original_language: "en",
     region: "US",
     include_adult: "false",
     page: String(page),
-  });
+  };
+  if (toDate) params["primary_release_date.lte"] = toDate;
+  const res = await tmdbFetch<{
+    results: TmdbSearchResult[];
+    total_pages: number;
+    total_results: number;
+  }>("/discover/movie", params);
   return {
     results: res.results.map((r) => ({ ...r, media_type: "movie" as const })),
     total_pages: res.total_pages,
