@@ -15,6 +15,8 @@ import {
   Loader2,
   CalendarCheck,
   CalendarDays,
+  UserPlus,
+  Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +31,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 import { DateWithHistoryLink } from "@/components/date-with-history-link";
 
 type UserSnap = { id: string; name: string; avatarUrl: string | null };
@@ -118,6 +121,70 @@ export function WatchPartyDetail({
   const [confirming, setConfirming] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [rescheduling, setRescheduling] = useState(false);
+
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [friends, setFriends] = useState<
+    { id: string; name: string; avatarUrl: string | null }[]
+  >([]);
+  const [loadingFriends, setLoadingFriends] = useState(false);
+  const [selectedInviteIds, setSelectedInviteIds] = useState<Set<string>>(
+    new Set(),
+  );
+  const [inviting, setInviting] = useState(false);
+  const [inviteError, setInviteError] = useState<string | null>(null);
+
+  const openInviteDialog = async () => {
+    setSelectedInviteIds(new Set());
+    setInviteError(null);
+    setInviteOpen(true);
+    setLoadingFriends(true);
+    try {
+      const r = await fetch("/api/friends");
+      const data = (await r.json()) as {
+        friends: { id: string; name: string; avatarUrl: string | null }[];
+      };
+      const alreadyIn = new Set([
+        party.hostId,
+        ...party.invites.map((i) => i.userId),
+      ]);
+      setFriends((data.friends ?? []).filter((f) => !alreadyIn.has(f.id)));
+    } catch {
+      setInviteError("Failed to load friends");
+    } finally {
+      setLoadingFriends(false);
+    }
+  };
+
+  const toggleInvite = (id: string) => {
+    setSelectedInviteIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const submitInvites = async () => {
+    if (selectedInviteIds.size === 0) return;
+    setInviting(true);
+    setInviteError(null);
+    try {
+      const res = await fetch(`/api/watch-parties/${party.id}/invite`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ inviteeIds: Array.from(selectedInviteIds) }),
+      });
+      if (!res.ok) {
+        const body = (await res.json()) as { error?: string };
+        setInviteError(body.error ?? "Something went wrong");
+        return;
+      }
+      setInviteOpen(false);
+      router.refresh();
+    } finally {
+      setInviting(false);
+    }
+  };
 
   const respond = async (status: "ACCEPTED" | "DECLINED") => {
     setResponding(true);
@@ -370,6 +437,15 @@ export function WatchPartyDetail({
             <Button
               variant="outline"
               size="sm"
+              onClick={openInviteDialog}
+              className="gap-1.5"
+            >
+              <UserPlus className="h-3.5 w-3.5" />
+              Invite people
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => setRescheduleOpen(true)}
               className="gap-1.5"
             >
@@ -393,6 +469,88 @@ export function WatchPartyDetail({
           </>
         )}
       </div>
+
+      {/* Invite dialog */}
+      <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Invite more people</DialogTitle>
+            <DialogDescription>
+              Select friends to add to this watch party.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-2">
+            {loadingFriends ? (
+              <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Loading friends…
+              </div>
+            ) : friends.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-2">
+                All your friends are already invited.
+              </p>
+            ) : (
+              <div className="space-y-1 max-h-52 overflow-y-auto rounded-md border border-border p-1">
+                {friends.map((f) => {
+                  const selected = selectedInviteIds.has(f.id);
+                  return (
+                    <button
+                      key={f.id}
+                      type="button"
+                      onClick={() => toggleInvite(f.id)}
+                      className={cn(
+                        "w-full flex items-center gap-3 rounded px-2 py-2 text-sm transition-colors",
+                        selected
+                          ? "bg-primary/10 text-primary"
+                          : "hover:bg-muted",
+                      )}
+                    >
+                      <Avatar className="h-7 w-7 shrink-0">
+                        <AvatarImage src={f.avatarUrl ?? undefined} />
+                        <AvatarFallback className="text-xs">
+                          {f.name[0]}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="flex-1 text-left font-medium">
+                        {f.name}
+                      </span>
+                      {selected && (
+                        <Check className="h-4 w-4 shrink-0 text-primary" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            {selectedInviteIds.size > 0 && (
+              <p className="mt-2 text-xs text-muted-foreground">
+                {selectedInviteIds.size} friend
+                {selectedInviteIds.size !== 1 ? "s" : ""} selected
+              </p>
+            )}
+            {inviteError && (
+              <p className="mt-2 text-sm text-destructive">{inviteError}</p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setInviteOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={submitInvites}
+              disabled={inviting || selectedInviteIds.size === 0}
+              className="gap-1.5"
+            >
+              {inviting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <UserPlus className="h-4 w-4" />
+              )}
+              Send invites
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Reschedule dialog */}
       <Dialog open={rescheduleOpen} onOpenChange={setRescheduleOpen}>
