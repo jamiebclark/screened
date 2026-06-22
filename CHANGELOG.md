@@ -1,3 +1,11 @@
+## [1.63.0](https://github.com/jamiebclark/screened/compare/v1.62.1...v1.63.0) (2026-06-22)
+
+### Features
+
+* **watch-parties:** add addInvitesToWatchParty lib function ([8471f98](https://github.com/jamiebclark/screened/commit/8471f989b621ffd7f5ad5e1351c26ab21cb8abe2))
+* **watch-parties:** add invite-people button to watch party detail ([b4b3f60](https://github.com/jamiebclark/screened/commit/b4b3f600a37b7681aa122866e8acc2f95ebfb459))
+* **watch-parties:** add POST /api/watch-parties/[id]/invite endpoint ([e471e0d](https://github.com/jamiebclark/screened/commit/e471e0d3f7c7fc6c0fa6d1d84da6c3fd2563e8ec))
+
 ## [1.62.1](https://github.com/jamiebclark/screened/compare/v1.62.0...v1.62.1) (2026-06-06)
 
 ### Bug Fixes
