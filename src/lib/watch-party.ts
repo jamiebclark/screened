@@ -181,6 +181,98 @@ export async function createWatchParty(
   return party;
 }
 
+export async function addInvitesToWatchParty(
+  partyId: string,
+  hostId: string,
+  inviteeIds: string[],
+) {
+  const party = await prisma.watchParty.findUnique({
+    where: { id: partyId },
+    select: {
+      hostId: true,
+      status: true,
+      mediaItem: {
+        select: {
+          id: true,
+          tmdbId: true,
+          type: true,
+          title: true,
+          year: true,
+          poster: true,
+        },
+      },
+      host: { select: { name: true } },
+      invites: { select: { userId: true } },
+    },
+  });
+  if (!party) throw new Error("Watch party not found");
+  if (party.hostId !== hostId) throw new Error("Only the host can invite");
+  if (party.status !== "SCHEDULED") throw new Error("Party is not scheduled");
+
+  if (inviteeIds.includes(hostId)) throw new Error("Host cannot be an invitee");
+
+  const friendIds = await listFriendUserIds(hostId);
+  const friendSet = new Set(friendIds);
+  const nonFriends = inviteeIds.filter((id) => !friendSet.has(id));
+  if (nonFriends.length > 0) throw new Error("All invitees must be friends");
+
+  const existingIds = new Set(party.invites.map((i) => i.userId));
+  const newIds = inviteeIds.filter((id) => !existingIds.has(id));
+  if (newIds.length === 0) return [];
+
+  const created = await prisma.$transaction(async (tx) => {
+    const invites = await Promise.all(
+      newIds.map((userId) =>
+        tx.watchPartyInvite.create({ data: { watchPartyId: partyId, userId } }),
+      ),
+    );
+
+    await tx.notification.createMany({
+      data: invites.map((invite) => ({
+        userId: invite.userId,
+        type: NotificationType.WATCH_PARTY_INVITE,
+        watchPartyInviteId: invite.id,
+      })),
+      skipDuplicates: true,
+    });
+
+    return invites;
+  });
+
+  if (discordFeatures().bot) {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+    const titleLine = party.mediaItem.year
+      ? `${party.mediaItem.title} (${party.mediaItem.year})`
+      : party.mediaItem.title;
+    const scheduled = party.mediaItem
+      ? new Date().toLocaleString("en-US", {
+          dateStyle: "medium",
+          timeStyle: "short",
+        })
+      : "";
+
+    const connections = await prisma.discordConnection.findMany({
+      where: { userId: { in: newIds }, dmEnabled: true },
+      select: { discordUserId: true },
+    });
+
+    for (const { discordUserId } of connections) {
+      await sendDM(discordUserId, {
+        description: `**${party.host.name}** invited you to a Watch Party for **${titleLine}**${scheduled ? ` on ${scheduled}` : ""}`,
+        color: 0xeb459e,
+        url: `${appUrl}/watch-parties/${partyId}`,
+        ...(party.mediaItem.poster && {
+          thumbnail: {
+            url: `https://image.tmdb.org/t/p/w185${party.mediaItem.poster}`,
+          },
+        }),
+      });
+    }
+  }
+
+  return created;
+}
+
 export async function respondToInvite(
   watchPartyId: string,
   userId: string,
