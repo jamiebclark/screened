@@ -1,3 +1,9 @@
+## [1.63.1](https://github.com/jamiebclark/screened/compare/v1.63.0...v1.63.1) (2026-08-07)
+
+### Bug Fixes
+
+* **lists:** use id field for tmdb id in radarr list export ([5685956](https://github.com/jamiebclark/screened/commit/5685956745f22bd0c4d4e19332124c9fd122349a))
+
 ## [1.63.0](https://github.com/jamiebclark/screened/compare/v1.62.1...v1.63.0) (2026-06-22)
 
 ### Features
