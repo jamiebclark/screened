@@ -48,3 +48,14 @@ The token is shown on the list's page when you're logged in.
 3. Paste the endpoint URL
 4. Set your quality profile and root folder
 5. Save — Radarr will poll the list and queue downloads automatically
+
+**Response format:**
+
+Radarr's "Custom Lists" type parses the response as TMDB-shaped JSON and matches
+movies on the `id` field only — it discards any entry whose `id` is missing or
+zero, reporting the list as empty. `title` and `year` are ignored by Radarr and
+included purely to make the raw JSON readable.
+
+```json
+[{ "id": 9820, "title": "The Parent Trap", "year": 1998, "adult": false }]
+```
