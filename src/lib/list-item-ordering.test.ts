@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { normalizePositions, orderListItems } from "./list-item-ordering";
+import {
+  filterHiddenFromOrdering,
+  normalizePositions,
+  orderListItems,
+} from "./list-item-ordering";
 import type { OrderableItem } from "./list-item-ordering";
 
 function d(iso: string) {
@@ -15,6 +19,7 @@ function item(
     mediaItemId: `media-${overrides.id}`,
     mediaItem: { type: "MOVIE", title: overrides.id, year: 2000 },
     votes: [],
+    isHidden: false,
     ...overrides,
   };
 }
@@ -105,6 +110,75 @@ describe("orderListItems", () => {
     expect(result.tvShows.map((i) => i.id)).toEqual(["tv1"]);
     expect(result.watchedMovies.map((i) => i.id)).toEqual(["watchedMovie1"]);
     expect(result.watchedTv.map((i) => i.id)).toEqual(["watchedTv1"]);
+  });
+});
+
+describe("filterHiddenFromOrdering", () => {
+  it("is a no-op when hiddenFilter is 'include'", () => {
+    const ordering = orderListItems(
+      [item({ id: "a", isHidden: true }), item({ id: "b" })],
+      {
+        rankingEnabled: true,
+        sort: "date_added",
+        watchedMediaItemIds: new Set(),
+      },
+    );
+    expect(filterHiddenFromOrdering(ordering, "include")).toBe(ordering);
+  });
+
+  it("filters hidden items in ranked mode while preserving surviving displayRank verbatim", () => {
+    const items = [
+      item({ id: "a", position: 1 }),
+      item({ id: "b", position: 2, isHidden: true }),
+      item({ id: "c", position: 3 }),
+    ];
+    const ordering = orderListItems(items, {
+      rankingEnabled: true,
+      sort: "date_added",
+      watchedMediaItemIds: new Set(),
+    });
+    const filtered = filterHiddenFromOrdering(ordering, "exclude");
+
+    expect(filtered.mode).toBe("ranked");
+    if (filtered.mode !== "ranked") throw new Error("expected ranked");
+    expect(filtered.items.map((i) => i.id)).toEqual(["a", "c"]);
+    expect(filtered.items.map((i) => i.displayRank)).toEqual([1, 3]);
+  });
+
+  it("filters each grouped section independently without cross-section movement", () => {
+    const items = [
+      item({
+        id: "movie1",
+        mediaItem: { type: "MOVIE", title: "Movie 1", year: 2000 },
+      }),
+      item({
+        id: "movie2",
+        isHidden: true,
+        mediaItem: { type: "MOVIE", title: "Movie 2", year: 2000 },
+      }),
+      item({
+        id: "tv1",
+        mediaItem: { type: "TV", title: "TV 1", year: 2000 },
+      }),
+      item({
+        id: "watchedMovie1",
+        mediaItemId: "media-watchedMovie1",
+        mediaItem: { type: "MOVIE", title: "Watched Movie 1", year: 2000 },
+      }),
+    ];
+    const ordering = orderListItems(items, {
+      rankingEnabled: false,
+      sort: "date_added",
+      watchedMediaItemIds: new Set(["media-watchedMovie1"]),
+    });
+    const filtered = filterHiddenFromOrdering(ordering, "exclude");
+
+    expect(filtered.mode).toBe("grouped");
+    if (filtered.mode !== "grouped") throw new Error("expected grouped");
+    expect(filtered.movies.map((i) => i.id)).toEqual(["movie1"]);
+    expect(filtered.tvShows.map((i) => i.id)).toEqual(["tv1"]);
+    expect(filtered.watchedMovies.map((i) => i.id)).toEqual(["watchedMovie1"]);
+    expect(filtered.watchedTv).toEqual([]);
   });
 });
 
