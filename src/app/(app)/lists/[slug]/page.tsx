@@ -5,17 +5,25 @@ import { notFound, redirect } from "next/navigation";
 import { Film } from "lucide-react";
 import { PrivateListGate } from "./private-list-gate";
 import { ListPageHeader } from "./list-page-header";
-import { ListSortControls, type SortField } from "./list-sort-controls";
+import { ListSortControls } from "./list-sort-controls";
+import { ListHiddenFilter } from "./list-hidden-filter";
 import { ListItemsGrid, type GridItem } from "./list-items-grid";
 import { ListItemReorder } from "./list-item-reorder";
 import { discordFeatures } from "@/lib/discord";
 import { computeUnreadCommentCount } from "@/lib/comment-utils";
 import { MediaType, WatchStatus } from "@/generated/prisma";
-import { orderListItems } from "@/lib/list-item-ordering";
+import {
+  orderListItems,
+  filterHiddenFromOrdering,
+} from "@/lib/list-item-ordering";
+import { parseListViewParams } from "@/lib/list-view-params";
+import { canCurateListItems } from "@/lib/list-item-permissions";
+import { buildTagVocabulary } from "@/lib/list-item-tags";
+import { computeListStats } from "@/lib/list-stats";
 
 type Params = {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ sort?: string }>;
+  searchParams: Promise<{ sort?: string; hidden?: string }>;
 };
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
@@ -27,19 +35,11 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   return { title: list ? `${list.name}` : "List" };
 }
 
-const VALID_SORTS: SortField[] = ["date_added", "title", "votes", "release"];
-
-function parseSort(raw: string | undefined, votingEnabled: boolean): SortField {
-  if (raw === "votes" && !votingEnabled) return "date_added";
-  return VALID_SORTS.includes(raw as SortField)
-    ? (raw as SortField)
-    : "date_added";
-}
-
 type RawItem = {
   id: string;
   notes: string | null;
   noteIsSpoiler: boolean;
+  isHidden: boolean;
   position: number | null;
   addedAt: Date;
   mediaItemId: string;
@@ -56,6 +56,7 @@ type RawItem = {
   };
   votes: { value: number; userId: string }[];
   comments: { id: string; createdAt: Date }[];
+  tags: { id: string; label: string; normalized: string; createdAt: Date }[];
 };
 
 function toGridItem(
@@ -76,6 +77,7 @@ function toGridItem(
     id: item.id,
     notes: item.notes,
     noteIsSpoiler: item.noteIsSpoiler,
+    isHidden: item.isHidden,
     position: item.position,
     displayRank,
     addedAt: item.addedAt.toISOString(),
@@ -83,6 +85,11 @@ function toGridItem(
     commentCount,
     unreadCommentCount,
     addedBy: item.addedBy,
+    tags: item.tags.map((tag) => ({
+      id: tag.id,
+      label: tag.label,
+      normalized: tag.normalized,
+    })),
     mediaItem: {
       tmdbId: item.mediaItem.tmdbId,
       type: item.mediaItem.type === MediaType.MOVIE ? "movie" : "tv",
@@ -101,7 +108,7 @@ function toGridItem(
 
 export default async function ListPage({ params, searchParams }: Params) {
   const { slug } = await params;
-  const { sort: rawSort } = await searchParams;
+  const { sort: rawSort, hidden: rawHidden } = await searchParams;
 
   const session = await auth();
 
@@ -123,6 +130,15 @@ export default async function ListPage({ params, searchParams }: Params) {
           addedBy: { select: { id: true, name: true, avatarUrl: true } },
           votes: { select: { value: true, userId: true } },
           comments: { select: { id: true, createdAt: true } },
+          tags: {
+            select: {
+              id: true,
+              label: true,
+              normalized: true,
+              createdAt: true,
+            },
+            orderBy: { createdAt: "asc" },
+          },
         },
         orderBy: [{ position: "asc" }, { addedAt: "desc" }],
       },
@@ -137,10 +153,10 @@ export default async function ListPage({ params, searchParams }: Params) {
     : null;
   const isMember = memberRecord !== null && memberRecord !== undefined;
   const isOwner = userId === list.ownerId;
-  const isContributor =
-    isOwner ||
-    memberRecord?.role === "OWNER" ||
-    memberRecord?.role === "CONTRIBUTOR";
+  const canCurate = canCurateListItems({
+    isOwner,
+    memberRole: memberRecord?.role ?? null,
+  });
 
   if (!list.isPublic && !isMember) {
     if (!userId) {
@@ -164,7 +180,10 @@ export default async function ListPage({ params, searchParams }: Params) {
     ? `${appUrl}/api/lists/${slug}/radarr`
     : `${appUrl}/api/lists/${slug}/radarr?token=${list.radarrToken}`;
 
-  const sort = parseSort(rawSort, list.votingEnabled);
+  const { sort, hiddenFilter } = parseListViewParams(
+    { sort: rawSort, hidden: rawHidden },
+    { votingEnabled: list.votingEnabled },
+  );
   const mediaIds = list.items.map((i) => i.mediaItemId);
 
   const watchedIdSet =
@@ -183,11 +202,14 @@ export default async function ListPage({ params, searchParams }: Params) {
         )
       : new Set<string>();
 
-  const ordering = orderListItems(list.items, {
+  const fullOrdering = orderListItems(list.items, {
     rankingEnabled: list.rankingEnabled,
     sort,
     watchedMediaItemIds: watchedIdSet,
   });
+  const ordering = filterHiddenFromOrdering(fullOrdering, hiddenFilter);
+  const tagVocabulary = buildTagVocabulary(list.items);
+  const stats = computeListStats(list.items);
 
   const watchedCount = list.items.filter((i) =>
     watchedIdSet.has(i.mediaItemId),
@@ -248,7 +270,12 @@ export default async function ListPage({ params, searchParams }: Params) {
 
   const canDelete = isMember || isOwner;
   const canVote = (isMember || isOwner) && list.votingEnabled;
-  const canReorder = list.rankingEnabled && isContributor;
+  const canReorder =
+    list.rankingEnabled && canCurate && hiddenFilter === "include";
+  const reorderDisabledReason =
+    list.rankingEnabled && canCurate && hiddenFilter === "exclude"
+      ? "Reordering is off while hidden items are filtered out."
+      : null;
 
   function makeGridItem(item: RawItem & { displayRank?: number }): GridItem {
     return toGridItem(
@@ -277,6 +304,18 @@ export default async function ListPage({ params, searchParams }: Params) {
       `${i.mediaItem.type === MediaType.MOVIE ? "movie" : "tv"}-${i.mediaItem.tmdbId}`,
   );
 
+  const filteredItemCount =
+    ordering.mode === "ranked"
+      ? ordering.items.length
+      : ordering.movies.length +
+        ordering.tvShows.length +
+        ordering.watchedMovies.length +
+        ordering.watchedTv.length;
+  const allHiddenWhileFiltered =
+    list.items.length > 0 &&
+    hiddenFilter === "exclude" &&
+    filteredItemCount === 0;
+
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
       <ListPageHeader
@@ -289,6 +328,7 @@ export default async function ListPage({ params, searchParams }: Params) {
         memberCount={list.members.length}
         itemCount={list.items.length}
         watchedCount={userId ? watchedCount : 0}
+        stats={stats}
         memberAvatars={list.members.slice(0, 5).map((m) => ({
           id: m.id,
           name: m.user.name,
@@ -318,17 +358,30 @@ export default async function ListPage({ params, searchParams }: Params) {
       />
 
       {/* Main content */}
-      {list.items.length > 0 && !list.rankingEnabled && (
-        <ListSortControls
-          currentSort={sort}
-          showVoteSort={list.votingEnabled}
-        />
+      {list.items.length > 0 && (
+        <div className="flex items-center gap-2 flex-wrap mb-6">
+          {!list.rankingEnabled && (
+            <ListSortControls
+              currentSort={sort}
+              showVoteSort={list.votingEnabled}
+            />
+          )}
+          <ListHiddenFilter hiddenFilter={hiddenFilter} />
+        </div>
       )}
 
       {list.items.length === 0 ? (
         <div className="text-center py-16 border border-dashed border-border rounded-xl">
           <Film className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
           <p className="text-muted-foreground">No items yet</p>
+        </div>
+      ) : allHiddenWhileFiltered ? (
+        <div className="text-center py-16 border border-dashed border-border rounded-xl space-y-3">
+          <Film className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+          <p className="text-muted-foreground">
+            Every item on this list is hidden.
+          </p>
+          <ListHiddenFilter hiddenFilter={hiddenFilter} />
         </div>
       ) : list.displayMode === "LIST" ? (
         <ListItemReorder
@@ -344,7 +397,10 @@ export default async function ListPage({ params, searchParams }: Params) {
           currentUserId={userId}
           rankingEnabled={list.rankingEnabled}
           canReorder={canReorder}
+          canCurate={canCurate}
+          reorderDisabledReason={reorderDisabledReason}
           isListOwner={isOwner}
+          tagVocabulary={tagVocabulary}
         />
       ) : (
         <ListItemsGrid
@@ -359,7 +415,9 @@ export default async function ListPage({ params, searchParams }: Params) {
           votingEnabled={list.votingEnabled}
           commentsEnabled={list.commentsEnabled}
           currentUserId={userId}
+          canCurate={canCurate}
           isListOwner={isOwner}
+          tagVocabulary={tagVocabulary}
         />
       )}
     </div>

@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Globe, Lock, Users, Plus, Settings } from "lucide-react";
+import { Globe, Lock, Users, Plus, Settings, BarChart3 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ListSettingsModal } from "./list-settings-modal";
 import { ListAddFab } from "./list-add-fab";
+import { ListStatsModal } from "./list-stats-modal";
+import type { ListStats } from "@/lib/list-stats";
 
 type MemberRecord = {
   id: string;
@@ -29,6 +31,7 @@ interface ListPageHeaderProps {
   memberCount: number;
   itemCount: number;
   watchedCount: number;
+  stats: ListStats;
   memberAvatars: {
     id: string;
     name: string | null;
@@ -58,6 +61,7 @@ export function ListPageHeader({
   memberCount,
   itemCount,
   watchedCount,
+  stats,
   memberAvatars,
   existingKeys,
   rankingEnabled,
@@ -77,6 +81,7 @@ export function ListPageHeader({
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsTab, setSettingsTab] = useState(defaultTab);
   const [addOpen, setAddOpen] = useState(false);
+  const [statsOpen, setStatsOpen] = useState(false);
 
   const openSettings = (tab: string) => {
     setSettingsTab(tab);
@@ -136,19 +141,28 @@ export function ListPageHeader({
         </div>
       </div>
 
-      {hasSidebar && (
-        <div className="flex items-center gap-1 shrink-0">
-          {isMember && (
-            <Button
-              variant="default"
-              size="icon"
-              className="h-9 w-9"
-              onClick={() => setAddOpen(true)}
-              aria-label="Add item to list"
-            >
-              <Plus className="h-5 w-5" />
-            </Button>
-          )}
+      <div className="flex items-center gap-1 shrink-0">
+        {hasSidebar && isMember && (
+          <Button
+            variant="default"
+            size="icon"
+            className="h-9 w-9"
+            onClick={() => setAddOpen(true)}
+            aria-label="Add item to list"
+          >
+            <Plus className="h-5 w-5" />
+          </Button>
+        )}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-9 w-9"
+          onClick={() => setStatsOpen(true)}
+          aria-label="List stats"
+        >
+          <BarChart3 className="h-5 w-5" />
+        </Button>
+        {hasSidebar && (
           <Button
             variant="ghost"
             size="icon"
@@ -158,8 +172,14 @@ export function ListPageHeader({
           >
             <Settings className="h-5 w-5" />
           </Button>
-        </div>
-      )}
+        )}
+      </div>
+
+      <ListStatsModal
+        open={statsOpen}
+        onOpenChange={setStatsOpen}
+        stats={stats}
+      />
 
       {hasSidebar && (
         <ListSettingsModal

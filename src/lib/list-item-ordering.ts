@@ -1,3 +1,5 @@
+import type { HiddenFilter } from "./list-view-params";
+
 /** Minimal shape the ordering functions need — structurally satisfied by the Prisma row. */
 export type OrderableItem = {
   id: string;
@@ -6,6 +8,7 @@ export type OrderableItem = {
   mediaItemId: string;
   mediaItem: { type: "MOVIE" | "TV"; title: string; year: number | null };
   votes: { value: number }[];
+  isHidden: boolean;
 };
 
 /** A ranked list renders as one flat sequence with derived, contiguous ranks. */
@@ -90,6 +93,33 @@ export function orderListItems<T extends OrderableItem>(
     tvShows: unwatched.filter((i) => i.mediaItem.type === "TV"),
     watchedMovies: watched.filter((i) => i.mediaItem.type === "MOVIE"),
     watchedTv: watched.filter((i) => i.mediaItem.type === "TV"),
+  };
+}
+
+/**
+ * Removes hidden items from an already-computed ordering without renumbering anything.
+ * `"include"` is a no-op; `"exclude"` filters ranked items while preserving `displayRank`
+ * verbatim, and filters each grouped section independently.
+ */
+export function filterHiddenFromOrdering<T extends { isHidden: boolean }>(
+  ordering: ListOrdering<T>,
+  hiddenFilter: HiddenFilter,
+): ListOrdering<T> {
+  if (hiddenFilter === "include") return ordering;
+
+  if (ordering.mode === "ranked") {
+    return {
+      mode: "ranked",
+      items: ordering.items.filter((item) => !item.isHidden),
+    };
+  }
+
+  return {
+    mode: "grouped",
+    movies: ordering.movies.filter((item) => !item.isHidden),
+    tvShows: ordering.tvShows.filter((item) => !item.isHidden),
+    watchedMovies: ordering.watchedMovies.filter((item) => !item.isHidden),
+    watchedTv: ordering.watchedTv.filter((item) => !item.isHidden),
   };
 }
 

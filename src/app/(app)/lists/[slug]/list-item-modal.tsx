@@ -4,7 +4,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ThumbsUp, ThumbsDown, Eye, Pencil, Loader2 } from "lucide-react";
+import {
+  ThumbsUp,
+  ThumbsDown,
+  Eye,
+  EyeOff,
+  Pencil,
+  Loader2,
+} from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -12,10 +19,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { MarkdownEditor } from "@/components/markdown-editor";
 import { ListItemVoteControls } from "./list-item-vote-controls";
 import { ListItemDeleteButton } from "./list-item-delete-button";
+import { ListItemHideToggle } from "./list-item-hide-toggle";
 import { ListItemComments } from "./list-item-comments";
+import { ListItemTagEditor, type ItemTag } from "./list-item-tag-editor";
 import { tmdbImageUrl } from "@/lib/utils";
 import { MarkdownContent } from "@/components/markdown-content";
 import type { GridItem } from "./list-items-grid";
+import type { TagVocabularyEntry } from "@/lib/list-item-tags";
 
 interface ListItemModalProps {
   item: GridItem | null;
@@ -26,12 +36,16 @@ interface ListItemModalProps {
   votingEnabled: boolean;
   commentsEnabled: boolean;
   currentUserId: string | undefined;
+  canCurate: boolean;
   isListOwner: boolean;
+  tagVocabulary: TagVocabularyEntry[];
   onNoteSaved?: (
     itemId: string,
     note: string | null,
     isSpoiler: boolean,
   ) => void;
+  onHiddenChanged?: (itemId: string, isHidden: boolean) => void;
+  onTagsChanged?: (itemId: string, tags: ItemTag[]) => void;
 }
 
 function NoteDisplay({
@@ -201,8 +215,12 @@ export function ListItemModal({
   votingEnabled,
   commentsEnabled,
   currentUserId,
+  canCurate,
   isListOwner,
+  tagVocabulary,
   onNoteSaved,
+  onHiddenChanged,
+  onTagsChanged,
 }: ListItemModalProps) {
   if (!item) return null;
 
@@ -302,6 +320,18 @@ export function ListItemModal({
               onSaved={(note, isSpoiler) =>
                 onNoteSaved?.(item.id, note, isSpoiler)
               }
+            />
+
+            <div className="border-t border-border" />
+
+            {/* Tags */}
+            <ListItemTagEditor
+              listSlug={listSlug}
+              itemId={item.id}
+              tags={item.tags}
+              vocabulary={tagVocabulary}
+              canCurate={canCurate}
+              onChange={(tags) => onTagsChanged?.(item.id, tags)}
             />
 
             <div className="border-t border-border" />
@@ -409,13 +439,35 @@ export function ListItemModal({
             <div className="border-t border-border" />
 
             {/* Actions */}
-            {item.canDelete && (
-              <ListItemDeleteButton
-                itemId={item.id}
-                listSlug={listSlug}
-                onDeleted={onClose}
-              />
-            )}
+            <div className="flex items-center gap-4">
+              {item.canDelete && (
+                <ListItemDeleteButton
+                  itemId={item.id}
+                  listSlug={listSlug}
+                  onDeleted={onClose}
+                />
+              )}
+              {canCurate && (
+                <div className="flex items-center gap-1.5">
+                  <ListItemHideToggle
+                    listSlug={listSlug}
+                    itemId={item.id}
+                    isHidden={item.isHidden}
+                    onChange={(next) => onHiddenChanged?.(item.id, next)}
+                    className="text-muted-foreground hover:text-foreground h-6 w-6"
+                  />
+                  <span className="text-xs text-muted-foreground flex items-center gap-1">
+                    {item.isHidden ? (
+                      <>
+                        <EyeOff className="h-3 w-3" /> Hidden
+                      </>
+                    ) : (
+                      "Hide from list"
+                    )}
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </DialogContent>

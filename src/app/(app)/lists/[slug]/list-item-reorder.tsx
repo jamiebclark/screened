@@ -23,6 +23,8 @@ import { GripVertical } from "lucide-react";
 import { ListItemsListView } from "./list-items-list-view";
 import { ListItemModal } from "./list-item-modal";
 import type { GridItem } from "./list-items-grid";
+import type { ItemTag } from "./list-item-tag-editor";
+import type { TagVocabularyEntry } from "@/lib/list-item-tags";
 
 interface ListItemReorderProps {
   items: GridItem[];
@@ -33,7 +35,10 @@ interface ListItemReorderProps {
   currentUserId: string | undefined;
   rankingEnabled: boolean;
   canReorder: boolean;
+  canCurate: boolean;
+  reorderDisabledReason: string | null;
   isListOwner: boolean;
+  tagVocabulary: TagVocabularyEntry[];
 }
 
 function SortableRow({
@@ -86,7 +91,10 @@ export function ListItemReorder({
   currentUserId,
   rankingEnabled,
   canReorder,
+  canCurate,
+  reorderDisabledReason,
   isListOwner,
+  tagVocabulary,
 }: ListItemReorderProps) {
   const router = useRouter();
   const [items, setItems] = useState(initialItems);
@@ -150,6 +158,19 @@ export function ListItemReorder({
     [],
   );
 
+  const handleHiddenChanged = useCallback(
+    (itemId: string, isHidden: boolean) => {
+      setItems((prev) =>
+        prev.map((i) => (i.id === itemId ? { ...i, isHidden } : i)),
+      );
+    },
+    [],
+  );
+
+  const handleTagsChanged = useCallback((itemId: string, tags: ItemTag[]) => {
+    setItems((prev) => prev.map((i) => (i.id === itemId ? { ...i, tags } : i)));
+  }, []);
+
   const modal = (
     <ListItemModal
       item={selectedItem}
@@ -160,14 +181,23 @@ export function ListItemReorder({
       votingEnabled={votingEnabled}
       commentsEnabled={commentsEnabled}
       currentUserId={currentUserId}
+      canCurate={canCurate}
       isListOwner={isListOwner}
+      tagVocabulary={tagVocabulary}
       onNoteSaved={handleNoteSaved}
+      onHiddenChanged={handleHiddenChanged}
+      onTagsChanged={handleTagsChanged}
     />
   );
 
   if (!canReorder) {
     return (
       <>
+        {reorderDisabledReason && (
+          <p className="text-sm text-muted-foreground mb-2">
+            {reorderDisabledReason}
+          </p>
+        )}
         <ListItemsListView
           items={items}
           listSlug={listSlug}
@@ -175,7 +205,9 @@ export function ListItemReorder({
           currentUserId={currentUserId}
           rankingEnabled={rankingEnabled}
           canReorder={false}
+          canCurate={canCurate}
           onSelect={setSelectedItemId}
+          onHiddenChange={handleHiddenChanged}
         />
         {modal}
       </>
@@ -204,7 +236,9 @@ export function ListItemReorder({
                   currentUserId={currentUserId}
                   rankingEnabled={rankingEnabled}
                   canReorder={false}
+                  canCurate={canCurate}
                   onSelect={setSelectedItemId}
+                  onHiddenChange={handleHiddenChanged}
                 />
               </SortableRow>
             ))}
