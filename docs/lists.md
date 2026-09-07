@@ -47,6 +47,51 @@ The add-title search on a list supports narrowing results:
 Combine type and year to find titles that are hard to distinguish by name alone — for example,
 searching "House" restricted to Films and year 1985 finds the 1985 film directly.
 
+## Curating a list
+
+Owners and contributors can curate items without deleting them, keeping viewers focused on what
+still matters while preserving history and votes.
+
+### Hiding items
+
+Click the eye icon on any item to hide it. Hidden items:
+
+- Render at reduced opacity with an `EyeOff` badge, visible to every member — not just the person
+  who hid it.
+- Keep their rank, note, votes and comments exactly as they were; unhiding restores full emphasis
+  with nothing lost.
+- Stay in a ranked list's drag order — the gap left behind is not renumbered.
+- Are still counted for the list's item cap, and still included in the Radarr export.
+
+Viewers can see which items are hidden but cannot hide or unhide anything themselves.
+
+Use the **hidden-item filter** pill in the header to remove hidden items from view entirely. The
+filter's state lives in the URL (`?hidden=exclude`), so it survives a reload and a shared link.
+While the filter is active, drag-to-reorder is disabled — reordering a partial list would make the
+persisted order ambiguous — and a note explains why. If every item on the list happens to be
+hidden, filtering shows an explanatory message instead of an empty list.
+
+### Tagging items
+
+Any member with edit rights can add free-text tags to an item — for example `halloween` or
+`rewatch`. Tags:
+
+- Are shared with every viewer of the list, not just their creator.
+- Build a per-list autocomplete vocabulary: typing a few characters on any item suggests tags
+  already used elsewhere on that same list. Tags never leak across lists.
+- Canonicalize to the casing first used on the list (`Noir` and `noir` collapse into a single
+  chip), and are capped at 15 tags per item, 30 characters per tag.
+- Remain visible and editable on hidden items.
+
+Viewers can read tag chips but cannot add or remove them.
+
+### List stats
+
+Click the stats icon in the header to see a read-only breakout of the list's shape: total items,
+items still in play (not hidden), distinct release decades, and distinct tags in use on visible
+items. Stats describe the whole list regardless of the current hidden-item filter, and are visible
+to every viewer, including logged-out visitors on public lists.
+
 ## Privacy
 
 | Visibility | Radarr endpoint | Discoverable by others |
