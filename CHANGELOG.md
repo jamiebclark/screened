@@ -1,3 +1,9 @@
+## [1.65.1](https://github.com/jamiebclark/screened/compare/v1.65.0...v1.65.1) (2026-09-07)
+
+### Bug Fixes
+
+* **docker:** pin prisma cli to the built client version ([50b0823](https://github.com/jamiebclark/screened/commit/50b082344ab2d1a61dddc9807973084ca5764425))
+
 ## [1.65.0](https://github.com/jamiebclark/screened/compare/v1.64.0...v1.65.0) (2026-09-07)
 
 ### Features
