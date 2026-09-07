@@ -36,6 +36,8 @@ interface ListSettingsModalProps {
   listSlug: string;
   isOwner: boolean;
   // Feature flags (owner settings)
+  name: string;
+  description: string | null;
   rankingEnabled: boolean;
   votingEnabled: boolean;
   commentsEnabled: boolean;
@@ -115,6 +117,8 @@ export function ListSettingsModal({
   onTabChange,
   listSlug,
   isOwner,
+  name,
+  description,
   rankingEnabled,
   votingEnabled,
   commentsEnabled,
@@ -153,6 +157,8 @@ export function ListSettingsModal({
               <TabsContent value="settings">
                 <ListSettingsPanel
                   listSlug={listSlug}
+                  name={name}
+                  description={description}
                   rankingEnabled={rankingEnabled}
                   votingEnabled={votingEnabled}
                   commentsEnabled={commentsEnabled}

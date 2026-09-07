@@ -91,6 +91,7 @@ export function ListItemReorder({
   const router = useRouter();
   const [items, setItems] = useState(initialItems);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const selectedItem = selectedItemId
     ? (items.find((i) => i.id === selectedItemId) ?? null)
@@ -108,6 +109,7 @@ export function ListItemReorder({
       const { active, over } = event;
       if (!over || active.id === over.id) return;
 
+      const previous = items;
       const oldIndex = items.findIndex((i) => i.id === active.id);
       const newIndex = items.findIndex((i) => i.id === over.id);
       const reordered = arrayMove(items, oldIndex, newIndex);
@@ -118,11 +120,20 @@ export function ListItemReorder({
         position: idx + 1,
       }));
 
-      await fetch(`/api/lists/${listSlug}/items/reorder`, {
+      const res = await fetch(`/api/lists/${listSlug}/items/reorder`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ positions }),
       });
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setItems(previous);
+        setError(body.error ?? "Could not save the new order");
+        return;
+      }
+
+      setError(null);
       router.refresh();
     },
     [items, listSlug, router],
@@ -173,6 +184,7 @@ export function ListItemReorder({
 
   return (
     <>
+      {error && <p className="text-sm text-destructive mb-2">{error}</p>}
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}

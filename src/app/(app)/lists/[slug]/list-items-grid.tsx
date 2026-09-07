@@ -12,6 +12,7 @@ export type GridItem = {
   notes: string | null;
   noteIsSpoiler: boolean;
   position: number | null;
+  displayRank?: number;
   addedAt: string;
   canDelete: boolean;
   commentCount: number;
@@ -33,6 +34,8 @@ export type GridItem = {
 };
 
 interface ListItemsGridProps {
+  rankingEnabled: boolean;
+  rankedItems: GridItem[];
   movies: GridItem[];
   tvShows: GridItem[];
   watchedMovies: GridItem[];
@@ -80,15 +83,24 @@ function SectionGrid({
               onClick={() => onSelect(item.id)}
             />
 
+            {/* Rank badge — top-left pill, ranked lists only */}
+            {item.displayRank !== undefined && (
+              <div className="absolute top-2 left-2 z-10 pointer-events-none rounded-full bg-black/70 text-white text-[11px] font-bold px-2 py-0.5 shadow-sm">
+                {item.displayRank}
+              </div>
+            )}
+
             {/* Added-by avatar — top left */}
-            <div className="absolute top-2 left-2 z-10 pointer-events-none">
-              <Avatar className="h-6 w-6 border-2 border-background shadow-sm">
-                <AvatarImage src={item.addedBy.avatarUrl ?? undefined} />
-                <AvatarFallback className="text-[9px]">
-                  {item.addedBy.name?.[0]?.toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-            </div>
+            {item.displayRank === undefined && (
+              <div className="absolute top-2 left-2 z-10 pointer-events-none">
+                <Avatar className="h-6 w-6 border-2 border-background shadow-sm">
+                  <AvatarImage src={item.addedBy.avatarUrl ?? undefined} />
+                  <AvatarFallback className="text-[9px]">
+                    {item.addedBy.name?.[0]?.toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+              </div>
+            )}
 
             {/* Vote pill — top right, only shown when voting is enabled */}
             {votingEnabled && (
@@ -129,6 +141,8 @@ function SectionGrid({
 }
 
 export function ListItemsGrid({
+  rankingEnabled,
+  rankedItems,
   movies,
   tvShows,
   watchedMovies,
@@ -142,7 +156,9 @@ export function ListItemsGrid({
 }: ListItemsGridProps) {
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
 
-  const allItems = [...movies, ...tvShows, ...watchedMovies, ...watchedTv];
+  const allItems = rankingEnabled
+    ? rankedItems
+    : [...movies, ...tvShows, ...watchedMovies, ...watchedTv];
   const selectedItem = selectedItemId
     ? (allItems.find((i) => i.id === selectedItemId) ?? null)
     : null;
@@ -157,6 +173,25 @@ export function ListItemsGrid({
     currentUserId,
     onSelect: setSelectedItemId,
   };
+
+  if (rankingEnabled) {
+    return (
+      <>
+        <SectionGrid items={rankedItems} {...sectionProps} />
+        <ListItemModal
+          item={selectedItem}
+          isOpen={selectedItem !== null}
+          onClose={() => setSelectedItemId(null)}
+          listSlug={listSlug}
+          canVote={canVote}
+          votingEnabled={votingEnabled}
+          commentsEnabled={commentsEnabled}
+          currentUserId={currentUserId}
+          isListOwner={isListOwner}
+        />
+      </>
+    );
+  }
 
   return (
     <>
