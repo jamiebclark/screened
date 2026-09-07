@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { validateListDetails } from "@/lib/list-validation";
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -52,9 +53,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   }
 
   const { slug } = await params;
-  const body = (await req.json()) as {
+  let body: {
     name?: string;
-    description?: string;
+    description?: string | null;
     isPublic?: boolean;
     rankingEnabled?: boolean;
     votingEnabled?: boolean;
@@ -62,6 +63,14 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     displayMode?: "GRID" | "LIST";
     itemCap?: number | null;
   };
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json(
+      { error: "Invalid request body" },
+      { status: 400 },
+    );
+  }
 
   const list = await prisma.list.findUnique({
     where: { slug },
@@ -69,6 +78,43 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   });
   if (!list || list.ownerId !== session.user.id) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const validated = validateListDetails({
+    name: body.name,
+    description: body.description,
+  });
+  if (!validated.ok) {
+    return NextResponse.json({ error: validated.error }, { status: 400 });
+  }
+  const { name: validatedName, description: validatedDescription } =
+    validated.value;
+
+  if (
+    body.displayMode !== undefined &&
+    body.displayMode !== "GRID" &&
+    body.displayMode !== "LIST"
+  ) {
+    return NextResponse.json(
+      { error: "Display mode must be GRID or LIST" },
+      { status: 400 },
+    );
+  }
+
+  let validatedItemCap: number | null | undefined = undefined;
+  if (body.itemCap !== undefined) {
+    if (
+      body.itemCap !== null &&
+      (typeof body.itemCap !== "number" ||
+        !Number.isInteger(body.itemCap) ||
+        body.itemCap < 1)
+    ) {
+      return NextResponse.json(
+        { error: "Item cap must be a positive number or empty" },
+        { status: 400 },
+      );
+    }
+    validatedItemCap = body.itemCap;
   }
 
   // Resolve ranking/voting mutex
@@ -95,17 +141,18 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       return tx.list.update({
         where: { slug },
         data: {
-          name: body.name ?? list.name,
+          name: validatedName ?? list.name,
           description:
-            body.description !== undefined
-              ? body.description
+            validatedDescription !== undefined
+              ? validatedDescription
               : list.description,
           isPublic: body.isPublic ?? list.isPublic,
           rankingEnabled,
           votingEnabled,
           commentsEnabled: body.commentsEnabled ?? list.commentsEnabled,
           displayMode: body.displayMode ?? list.displayMode,
-          itemCap: body.itemCap !== undefined ? body.itemCap : list.itemCap,
+          itemCap:
+            validatedItemCap !== undefined ? validatedItemCap : list.itemCap,
         },
       });
     });
@@ -119,17 +166,18 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       return tx.list.update({
         where: { slug },
         data: {
-          name: body.name ?? list.name,
+          name: validatedName ?? list.name,
           description:
-            body.description !== undefined
-              ? body.description
+            validatedDescription !== undefined
+              ? validatedDescription
               : list.description,
           isPublic: body.isPublic ?? list.isPublic,
           rankingEnabled,
           votingEnabled,
           commentsEnabled: body.commentsEnabled ?? list.commentsEnabled,
           displayMode: body.displayMode ?? list.displayMode,
-          itemCap: body.itemCap !== undefined ? body.itemCap : list.itemCap,
+          itemCap:
+            validatedItemCap !== undefined ? validatedItemCap : list.itemCap,
         },
       });
     });
@@ -137,20 +185,25 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     updated = await prisma.list.update({
       where: { slug },
       data: {
-        name: body.name ?? list.name,
+        name: validatedName ?? list.name,
         description:
-          body.description !== undefined ? body.description : list.description,
+          validatedDescription !== undefined
+            ? validatedDescription
+            : list.description,
         isPublic: body.isPublic ?? list.isPublic,
         rankingEnabled,
         votingEnabled,
         commentsEnabled: body.commentsEnabled ?? list.commentsEnabled,
         displayMode: body.displayMode ?? list.displayMode,
-        itemCap: body.itemCap !== undefined ? body.itemCap : list.itemCap,
+        itemCap:
+          validatedItemCap !== undefined ? validatedItemCap : list.itemCap,
       },
     });
   }
 
-  return NextResponse.json(updated);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { discordWebhookUrl: _webhook, ...safeUpdated } = updated;
+  return NextResponse.json(safeUpdated);
 }
 
 export async function DELETE(req: NextRequest, { params }: Params) {
