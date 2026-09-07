@@ -1,5 +1,10 @@
 import { test, expect } from "@playwright/test";
-import { ensureLoggedIn, ensureTestUsersExist } from "./helpers";
+import {
+  ensureLoggedIn,
+  ensureTestUsersExist,
+  LIVE_TMDB,
+  LIVE_TMDB_REASON,
+} from "./helpers";
 
 test.beforeEach(async ({ page }) => {
   await ensureTestUsersExist(page);
@@ -20,6 +25,7 @@ test.describe("Browse sort & filter", () => {
   test("shareable URL with ?genres and ?sort loads and shows results", async ({
     page,
   }) => {
+    test.skip(!LIVE_TMDB, LIVE_TMDB_REASON);
     // Action (28) + Comedy (35), sorted by rating high-to-low
     await page.goto("/browse?genres=28,35&sort=rating_desc");
     await expect(page.getByRole("heading", { name: "Browse" })).toBeVisible({
@@ -35,6 +41,7 @@ test.describe("Browse sort & filter", () => {
   test("sort: Year Newest First changes URL to sort=year_desc", async ({
     page,
   }) => {
+    test.skip(!LIVE_TMDB, LIVE_TMDB_REASON);
     await page.goto("/browse");
     await page.getByRole("button", { name: /Filters/ }).click();
     await page.getByRole("combobox").selectOption("year_desc");
@@ -67,6 +74,7 @@ test.describe("Browse sort & filter", () => {
   test("year range: inverted range shows inline error and no results", async ({
     page,
   }) => {
+    test.skip(!LIVE_TMDB, LIVE_TMDB_REASON);
     await page.goto("/browse?yearMin=2000&yearMax=1990");
     await expect(page.getByRole("heading", { name: "Browse" })).toBeVisible({
       timeout: 8000,
@@ -79,6 +87,7 @@ test.describe("Browse sort & filter", () => {
   test("multi-genre toggle: selecting two genres updates URL with comma-separated genres", async ({
     page,
   }) => {
+    test.skip(!LIVE_TMDB, LIVE_TMDB_REASON);
     await page.goto("/browse");
     await page.getByRole("button", { name: /Filters/ }).click();
 
@@ -119,6 +128,7 @@ test.describe("Browse sort & filter", () => {
   test("legacy ?genre= param still works (backward compat)", async ({
     page,
   }) => {
+    test.skip(!LIVE_TMDB, LIVE_TMDB_REASON);
     await page.goto("/browse?genre=28&type=movie");
     await expect(page.getByRole("heading", { name: "Browse" })).toBeVisible({
       timeout: 10000,

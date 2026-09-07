@@ -1,5 +1,14 @@
 import { test, expect } from "@playwright/test";
-import { ensureLoggedIn, ensureTestUsersExist } from "./helpers";
+import {
+  ensureLoggedIn,
+  ensureTestUsersExist,
+  LIVE_TMDB,
+  LIVE_TMDB_REASON,
+} from "./helpers";
+
+// Every test here drives a surface that calls TMDB on each request, so the
+// MediaItem rows global-setup seeds cannot satisfy them.
+test.skip(!LIVE_TMDB, LIVE_TMDB_REASON);
 
 test.beforeEach(async ({ page }) => {
   await ensureTestUsersExist(page);

@@ -1,5 +1,10 @@
 import { test, expect } from "@playwright/test";
-import { ensureLoggedIn, ensureTestUsersExist } from "./helpers";
+import {
+  ensureLoggedIn,
+  ensureTestUsersExist,
+  LIVE_TMDB,
+  LIVE_TMDB_REASON,
+} from "./helpers";
 
 test.beforeEach(async ({ page }) => {
   await ensureTestUsersExist(page);
@@ -8,6 +13,7 @@ test.beforeEach(async ({ page }) => {
 
 test.describe("Search", () => {
   test("search for a movie by title", async ({ page }) => {
+    test.skip(!LIVE_TMDB, LIVE_TMDB_REASON);
     await page.goto("/search");
     await page
       .getByPlaceholder("Search movies and TV shows...")
@@ -20,6 +26,7 @@ test.describe("Search", () => {
   });
 
   test("search for a TV show by title", async ({ page }) => {
+    test.skip(!LIVE_TMDB, LIVE_TMDB_REASON);
     await page.goto("/search");
     await page
       .getByPlaceholder("Search movies and TV shows...")
@@ -32,6 +39,7 @@ test.describe("Search", () => {
   });
 
   test("filter search results to movies only", async ({ page }) => {
+    test.skip(!LIVE_TMDB, LIVE_TMDB_REASON);
     await page.goto("/search?q=avatar");
     await page.getByRole("link", { name: "Movies" }).click();
     await expect(page).toHaveURL(/type=movie/);
@@ -46,6 +54,7 @@ test.describe("Search", () => {
   });
 
   test("filter search results to TV shows only", async ({ page }) => {
+    test.skip(!LIVE_TMDB, LIVE_TMDB_REASON);
     await page.goto("/search?q=avatar");
     await page.getByRole("link", { name: "TV Shows" }).click();
     await expect(page).toHaveURL(/type=tv/);
@@ -65,6 +74,7 @@ test.describe("Search", () => {
   });
 
   test("no results message for gibberish query", async ({ page }) => {
+    test.skip(!LIVE_TMDB, LIVE_TMDB_REASON);
     await page.goto("/search");
     await page
       .getByPlaceholder("Search movies and TV shows...")
@@ -76,6 +86,7 @@ test.describe("Search", () => {
   });
 
   test("navigate from home trending section to search", async ({ page }) => {
+    test.skip(!LIVE_TMDB, LIVE_TMDB_REASON);
     await page.goto("/");
     // Prefer the Trending movies "See all" — the first "See all" on the page may be Recently watched → /history.
     await page
@@ -91,6 +102,7 @@ test.describe("GET /api/search", () => {
   test("finds the 1985 film House when restricted by type and year", async ({
     page,
   }) => {
+    test.skip(!LIVE_TMDB, LIVE_TMDB_REASON);
     const res = await page.request.get(
       "/api/search?q=House&type=movie&year=1985",
     );
@@ -106,6 +118,7 @@ test.describe("GET /api/search", () => {
   test("finds the 1989 film Arena when restricted by type and year", async ({
     page,
   }) => {
+    test.skip(!LIVE_TMDB, LIVE_TMDB_REASON);
     const res = await page.request.get(
       "/api/search?q=Arena&type=movie&year=1989",
     );
@@ -117,6 +130,7 @@ test.describe("GET /api/search", () => {
   });
 
   test("rejects a non-numeric year with 400", async ({ page }) => {
+    test.skip(!LIVE_TMDB, LIVE_TMDB_REASON);
     const res = await page.request.get("/api/search?q=House&year=abc");
     expect(res.status()).toBe(400);
     const body = (await res.json()) as { error: string };
@@ -128,6 +142,7 @@ test.describe("List add-title dialog search refinement", () => {
   test("restrict to movies, set year, and add the 1985 House to a list", async ({
     page,
   }) => {
+    test.skip(!LIVE_TMDB, LIVE_TMDB_REASON);
     const res = await page.request.post("/api/lists", {
       data: { name: `Search test ${Date.now()}`, isPublic: true },
       headers: { "Content-Type": "application/json" },
