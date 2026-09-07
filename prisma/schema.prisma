@@ -414,6 +414,7 @@ model ListItem {
   addedById     String
   notes         String?
   noteIsSpoiler Boolean  @default(false)
+  isHidden      Boolean  @default(false)
   position      Int?
   addedAt       DateTime @default(now())
 
@@ -423,8 +424,22 @@ model ListItem {
   votes        ListItemVote[]
   comments     ListItemComment[]
   commentReads ListItemCommentRead[]
+  tags         ListItemTag[]
 
   @@unique([listId, mediaItemId])
+}
+
+model ListItemTag {
+  id         String   @id @default(cuid())
+  listItemId String
+  label      String
+  normalized String
+  createdAt  DateTime @default(now())
+
+  listItem ListItem @relation(fields: [listItemId], references: [id], onDelete: Cascade)
+
+  @@unique([listItemId, normalized])
+  @@index([listItemId])
 }
 
 model ListItemComment {
