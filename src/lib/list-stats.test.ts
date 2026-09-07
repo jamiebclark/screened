@@ -9,7 +9,10 @@ function item(overrides: {
   return {
     isHidden: overrides.isHidden ?? false,
     mediaItem: { year: overrides.year ?? null },
-    tags: (overrides.tags ?? []).map((normalized) => ({ normalized })),
+    tags: (overrides.tags ?? []).map((label) => ({
+      label,
+      normalized: label.toLocaleLowerCase(),
+    })),
   };
 }
 
@@ -57,6 +60,54 @@ describe("computeListStats", () => {
       visibleItems: 0,
       distinctDecades: 0,
       distinctVisibleTags: 0,
+      tagCounts: [],
     });
+  });
+});
+
+describe("computeListStats tagCounts", () => {
+  it("counts how many non-hidden items carry each tag", () => {
+    const stats = computeListStats([
+      item({ tags: ["Tom Savini", "Gore"] }),
+      item({ tags: ["Tom Savini"] }),
+      item({ tags: ["Gore"] }),
+    ]);
+    expect(stats.tagCounts).toEqual([
+      { label: "Gore", normalized: "gore", count: 2 },
+      { label: "Tom Savini", normalized: "tom savini", count: 2 },
+    ]);
+  });
+
+  it("excludes tags carried only by hidden items", () => {
+    const stats = computeListStats([
+      item({ isHidden: true, tags: ["Hidden Only"] }),
+      item({ tags: ["Tom Savini"] }),
+    ]);
+    expect(stats.tagCounts).toEqual([
+      { label: "Tom Savini", normalized: "tom savini", count: 1 },
+    ]);
+  });
+
+  it("does not count a hidden item towards a tag it shares with a visible one", () => {
+    const stats = computeListStats([
+      item({ isHidden: true, tags: ["Tom Savini"] }),
+      item({ tags: ["Tom Savini"] }),
+    ]);
+    expect(stats.tagCounts[0].count).toBe(1);
+  });
+
+  it("orders by count descending, then normalized ascending", () => {
+    const stats = computeListStats([
+      item({ tags: ["Zombie", "Alpha"] }),
+      item({ tags: ["Zombie"] }),
+    ]);
+    expect(stats.tagCounts.map((t) => t.normalized)).toEqual([
+      "zombie",
+      "alpha",
+    ]);
+  });
+
+  it("is empty when nothing is tagged", () => {
+    expect(computeListStats([item({}), item({})]).tagCounts).toEqual([]);
   });
 });

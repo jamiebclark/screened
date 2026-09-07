@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   TAG_MAX_LENGTH,
   TAG_MAX_PER_ITEM,
+  activeTagFragment,
   buildTagVocabulary,
+  completedTagFragments,
   normalizeTagLabel,
   splitTagInput,
   suggestTags,
@@ -213,5 +215,46 @@ describe("validateTagBatch", () => {
       ok: true,
       value: [{ label: "New Tag", normalized: "new tag" }],
     });
+  });
+});
+
+describe("activeTagFragment", () => {
+  it("returns the whole field when no comma has been typed", () => {
+    expect(activeTagFragment("hor")).toBe("hor");
+  });
+
+  it("returns only the fragment after the last comma", () => {
+    expect(activeTagFragment("horror, sci")).toBe("sci");
+    expect(activeTagFragment("horror, cult, sci-f")).toBe("sci-f");
+  });
+
+  it("is empty immediately after a comma, so nothing is suggested yet", () => {
+    expect(activeTagFragment("horror,")).toBe("");
+    expect(activeTagFragment("horror, ")).toBe("");
+  });
+
+  it("trims surrounding whitespace", () => {
+    expect(activeTagFragment("horror,   sci  ")).toBe("sci");
+  });
+});
+
+describe("completedTagFragments", () => {
+  it("is empty when nothing has been comma-terminated", () => {
+    expect(completedTagFragments("horror")).toEqual([]);
+  });
+
+  it("returns the fragments before the active one", () => {
+    expect(completedTagFragments("horror, sci")).toEqual(["horror"]);
+    expect(completedTagFragments("horror, cult, sci")).toEqual([
+      "horror",
+      "cult",
+    ]);
+  });
+
+  it("drops empty fragments from repeated or trailing commas", () => {
+    expect(completedTagFragments("horror,, cult, ")).toEqual([
+      "horror",
+      "cult",
+    ]);
   });
 });
