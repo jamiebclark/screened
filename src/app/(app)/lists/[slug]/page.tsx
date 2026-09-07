@@ -335,6 +335,7 @@ export default async function ListPage({ params, searchParams }: Params) {
           avatarUrl: m.user.avatarUrl,
         }))}
         existingKeys={existingListKeys}
+        tagVocabulary={tagVocabulary}
         rankingEnabled={list.rankingEnabled}
         votingEnabled={list.votingEnabled}
         commentsEnabled={list.commentsEnabled}

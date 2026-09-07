@@ -3,7 +3,8 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState, useRef, useCallback, useMemo, useEffect } from "react";
-import { Search, Loader2, Film, Tv, ArrowLeft, Eye } from "lucide-react";
+import { Search, Loader2, Film, Tv, ArrowLeft, Eye, X } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,6 +21,15 @@ import {
   buildTitleSearchQuery,
   TitleMediaType,
 } from "@/lib/title-search-params";
+import {
+  activeTagFragment,
+  completedTagFragments,
+  splitTagInput,
+  suggestTags,
+  tagComparisonKey,
+  TAG_MAX_PER_ITEM,
+} from "@/lib/list-item-tags";
+import type { TagVocabularyEntry } from "@/lib/list-item-tags";
 
 type SearchResult = {
   tmdbId: number;
@@ -40,6 +50,7 @@ interface ListAddFabProps {
   onOpenChange: (open: boolean) => void;
   listSlug: string;
   existingKeys: string[];
+  tagVocabulary: TagVocabularyEntry[];
 }
 
 export function ListAddFab({
@@ -47,6 +58,7 @@ export function ListAddFab({
   onOpenChange,
   listSlug,
   existingKeys,
+  tagVocabulary,
 }: ListAddFabProps) {
   const router = useRouter();
   const [query, setQuery] = useState("");
@@ -64,6 +76,9 @@ export function ListAddFab({
 
   const [selected, setSelected] = useState<SearchResult | null>(null);
   const [notes, setNotes] = useState("");
+  // Tags chosen before the item exists, submitted with it in one request.
+  const [pendingTags, setPendingTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState("");
   const [noteIsSpoiler, setNoteIsSpoiler] = useState(false);
   const [adding, setAdding] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
@@ -210,8 +225,45 @@ export function ListAddFab({
     setSelected(null);
     setNotes("");
     setNoteIsSpoiler(false);
+    setPendingTags([]);
+    setTagInput("");
     setAddError(null);
     setTimeout(() => inputRef.current?.focus(), 50);
+  };
+
+  // Suggest against the fragment being typed, so a second tag after a comma
+  // still matches.
+  const tagFragment = activeTagFragment(tagInput);
+  const tagSuggestions = useMemo(
+    () =>
+      suggestTags(tagVocabulary, tagFragment, {
+        exclude: pendingTags.map(tagComparisonKey),
+      }),
+    [tagVocabulary, tagFragment, pendingTags],
+  );
+
+  const addPendingTags = (labels: string[]) => {
+    if (labels.length === 0) return;
+    setPendingTags((prev) => {
+      const seen = new Set(prev.map(tagComparisonKey));
+      const next = [...prev];
+      for (const label of labels) {
+        const key = tagComparisonKey(label);
+        if (!seen.has(key) && next.length < TAG_MAX_PER_ITEM) {
+          seen.add(key);
+          next.push(label);
+        }
+      }
+      return next;
+    });
+    setTagInput("");
+  };
+
+  const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      addPendingTags(splitTagInput(tagInput));
+    }
   };
 
   const handleAdd = async () => {
@@ -227,6 +279,12 @@ export function ListAddFab({
           type: selected.type,
           notes: notes.trim() || undefined,
           noteIsSpoiler: notes.trim() ? noteIsSpoiler : undefined,
+          // Include anything still sitting in the input, so a tag typed but
+          // not committed with Enter is not silently dropped on submit.
+          labels: (() => {
+            const all = [...pendingTags, ...splitTagInput(tagInput)];
+            return all.length > 0 ? all.slice(0, TAG_MAX_PER_ITEM) : undefined;
+          })(),
         }),
       });
       if (!res.ok) {
@@ -481,6 +539,79 @@ export function ListAddFab({
                   </span>
                 </label>
               )}
+            </div>
+
+            {/* Tags */}
+            <div className="space-y-2">
+              <Label className="text-sm">
+                Tags{" "}
+                <span className="text-muted-foreground font-normal">
+                  (optional)
+                </span>
+              </Label>
+              {pendingTags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {pendingTags.map((label) => (
+                    <Badge
+                      key={tagComparisonKey(label)}
+                      variant="secondary"
+                      className="rounded-full text-xs gap-1 pr-1"
+                    >
+                      {label}
+                      <button
+                        type="button"
+                        aria-label={`Remove tag ${label}`}
+                        onClick={() =>
+                          setPendingTags((prev) =>
+                            prev.filter(
+                              (t) =>
+                                tagComparisonKey(t) !== tagComparisonKey(label),
+                            ),
+                          )
+                        }
+                        className="ml-0.5 rounded-full hover:text-destructive"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+              <Input
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={handleTagKeyDown}
+                placeholder="Add a tag…"
+                aria-describedby="add-tag-hint"
+                disabled={pendingTags.length >= TAG_MAX_PER_ITEM}
+              />
+              {tagSuggestions.length > 0 && tagFragment.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {tagSuggestions.map((entry) => (
+                    <button
+                      key={entry.normalized}
+                      type="button"
+                      onClick={() =>
+                        addPendingTags([
+                          ...completedTagFragments(tagInput),
+                          entry.label,
+                        ])
+                      }
+                      className="rounded-full border px-2 py-0.5 text-xs hover:bg-muted transition-colors"
+                    >
+                      {entry.label}{" "}
+                      <span className="text-muted-foreground">
+                        {entry.count}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+              <p id="add-tag-hint" className="text-xs text-muted-foreground">
+                {pendingTags.length >= TAG_MAX_PER_ITEM
+                  ? `Tag limit reached (${TAG_MAX_PER_ITEM}).`
+                  : "Press Enter or comma to add. Separate several with commas."}
+              </p>
             </div>
 
             {addError && <p className="text-sm text-destructive">{addError}</p>}

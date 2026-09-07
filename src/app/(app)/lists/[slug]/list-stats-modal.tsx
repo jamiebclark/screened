@@ -44,6 +44,30 @@ export function ListStatsModal({
           ))}
         </div>
 
+        {stats.tagCounts.length > 0 && (
+          <div className="space-y-2">
+            <h3 className="text-base font-semibold">
+              Tags{" "}
+              <span className="text-sm font-normal text-muted-foreground">
+                {stats.tagCounts.length}
+              </span>
+            </h3>
+            <ul className="divide-y rounded-lg border">
+              {stats.tagCounts.map((tag) => (
+                <li
+                  key={tag.normalized}
+                  className="flex items-center justify-between gap-3 px-3 py-2"
+                >
+                  <span className="truncate text-sm">{tag.label}</span>
+                  <span className="shrink-0 text-sm text-muted-foreground">
+                    {tag.count} {tag.count === 1 ? "film" : "films"}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         {isEmpty && (
           <p className="text-sm text-muted-foreground">
             Nothing to summarise yet — add some titles.
