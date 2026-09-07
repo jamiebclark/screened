@@ -1,3 +1,15 @@
+## [1.66.0](https://github.com/jamiebclark/screened/compare/v1.65.1...v1.66.0) (2026-09-07)
+
+### Features
+
+* **lists:** accept tags when adding an item ([6ddc4d5](https://github.com/jamiebclark/screened/commit/6ddc4d5a8d1d18b55eb09059559518135b7b7319))
+* **lists:** add production country to media items ([f90214a](https://github.com/jamiebclark/screened/commit/f90214a7ae8f17426093640cbb09a46829aba1b1))
+* **lists:** add tag fragment helpers and per-tag counts ([0c3bc70](https://github.com/jamiebclark/screened/commit/0c3bc703423b2e49d37457658b0a492d2a3d5ecf))
+* **lists:** map tmdb production countries to iso codes ([82d83aa](https://github.com/jamiebclark/screened/commit/82d83aa868b83ecd4a8070db923f19802f83eb18))
+* **lists:** persist and count production countries ([61373b7](https://github.com/jamiebclark/screened/commit/61373b7c18593c5b1564291d181afbab53c94b1a))
+* **lists:** show production country on items and in stats ([bbf16a3](https://github.com/jamiebclark/screened/commit/bbf16a389f5e7ca706f05ede5ebca8d93f05268e))
+* **lists:** tag items while adding them, and clarify the tag input ([91eaba5](https://github.com/jamiebclark/screened/commit/91eaba5e539a62c1ae4679e1d125f6c0f009d2d7))
+
 ## [1.65.1](https://github.com/jamiebclark/screened/compare/v1.65.0...v1.65.1) (2026-09-07)
 
 ### Bug Fixes
