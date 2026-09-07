@@ -279,6 +279,7 @@ model MediaItem {
   year      Int?
   overview  String?
   genres    String[]
+  productionCountries String[] @default([])
   runtime     Int?
   releaseDate DateTime?
   cast             String[] @default([])

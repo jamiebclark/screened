@@ -11,7 +11,7 @@ import {
 import { buildEmbeddingText, generateEmbedding } from "@/lib/embeddings";
 import { MediaType } from "@/generated/prisma";
 
-export const CURRENT_ENRICHMENT_VERSION = 2;
+export const CURRENT_ENRICHMENT_VERSION = 3;
 
 async function enrichAndEmbed(
   mediaItemId: string,
@@ -77,6 +77,25 @@ async function enrichAndEmbed(
     let updated = await prisma.mediaItem.findUniqueOrThrow({
       where: { id: mediaItemId },
     });
+
+    // Lazy backfill for rows created before productionCountries existed. Gated
+    // on being empty so this costs one extra TMDB call per item, once.
+    if (updated.productionCountries.length === 0) {
+      try {
+        const codes =
+          type === "movie"
+            ? await getMovie(tmdbId).then((m) => m.production_country_codes)
+            : await getTvShow(tmdbId).then((s) => s.production_country_codes);
+        if (codes.length > 0) {
+          updated = await prisma.mediaItem.update({
+            where: { id: mediaItemId },
+            data: { productionCountries: codes },
+          });
+        }
+      } catch {
+        // non-fatal: a country backfill failure must not block enrichment
+      }
+    }
 
     if (updated.releaseDate === null) {
       try {
@@ -160,6 +179,7 @@ export async function getOrCreateMediaItem(
         overview: movie.overview,
         genres: movie.genres.map((g) => g.name),
         runtime: movie.runtime,
+        productionCountries: movie.production_country_codes,
         releaseDate: movie.release_date ? new Date(movie.release_date) : null,
       },
     });
@@ -180,6 +200,7 @@ export async function getOrCreateMediaItem(
         overview: show.overview,
         genres: show.genres.map((g) => g.name),
         runtime: show.episode_run_time[0] ?? null,
+        productionCountries: show.production_country_codes,
         releaseDate: show.first_air_date ? new Date(show.first_air_date) : null,
       },
     });

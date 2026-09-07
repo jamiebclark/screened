@@ -8,6 +8,7 @@ import { ListSettingsModal } from "./list-settings-modal";
 import { ListAddFab } from "./list-add-fab";
 import { ListStatsModal } from "./list-stats-modal";
 import type { ListStats } from "@/lib/list-stats";
+import type { TagVocabularyEntry } from "@/lib/list-item-tags";
 
 type MemberRecord = {
   id: string;
@@ -38,6 +39,7 @@ interface ListPageHeaderProps {
     avatarUrl: string | null;
   }[];
   existingKeys: string[];
+  tagVocabulary: TagVocabularyEntry[];
   // settings modal data
   rankingEnabled: boolean;
   votingEnabled: boolean;
@@ -64,6 +66,7 @@ export function ListPageHeader({
   stats,
   memberAvatars,
   existingKeys,
+  tagVocabulary,
   rankingEnabled,
   votingEnabled,
   commentsEnabled,
@@ -209,6 +212,7 @@ export function ListPageHeader({
           onOpenChange={setAddOpen}
           listSlug={listSlug}
           existingKeys={existingKeys}
+          tagVocabulary={tagVocabulary}
         />
       )}
     </div>

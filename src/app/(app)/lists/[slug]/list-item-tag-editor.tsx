@@ -9,7 +9,12 @@ import {
   PopoverAnchor,
   PopoverContent,
 } from "@/components/ui/popover";
-import { splitTagInput, suggestTags } from "@/lib/list-item-tags";
+import {
+  activeTagFragment,
+  completedTagFragments,
+  splitTagInput,
+  suggestTags,
+} from "@/lib/list-item-tags";
 import type { TagVocabularyEntry } from "@/lib/list-item-tags";
 
 export type ItemTag = { id: string; label: string; normalized: string };
@@ -36,12 +41,15 @@ export function ListItemTagEditor({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Match on the fragment being typed, not the whole field, so suggestions
+  // still work for a second tag after a comma.
+  const fragment = activeTagFragment(input);
   const suggestions = useMemo(
     () =>
-      suggestTags(vocabulary, input, {
+      suggestTags(vocabulary, fragment, {
         exclude: tags.map((t) => t.normalized),
       }),
-    [vocabulary, input, tags],
+    [vocabulary, fragment, tags],
   );
 
   async function submitLabels(labels: string[]) {
@@ -98,7 +106,9 @@ export function ListItemTagEditor({
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "Enter") {
+    // Comma commits as well as Enter: it is the convention most tag inputs use,
+    // and splitTagInput already treats it as the separator for pasted lists.
+    if (e.key === "Enter" || e.key === ",") {
       e.preventDefault();
       void submitLabels(splitTagInput(input));
     }
@@ -130,7 +140,7 @@ export function ListItemTagEditor({
       </div>
 
       {canCurate && (
-        <Popover open={suggestions.length > 0 && input.trim().length > 0}>
+        <Popover open={suggestions.length > 0 && fragment.length > 0}>
           <PopoverAnchor asChild>
             <input
               type="text"
@@ -139,6 +149,7 @@ export function ListItemTagEditor({
               onKeyDown={handleKeyDown}
               disabled={pending}
               placeholder="Add a tag…"
+              aria-describedby={`tag-hint-${itemId}`}
               className="w-full rounded-md border border-input bg-transparent px-2 py-1 text-sm outline-none focus:ring-1 focus:ring-ring disabled:opacity-50"
             />
           </PopoverAnchor>
@@ -150,7 +161,15 @@ export function ListItemTagEditor({
               <button
                 key={entry.normalized}
                 type="button"
-                onClick={() => void submitLabels([entry.label])}
+                onClick={() =>
+                  void submitLabels([
+                    // Keep anything already comma-terminated in the field, so
+                    // picking a suggestion for the second tag does not discard
+                    // the first.
+                    ...completedTagFragments(input),
+                    entry.label,
+                  ])
+                }
                 className="flex w-full items-center justify-between rounded-sm px-3 py-2 text-sm hover:bg-muted transition-colors"
               >
                 <span>{entry.label}</span>
@@ -161,6 +180,12 @@ export function ListItemTagEditor({
             ))}
           </PopoverContent>
         </Popover>
+      )}
+
+      {canCurate && !error && (
+        <p id={`tag-hint-${itemId}`} className="text-xs text-muted-foreground">
+          Press Enter or comma to add. Separate several with commas.
+        </p>
       )}
 
       {error && <p className="text-xs text-destructive">{error}</p>}

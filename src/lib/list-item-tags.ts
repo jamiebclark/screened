@@ -19,6 +19,22 @@ export function splitTagInput(raw: string): string[] {
     .filter((fragment) => fragment.length > 0);
 }
 
+/**
+ * The fragment the caret is in: everything after the last comma. Suggestions
+ * must match against this rather than the whole field, or typing a second tag
+ * after a comma matches "horror, sci" as one string and finds nothing.
+ */
+export function activeTagFragment(raw: string): string {
+  const lastComma = raw.lastIndexOf(",");
+  return (lastComma === -1 ? raw : raw.slice(lastComma + 1)).trim();
+}
+
+/** The complete fragments before the active one. */
+export function completedTagFragments(raw: string): string[] {
+  const lastComma = raw.lastIndexOf(",");
+  return lastComma === -1 ? [] : splitTagInput(raw.slice(0, lastComma));
+}
+
 export type TagVocabularyEntry = {
   label: string;
   normalized: string;

@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notifyListItemAdded } from "@/lib/discord";
 import { getMovie, getTvShow } from "@/lib/tmdb";
+import { buildTagVocabulary, validateTagBatch } from "@/lib/list-item-tags";
 import { MediaType } from "@/generated/prisma";
 
 type Params = { params: Promise<{ slug: string }> };
@@ -31,6 +32,7 @@ async function getOrCreateMediaItem(tmdbId: number, type: "movie" | "tv") {
         overview: movie.overview,
         genres: movie.genres.map((g) => g.name),
         runtime: movie.runtime,
+        productionCountries: movie.production_country_codes,
       },
     });
   } else {
@@ -48,6 +50,7 @@ async function getOrCreateMediaItem(tmdbId: number, type: "movie" | "tv") {
         overview: show.overview,
         genres: show.genres.map((g) => g.name),
         runtime: show.episode_run_time[0] ?? null,
+        productionCountries: show.production_country_codes,
       },
     });
   }
@@ -65,8 +68,9 @@ export async function POST(req: NextRequest, { params }: Params) {
     type?: string;
     notes?: string;
     noteIsSpoiler?: boolean;
+    labels?: unknown;
   };
-  const { tmdbId, type, notes, noteIsSpoiler } = body;
+  const { tmdbId, type, notes, noteIsSpoiler, labels } = body;
 
   if (!tmdbId || !type || !["movie", "tv"].includes(type)) {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
@@ -91,6 +95,26 @@ export async function POST(req: NextRequest, { params }: Params) {
 
   if (list.itemCap !== null && list.items.length >= list.itemCap) {
     return NextResponse.json({ error: "List is at capacity" }, { status: 403 });
+  }
+
+  // Validate tags before creating anything, so a rejected batch cannot leave a
+  // freshly added item behind. Vocabulary is this list's own tags, matching the
+  // per-item editor's scoping.
+  let tagsToCreate: { label: string; normalized: string }[] = [];
+  if (labels !== undefined) {
+    const vocabularySource = await prisma.listItemTag.findMany({
+      where: { listItem: { listId: list.id } },
+      select: { label: true, normalized: true, createdAt: true },
+    });
+    const result = validateTagBatch(
+      labels,
+      [],
+      buildTagVocabulary([{ tags: vocabularySource }]),
+    );
+    if (!result.ok) {
+      return NextResponse.json({ error: result.error }, { status: 400 });
+    }
+    tagsToCreate = result.value;
   }
 
   const mediaItem = await getOrCreateMediaItem(tmdbId, type as "movie" | "tv");
@@ -118,6 +142,18 @@ export async function POST(req: NextRequest, { params }: Params) {
     },
     include: { mediaItem: true, addedBy: { select: { id: true, name: true } } },
   });
+
+  if (tagsToCreate.length > 0) {
+    await prisma.listItemTag.createMany({
+      data: tagsToCreate.map((tag) => ({
+        listItemId: item.id,
+        label: tag.label,
+        normalized: tag.normalized,
+      })),
+      // The item may be an upsert of one that already carried these tags.
+      skipDuplicates: true,
+    });
+  }
 
   await prisma.list.update({
     where: { id: list.id },
