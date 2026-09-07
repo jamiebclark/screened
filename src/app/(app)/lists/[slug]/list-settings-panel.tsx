@@ -22,6 +22,13 @@ interface ListSettingsPanelProps {
   commentsEnabled: boolean;
   displayMode: "GRID" | "LIST";
   itemCap: number | null;
+  challengeStartsAt: string | null;
+  challengeEndsAt: string | null;
+}
+
+/** Stored UTC-day-start ISO datetime -> `<input type="date">` value, with no timezone arithmetic. */
+function toDateInputValue(iso: string | null): string {
+  return iso ? iso.slice(0, 10) : "";
 }
 
 export function ListSettingsPanel({
@@ -33,6 +40,8 @@ export function ListSettingsPanel({
   commentsEnabled: initialComments,
   displayMode: initialDisplayMode,
   itemCap: initialItemCap,
+  challengeStartsAt: initialChallengeStartsAt,
+  challengeEndsAt: initialChallengeEndsAt,
 }: ListSettingsPanelProps) {
   const router = useRouter();
   const [name, setName] = useState(initialName);
@@ -67,7 +76,14 @@ export function ListSettingsPanel({
     votingEnabled !== initialVoting ||
     commentsEnabled !== initialComments ||
     displayMode !== initialDisplayMode ||
-    (itemCap === "" ? null : Number(itemCap)) !== initialItemCap;
+    (itemCap === "" ? null : Number(itemCap)) !== initialItemCap ||
+    challengeStartsAt !== toDateInputValue(initialChallengeStartsAt) ||
+    challengeEndsAt !== toDateInputValue(initialChallengeEndsAt);
+
+  const clearWindow = () => {
+    setChallengeStartsAt("");
+    setChallengeEndsAt("");
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -94,6 +110,9 @@ export function ListSettingsPanel({
           commentsEnabled,
           displayMode,
           itemCap: parsedCap,
+          challengeStartsAt:
+            challengeStartsAt === "" ? null : challengeStartsAt,
+          challengeEndsAt: challengeEndsAt === "" ? null : challengeEndsAt,
         }),
       });
 
@@ -248,6 +267,40 @@ export function ListSettingsPanel({
           />
           <p className="text-[11px] text-muted-foreground">
             Max items allowed (leave blank for no limit)
+          </p>
+        </div>
+
+        <div className="space-y-1">
+          <div className="flex items-center justify-between">
+            <Label className="text-xs font-medium">Challenge window</Label>
+            {(challengeStartsAt !== "" || challengeEndsAt !== "") && (
+              <button
+                type="button"
+                onClick={clearWindow}
+                className="text-[11px] text-muted-foreground hover:text-foreground underline"
+              >
+                Clear window
+              </button>
+            )}
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <Input
+              id="challenge-starts-at"
+              type="date"
+              value={challengeStartsAt}
+              onChange={(e) => setChallengeStartsAt(e.target.value)}
+              className="h-7 text-xs"
+            />
+            <Input
+              id="challenge-ends-at"
+              type="date"
+              value={challengeEndsAt}
+              onChange={(e) => setChallengeEndsAt(e.target.value)}
+              className="h-7 text-xs"
+            />
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            Only watches inside this window count toward challenge figures
           </p>
         </div>
       </div>
