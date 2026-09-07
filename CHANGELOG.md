@@ -1,3 +1,10 @@
+## [1.68.1](https://github.com/jamiebclark/screened/compare/v1.68.0...v1.68.1) (2026-09-07)
+
+### Bug Fixes
+
+* **lists:** merge existing tags that differ only by an invisible character ([d1fb403](https://github.com/jamiebclark/screened/commit/d1fb403342a963035f54a71a2cb7173ada5c61f4))
+* **lists:** treat tags that differ only by an invisible character as one ([fb30b6b](https://github.com/jamiebclark/screened/commit/fb30b6b8b053b69753e72f4497e7ee5af47a3a36))
+
 ## [1.68.0](https://github.com/jamiebclark/screened/compare/v1.67.0...v1.68.0) (2026-09-07)
 
 ### Features
