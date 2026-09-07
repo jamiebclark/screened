@@ -32,6 +32,7 @@ async function getOrCreateMediaItem(tmdbId: number, type: "movie" | "tv") {
         overview: movie.overview,
         genres: movie.genres.map((g) => g.name),
         runtime: movie.runtime,
+        productionCountries: movie.production_country_codes,
       },
     });
   } else {
@@ -49,6 +50,7 @@ async function getOrCreateMediaItem(tmdbId: number, type: "movie" | "tv") {
         overview: show.overview,
         genres: show.genres.map((g) => g.name),
         runtime: show.episode_run_time[0] ?? null,
+        productionCountries: show.production_country_codes,
       },
     });
   }
