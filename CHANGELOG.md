@@ -1,3 +1,17 @@
+## [1.68.0](https://github.com/jamiebclark/screened/compare/v1.67.0...v1.68.0) (2026-09-07)
+
+### Features
+
+* **lists:** add list tag model and challenge window ([325af92](https://github.com/jamiebclark/screened/commit/325af926877264631dc0467f6462d54941bf5d5a))
+* **lists:** add list tag routes and accept the challenge window ([2b8769f](https://github.com/jamiebclark/screened/commit/2b8769f2e797ce78d253c11c9328b354c6f48697))
+* **lists:** keep the list's actions in reach while scrolling ([2082fd4](https://github.com/jamiebclark/screened/commit/2082fd43d958d641df45c7bdb74f564b2d49d1a1))
+* **lists:** let an owner delete a list ([b0e6574](https://github.com/jamiebclark/screened/commit/b0e6574a987447f724f247b01145ccf48543b517))
+* **lists:** manage a list's tags from the list page ([e225167](https://github.com/jamiebclark/screened/commit/e225167d8e18c1b3860d7e50bd98e8ab694cae57))
+* **lists:** resolve tags, windows and in-window watches in the lib layer ([397d203](https://github.com/jamiebclark/screened/commit/397d203a05672174ef7b6c28de53153ad9911ab2))
+* **lists:** set the challenge window in list settings ([e723867](https://github.com/jamiebclark/screened/commit/e723867f2cbca501c30b8e4f85f3da6419adf36e))
+* **lists:** show an item's tags on its grid card ([6a9f03b](https://github.com/jamiebclark/screened/commit/6a9f03b732958cc9c6d8978f1dc9f0b5527c1b77))
+* **lists:** show the challenge history and in-window figures ([33bdf45](https://github.com/jamiebclark/screened/commit/33bdf45a72105319d66d322dddd5dd00651529e2))
+
 ## [1.67.0](https://github.com/jamiebclark/screened/compare/v1.66.0...v1.67.0) (2026-09-07)
 
 ### Features
