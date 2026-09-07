@@ -1,3 +1,9 @@
+## [1.67.0](https://github.com/jamiebclark/screened/compare/v1.66.0...v1.67.0) (2026-09-07)
+
+### Features
+
+* **lists:** add admin route to backfill production countries ([ca876ed](https://github.com/jamiebclark/screened/commit/ca876ed8c862d8675757b1f74603f46eb4f5c62d))
+
 ## [1.66.0](https://github.com/jamiebclark/screened/compare/v1.65.1...v1.66.0) (2026-09-07)
 
 ### Features
