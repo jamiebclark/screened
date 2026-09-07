@@ -8,6 +8,7 @@ import { ListItemVotePill } from "./list-item-vote-pill";
 import { ListItemHideToggle } from "./list-item-hide-toggle";
 import { MarkdownContent } from "@/components/markdown-content";
 import { tmdbImageUrl, cn } from "@/lib/utils";
+import { formatProductionCountries } from "@/lib/production-countries";
 import type { GridItem } from "./list-items-grid";
 
 interface ListItemsListViewProps {
@@ -116,6 +117,12 @@ function ListRow({
           {item.mediaItem.year}
           {item.mediaItem.year && " · "}
           {item.mediaItem.type === "movie" ? "Movie" : "TV"}
+          {item.mediaItem.productionCountries.length > 0 && (
+            <>
+              {" · "}
+              {formatProductionCountries(item.mediaItem.productionCountries)}
+            </>
+          )}
         </p>
         <div className="flex items-center gap-1 mt-1.5">
           <Avatar className="h-4 w-4 shrink-0">

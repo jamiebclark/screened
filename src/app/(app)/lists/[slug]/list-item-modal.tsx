@@ -23,6 +23,7 @@ import { ListItemHideToggle } from "./list-item-hide-toggle";
 import { ListItemComments } from "./list-item-comments";
 import { ListItemTagEditor, type ItemTag } from "./list-item-tag-editor";
 import { tmdbImageUrl } from "@/lib/utils";
+import { formatProductionCountries } from "@/lib/production-countries";
 import { MarkdownContent } from "@/components/markdown-content";
 import type { GridItem } from "./list-items-grid";
 import type { TagVocabularyEntry } from "@/lib/list-item-tags";
@@ -287,6 +288,14 @@ export function ListItemModal({
                   <>
                     <span>·</span>
                     <span>{runtimeLabel}</span>
+                  </>
+                )}
+                {mediaItem.productionCountries.length > 0 && (
+                  <>
+                    <span>·</span>
+                    <span>
+                      {formatProductionCountries(mediaItem.productionCountries)}
+                    </span>
                   </>
                 )}
               </div>

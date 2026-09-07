@@ -34,6 +34,7 @@ export type GridItem = {
     overview: string | null;
     runtime: number | null;
     genres: string[];
+    productionCountries: string[];
   };
   votes: { value: number; userId: string }[];
   watchedBy: { id: string; name: string | null; avatarUrl: string | null }[];

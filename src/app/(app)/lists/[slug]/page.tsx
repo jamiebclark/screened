@@ -53,6 +53,7 @@ type RawItem = {
     overview: string | null;
     runtime: number | null;
     genres: string[];
+    productionCountries: string[];
   };
   votes: { value: number; userId: string }[];
   comments: { id: string; createdAt: Date }[];
@@ -99,6 +100,7 @@ function toGridItem(
       overview: item.mediaItem.overview,
       runtime: item.mediaItem.runtime,
       genres: item.mediaItem.genres,
+      productionCountries: item.mediaItem.productionCountries,
     },
     votes: item.votes,
     watchedBy,

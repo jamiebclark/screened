@@ -7,6 +7,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { ListStats } from "@/lib/list-stats";
+import { countryDisplayName } from "@/lib/production-countries";
 
 interface ListStatsModalProps {
   open: boolean;
@@ -26,6 +27,7 @@ export function ListStatsModal({
     { label: "Still in play", value: stats.visibleItems },
     { label: "Decades", value: stats.distinctDecades },
     { label: "Tags in use", value: stats.distinctVisibleTags },
+    { label: "Countries", value: stats.distinctVisibleCountries },
   ];
 
   return (
@@ -43,6 +45,32 @@ export function ListStatsModal({
             </div>
           ))}
         </div>
+
+        {stats.countryCounts.length > 0 && (
+          <div className="space-y-2">
+            <h3 className="text-base font-semibold">
+              Countries{" "}
+              <span className="text-sm font-normal text-muted-foreground">
+                {stats.countryCounts.length}
+              </span>
+            </h3>
+            <ul className="divide-y rounded-lg border">
+              {stats.countryCounts.map((country) => (
+                <li
+                  key={country.code}
+                  className="flex items-center justify-between gap-3 px-3 py-2"
+                >
+                  <span className="truncate text-sm">
+                    {countryDisplayName(country.code)}
+                  </span>
+                  <span className="shrink-0 text-sm text-muted-foreground">
+                    {country.count} {country.count === 1 ? "film" : "films"}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {stats.tagCounts.length > 0 && (
           <div className="space-y-2">
