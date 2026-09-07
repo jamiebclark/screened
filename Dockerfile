@@ -29,7 +29,12 @@ COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/src/generated ./src/generated
-RUN yarn add prisma --ignore-engines && yarn cache clean && \
+# Pin the CLI to the exact @prisma/client version this image was built against.
+# An unpinned `yarn add prisma` resolves to whatever npm tags `latest`, which
+# drifted to a v8 prerelease that renames `migrate` to `migration` — the CMD
+# below then fails, and because it is &&-chained the server never starts.
+RUN PRISMA_VERSION="$(node -p "require('./package.json').dependencies['@prisma/client'].replace(/^\D*/,'')")" && \
+    yarn add "prisma@${PRISMA_VERSION}" --exact --ignore-engines && yarn cache clean && \
     chown -R nextjs:nodejs node_modules
 
 USER nextjs
