@@ -140,6 +140,6 @@ These `.cursor/rules/` files contain full detail behind the summaries above — 
 
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan
-at specs/010-list-item-curation/plan.md
+at specs/011-list-challenge-tracking/plan.md
 
 <!-- SPECKIT END -->
