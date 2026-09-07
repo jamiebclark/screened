@@ -1,3 +1,16 @@
+## [1.64.0](https://github.com/jamiebclark/screened/compare/v1.63.1...v1.64.0) (2026-09-07)
+
+### Features
+
+* **lists:** surface rename and layout controls, honour ranked order ([5efc2c4](https://github.com/jamiebclark/screened/commit/5efc2c4ef998c45d8ffa4f949cb3e2693a0e59d2))
+* **search:** add title search param parsing and tmdb paging ([6324752](https://github.com/jamiebclark/screened/commit/632475246179cf683548e8e135e08098053273c4))
+* **search:** support type, year and paging in search api ([8a4beba](https://github.com/jamiebclark/screened/commit/8a4bebaea8d68fed0941e2614c31684597029720))
+
+### Bug Fixes
+
+* **lists:** add pure modules for ordering and validation ([7490726](https://github.com/jamiebclark/screened/commit/7490726fff4395d1f7f4e93e6587948794924271))
+* **lists:** persist item order and validate rename/layout in api ([6e14b9b](https://github.com/jamiebclark/screened/commit/6e14b9ba769a1832e8634694b1fa487f3dbff1e8))
+
 ## [1.63.1](https://github.com/jamiebclark/screened/compare/v1.63.0...v1.63.1) (2026-08-07)
 
 ### Bug Fixes
