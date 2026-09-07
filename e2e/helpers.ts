@@ -1,4 +1,16 @@
-import { Page } from "@playwright/test";
+import { Page, expect } from "@playwright/test";
+
+/**
+ * Some specs drive surfaces that hit TMDB on every request and so cannot be
+ * satisfied by seeded MediaItem rows: `/api/search`, the browse and upcoming
+ * pages, and the TV season list on /tv/[tmdbId] that supplies episode names.
+ *
+ * CI runs with a placeholder TMDB_API_KEY, so those specs are skipped unless
+ * you opt in with E2E_LIVE_TMDB=1 and a real key in the environment.
+ */
+export const LIVE_TMDB = process.env.E2E_LIVE_TMDB === "1";
+export const LIVE_TMDB_REASON =
+  "needs a live TMDB_API_KEY; set E2E_LIVE_TMDB=1 to run";
 
 export const TEST_USER = {
   name: "E2E Tester",
@@ -30,7 +42,35 @@ export async function login(page: Page, user = TEST_USER) {
   await page.getByLabel("Email").fill(user.email);
   await page.getByLabel("Password").fill(user.password);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  await page.waitForURL("/", { timeout: 10000 });
+
+  await settleAfterSignIn(page);
+}
+
+/**
+ * Waits for the signed-in app shell, stepping through onboarding if the user
+ * lands there.
+ *
+ * Two things this has to absorb. NextAuth honours its callbackUrl cookie, so a
+ * sign-in after visiting a deep link returns to that page rather than "/" —
+ * waiting on "/" made every logout/login hop time out even though sign-in had
+ * worked. And a user who has not onboarded is sent to /onboarding, which is its
+ * own route group with its own layout and therefore has no app-shell header at
+ * all. That is the normal case against a fresh database, which is what CI runs.
+ */
+export async function settleAfterSignIn(page: Page) {
+  const userMenu = page.getByRole("button", { name: "Open user menu" });
+  const onboardingCta = page.getByRole("button", {
+    name: "Continue to Screened",
+  });
+
+  await expect(userMenu.or(onboardingCta).first()).toBeVisible({
+    timeout: 20000,
+  });
+
+  if (await onboardingCta.isVisible().catch(() => false)) {
+    await onboardingCta.click();
+    await expect(userMenu).toBeVisible({ timeout: 20000 });
+  }
 }
 
 export async function logout(page: Page) {
@@ -54,6 +94,13 @@ export async function ensureLoggedIn(page: Page, user = TEST_USER) {
   await page.goto("/");
   if (page.url().includes("/login") || page.url().includes("/register")) {
     await login(page, user);
+    return;
+  }
+  // Already authenticated, but an un-onboarded user is redirected to
+  // /onboarding, whose URL mentions neither login nor register. Without this
+  // the caller starts its test sitting on the onboarding screen.
+  if (page.url().includes("/onboarding")) {
+    await settleAfterSignIn(page);
   }
 }
 
