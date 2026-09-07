@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { MessageSquare, Eye } from "lucide-react";
+import { MessageSquare, Eye, EyeOff } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ListItemVotePill } from "./list-item-vote-pill";
+import { ListItemHideToggle } from "./list-item-hide-toggle";
 import { MarkdownContent } from "@/components/markdown-content";
-import { tmdbImageUrl } from "@/lib/utils";
+import { tmdbImageUrl, cn } from "@/lib/utils";
 import type { GridItem } from "./list-items-grid";
 
 interface ListItemsListViewProps {
@@ -16,7 +17,9 @@ interface ListItemsListViewProps {
   currentUserId: string | undefined;
   rankingEnabled: boolean;
   canReorder: boolean;
+  canCurate: boolean;
   onSelect: (id: string) => void;
+  onHiddenChange: (id: string, isHidden: boolean) => void;
 }
 
 function SpoilerNote({ notes }: { notes: string }) {
@@ -48,14 +51,18 @@ function ListRow({
   canVote,
   currentUserId,
   rankingEnabled,
+  canCurate,
   onSelect,
+  onHiddenChange,
 }: {
   item: GridItem;
   listSlug: string;
   canVote: boolean;
   currentUserId: string | undefined;
   rankingEnabled: boolean;
+  canCurate: boolean;
   onSelect: (id: string) => void;
+  onHiddenChange: (id: string, isHidden: boolean) => void;
 }) {
   const posterUrl = tmdbImageUrl(item.mediaItem.poster, "w154");
   const upvotes = item.votes.filter((v) => v.value === 1).length;
@@ -66,7 +73,10 @@ function ListRow({
 
   return (
     <div
-      className="flex items-start gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+      className={cn(
+        "flex items-start gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer",
+        item.isHidden && "opacity-50",
+      )}
       onClick={() => onSelect(item.id)}
     >
       {/* Rank number */}
@@ -130,6 +140,23 @@ function ListRow({
               <MarkdownContent content={item.notes} />
             </div>
           ))}
+        {item.tags.length > 0 && (
+          <div className="flex flex-wrap items-center gap-1 mt-1">
+            {item.tags.slice(0, 3).map((tag) => (
+              <span
+                key={tag.id}
+                className="inline-flex items-center rounded-full bg-secondary px-1.5 py-0.5 text-[11px] text-secondary-foreground"
+              >
+                {tag.label}
+              </span>
+            ))}
+            {item.tags.length > 3 && (
+              <span className="text-[11px] text-muted-foreground">
+                +{item.tags.length - 3}
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Badges */}
@@ -160,6 +187,18 @@ function ListRow({
               : item.commentCount}
           </div>
         )}
+        {item.isHidden && (
+          <EyeOff className="h-3.5 w-3.5 text-muted-foreground" />
+        )}
+        {canCurate && (
+          <ListItemHideToggle
+            listSlug={listSlug}
+            itemId={item.id}
+            isHidden={item.isHidden}
+            onChange={(next) => onHiddenChange(item.id, next)}
+            className="text-muted-foreground hover:text-foreground h-6 w-6"
+          />
+        )}
       </div>
     </div>
   );
@@ -171,7 +210,9 @@ export function ListItemsListView({
   canVote,
   currentUserId,
   rankingEnabled,
+  canCurate,
   onSelect,
+  onHiddenChange,
 }: ListItemsListViewProps) {
   return (
     <div className="divide-y divide-border">
@@ -183,7 +224,9 @@ export function ListItemsListView({
           canVote={canVote}
           currentUserId={currentUserId}
           rankingEnabled={rankingEnabled}
+          canCurate={canCurate}
           onSelect={onSelect}
+          onHiddenChange={onHiddenChange}
         />
       ))}
     </div>

@@ -6,11 +6,17 @@ import { MediaCard } from "@/components/media-card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ListItemVotePill } from "./list-item-vote-pill";
 import { ListItemModal } from "./list-item-modal";
+import { ListItemHideToggle } from "./list-item-hide-toggle";
+import { EyeOff } from "lucide-react";
+import { cn } from "@/lib/utils";
+import type { ItemTag } from "./list-item-tag-editor";
+import type { TagVocabularyEntry } from "@/lib/list-item-tags";
 
 export type GridItem = {
   id: string;
   notes: string | null;
   noteIsSpoiler: boolean;
+  isHidden: boolean;
   position: number | null;
   displayRank?: number;
   addedAt: string;
@@ -18,6 +24,7 @@ export type GridItem = {
   commentCount: number;
   unreadCommentCount: number;
   addedBy: { id: string; name: string | null; avatarUrl: string | null };
+  tags: ItemTag[];
   mediaItem: {
     tmdbId: number;
     type: "movie" | "tv";
@@ -45,7 +52,9 @@ interface ListItemsGridProps {
   votingEnabled: boolean;
   commentsEnabled: boolean;
   currentUserId: string | undefined;
+  canCurate: boolean;
   isListOwner: boolean;
+  tagVocabulary: TagVocabularyEntry[];
 }
 
 function SectionGrid({
@@ -54,14 +63,18 @@ function SectionGrid({
   canVote,
   votingEnabled,
   currentUserId,
+  canCurate,
   onSelect,
+  onHiddenChange,
 }: {
   items: GridItem[];
   listSlug: string;
   canVote: boolean;
   votingEnabled: boolean;
   currentUserId: string | undefined;
+  canCurate: boolean;
   onSelect: (id: string) => void;
+  onHiddenChange: (id: string, isHidden: boolean) => void;
 }) {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
@@ -73,7 +86,10 @@ function SectionGrid({
           : null;
 
         return (
-          <div key={item.id} className="relative">
+          <div
+            key={item.id}
+            className={cn("relative", item.isHidden && "opacity-50")}
+          >
             <MediaCard
               tmdbId={item.mediaItem.tmdbId}
               type={item.mediaItem.type}
@@ -82,6 +98,25 @@ function SectionGrid({
               year={item.mediaItem.year}
               onClick={() => onSelect(item.id)}
             />
+
+            {item.isHidden && (
+              <div className="absolute inset-x-0 top-1/2 z-10 flex justify-center pointer-events-none">
+                <div className="rounded-full bg-black/70 text-white p-1.5 shadow-sm">
+                  <EyeOff className="h-4 w-4" />
+                </div>
+              </div>
+            )}
+
+            {canCurate && (
+              <div className="absolute bottom-2 left-2 z-10 rounded-full bg-black/60 text-white p-1.5 shadow-sm">
+                <ListItemHideToggle
+                  listSlug={listSlug}
+                  itemId={item.id}
+                  isHidden={item.isHidden}
+                  onChange={(next) => onHiddenChange(item.id, next)}
+                />
+              </div>
+            )}
 
             {/* Rank badge — top-left pill, ranked lists only */}
             {item.displayRank !== undefined && (
@@ -152,13 +187,45 @@ export function ListItemsGrid({
   votingEnabled,
   commentsEnabled,
   currentUserId,
+  canCurate,
   isListOwner,
+  tagVocabulary,
 }: ListItemsGridProps) {
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [hiddenOverrides, setHiddenOverrides] = useState<
+    Record<string, boolean>
+  >({});
+  const [tagOverrides, setTagOverrides] = useState<Record<string, ItemTag[]>>(
+    {},
+  );
+
+  function applyOverride(item: GridItem): GridItem {
+    const hiddenOverride = hiddenOverrides[item.id];
+    const tagOverride = tagOverrides[item.id];
+    return {
+      ...item,
+      isHidden: hiddenOverride === undefined ? item.isHidden : hiddenOverride,
+      tags: tagOverride === undefined ? item.tags : tagOverride,
+    };
+  }
+
+  function handleHiddenChange(id: string, isHidden: boolean) {
+    setHiddenOverrides((prev) => ({ ...prev, [id]: isHidden }));
+  }
+
+  function handleTagsChange(id: string, tags: ItemTag[]) {
+    setTagOverrides((prev) => ({ ...prev, [id]: tags }));
+  }
+
+  const rankedItemsView = rankedItems.map(applyOverride);
+  const moviesView = movies.map(applyOverride);
+  const tvShowsView = tvShows.map(applyOverride);
+  const watchedMoviesView = watchedMovies.map(applyOverride);
+  const watchedTvView = watchedTv.map(applyOverride);
 
   const allItems = rankingEnabled
-    ? rankedItems
-    : [...movies, ...tvShows, ...watchedMovies, ...watchedTv];
+    ? rankedItemsView
+    : [...moviesView, ...tvShowsView, ...watchedMoviesView, ...watchedTvView];
   const selectedItem = selectedItemId
     ? (allItems.find((i) => i.id === selectedItemId) ?? null)
     : null;
@@ -171,13 +238,15 @@ export function ListItemsGrid({
     canVote,
     votingEnabled,
     currentUserId,
+    canCurate,
     onSelect: setSelectedItemId,
+    onHiddenChange: handleHiddenChange,
   };
 
   if (rankingEnabled) {
     return (
       <>
-        <SectionGrid items={rankedItems} {...sectionProps} />
+        <SectionGrid items={rankedItemsView} {...sectionProps} />
         <ListItemModal
           item={selectedItem}
           isOpen={selectedItem !== null}
@@ -187,7 +256,11 @@ export function ListItemsGrid({
           votingEnabled={votingEnabled}
           commentsEnabled={commentsEnabled}
           currentUserId={currentUserId}
+          canCurate={canCurate}
           isListOwner={isListOwner}
+          onHiddenChanged={handleHiddenChange}
+          tagVocabulary={tagVocabulary}
+          onTagsChanged={handleTagsChange}
         />
       </>
     );
@@ -202,7 +275,7 @@ export function ListItemsGrid({
               <Film className="h-4 w-4" />
               Movies ({movies.length})
             </h2>
-            <SectionGrid items={movies} {...sectionProps} />
+            <SectionGrid items={moviesView} {...sectionProps} />
           </section>
         )}
 
@@ -212,7 +285,7 @@ export function ListItemsGrid({
               <Tv className="h-4 w-4" />
               TV Shows ({tvShows.length})
             </h2>
-            <SectionGrid items={tvShows} {...sectionProps} />
+            <SectionGrid items={tvShowsView} {...sectionProps} />
           </section>
         )}
 
@@ -228,7 +301,7 @@ export function ListItemsGrid({
                     <Film className="h-4 w-4" />
                     Movies ({watchedMovies.length})
                   </h3>
-                  <SectionGrid items={watchedMovies} {...sectionProps} />
+                  <SectionGrid items={watchedMoviesView} {...sectionProps} />
                 </div>
               )}
               {watchedTv.length > 0 && (
@@ -237,7 +310,7 @@ export function ListItemsGrid({
                     <Tv className="h-4 w-4" />
                     TV Shows ({watchedTv.length})
                   </h3>
-                  <SectionGrid items={watchedTv} {...sectionProps} />
+                  <SectionGrid items={watchedTvView} {...sectionProps} />
                 </div>
               )}
             </div>
@@ -254,7 +327,11 @@ export function ListItemsGrid({
         votingEnabled={votingEnabled}
         commentsEnabled={commentsEnabled}
         currentUserId={currentUserId}
+        canCurate={canCurate}
         isListOwner={isListOwner}
+        onHiddenChanged={handleHiddenChange}
+        tagVocabulary={tagVocabulary}
+        onTagsChanged={handleTagsChange}
       />
     </>
   );

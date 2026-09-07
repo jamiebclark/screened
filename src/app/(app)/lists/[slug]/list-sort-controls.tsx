@@ -33,7 +33,7 @@ export function ListSortControls({
     : SORT_OPTIONS.filter((o) => o.value !== "votes");
 
   return (
-    <div className="flex items-center gap-2 flex-wrap mb-6">
+    <div className="flex items-center gap-2 flex-wrap">
       <span className="text-xs text-muted-foreground">Sort:</span>
       {options.map((opt) => (
         <button
