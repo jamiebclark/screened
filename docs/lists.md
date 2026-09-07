@@ -92,6 +92,55 @@ items still in play (not hidden), distinct release decades, and distinct tags in
 items. Stats describe the whole list regardless of the current hidden-item filter, and are visible
 to every viewer, including logged-out visitors on public lists.
 
+## Running a challenge
+
+Lists support Hooptober-style challenges: declare the categories up front, set a window, and let
+the list track who watched what and when.
+
+### Declaring categories
+
+Click the **Tags** icon in the header to open the list's declared tags — separate from the
+free-text tags on individual items:
+
+- Curators (owners and contributors) can declare, rename, and delete tags here, independently of
+  any item. A newly declared tag shows **0 films** until something is tagged with it.
+- Declared tags are offered as suggestions the moment you start tagging an item, and any label you
+  type that isn't already declared is added to the list's vocabulary automatically.
+- Renaming merges nothing — it only changes the label everywhere it's used. Trying to rename one
+  tag to a name another tag on the list already uses is rejected.
+- Deleting a tag tells you how many items it will be removed from before you confirm.
+- Viewers can read declared tags but cannot create, rename, or delete them.
+
+### Setting the challenge window
+
+Owners set an optional challenge window from the **Settings** tab — a start date, an end date, or
+both. Only owners can change it; contributors and viewers cannot. **Clear window** removes both
+dates. While a window is set:
+
+- The list's Stats show a **During the challenge** block above the all-time figures: categories
+  covered (against the declared tag count), decades, countries, and films watched, plus a
+  **Still to cover** list of every uncovered category.
+- A watch counts once its date falls on or inside the window's start and end dates (both inclusive)
+  — watching a title again inside the window after an earlier out-of-window watch is what flips its
+  categories from uncovered to covered.
+- Hiding an item removes it from the in-window figures but its watch stays listed in the history.
+
+With no window set, only the all-time figures show, and the history has no date restriction.
+
+### Reading the shared history
+
+The **History** icon (owners and members only) opens a shared, date-ordered scoreboard of who
+watched what on the list, attributed by name and avatar, TV episodes labelled `S1E4`-style and
+interleaved with films by date. If a window is set, only in-window watches appear; log out or set a
+window with nothing in it yet and you'll see a short explanation instead of an empty page.
+
+### Grid and sticky header
+
+In Grid layout, a tagged item shows up to two of its tags beneath the poster plus a `+N` counter for
+the rest — untagged cards are unchanged. On a long list, a slim bar with the list name and the same
+Add/Stats actions as the header stays in reach once you scroll past the top; it never appears on a
+list short enough to fit on screen.
+
 ## Privacy
 
 | Visibility | Radarr endpoint | Discoverable by others |

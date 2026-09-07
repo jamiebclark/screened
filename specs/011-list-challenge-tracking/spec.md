@@ -95,8 +95,8 @@ all-time figures still include the title.
 
 **Acceptance Scenarios**:
 
-1. **Given** a list, **When** a curator opens the list's settings, **Then** they can set and clear a challenge start date and end date.
-2. **Given** a curator setting a window, **When** the end date is earlier than the start date, **Then** the change is rejected with a clear message and nothing is saved.
+1. **Given** a list, **When** the list owner opens the list's settings, **Then** they can set and clear a challenge start date and end date. A contributor, who may curate items and tags, MUST NOT be able to change the window.
+2. **Given** the owner setting a window, **When** the end date is earlier than the start date, **Then** the change is rejected with a clear message and nothing is saved.
 3. **Given** a list with a window set and members who have logged watches, **When** any member opens the list's watch history, **Then** they see one shared, date-ordered record of every list title watched inside the window, each line naming and picturing the member who watched it.
 4. **Given** a member watched a list title before the window opened, **When** the watch history is viewed, **Then** that watch does not appear.
 5. **Given** a list title tagged "folk horror" whose only watch predates the window, **When** the in-window figures are read, **Then** "folk horror" is not counted as covered.
@@ -193,7 +193,7 @@ both actions still work from where the member is.
 - **FR-006**: Deleting a tag MUST remove it from every item that carries it, and MUST tell the member how many items will be affected before the deletion is confirmed.
 - **FR-007**: A tag that no item carries MUST still be offered as a suggestion when a member is tagging an item.
 - **FR-008**: Tagging an item MUST be limited to the list's tags: entering a name that is not yet one of them MUST create it as a list tag as part of the same action, so an item can never carry a tag the list does not know about.
-- **FR-009**: The list's summary figures MUST list every tag the list holds, including those carried by no item, showing a count of zero for those.
+- **FR-009**: The list's summary figures MUST list every tag the list holds, including those carried by no item, showing a count of zero for those. This applies to the enumerated tag list. The existing "tags in use" count keeps its present meaning — tags carried by at least one non-hidden item — so that the new zero-count entries add to what is listed without redefining a figure that already exists (see SC-010).
 - **FR-010**: Every tag assignment that exists before this change MUST still exist after it, attached to the same item and reading with the same name that the list already displays for it.
 
 **Challenge window**
@@ -209,7 +209,7 @@ both actions still work from where the member is.
 - **FR-016**: The history MUST cover all of the list's members as a single shared record, attributing each watch with that member's name and avatar.
 - **FR-017**: When the list has a challenge window, the history MUST include only watches falling inside it, treating watches exactly on either boundary as inside.
 - **FR-018**: The history MUST include both film watches and TV episode viewings, presented on the dates they happened in the same date-ordered record.
-- **FR-019**: The history MUST be visible to every member who can see the list.
+- **FR-019**: The history MUST be visible to every member who can see the list. On a public list the attributed history — which names who watched what and when — MUST remain member-only, while the aggregate in-window figures, which name nobody, stay as visible as the list's existing figures. A public list MUST NOT expose its members' viewing dates to anonymous visitors.
 - **FR-020**: When the list has no challenge window, the history MUST show the members' watches of list titles without date restriction.
 
 **In-window coverage figures**
