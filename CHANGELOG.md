@@ -1,3 +1,12 @@
+## [1.65.0](https://github.com/jamiebclark/screened/compare/v1.64.0...v1.65.0) (2026-09-07)
+
+### Features
+
+* **lists:** add curation lib modules for permissions, tags and stats ([26ecbe8](https://github.com/jamiebclark/screened/commit/26ecbe86c70181de7c0f5d70af66a1a6a2c3b4b1))
+* **lists:** add hidden flag and per-item tag model ([2d2034c](https://github.com/jamiebclark/screened/commit/2d2034c0ee1d6936ee88c5351158068ad5046b53))
+* **lists:** add hide and tag api routes ([45bd4c8](https://github.com/jamiebclark/screened/commit/45bd4c8aae150f2c82fab689056d54cd51f947cf))
+* **lists:** add hide toggle, tag editor and stats modal to list page ([fedff99](https://github.com/jamiebclark/screened/commit/fedff99506980705e3bd6252a72e4f27e18cd065))
+
 ## [1.64.0](https://github.com/jamiebclark/screened/compare/v1.63.1...v1.64.0) (2026-09-07)
 
 ### Features
