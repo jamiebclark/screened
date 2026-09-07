@@ -70,10 +70,10 @@ function ListRow({
       onClick={() => onSelect(item.id)}
     >
       {/* Rank number */}
-      {rankingEnabled && item.position !== undefined && (
+      {rankingEnabled && item.displayRank !== undefined && (
         <div className="w-7 shrink-0 flex items-center justify-center pt-1">
           <span className="text-sm font-bold text-muted-foreground tabular-nums">
-            {item.position}
+            {item.displayRank}
           </span>
         </div>
       )}

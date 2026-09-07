@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { slugify, generateToken } from "@/lib/utils";
 import { applyPreset, type ListPreset } from "@/lib/list-presets";
+import { validateListDetails } from "@/lib/list-validation";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -63,10 +64,21 @@ export async function POST(req: NextRequest) {
     displayMode?: "GRID" | "LIST";
     itemCap?: number | null;
   };
-  const { name, description, isPublic = true, preset } = body;
+  const { isPublic = true, preset } = body;
 
-  if (!name?.trim()) {
-    return NextResponse.json({ error: "Name required" }, { status: 400 });
+  const validated = validateListDetails({
+    name: body.name,
+    description: body.description,
+  });
+  if (!validated.ok) {
+    return NextResponse.json({ error: validated.error }, { status: 400 });
+  }
+  const { name, description } = validated.value;
+  if (!name) {
+    return NextResponse.json(
+      { error: "List name is required" },
+      { status: 400 },
+    );
   }
 
   const flags = applyPreset(preset ?? "custom", {
@@ -91,8 +103,8 @@ export async function POST(req: NextRequest) {
 
   const list = await prisma.list.create({
     data: {
-      name: name.trim(),
-      description: description?.trim(),
+      name,
+      description,
       slug,
       isPublic,
       ownerId: session.user.id,

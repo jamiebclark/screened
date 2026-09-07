@@ -169,6 +169,8 @@ export function ListPageHeader({
           onTabChange={setSettingsTab}
           listSlug={listSlug}
           isOwner={isOwner}
+          name={name}
+          description={description}
           rankingEnabled={rankingEnabled}
           votingEnabled={votingEnabled}
           commentsEnabled={commentsEnabled}

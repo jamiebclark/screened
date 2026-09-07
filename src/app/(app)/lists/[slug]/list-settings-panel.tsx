@@ -6,10 +6,17 @@ import { Settings, Loader2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import {
+  LIST_NAME_MAX_LENGTH,
+  LIST_DESCRIPTION_MAX_LENGTH,
+} from "@/lib/list-validation";
 
 interface ListSettingsPanelProps {
   listSlug: string;
+  name: string;
+  description: string | null;
   rankingEnabled: boolean;
   votingEnabled: boolean;
   commentsEnabled: boolean;
@@ -19,6 +26,8 @@ interface ListSettingsPanelProps {
 
 export function ListSettingsPanel({
   listSlug,
+  name: initialName,
+  description: initialDescription,
   rankingEnabled: initialRanking,
   votingEnabled: initialVoting,
   commentsEnabled: initialComments,
@@ -26,6 +35,8 @@ export function ListSettingsPanel({
   itemCap: initialItemCap,
 }: ListSettingsPanelProps) {
   const router = useRouter();
+  const [name, setName] = useState(initialName);
+  const [description, setDescription] = useState(initialDescription ?? "");
   const [rankingEnabled, setRankingEnabled] = useState(initialRanking);
   const [votingEnabled, setVotingEnabled] = useState(initialVoting);
   const [commentsEnabled, setCommentsEnabled] = useState(initialComments);
@@ -37,6 +48,7 @@ export function ListSettingsPanel({
   );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
 
   const handleRankingChange = (checked: boolean) => {
     setRankingEnabled(checked);
@@ -49,6 +61,8 @@ export function ListSettingsPanel({
   };
 
   const isDirty =
+    name !== initialName ||
+    description !== (initialDescription ?? "") ||
     rankingEnabled !== initialRanking ||
     votingEnabled !== initialVoting ||
     commentsEnabled !== initialComments ||
@@ -58,6 +72,7 @@ export function ListSettingsPanel({
   const handleSave = async () => {
     setSaving(true);
     setError(null);
+    setSaved(false);
 
     const parsedCap =
       itemCap.trim() === "" ? null : parseInt(itemCap.trim(), 10);
@@ -72,6 +87,8 @@ export function ListSettingsPanel({
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          name,
+          description,
           rankingEnabled,
           votingEnabled,
           commentsEnabled,
@@ -86,6 +103,7 @@ export function ListSettingsPanel({
         return;
       }
 
+      setSaved(true);
       router.refresh();
     } catch {
       setError("Something went wrong");
@@ -102,6 +120,54 @@ export function ListSettingsPanel({
       </p>
 
       <div className="space-y-3">
+        <div className="space-y-1">
+          <Label htmlFor="list-name" className="text-xs font-medium">
+            Name
+          </Label>
+          <Input
+            id="list-name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            maxLength={LIST_NAME_MAX_LENGTH}
+            className="h-7 text-xs"
+          />
+        </div>
+
+        <div className="space-y-1">
+          <Label htmlFor="list-description" className="text-xs font-medium">
+            Description
+          </Label>
+          <Textarea
+            id="list-description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            maxLength={LIST_DESCRIPTION_MAX_LENGTH}
+            className="text-xs"
+            rows={2}
+          />
+        </div>
+
+        <div className="space-y-1">
+          <Label className="text-xs font-medium">Layout</Label>
+          <div className="grid grid-cols-2 gap-2">
+            {(["GRID", "LIST"] as const).map((mode) => (
+              <label key={mode} className="relative cursor-pointer">
+                <input
+                  type="radio"
+                  name="displayMode"
+                  value={mode}
+                  checked={displayMode === mode}
+                  onChange={() => setDisplayMode(mode)}
+                  className="peer sr-only"
+                />
+                <div className="rounded-md border border-border bg-muted p-2 text-center peer-checked:border-primary peer-checked:bg-primary/10 transition-all text-xs font-medium">
+                  {mode === "GRID" ? "Grid" : "List"}
+                </div>
+              </label>
+            ))}
+          </div>
+        </div>
+
         <div className="flex items-start gap-2">
           <Checkbox
             id="ranking-toggle"
@@ -168,27 +234,6 @@ export function ListSettingsPanel({
         </div>
 
         <div className="space-y-1">
-          <Label className="text-xs font-medium">Display mode</Label>
-          <div className="grid grid-cols-2 gap-2">
-            {(["GRID", "LIST"] as const).map((mode) => (
-              <label key={mode} className="relative cursor-pointer">
-                <input
-                  type="radio"
-                  name="displayMode"
-                  value={mode}
-                  checked={displayMode === mode}
-                  onChange={() => setDisplayMode(mode)}
-                  className="peer sr-only"
-                />
-                <div className="rounded-md border border-border bg-muted p-2 text-center peer-checked:border-primary peer-checked:bg-primary/10 transition-all text-xs font-medium">
-                  {mode === "GRID" ? "Grid" : "List"}
-                </div>
-              </label>
-            ))}
-          </div>
-        </div>
-
-        <div className="space-y-1">
           <Label htmlFor="item-cap" className="text-xs font-medium">
             Item cap
           </Label>
@@ -208,18 +253,19 @@ export function ListSettingsPanel({
       </div>
 
       {error && <p className="mt-2 text-xs text-destructive">{error}</p>}
-
-      {isDirty && (
-        <Button
-          size="sm"
-          className="mt-3 w-full"
-          onClick={handleSave}
-          disabled={saving}
-        >
-          {saving && <Loader2 className="h-3 w-3 animate-spin mr-1" />}
-          Save settings
-        </Button>
+      {!error && saved && !isDirty && (
+        <p className="mt-2 text-xs text-muted-foreground">Saved</p>
       )}
+
+      <Button
+        size="sm"
+        className="mt-3 w-full"
+        onClick={handleSave}
+        disabled={saving || !isDirty}
+      >
+        {saving && <Loader2 className="h-3 w-3 animate-spin mr-1" />}
+        Save settings
+      </Button>
     </div>
   );
 }

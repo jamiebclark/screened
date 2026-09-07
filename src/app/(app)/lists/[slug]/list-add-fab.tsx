@@ -16,6 +16,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import {
+  buildTitleSearchQuery,
+  TitleMediaType,
+} from "@/lib/title-search-params";
 
 type SearchResult = {
   tmdbId: number;
@@ -24,6 +28,8 @@ type SearchResult = {
   year: number | null;
   type: string;
 };
+
+const SEARCH_LIMIT = 20;
 
 function itemKey(tmdbId: number, type: string): string {
   return `${type}-${tmdbId}`;
@@ -44,11 +50,17 @@ export function ListAddFab({
 }: ListAddFabProps) {
   const router = useRouter();
   const [query, setQuery] = useState("");
+  const [mediaType, setMediaType] = useState<TitleMediaType>("multi");
+  const [year, setYear] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
   const [results, setResults] = useState<SearchResult[]>([]);
   const [searching, setSearching] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [localAdded, setLocalAdded] = useState<Set<string>>(new Set());
+  const requestSeqRef = useRef(0);
 
   const [selected, setSelected] = useState<SearchResult | null>(null);
   const [notes, setNotes] = useState("");
@@ -66,6 +78,10 @@ export function ListAddFab({
 
   const resetModal = () => {
     setQuery("");
+    setMediaType("multi");
+    setYear("");
+    setPage(1);
+    setTotalPages(0);
     setResults([]);
     setSearchError(null);
     setDropdownOpen(false);
@@ -80,39 +96,105 @@ export function ListAddFab({
     if (!val) resetModal();
   };
 
-  const search = useCallback(async (q: string) => {
-    if (!q.trim()) {
-      setResults([]);
-      setDropdownOpen(false);
-      return;
-    }
-    setSearching(true);
-    setSearchError(null);
-    try {
-      const res = await fetch(
-        `/api/search?q=${encodeURIComponent(q)}&type=multi`,
-      );
-      if (!res.ok) {
-        setSearchError("Search failed");
+  const search = useCallback(
+    async (
+      q: string,
+      type: TitleMediaType,
+      yearInput: string,
+      pageNum: number,
+      append: boolean,
+    ) => {
+      if (!q.trim()) {
         setResults([]);
+        setTotalPages(0);
+        setDropdownOpen(false);
         return;
       }
-      const data = (await res.json()) as { results?: SearchResult[] };
-      setResults(data.results ?? []);
-      setDropdownOpen(true);
-    } catch {
-      setSearchError("Search failed");
-      setResults([]);
-    } finally {
-      setSearching(false);
-    }
-  }, []);
+      const seq = ++requestSeqRef.current;
+      if (append) setLoadingMore(true);
+      else setSearching(true);
+      setSearchError(null);
+      try {
+        const yearNum = yearInput.trim() ? Number(yearInput) : undefined;
+        const qs = buildTitleSearchQuery({
+          q,
+          mediaType: type,
+          year: yearNum,
+          page: pageNum,
+          limit: SEARCH_LIMIT,
+        });
+        const res = await fetch(`/api/search?${qs}`);
+        if (seq !== requestSeqRef.current) return;
+        if (!res.ok) {
+          const j = (await res.json().catch(() => ({}))) as {
+            error?: string;
+          };
+          setSearchError(j.error ?? "Search failed");
+          if (!append) setResults([]);
+          return;
+        }
+        const data = (await res.json()) as {
+          results?: SearchResult[];
+          totalPages?: number;
+        };
+        setResults((prev) =>
+          append ? [...prev, ...(data.results ?? [])] : (data.results ?? []),
+        );
+        setTotalPages(data.totalPages ?? 0);
+        setDropdownOpen(true);
+      } catch {
+        if (seq !== requestSeqRef.current) return;
+        setSearchError("Search failed");
+        if (!append) setResults([]);
+      } finally {
+        if (seq === requestSeqRef.current) {
+          setSearching(false);
+          setLoadingMore(false);
+        }
+      }
+    },
+    [],
+  );
 
   const handleQueryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setQuery(val);
+    setPage(1);
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => search(val), 350);
+    debounceRef.current = setTimeout(
+      () => search(val, mediaType, year, 1, false),
+      350,
+    );
+  };
+
+  const handleMediaTypeChange = (type: TitleMediaType) => {
+    setMediaType(type);
+    setPage(1);
+    search(query, type, year, 1, false);
+  };
+
+  const handleYearChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setYear(val);
+    setPage(1);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(
+      () => search(query, mediaType, val, 1, false),
+      350,
+    );
+  };
+
+  const handleLoadMore = () => {
+    const nextPage = page + 1;
+    setPage(nextPage);
+    search(query, mediaType, year, nextPage, true);
+  };
+
+  const handleClearFilters = () => {
+    setMediaType("multi");
+    setYear("");
+    setPage(1);
+    search(query, "multi", "", 1, false);
   };
 
   const handleSelect = (result: SearchResult) => {
@@ -198,9 +280,65 @@ export function ListAddFab({
               )}
             </div>
 
+            {/* Filters: media type + year */}
+            <div className="flex items-center gap-2">
+              <div className="flex rounded-md border border-border p-0.5">
+                {(
+                  [
+                    { value: "multi", label: "All" },
+                    { value: "movie", label: "Films" },
+                    { value: "tv", label: "TV" },
+                  ] as const
+                ).map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => handleMediaTypeChange(opt.value)}
+                    className={cn(
+                      "px-2.5 py-1 text-xs rounded-sm transition-colors",
+                      mediaType === opt.value
+                        ? "bg-accent text-foreground"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+              <Input
+                value={year}
+                onChange={handleYearChange}
+                placeholder="Year"
+                inputMode="numeric"
+                className="w-20 h-8 text-xs"
+              />
+            </div>
+
             {searchError && (
               <p className="text-sm text-destructive">{searchError}</p>
             )}
+
+            {/* Empty state */}
+            {dropdownOpen &&
+              !searching &&
+              query.trim() &&
+              results.length === 0 &&
+              !searchError && (
+                <div className="rounded-md border border-border p-3 text-center space-y-2">
+                  <p className="text-sm text-muted-foreground">
+                    No titles matched. Try a different year, or search both
+                    films and TV.
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleClearFilters}
+                  >
+                    Clear filters
+                  </Button>
+                </div>
+              )}
 
             {/* Results */}
             {dropdownOpen && results.length > 0 && (
@@ -263,6 +401,19 @@ export function ListAddFab({
                   );
                 })}
               </ul>
+            )}
+
+            {dropdownOpen && results.length > 0 && page < totalPages && (
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full"
+                disabled={loadingMore}
+                onClick={handleLoadMore}
+              >
+                {loadingMore && <Loader2 className="h-4 w-4 animate-spin" />}
+                Load more
+              </Button>
             )}
           </div>
         ) : (

@@ -11,6 +11,7 @@ import { ListItemReorder } from "./list-item-reorder";
 import { discordFeatures } from "@/lib/discord";
 import { computeUnreadCommentCount } from "@/lib/comment-utils";
 import { MediaType, WatchStatus } from "@/generated/prisma";
+import { orderListItems } from "@/lib/list-item-ordering";
 
 type Params = {
   params: Promise<{ slug: string }>;
@@ -57,34 +58,13 @@ type RawItem = {
   comments: { id: string; createdAt: Date }[];
 };
 
-function sortItems(items: RawItem[], sort: SortField): RawItem[] {
-  return [...items].sort((a, b) => {
-    switch (sort) {
-      case "title":
-        return a.mediaItem.title.localeCompare(b.mediaItem.title);
-      case "votes": {
-        const scoreA = a.votes.reduce((s, v) => s + v.value, 0);
-        const scoreB = b.votes.reduce((s, v) => s + v.value, 0);
-        if (scoreB !== scoreA) return scoreB - scoreA;
-        return b.addedAt.getTime() - a.addedAt.getTime();
-      }
-      case "release": {
-        const diff = (b.mediaItem.year ?? 0) - (a.mediaItem.year ?? 0);
-        if (diff !== 0) return diff;
-        return a.mediaItem.title.localeCompare(b.mediaItem.title);
-      }
-      default:
-        return b.addedAt.getTime() - a.addedAt.getTime();
-    }
-  });
-}
-
 function toGridItem(
   item: RawItem,
   canDelete: boolean,
   watchedBy: { id: string; name: string | null; avatarUrl: string | null }[],
   watchingBy: { id: string; name: string | null; avatarUrl: string | null }[],
   lastReadAt: Date | null,
+  displayRank?: number,
 ): GridItem {
   const commentCount = item.comments.length;
   const unreadCommentCount = computeUnreadCommentCount(
@@ -97,6 +77,7 @@ function toGridItem(
     notes: item.notes,
     noteIsSpoiler: item.noteIsSpoiler,
     position: item.position,
+    displayRank,
     addedAt: item.addedAt.toISOString(),
     canDelete,
     commentCount,
@@ -184,10 +165,7 @@ export default async function ListPage({ params, searchParams }: Params) {
     : `${appUrl}/api/lists/${slug}/radarr?token=${list.radarrToken}`;
 
   const sort = parseSort(rawSort, list.votingEnabled);
-  const sortedItems = list.rankingEnabled
-    ? list.items
-    : sortItems(list.items, sort);
-  const mediaIds = sortedItems.map((i) => i.mediaItemId);
+  const mediaIds = list.items.map((i) => i.mediaItemId);
 
   const watchedIdSet =
     userId && mediaIds.length > 0
@@ -205,12 +183,15 @@ export default async function ListPage({ params, searchParams }: Params) {
         )
       : new Set<string>();
 
-  const unwatchedItems = userId
-    ? sortedItems.filter((i) => !watchedIdSet.has(i.mediaItemId))
-    : sortedItems;
-  const watchedItems = userId
-    ? sortedItems.filter((i) => watchedIdSet.has(i.mediaItemId))
-    : [];
+  const ordering = orderListItems(list.items, {
+    rankingEnabled: list.rankingEnabled,
+    sort,
+    watchedMediaItemIds: watchedIdSet,
+  });
+
+  const watchedCount = list.items.filter((i) =>
+    watchedIdSet.has(i.mediaItemId),
+  ).length;
 
   const memberUserIds = list.members.map((m) => m.userId);
   const memberStatuses =
@@ -269,30 +250,27 @@ export default async function ListPage({ params, searchParams }: Params) {
   const canVote = (isMember || isOwner) && list.votingEnabled;
   const canReorder = list.rankingEnabled && isContributor;
 
-  function makeGridItems(items: RawItem[]): GridItem[] {
-    return items.map((item) =>
-      toGridItem(
-        item,
-        canDelete && (isOwner || item.addedBy.id === userId),
-        watchedByMap.get(item.mediaItemId) ?? [],
-        watchingByMap.get(item.mediaItemId) ?? [],
-        userId ? (commentReadMap.get(item.id) ?? null) : null,
-      ),
+  function makeGridItem(item: RawItem & { displayRank?: number }): GridItem {
+    return toGridItem(
+      item,
+      canDelete && (isOwner || item.addedBy.id === userId),
+      watchedByMap.get(item.mediaItemId) ?? [],
+      watchingByMap.get(item.mediaItemId) ?? [],
+      userId ? (commentReadMap.get(item.id) ?? null) : null,
+      item.displayRank,
     );
   }
 
-  const movies = makeGridItems(
-    unwatchedItems.filter((i) => i.mediaItem.type === MediaType.MOVIE),
-  );
-  const tvShows = makeGridItems(
-    unwatchedItems.filter((i) => i.mediaItem.type === MediaType.TV),
-  );
-  const watchedMovies = makeGridItems(
-    watchedItems.filter((i) => i.mediaItem.type === MediaType.MOVIE),
-  );
-  const watchedTv = makeGridItems(
-    watchedItems.filter((i) => i.mediaItem.type === MediaType.TV),
-  );
+  const rankedItems =
+    ordering.mode === "ranked" ? ordering.items.map(makeGridItem) : [];
+  const movies =
+    ordering.mode === "grouped" ? ordering.movies.map(makeGridItem) : [];
+  const tvShows =
+    ordering.mode === "grouped" ? ordering.tvShows.map(makeGridItem) : [];
+  const watchedMovies =
+    ordering.mode === "grouped" ? ordering.watchedMovies.map(makeGridItem) : [];
+  const watchedTv =
+    ordering.mode === "grouped" ? ordering.watchedTv.map(makeGridItem) : [];
 
   const existingListKeys = list.items.map(
     (i) =>
@@ -310,7 +288,7 @@ export default async function ListPage({ params, searchParams }: Params) {
         description={list.description ?? null}
         memberCount={list.members.length}
         itemCount={list.items.length}
-        watchedCount={userId ? watchedItems.length : 0}
+        watchedCount={userId ? watchedCount : 0}
         memberAvatars={list.members.slice(0, 5).map((m) => ({
           id: m.id,
           name: m.user.name,
@@ -354,7 +332,11 @@ export default async function ListPage({ params, searchParams }: Params) {
         </div>
       ) : list.displayMode === "LIST" ? (
         <ListItemReorder
-          items={[...movies, ...tvShows, ...watchedMovies, ...watchedTv]}
+          items={
+            list.rankingEnabled
+              ? rankedItems
+              : [...movies, ...tvShows, ...watchedMovies, ...watchedTv]
+          }
           listSlug={slug}
           canVote={canVote}
           votingEnabled={list.votingEnabled}
@@ -366,6 +348,8 @@ export default async function ListPage({ params, searchParams }: Params) {
         />
       ) : (
         <ListItemsGrid
+          rankingEnabled={list.rankingEnabled}
+          rankedItems={rankedItems}
           movies={movies}
           tvShows={tvShows}
           watchedMovies={watchedMovies}

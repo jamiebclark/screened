@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { normalizePositions } from "@/lib/list-item-ordering";
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -34,7 +35,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   }
 
   if (!list.rankingEnabled) {
-    return NextResponse.json({ error: "List is not ranked" }, { status: 400 });
+    return NextResponse.json(
+      { error: "This list is not ranked, so items cannot be reordered" },
+      { status: 400 },
+    );
   }
 
   const body = (await req.json()) as {
@@ -49,17 +53,42 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   for (const entry of body.positions) {
     if (!listItemIds.has(entry.id)) {
       return NextResponse.json(
-        { error: `Item ${entry.id} does not belong to this list` },
+        { error: "One or more items do not belong to this list" },
         { status: 400 },
       );
     }
   }
 
-  await prisma.$transaction(
-    body.positions.map(({ id, position }) =>
-      prisma.listItem.update({ where: { id }, data: { position } }),
-    ),
-  );
+  const uniqueIds = new Set(body.positions.map((entry) => entry.id));
+  if (uniqueIds.size !== body.positions.length) {
+    return NextResponse.json(
+      { error: "Each item may appear only once" },
+      { status: 400 },
+    );
+  }
+
+  if (body.positions.length !== list.items.length) {
+    return NextResponse.json(
+      { error: "Reorder must include every item on the list" },
+      { status: 400 },
+    );
+  }
+
+  const normalized = normalizePositions(body.positions);
+
+  try {
+    await prisma.$transaction(
+      normalized.map(({ id, position }) =>
+        prisma.listItem.update({ where: { id }, data: { position } }),
+      ),
+    );
+  } catch (error) {
+    console.error("Failed to save list item order", error);
+    return NextResponse.json(
+      { error: "Could not save the new order" },
+      { status: 500 },
+    );
+  }
 
   return NextResponse.json({ success: true });
 }

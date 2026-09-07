@@ -86,3 +86,71 @@ test.describe("Search", () => {
     await expect(page).toHaveURL(/\/search/);
   });
 });
+
+test.describe("GET /api/search", () => {
+  test("finds the 1985 film House when restricted by type and year", async ({
+    page,
+  }) => {
+    const res = await page.request.get(
+      "/api/search?q=House&type=movie&year=1985",
+    );
+    expect(res.ok()).toBeTruthy();
+    const body = (await res.json()) as {
+      results: { tmdbId: number; title: string; year: number | null }[];
+    };
+    expect(
+      body.results.some((r) => r.tmdbId === 25165 && r.year === 1985),
+    ).toBeTruthy();
+  });
+
+  test("finds the 1989 film Arena when restricted by type and year", async ({
+    page,
+  }) => {
+    const res = await page.request.get(
+      "/api/search?q=Arena&type=movie&year=1989",
+    );
+    expect(res.ok()).toBeTruthy();
+    const body = (await res.json()) as {
+      results: { title: string; year: number | null }[];
+    };
+    expect(body.results.some((r) => r.year === 1989)).toBeTruthy();
+  });
+
+  test("rejects a non-numeric year with 400", async ({ page }) => {
+    const res = await page.request.get("/api/search?q=House&year=abc");
+    expect(res.status()).toBe(400);
+    const body = (await res.json()) as { error: string };
+    expect(body.error).toMatch(/year/i);
+  });
+});
+
+test.describe("List add-title dialog search refinement", () => {
+  test("restrict to movies, set year, and add the 1985 House to a list", async ({
+    page,
+  }) => {
+    const res = await page.request.post("/api/lists", {
+      data: { name: `Search test ${Date.now()}`, isPublic: true },
+      headers: { "Content-Type": "application/json" },
+    });
+    expect(res.ok()).toBeTruthy();
+    const list = (await res.json()) as { slug: string };
+
+    await page.goto(`/lists/${list.slug}`);
+    await page.getByRole("button", { name: "Add item to list" }).click();
+    await expect(page.getByText("Search to add")).toBeVisible();
+
+    await page.getByRole("button", { name: "Films" }).click();
+    await page.getByPlaceholder("Year").fill("1985");
+    await page.getByPlaceholder("Search movies and TV shows…").fill("House");
+
+    const row = page.getByRole("button", { name: /House/ }).first();
+    await expect(row).toBeVisible({ timeout: 10000 });
+    await row.click();
+
+    await expect(page.getByText("Add to list")).toBeVisible();
+    await page.getByRole("button", { name: "Add to list" }).click();
+    await expect(page.getByText("Search to add")).not.toBeVisible({
+      timeout: 10000,
+    });
+  });
+});
