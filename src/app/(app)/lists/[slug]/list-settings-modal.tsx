@@ -43,6 +43,8 @@ interface ListSettingsModalProps {
   commentsEnabled: boolean;
   displayMode: "GRID" | "LIST";
   itemCap: number | null;
+  challengeStartsAt: string | null;
+  challengeEndsAt: string | null;
   // Members
   members: MemberRecord[];
   // Integrations
@@ -124,6 +126,8 @@ export function ListSettingsModal({
   commentsEnabled,
   displayMode,
   itemCap,
+  challengeStartsAt,
+  challengeEndsAt,
   members,
   radarrUrl,
   discordEnabled,
@@ -164,6 +168,8 @@ export function ListSettingsModal({
                   commentsEnabled={commentsEnabled}
                   displayMode={displayMode}
                   itemCap={itemCap}
+                  challengeStartsAt={challengeStartsAt}
+                  challengeEndsAt={challengeEndsAt}
                 />
               </TabsContent>
 

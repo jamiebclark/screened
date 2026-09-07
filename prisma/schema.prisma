@@ -386,6 +386,8 @@ model List {
   commentsEnabled    Boolean     @default(true)
   displayMode        DisplayMode @default(GRID)
   itemCap            Int?
+  challengeStartsAt  DateTime?
+  challengeEndsAt    DateTime?
   createdAt          DateTime    @default(now())
   updatedAt          DateTime    @updatedAt
 
@@ -393,6 +395,7 @@ model List {
   members        ListMember[]
   items          ListItem[]
   accessRequests ListAccessRequest[]
+  tags           ListTag[]
 }
 
 model ListMember {
@@ -430,17 +433,32 @@ model ListItem {
   @@unique([listId, mediaItemId])
 }
 
-model ListItemTag {
+model ListTag {
   id         String   @id @default(cuid())
-  listItemId String
+  listId     String
   label      String
   normalized String
   createdAt  DateTime @default(now())
 
-  listItem ListItem @relation(fields: [listItemId], references: [id], onDelete: Cascade)
+  list  List          @relation(fields: [listId], references: [id], onDelete: Cascade)
+  items ListItemTag[]
 
-  @@unique([listItemId, normalized])
+  @@unique([listId, normalized])
+  @@index([listId])
+}
+
+model ListItemTag {
+  id         String   @id @default(cuid())
+  listItemId String
+  listTagId  String
+  createdAt  DateTime @default(now())
+
+  listItem ListItem @relation(fields: [listItemId], references: [id], onDelete: Cascade)
+  listTag  ListTag  @relation(fields: [listTagId], references: [id], onDelete: Cascade)
+
+  @@unique([listItemId, listTagId])
   @@index([listItemId])
+  @@index([listTagId])
 }
 
 model ListItemComment {

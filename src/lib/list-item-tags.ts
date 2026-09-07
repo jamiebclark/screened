@@ -36,48 +36,43 @@ export function completedTagFragments(raw: string): string[] {
 }
 
 export type TagVocabularyEntry = {
+  id: string;
   label: string;
   normalized: string;
   count: number;
 };
 
 export function buildTagVocabulary(
-  items: { tags: { label: string; normalized: string; createdAt: Date }[] }[],
+  listTags: {
+    id: string;
+    label: string;
+    normalized: string;
+    createdAt: Date;
+  }[],
+  items: { tags: { listTagId: string }[] }[],
 ): TagVocabularyEntry[] {
-  const byNormalized = new Map<
-    string,
-    { label: string; createdAt: Date; count: number }
-  >();
+  const byId = new Map<string, TagVocabularyEntry>(
+    listTags.map((tag) => [
+      tag.id,
+      { id: tag.id, label: tag.label, normalized: tag.normalized, count: 0 },
+    ]),
+  );
 
   for (const item of items) {
+    // Count each tag once per item, even if an item somehow carries it twice.
+    const seenOnItem = new Set<string>();
     for (const tag of item.tags) {
-      const existing = byNormalized.get(tag.normalized);
-      if (!existing) {
-        byNormalized.set(tag.normalized, {
-          label: tag.label,
-          createdAt: tag.createdAt,
-          count: 1,
-        });
-        continue;
-      }
-      existing.count += 1;
-      if (tag.createdAt.getTime() < existing.createdAt.getTime()) {
-        existing.label = tag.label;
-        existing.createdAt = tag.createdAt;
-      }
+      if (seenOnItem.has(tag.listTagId)) continue;
+      seenOnItem.add(tag.listTagId);
+      const entry = byId.get(tag.listTagId);
+      if (entry) entry.count += 1;
     }
   }
 
-  return Array.from(byNormalized.entries())
-    .map(([normalized, entry]) => ({
-      label: entry.label,
-      normalized,
-      count: entry.count,
-    }))
-    .sort((a, b) => {
-      if (b.count !== a.count) return b.count - a.count;
-      return a.normalized.localeCompare(b.normalized);
-    });
+  return Array.from(byId.values()).sort((a, b) => {
+    if (b.count !== a.count) return b.count - a.count;
+    return a.normalized.localeCompare(b.normalized);
+  });
 }
 
 export function suggestTags(
@@ -116,8 +111,37 @@ export function suggestTags(
   return results;
 }
 
+export type TagNameResult =
+  | { ok: true; value: { label: string; normalized: string } }
+  | { ok: false; error: string };
+
+/** Shared emptiness/length rules for a single tag label. */
+export function validateTagName(raw: unknown): TagNameResult {
+  if (typeof raw !== "string") {
+    return { ok: false, error: "Tag must be text" };
+  }
+
+  const label = normalizeTagLabel(raw);
+  const normalized = tagComparisonKey(raw);
+
+  if (normalized.length === 0) {
+    return { ok: false, error: "Tag cannot be empty" };
+  }
+  if (label.length > TAG_MAX_LENGTH) {
+    return { ok: false, error: "Tags must be 30 characters or fewer" };
+  }
+
+  return { ok: true, value: { label, normalized } };
+}
+
 export type TagBatchResult =
-  | { ok: true; value: { label: string; normalized: string }[] }
+  | {
+      ok: true;
+      value: {
+        linkTagIds: string[];
+        createTags: { label: string; normalized: string }[];
+      };
+    }
   | { ok: false; error: string };
 
 export function validateTagBatch(
@@ -134,37 +158,33 @@ export function validateTagBatch(
   );
   const existingNormalized = new Set(existing.map((tag) => tag.normalized));
 
-  const toInsert: { label: string; normalized: string }[] = [];
+  const linkTagIds: string[] = [];
+  const createTags: { label: string; normalized: string }[] = [];
   const seenInBatch = new Set<string>();
+  let addedCount = 0;
 
   for (const raw of labels as string[]) {
-    const label = normalizeTagLabel(raw);
-    const normalized = tagComparisonKey(raw);
+    const nameResult = validateTagName(raw);
+    if (!nameResult.ok) return nameResult;
+    const { label, normalized } = nameResult.value;
 
-    if (normalized.length === 0) {
-      return { ok: false, error: "Tag cannot be empty" };
-    }
-    if (label.length > TAG_MAX_LENGTH) {
-      return {
-        ok: false,
-        error: "Tags must be 30 characters or fewer",
-      };
-    }
     if (existingNormalized.has(normalized) || seenInBatch.has(normalized)) {
       continue;
     }
-
     seenInBatch.add(normalized);
+    addedCount += 1;
+
     const canonical = vocabByNormalized.get(normalized);
-    toInsert.push({
-      label: canonical ? canonical.label : label,
-      normalized,
-    });
+    if (canonical) {
+      linkTagIds.push(canonical.id);
+    } else {
+      createTags.push({ label, normalized });
+    }
   }
 
-  if (existingNormalized.size + toInsert.length > TAG_MAX_PER_ITEM) {
+  if (existingNormalized.size + addedCount > TAG_MAX_PER_ITEM) {
     return { ok: false, error: "An item can have at most 15 tags" };
   }
 
-  return { ok: true, value: toInsert };
+  return { ok: true, value: { linkTagIds, createTags } };
 }

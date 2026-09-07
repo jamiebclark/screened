@@ -84,6 +84,9 @@ export async function POST(req: NextRequest, { params }: Params) {
         select: { id: true, position: true },
         orderBy: { addedAt: "desc" },
       },
+      tags: {
+        select: { id: true, label: true, normalized: true, createdAt: true },
+      },
     },
   });
 
@@ -100,21 +103,23 @@ export async function POST(req: NextRequest, { params }: Params) {
   // Validate tags before creating anything, so a rejected batch cannot leave a
   // freshly added item behind. Vocabulary is this list's own tags, matching the
   // per-item editor's scoping.
-  let tagsToCreate: { label: string; normalized: string }[] = [];
+  let linkTagIds: string[] = [];
+  let createTags: { label: string; normalized: string }[] = [];
   if (labels !== undefined) {
-    const vocabularySource = await prisma.listItemTag.findMany({
-      where: { listItem: { listId: list.id } },
-      select: { label: true, normalized: true, createdAt: true },
+    const allItemsForVocabulary = await prisma.listItem.findMany({
+      where: { listId: list.id },
+      select: { tags: { select: { listTagId: true } } },
     });
     const result = validateTagBatch(
       labels,
       [],
-      buildTagVocabulary([{ tags: vocabularySource }]),
+      buildTagVocabulary(list.tags, allItemsForVocabulary),
     );
     if (!result.ok) {
       return NextResponse.json({ error: result.error }, { status: 400 });
     }
-    tagsToCreate = result.value;
+    linkTagIds = result.value.linkTagIds;
+    createTags = result.value.createTags;
   }
 
   const mediaItem = await getOrCreateMediaItem(tmdbId, type as "movie" | "tv");
@@ -143,15 +148,38 @@ export async function POST(req: NextRequest, { params }: Params) {
     include: { mediaItem: true, addedBy: { select: { id: true, name: true } } },
   });
 
-  if (tagsToCreate.length > 0) {
-    await prisma.listItemTag.createMany({
-      data: tagsToCreate.map((tag) => ({
-        listItemId: item.id,
-        label: tag.label,
-        normalized: tag.normalized,
-      })),
-      // The item may be an upsert of one that already carried these tags.
-      skipDuplicates: true,
+  if (linkTagIds.length > 0 || createTags.length > 0) {
+    await prisma.$transaction(async (tx) => {
+      if (createTags.length > 0) {
+        await tx.listTag.createMany({
+          data: createTags.map((tag) => ({
+            listId: list.id,
+            label: tag.label,
+            normalized: tag.normalized,
+          })),
+          skipDuplicates: true,
+        });
+      }
+
+      const createdNormalized = createTags.map((t) => t.normalized);
+      const createdTags =
+        createdNormalized.length > 0
+          ? await tx.listTag.findMany({
+              where: { listId: list.id, normalized: { in: createdNormalized } },
+              select: { id: true },
+            })
+          : [];
+
+      const listTagIds = [...linkTagIds, ...createdTags.map((t) => t.id)];
+
+      await tx.listItemTag.createMany({
+        data: listTagIds.map((listTagId) => ({
+          listItemId: item.id,
+          listTagId,
+        })),
+        // The item may be an upsert of one that already carried these tags.
+        skipDuplicates: true,
+      });
     });
   }
 

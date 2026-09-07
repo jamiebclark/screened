@@ -233,4 +233,57 @@ test.describe("Lists - Edit settings", () => {
     await logout(page);
     await login(page);
   });
+
+  test("owner deletes a list from settings and lands back on /lists", async ({
+    page,
+  }) => {
+    const name = `Delete Me ${Date.now()}`;
+    const res = await page.request.post("/api/lists", {
+      data: { name, isPublic: true },
+      headers: { "Content-Type": "application/json" },
+    });
+    const list = (await res.json()) as { slug: string };
+
+    await page.goto(`/lists/${list.slug}`);
+    await page.getByRole("button", { name: "List settings" }).click();
+    await page.getByRole("tab", { name: "Settings" }).click();
+
+    // Two-step: the first click only reveals the confirmation.
+    await page.getByRole("button", { name: "Delete list" }).click();
+    await expect(page.getByText("This cannot be undone.")).toBeVisible();
+    await page.getByRole("button", { name: "Delete", exact: true }).click();
+
+    await expect(page).toHaveURL(/\/lists$/, { timeout: 10000 });
+    await expect(page.getByText(name)).toHaveCount(0);
+
+    // The list is really gone, not just hidden from the index.
+    const gone = await page.request.get(`/api/lists/${list.slug}`);
+    expect(gone.status()).toBe(404);
+  });
+
+  test("a CONTRIBUTOR cannot delete the list", async ({ page }) => {
+    const res = await page.request.post("/api/lists", {
+      data: { name: `Undeletable ${Date.now()}`, isPublic: true },
+      headers: { "Content-Type": "application/json" },
+    });
+    const list = (await res.json()) as { slug: string };
+    await page.request.post(`/api/lists/${list.slug}/members`, {
+      data: { email: TEST_USER_2.email, role: "CONTRIBUTOR" },
+      headers: { "Content-Type": "application/json" },
+    });
+
+    await logout(page);
+    await login(page, TEST_USER_2);
+
+    await page.goto(`/lists/${list.slug}`);
+    await expect(page.getByRole("button", { name: "Delete list" })).toHaveCount(
+      0,
+    );
+
+    const forbidden = await page.request.delete(`/api/lists/${list.slug}`);
+    expect(forbidden.status()).toBe(403);
+
+    await logout(page);
+    await login(page);
+  });
 });

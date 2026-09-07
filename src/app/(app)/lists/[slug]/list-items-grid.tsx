@@ -169,6 +169,24 @@ function SectionGrid({
                 </div>
               </div>
             )}
+
+            {item.tags.length > 0 && (
+              <div className="mt-1.5 flex flex-wrap items-center gap-1 pointer-events-none">
+                {item.tags.slice(0, 2).map((tag) => (
+                  <span
+                    key={tag.id}
+                    className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground truncate max-w-[6.5rem]"
+                  >
+                    {tag.label}
+                  </span>
+                ))}
+                {item.tags.length > 2 && (
+                  <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                    +{item.tags.length - 2}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         );
       })}

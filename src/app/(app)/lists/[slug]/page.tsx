@@ -19,7 +19,12 @@ import {
 import { parseListViewParams } from "@/lib/list-view-params";
 import { canCurateListItems } from "@/lib/list-item-permissions";
 import { buildTagVocabulary } from "@/lib/list-item-tags";
-import { computeListStats } from "@/lib/list-stats";
+import { computeListStats, computeWindowStats } from "@/lib/list-stats";
+import {
+  hasChallengeWindow,
+  describeChallengeWindow,
+} from "@/lib/list-challenge-window";
+import { fetchListInWindowWatchedMediaItemIds } from "@/lib/list-watch-history";
 
 type Params = {
   params: Promise<{ slug: string }>;
@@ -57,7 +62,11 @@ type RawItem = {
   };
   votes: { value: number; userId: string }[];
   comments: { id: string; createdAt: Date }[];
-  tags: { id: string; label: string; normalized: string; createdAt: Date }[];
+  tags: {
+    id: string;
+    listTagId: string;
+    listTag: { label: string; normalized: string };
+  }[];
 };
 
 function toGridItem(
@@ -88,8 +97,8 @@ function toGridItem(
     addedBy: item.addedBy,
     tags: item.tags.map((tag) => ({
       id: tag.id,
-      label: tag.label,
-      normalized: tag.normalized,
+      label: tag.listTag.label,
+      normalized: tag.listTag.normalized,
     })),
     mediaItem: {
       tmdbId: item.mediaItem.tmdbId,
@@ -126,6 +135,9 @@ export default async function ListPage({ params, searchParams }: Params) {
         },
         orderBy: { createdAt: "asc" },
       },
+      tags: {
+        select: { id: true, label: true, normalized: true, createdAt: true },
+      },
       items: {
         include: {
           mediaItem: true,
@@ -135,9 +147,8 @@ export default async function ListPage({ params, searchParams }: Params) {
           tags: {
             select: {
               id: true,
-              label: true,
-              normalized: true,
-              createdAt: true,
+              listTagId: true,
+              listTag: { select: { label: true, normalized: true } },
             },
             orderBy: { createdAt: "asc" },
           },
@@ -210,8 +221,8 @@ export default async function ListPage({ params, searchParams }: Params) {
     watchedMediaItemIds: watchedIdSet,
   });
   const ordering = filterHiddenFromOrdering(fullOrdering, hiddenFilter);
-  const tagVocabulary = buildTagVocabulary(list.items);
-  const stats = computeListStats(list.items);
+  const tagVocabulary = buildTagVocabulary(list.tags, list.items);
+  const stats = computeListStats(list.items, list.tags);
 
   const watchedCount = list.items.filter((i) =>
     watchedIdSet.has(i.mediaItemId),
@@ -229,6 +240,24 @@ export default async function ListPage({ params, searchParams }: Params) {
           select: { userId: true, mediaItemId: true, status: true },
         })
       : [];
+
+  const challengeWindow = {
+    startsAt: list.challengeStartsAt,
+    endsAt: list.challengeEndsAt,
+  };
+  const windowMemberUserIds = [...new Set([list.ownerId, ...memberUserIds])];
+  const windowStats = hasChallengeWindow(challengeWindow)
+    ? computeWindowStats(
+        list.items,
+        list.tags,
+        await fetchListInWindowWatchedMediaItemIds({
+          mediaItemIds: mediaIds,
+          memberUserIds: windowMemberUserIds,
+          window: challengeWindow,
+        }),
+      )
+    : null;
+  const windowDescription = describeChallengeWindow(challengeWindow);
 
   const memberById = new Map<
     string,
@@ -331,6 +360,8 @@ export default async function ListPage({ params, searchParams }: Params) {
         itemCount={list.items.length}
         watchedCount={userId ? watchedCount : 0}
         stats={stats}
+        windowStats={windowStats}
+        windowDescription={windowDescription}
         memberAvatars={list.members.slice(0, 5).map((m) => ({
           id: m.id,
           name: m.user.name,
@@ -338,11 +369,14 @@ export default async function ListPage({ params, searchParams }: Params) {
         }))}
         existingKeys={existingListKeys}
         tagVocabulary={tagVocabulary}
+        canCurate={canCurate}
         rankingEnabled={list.rankingEnabled}
         votingEnabled={list.votingEnabled}
         commentsEnabled={list.commentsEnabled}
         displayMode={list.displayMode}
         itemCap={list.itemCap}
+        challengeStartsAt={list.challengeStartsAt?.toISOString() ?? null}
+        challengeEndsAt={list.challengeEndsAt?.toISOString() ?? null}
         members={list.members.map((m) => ({
           id: m.id,
           userId: m.userId,

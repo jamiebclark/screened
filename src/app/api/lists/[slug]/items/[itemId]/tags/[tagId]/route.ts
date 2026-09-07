@@ -56,10 +56,19 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
 
     const tags = await prisma.listItemTag.findMany({
       where: { listItemId: itemId },
-      select: { id: true, label: true, normalized: true },
+      select: {
+        id: true,
+        listTag: { select: { label: true, normalized: true } },
+      },
       orderBy: { createdAt: "asc" },
     });
-    return NextResponse.json({ tags });
+    return NextResponse.json({
+      tags: tags.map((t) => ({
+        id: t.id,
+        label: t.listTag.label,
+        normalized: t.listTag.normalized,
+      })),
+    });
   } catch (error) {
     console.error("Failed to delete list item tag", error);
     return NextResponse.json(

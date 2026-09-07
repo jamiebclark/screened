@@ -10,6 +10,7 @@ import {
   suggestTags,
   tagComparisonKey,
   validateTagBatch,
+  validateTagName,
   type TagVocabularyEntry,
 } from "./list-item-tags";
 
@@ -44,73 +45,58 @@ describe("splitTagInput", () => {
 });
 
 describe("buildTagVocabulary", () => {
-  it("groups by normalized, counts items, and orders by count desc then normalized asc", () => {
-    const vocabulary = buildTagVocabulary([
-      {
-        tags: [
-          {
-            label: "Horror",
-            normalized: "horror",
-            createdAt: d("2024-01-02T00:00:00Z"),
-          },
-        ],
-      },
-      {
-        tags: [
-          {
-            label: "horror",
-            normalized: "horror",
-            createdAt: d("2024-01-01T00:00:00Z"),
-          },
-          {
-            label: "Comedy",
-            normalized: "comedy",
-            createdAt: d("2024-01-01T00:00:00Z"),
-          },
-        ],
-      },
+  const listTags = [
+    {
+      id: "t-horror",
+      label: "Horror",
+      normalized: "horror",
+      createdAt: d("2024-01-01T00:00:00Z"),
+    },
+    {
+      id: "t-comedy",
+      label: "Comedy",
+      normalized: "comedy",
+      createdAt: d("2024-01-01T00:00:00Z"),
+    },
+  ];
+
+  it("counts items carrying each tag, ordering by count desc then normalized asc", () => {
+    const vocabulary = buildTagVocabulary(listTags, [
+      { tags: [{ listTagId: "t-horror" }] },
+      { tags: [{ listTagId: "t-horror" }, { listTagId: "t-comedy" }] },
     ]);
 
     expect(vocabulary).toEqual([
-      { label: "horror", normalized: "horror", count: 2 },
-      { label: "Comedy", normalized: "comedy", count: 1 },
+      { id: "t-horror", label: "Horror", normalized: "horror", count: 2 },
+      { id: "t-comedy", label: "Comedy", normalized: "comedy", count: 1 },
     ]);
   });
 
-  it("picks the earliest-createdAt label as the canonical casing", () => {
-    const vocabulary = buildTagVocabulary([
-      {
-        tags: [
-          {
-            label: "HALLOWEEN",
-            normalized: "halloween",
-            createdAt: d("2024-02-01T00:00:00Z"),
-          },
-        ],
-      },
-      {
-        tags: [
-          {
-            label: "Halloween",
-            normalized: "halloween",
-            createdAt: d("2024-01-01T00:00:00Z"),
-          },
-        ],
-      },
+  it("seeds declared-but-unused tags at count: 0", () => {
+    const vocabulary = buildTagVocabulary(listTags, []);
+    expect(vocabulary).toEqual([
+      { id: "t-comedy", label: "Comedy", normalized: "comedy", count: 0 },
+      { id: "t-horror", label: "Horror", normalized: "horror", count: 0 },
     ]);
-    expect(vocabulary[0].label).toBe("Halloween");
   });
 
-  it("returns an empty array for items with no tags", () => {
-    expect(buildTagVocabulary([{ tags: [] }])).toEqual([]);
+  it("counts an item carrying the same tag twice only once", () => {
+    const vocabulary = buildTagVocabulary(listTags, [
+      { tags: [{ listTagId: "t-horror" }, { listTagId: "t-horror" }] },
+    ]);
+    expect(vocabulary.find((e) => e.id === "t-horror")?.count).toBe(1);
+  });
+
+  it("returns an empty array for a list with no declared tags", () => {
+    expect(buildTagVocabulary([], [{ tags: [] }])).toEqual([]);
   });
 });
 
 describe("suggestTags", () => {
   const vocabulary: TagVocabularyEntry[] = [
-    { label: "Horror", normalized: "horror", count: 3 },
-    { label: "Comedy Horror", normalized: "comedy horror", count: 2 },
-    { label: "Romance", normalized: "romance", count: 1 },
+    { id: "t1", label: "Horror", normalized: "horror", count: 3 },
+    { id: "t2", label: "Comedy Horror", normalized: "comedy horror", count: 2 },
+    { id: "t3", label: "Romance", normalized: "romance", count: 1 },
   ];
 
   it("returns prefix matches before substring matches", () => {
@@ -137,9 +123,45 @@ describe("suggestTags", () => {
   });
 });
 
+describe("validateTagName", () => {
+  it("rejects a non-string value", () => {
+    expect(validateTagName(5)).toEqual({
+      ok: false,
+      error: "Tag must be text",
+    });
+  });
+
+  it("rejects an empty or whitespace-only label", () => {
+    expect(validateTagName("  ")).toEqual({
+      ok: false,
+      error: "Tag cannot be empty",
+    });
+  });
+
+  it("rejects a label longer than the max length", () => {
+    const tooLong = "a".repeat(TAG_MAX_LENGTH + 1);
+    expect(validateTagName(tooLong)).toEqual({
+      ok: false,
+      error: "Tags must be 30 characters or fewer",
+    });
+  });
+
+  it("accepts a valid label, returning the normalized and display forms", () => {
+    expect(validateTagName("  Halloween  ")).toEqual({
+      ok: true,
+      value: { label: "Halloween", normalized: "halloween" },
+    });
+  });
+});
+
 describe("validateTagBatch", () => {
   const vocabulary: TagVocabularyEntry[] = [
-    { label: "Halloween", normalized: "halloween", count: 2 },
+    {
+      id: "t-halloween",
+      label: "Halloween",
+      normalized: "halloween",
+      count: 2,
+    },
   ];
 
   it("rejects a non-array input", () => {
@@ -185,14 +207,17 @@ describe("validateTagBatch", () => {
   it("silently drops a label already on the item, without error", () => {
     const existing = [{ label: "Halloween", normalized: "halloween" }];
     const result = validateTagBatch(["halloween"], existing, vocabulary);
-    expect(result).toEqual({ ok: true, value: [] });
+    expect(result).toEqual({
+      ok: true,
+      value: { linkTagIds: [], createTags: [] },
+    });
   });
 
-  it("canonicalises casing to the list vocabulary's display label", () => {
+  it("links to the existing list tag when the normalized form is already declared", () => {
     const result = validateTagBatch(["HALLOWEEN"], [], vocabulary);
     expect(result).toEqual({
       ok: true,
-      value: [{ label: "Halloween", normalized: "halloween" }],
+      value: { linkTagIds: ["t-halloween"], createTags: [] },
     });
   });
 
@@ -200,7 +225,10 @@ describe("validateTagBatch", () => {
     const result = validateTagBatch(["Comedy"], [], []);
     expect(result).toEqual({
       ok: true,
-      value: [{ label: "Comedy", normalized: "comedy" }],
+      value: {
+        linkTagIds: [],
+        createTags: [{ label: "Comedy", normalized: "comedy" }],
+      },
     });
   });
 
@@ -213,7 +241,30 @@ describe("validateTagBatch", () => {
     const result = validateTagBatch(["New Tag", "new tag"], existing, []);
     expect(result).toEqual({
       ok: true,
-      value: [{ label: "New Tag", normalized: "new tag" }],
+      value: {
+        linkTagIds: [],
+        createTags: [{ label: "New Tag", normalized: "new tag" }],
+      },
+    });
+  });
+
+  it("counts existing + linkTagIds + createTags against the per-item cap", () => {
+    const existing = Array.from({ length: TAG_MAX_PER_ITEM - 2 }, (_, i) => ({
+      label: `tag${i}`,
+      normalized: `tag${i}`,
+    }));
+    // One links to an existing list tag, one is genuinely new — both count.
+    const result = validateTagBatch(
+      ["Halloween", "Brand New"],
+      existing,
+      vocabulary,
+    );
+    expect(result).toEqual({
+      ok: true,
+      value: {
+        linkTagIds: ["t-halloween"],
+        createTags: [{ label: "Brand New", normalized: "brand new" }],
+      },
     });
   });
 });
