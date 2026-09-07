@@ -121,6 +121,7 @@ export interface TmdbSearchResult {
   first_air_date?: string;
   media_type: "movie" | "tv";
   vote_average: number;
+  popularity?: number;
 }
 
 export interface TmdbSearchResponse {
@@ -287,8 +288,13 @@ export async function getUpcomingReleasesPage(
 export async function searchMovie(
   query: string,
   year?: number,
+  page = 1,
 ): Promise<TmdbSearchResponse> {
-  const params: Record<string, string> = { query, include_adult: "false" };
+  const params: Record<string, string> = {
+    query,
+    include_adult: "false",
+    page: String(page),
+  };
   if (year) params.primary_release_year = String(year);
   const res = await tmdbFetch<{
     results: TmdbSearchResult[];
@@ -298,7 +304,36 @@ export async function searchMovie(
   }>("/search/movie", params);
   return {
     ...res,
-    results: res.results.map((r) => ({ ...r, media_type: "movie" as const })),
+    results: (res.results ?? []).map((r) => ({
+      ...r,
+      media_type: "movie" as const,
+    })),
+  };
+}
+
+export async function searchTv(
+  query: string,
+  year?: number,
+  page = 1,
+): Promise<TmdbSearchResponse> {
+  const params: Record<string, string> = {
+    query,
+    include_adult: "false",
+    page: String(page),
+  };
+  if (year) params.first_air_date_year = String(year);
+  const res = await tmdbFetch<{
+    results: TmdbSearchResult[];
+    total_results: number;
+    total_pages: number;
+    page: number;
+  }>("/search/tv", params);
+  return {
+    ...res,
+    results: (res.results ?? []).map((r) => ({
+      ...r,
+      media_type: "tv" as const,
+    })),
   };
 }
 
