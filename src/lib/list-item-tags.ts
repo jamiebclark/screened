@@ -1,14 +1,38 @@
 export const TAG_MAX_LENGTH = 30;
 export const TAG_MAX_PER_ITEM = 15;
 
-/** Display form: trim, then collapse internal whitespace runs to a single space. */
+/**
+ * Zero-width and format characters that render as nothing. Pasting a category
+ * name off a web page can carry one of these along, and two labels that differ
+ * only by an invisible character look identical on screen while comparing as
+ * different strings — which is how a list ends up showing the same tag twice.
+ *
+ * Kept in sync with the SQL in
+ * prisma/migrations/*_normalize_list_tag_keys/migration.sql. If this set
+ * changes, existing ListTag.normalized values need recomputing to match.
+ */
+const INVISIBLE_CHARS = /[­​-‏⁠-⁤﻿]/g;
+
+/**
+ * Display form: drop invisible characters, collapse whitespace runs to a single
+ * space, trim. Not case-folded and not NFKC-folded, so the label reads back the
+ * way it was typed.
+ */
 export function normalizeTagLabel(raw: string): string {
-  return raw.trim().replace(/\s+/g, " ");
+  return raw.replace(INVISIBLE_CHARS, "").replace(/\s+/g, " ").trim();
 }
 
-/** Comparison form: display form, lowercased for locale-aware matching. */
+/**
+ * Comparison form. NFKC first, so compatibility variants (full-width letters, a
+ * non-breaking space) fold onto their plain equivalents, then the display
+ * cleanup, then lowercased.
+ *
+ * Deliberately does NOT fold confusable homoglyphs — a Cyrillic "о" stays a
+ * different tag from a Latin "o", because collapsing look-alikes across scripts
+ * would silently merge tags that are genuinely different words.
+ */
 export function tagComparisonKey(raw: string): string {
-  return normalizeTagLabel(raw).toLocaleLowerCase();
+  return normalizeTagLabel(raw.normalize("NFKC")).toLocaleLowerCase();
 }
 
 /** Splits raw comma-separated input into non-empty fragments. */
