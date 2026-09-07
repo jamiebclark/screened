@@ -1,13 +1,25 @@
 "use client";
 
 import { useState } from "react";
-import { Globe, Lock, Users, Plus, Settings, BarChart3 } from "lucide-react";
+import Link from "next/link";
+import {
+  Globe,
+  Lock,
+  Users,
+  Plus,
+  Settings,
+  BarChart3,
+  Tag,
+  History,
+} from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ListSettingsModal } from "./list-settings-modal";
 import { ListAddFab } from "./list-add-fab";
 import { ListStatsModal } from "./list-stats-modal";
-import type { ListStats } from "@/lib/list-stats";
+import { ListTagsModal } from "./list-tags-modal";
+import { ListStickyHeader } from "./list-sticky-header";
+import type { ListStats, WindowStats } from "@/lib/list-stats";
 import type { TagVocabularyEntry } from "@/lib/list-item-tags";
 
 type MemberRecord = {
@@ -33,6 +45,8 @@ interface ListPageHeaderProps {
   itemCount: number;
   watchedCount: number;
   stats: ListStats;
+  windowStats?: WindowStats | null;
+  windowDescription?: string | null;
   memberAvatars: {
     id: string;
     name: string | null;
@@ -40,12 +54,15 @@ interface ListPageHeaderProps {
   }[];
   existingKeys: string[];
   tagVocabulary: TagVocabularyEntry[];
+  canCurate: boolean;
   // settings modal data
   rankingEnabled: boolean;
   votingEnabled: boolean;
   commentsEnabled: boolean;
   displayMode: "GRID" | "LIST";
   itemCap: number | null;
+  challengeStartsAt: string | null;
+  challengeEndsAt: string | null;
   members: MemberRecord[];
   radarrUrl: string;
   discordEnabled: boolean;
@@ -64,14 +81,19 @@ export function ListPageHeader({
   itemCount,
   watchedCount,
   stats,
+  windowStats,
+  windowDescription,
   memberAvatars,
   existingKeys,
   tagVocabulary,
+  canCurate,
   rankingEnabled,
   votingEnabled,
   commentsEnabled,
   displayMode,
   itemCap,
+  challengeStartsAt,
+  challengeEndsAt,
   members,
   radarrUrl,
   discordEnabled,
@@ -85,6 +107,7 @@ export function ListPageHeader({
   const [settingsTab, setSettingsTab] = useState(defaultTab);
   const [addOpen, setAddOpen] = useState(false);
   const [statsOpen, setStatsOpen] = useState(false);
+  const [tagsOpen, setTagsOpen] = useState(false);
 
   const openSettings = (tab: string) => {
     setSettingsTab(tab);
@@ -93,6 +116,12 @@ export function ListPageHeader({
 
   return (
     <div className="flex flex-col sm:flex-row sm:items-start gap-4 mb-8">
+      <ListStickyHeader
+        name={name}
+        canAdd={hasSidebar && isMember}
+        onAdd={() => setAddOpen(true)}
+        onStats={() => setStatsOpen(true)}
+      />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1">
           {isPublic ? (
@@ -165,6 +194,25 @@ export function ListPageHeader({
         >
           <BarChart3 className="h-5 w-5" />
         </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-9 w-9"
+          onClick={() => setTagsOpen(true)}
+          aria-label="Manage list tags"
+        >
+          <Tag className="h-5 w-5" />
+        </Button>
+        {hasSidebar && (
+          <Button variant="ghost" size="icon" className="h-9 w-9" asChild>
+            <Link
+              href={`/lists/${listSlug}/history`}
+              aria-label="Challenge history"
+            >
+              <History className="h-5 w-5" />
+            </Link>
+          </Button>
+        )}
         {hasSidebar && (
           <Button
             variant="ghost"
@@ -182,6 +230,16 @@ export function ListPageHeader({
         open={statsOpen}
         onOpenChange={setStatsOpen}
         stats={stats}
+        windowStats={windowStats}
+        windowDescription={windowDescription}
+      />
+
+      <ListTagsModal
+        open={tagsOpen}
+        onOpenChange={setTagsOpen}
+        listSlug={listSlug}
+        tags={tagVocabulary}
+        canCurate={canCurate}
       />
 
       {hasSidebar && (
@@ -199,6 +257,8 @@ export function ListPageHeader({
           commentsEnabled={commentsEnabled}
           displayMode={displayMode}
           itemCap={itemCap}
+          challengeStartsAt={challengeStartsAt}
+          challengeEndsAt={challengeEndsAt}
           members={members}
           radarrUrl={radarrUrl}
           discordEnabled={discordEnabled}
