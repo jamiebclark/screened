@@ -20,6 +20,9 @@ export async function POST(req: NextRequest, { params }: Params) {
       id: true,
       ownerId: true,
       members: { select: { userId: true, role: true } },
+      tags: {
+        select: { id: true, label: true, normalized: true, createdAt: true },
+      },
     },
   });
   if (!list) return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -29,7 +32,12 @@ export async function POST(req: NextRequest, { params }: Params) {
     select: {
       id: true,
       listId: true,
-      tags: { select: { label: true, normalized: true } },
+      tags: {
+        select: {
+          listTagId: true,
+          listTag: { select: { label: true, normalized: true } },
+        },
+      },
     },
   });
   if (!item || item.listId !== list.id) {
@@ -53,35 +61,77 @@ export async function POST(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "Tags must be text" }, { status: 400 });
   }
 
-  const vocabularySource = await prisma.listItemTag.findMany({
-    where: { listItem: { listId: list.id } },
-    select: { label: true, normalized: true, createdAt: true },
+  const allItemsForVocabulary = await prisma.listItem.findMany({
+    where: { listId: list.id },
+    select: { tags: { select: { listTagId: true } } },
   });
-  const vocabulary = buildTagVocabulary([{ tags: vocabularySource }]);
+  const vocabulary = buildTagVocabulary(list.tags, allItemsForVocabulary);
 
-  const result = validateTagBatch(body.labels, item.tags, vocabulary);
+  const existing = item.tags.map((t) => ({
+    label: t.listTag.label,
+    normalized: t.listTag.normalized,
+  }));
+
+  const result = validateTagBatch(body.labels, existing, vocabulary);
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: 400 });
   }
 
   try {
-    if (result.value.length > 0) {
-      await prisma.listItemTag.createMany({
-        data: result.value.map((tag) => ({
-          listItemId: itemId,
-          label: tag.label,
-          normalized: tag.normalized,
-        })),
-        skipDuplicates: true,
-      });
-    }
+    await prisma.$transaction(async (tx) => {
+      if (result.value.createTags.length > 0) {
+        await tx.listTag.createMany({
+          data: result.value.createTags.map((tag) => ({
+            listId: list.id,
+            label: tag.label,
+            normalized: tag.normalized,
+          })),
+          skipDuplicates: true,
+        });
+      }
+
+      const createdNormalized = result.value.createTags.map(
+        (t) => t.normalized,
+      );
+      const createdTags =
+        createdNormalized.length > 0
+          ? await tx.listTag.findMany({
+              where: { listId: list.id, normalized: { in: createdNormalized } },
+              select: { id: true },
+            })
+          : [];
+
+      const listTagIds = [
+        ...result.value.linkTagIds,
+        ...createdTags.map((t) => t.id),
+      ];
+
+      if (listTagIds.length > 0) {
+        await tx.listItemTag.createMany({
+          data: listTagIds.map((listTagId) => ({
+            listItemId: itemId,
+            listTagId,
+          })),
+          skipDuplicates: true,
+        });
+      }
+    });
 
     const tags = await prisma.listItemTag.findMany({
       where: { listItemId: itemId },
-      select: { id: true, label: true, normalized: true },
+      select: {
+        id: true,
+        listTag: { select: { label: true, normalized: true } },
+      },
       orderBy: { createdAt: "asc" },
     });
-    return NextResponse.json({ tags });
+    return NextResponse.json({
+      tags: tags.map((t) => ({
+        id: t.id,
+        label: t.listTag.label,
+        normalized: t.listTag.normalized,
+      })),
+    });
   } catch (error) {
     console.error("Failed to add list item tags", error);
     return NextResponse.json(

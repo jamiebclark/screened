@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { validateListDetails } from "@/lib/list-validation";
+import { parseChallengeWindowInput } from "@/lib/list-challenge-window";
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -62,6 +63,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     commentsEnabled?: boolean;
     displayMode?: "GRID" | "LIST";
     itemCap?: number | null;
+    challengeStartsAt?: string | null;
+    challengeEndsAt?: string | null;
   };
   try {
     body = await req.json();
@@ -117,6 +120,19 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     validatedItemCap = body.itemCap;
   }
 
+  const windowResult = parseChallengeWindowInput(
+    {
+      challengeStartsAt: body.challengeStartsAt,
+      challengeEndsAt: body.challengeEndsAt,
+    },
+    { startsAt: list.challengeStartsAt, endsAt: list.challengeEndsAt },
+  );
+  if (!windowResult.ok) {
+    return NextResponse.json({ error: windowResult.error }, { status: 400 });
+  }
+  const { startsAt: challengeStartsAt, endsAt: challengeEndsAt } =
+    windowResult.value;
+
   // Resolve ranking/voting mutex
   let rankingEnabled = body.rankingEnabled ?? list.rankingEnabled;
   let votingEnabled = body.votingEnabled ?? list.votingEnabled;
@@ -153,6 +169,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
           displayMode: body.displayMode ?? list.displayMode,
           itemCap:
             validatedItemCap !== undefined ? validatedItemCap : list.itemCap,
+          challengeStartsAt,
+          challengeEndsAt,
         },
       });
     });
@@ -178,6 +196,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
           displayMode: body.displayMode ?? list.displayMode,
           itemCap:
             validatedItemCap !== undefined ? validatedItemCap : list.itemCap,
+          challengeStartsAt,
+          challengeEndsAt,
         },
       });
     });
@@ -197,6 +217,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         displayMode: body.displayMode ?? list.displayMode,
         itemCap:
           validatedItemCap !== undefined ? validatedItemCap : list.itemCap,
+        challengeStartsAt,
+        challengeEndsAt,
       },
     });
   }
