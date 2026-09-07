@@ -22,12 +22,46 @@ describe("normalizeTagLabel", () => {
   it("trims and collapses internal whitespace", () => {
     expect(normalizeTagLabel("  Halloween   Movie  ")).toBe("Halloween Movie");
   });
+
+  it("strips invisible characters that a paste can carry along", () => {
+    expect(normalizeTagLabel("Tobe Hooper​")).toBe("Tobe Hooper");
+    expect(normalizeTagLabel("Tobe­Hooper")).toBe("TobeHooper");
+    expect(normalizeTagLabel("Tobe ​Hooper")).toBe("Tobe Hooper");
+  });
+
+  it("leaves case and typography alone", () => {
+    expect(normalizeTagLabel("J-Horror")).toBe("J-Horror");
+  });
 });
 
 describe("tagComparisonKey", () => {
   it("normalizes and lowercases", () => {
     expect(tagComparisonKey(" Halloween ")).toBe("halloween");
     expect(tagComparisonKey("HALLOWEEN")).toBe("halloween");
+  });
+
+  // A label pasted off a web page can carry a zero-width space or a
+  // non-breaking space. It renders identically to the plain spelling, so if it
+  // compared as a different string the list would show the same tag twice.
+  it.each([
+    ["plain", "Tobe Hooper"],
+    ["non-breaking space", "Tobe Hooper"],
+    ["trailing zero-width space", "Tobe Hooper​"],
+    ["zero-width space after the space", "Tobe ​Hooper"],
+    ["trailing soft hyphen", "Tobe Hooper­"],
+    ["word joiner at the end", "Tobe Hooper⁠"],
+    ["double space", "Tobe  Hooper"],
+    ["upper case", "TOBE HOOPER"],
+    ["full-width letter", "Ｔobe Hooper"],
+    ["surrounding whitespace", "  Tobe   Hooper  "],
+  ])("collides for %s", (_label, input) => {
+    expect(tagComparisonKey(input)).toBe("tobe hooper");
+  });
+
+  it("keeps homoglyphs from different scripts distinct", () => {
+    // Cyrillic "о" in place of the Latin one. Folding confusables across
+    // scripts would merge tags that are genuinely different words.
+    expect(tagComparisonKey("Tоbe Hooper")).not.toBe("tobe hooper");
   });
 });
 
