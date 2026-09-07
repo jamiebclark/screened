@@ -1,5 +1,14 @@
 import { test, expect } from "@playwright/test";
-import { ensureLoggedIn, ensureTestUsersExist } from "./helpers";
+import {
+  ensureLoggedIn,
+  ensureTestUsersExist,
+  LIVE_TMDB,
+  LIVE_TMDB_REASON,
+} from "./helpers";
+
+// Every test here drives a surface that calls TMDB on each request, so the
+// MediaItem rows global-setup seeds cannot satisfy them.
+test.skip(!LIVE_TMDB, LIVE_TMDB_REASON);
 
 // Classic titles with known past release dates — these will not appear in
 // "Coming Soon" (future) but verify the page loads and empty state behaves.

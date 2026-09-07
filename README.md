@@ -86,6 +86,7 @@ The app will be available at `http://localhost:3000` (or whatever `PORT` you set
 | [Movie Night Picker](docs/picker.md)   | How the Picker and scoring work                        |
 | [Watch Parties](docs/watch-parties.md) | Scheduling and inviting friends to watch together      |
 | [Discord](docs/discord-integration.md) | Webhooks, slash commands, and DM notifications         |
+| [E2E tests](docs/dev/e2e-tests.md)     | Running the Playwright suite and what it needs         |
 
 ---
 

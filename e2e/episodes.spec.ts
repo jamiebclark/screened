@@ -1,5 +1,10 @@
 import { test, expect } from "@playwright/test";
-import { ensureLoggedIn, ensureTestUsersExist } from "./helpers";
+import {
+  ensureLoggedIn,
+  ensureTestUsersExist,
+  LIVE_TMDB,
+  LIVE_TMDB_REASON,
+} from "./helpers";
 
 // Breaking Bad (tmdbId: 1396) — stable show with known seasons/episodes
 const TV_URL = "/tv/1396";
@@ -17,6 +22,7 @@ test.beforeEach(async ({ page }) => {
 
 test.describe("Episode Tracker", () => {
   test("TV show page loads with episode tracker", async ({ page }) => {
+    test.skip(!LIVE_TMDB, LIVE_TMDB_REASON);
     await page.goto(TV_URL);
     await expect(
       page.getByRole("heading", { name: "Breaking Bad" }),
@@ -25,6 +31,7 @@ test.describe("Episode Tracker", () => {
   });
 
   test("season accordion expands and shows episodes", async ({ page }) => {
+    test.skip(!LIVE_TMDB, LIVE_TMDB_REASON);
     await page.goto(TV_URL);
     await expect(page.getByText(/Season 1/i)).toBeVisible({ timeout: 10000 });
     await expect(page.getByText("Pilot")).toBeVisible({ timeout: 5000 });
@@ -33,6 +40,7 @@ test.describe("Episode Tracker", () => {
   test("toggle single episode changes its watched indicator", async ({
     page,
   }) => {
+    test.skip(!LIVE_TMDB, LIVE_TMDB_REASON);
     // Start with ep 1 unwatched
     await page.request.delete(`/api/media/${TV_TMDB_ID}/episodes`, {
       data: { seasonNumber: 1, episodeNumber: 1 },
@@ -64,6 +72,7 @@ test.describe("Episode Tracker", () => {
   });
 
   test("toggle episode from watched to unwatched", async ({ page }) => {
+    test.skip(!LIVE_TMDB, LIVE_TMDB_REASON);
     // Start with ep 2 watched
     await page.request.post(`/api/media/${TV_TMDB_ID}/episodes`, {
       data: { seasonNumber: 1, episodeNumber: 2 },
@@ -99,6 +108,7 @@ test.describe("Episode Tracker", () => {
   });
 
   test("mark all episodes in season via API succeeds", async ({ page }) => {
+    test.skip(!LIVE_TMDB, LIVE_TMDB_REASON);
     // Mark all 7 episodes of BB S1 via API
     const res = await page.request.post(`/api/media/${TV_TMDB_ID}/episodes`, {
       data: {
@@ -130,6 +140,7 @@ test.describe("Episode Tracker", () => {
   });
 
   test("unmark all episodes in season via API succeeds", async ({ page }) => {
+    test.skip(!LIVE_TMDB, LIVE_TMDB_REASON);
     // Clear all S1 episodes
     const res = await page.request.delete(`/api/media/${TV_TMDB_ID}/episodes`, {
       data: {

@@ -33,6 +33,7 @@ test.describe("Library pages (empty state)", () => {
     await expect(page.getByRole("heading", { name: "Watchlist" })).toBeVisible({
       timeout: 8000,
     });
+    await expect(page.getByText("Your watchlist is empty")).toHaveCount(1);
     await expect(page.getByText("Your watchlist is empty")).toBeVisible();
   });
 
@@ -41,6 +42,7 @@ test.describe("Library pages (empty state)", () => {
     await expect(page.getByRole("heading", { name: "Watching" })).toBeVisible({
       timeout: 8000,
     });
+    await expect(page.getByText("Nothing in progress")).toHaveCount(1);
     await expect(page.getByText("Nothing in progress")).toBeVisible();
   });
 
@@ -49,6 +51,7 @@ test.describe("Library pages (empty state)", () => {
     await expect(page.getByRole("heading", { name: "Dropped" })).toBeVisible({
       timeout: 8000,
     });
+    await expect(page.getByText("Nothing dropped")).toHaveCount(1);
     await expect(page.getByText("Nothing dropped")).toBeVisible();
   });
 });
