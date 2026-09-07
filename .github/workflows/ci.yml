@@ -102,3 +102,95 @@ jobs:
           TMDB_API_KEY: "00000000000000000000000000000000"
           NEXT_PUBLIC_APP_URL: http://localhost:3000
           CRON_SECRET: ci-cron-placeholder-secret-min-32-chars-xx
+
+  e2e:
+    name: E2E (Playwright)
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: screened_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d screened_e2e"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/screened_e2e
+      AUTH_SECRET: ci-e2e-placeholder-secret-min-32-chars!!
+      CRON_SECRET: ci-cron-placeholder-secret-min-32-chars-xx
+      # Playwright serves the app on this port and points AUTH_URL at it. The
+      # app's auth callback URL has to agree with the port under test, or
+      # sign-in redirects to another origin and every spec fails at login.
+      PLAYWRIGHT_PORT: "3010"
+      # Specs needing live TMDB (search, browse, upcoming, TV episode names)
+      # skip themselves unless E2E_LIVE_TMDB=1. The key stays a placeholder;
+      # e2e/global-setup.ts seeds the MediaItem rows the rest of the suite
+      # needs, and both getOrCreate helpers read the DB before calling TMDB.
+      TMDB_API_KEY: "00000000000000000000000000000000"
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: yarn
+
+      - run: yarn install --frozen-lockfile --ignore-engines
+
+      - run: yarn prisma migrate deploy
+
+      - run: yarn db:generate
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('yarn.lock') }}
+
+      - name: Install Playwright browser
+        run: yarn playwright install --with-deps chromium
+
+      - name: Build Next.js app
+        run: yarn build
+        env:
+          NEXTAUTH_URL: http://localhost:3010
+          NEXT_PUBLIC_APP_URL: http://localhost:3010
+
+      # Scoped to the specs verified green against a fresh database. The rest of
+      # the suite has pre-existing failures that predate this job — a full run
+      # is 93 failed / 56 passed / 32 skipped and takes 1.2 hours. Adding those
+      # here would make the gate permanently red and tell nobody anything.
+      # docs/dev/e2e-tests.md lists what is excluded and why; move a spec into
+      # this list as it is repaired.
+      - name: Playwright tests
+        run: |
+          yarn test:e2e \
+            e2e/auth.spec.ts \
+            e2e/app-pages.spec.ts \
+            e2e/watchlist.spec.ts \
+            e2e/stats.spec.ts \
+            e2e/browse.spec.ts \
+            e2e/browse-filter.spec.ts \
+            e2e/search.spec.ts \
+            e2e/upcoming.spec.ts \
+            e2e/episodes.spec.ts
+
+      - name: Upload report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
