@@ -1,5 +1,9 @@
 import { test, expect } from "@playwright/test";
-import { ensureLoggedIn, ensureTestUsersExist } from "./helpers";
+import {
+  ensureLoggedIn,
+  ensureTestUsersExist,
+  settleAfterSignIn,
+} from "./helpers";
 
 // Stable TMDB IDs used for seeding
 const SEED_MOVIES = [
@@ -84,7 +88,7 @@ test.describe("Stats page", () => {
     await p.getByLabel("Email").fill(unique);
     await p.getByLabel("Password").fill("testpassword123");
     await p.getByRole("button", { name: "Sign in", exact: true }).click();
-    await p.waitForURL("/", { timeout: 10000 });
+    await settleAfterSignIn(p);
 
     await p.goto("/stats");
     await expect(p.getByText(/no watch history yet/i)).toBeVisible();

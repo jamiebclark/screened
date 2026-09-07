@@ -104,8 +104,9 @@ test.describe("Watchlist Sort & Filter", () => {
     await page.getByRole("button", { name: "TV" }).click();
     await expect(page).toHaveURL(/type=tv/);
 
-    // Clear filters
-    await page.getByRole("button", { name: /clear/i }).click();
+    // Exact: /clear/i would also match "Clear filters", which the empty-result
+    // state renders, and a two-match locator fails Playwright strict mode.
+    await page.getByRole("button", { name: "Clear", exact: true }).click();
     await expect(page).not.toHaveURL(/type=/);
   });
 
@@ -129,7 +130,9 @@ test.describe("Watchlist Sort & Filter", () => {
     page,
   }) => {
     await page.goto("/watchlist?type=movie&maxRuntime=120");
-    await page.getByRole("button", { name: /clear/i }).click();
+    // Exact: this filter combination yields no results, so both "Clear" and
+    // "Clear filters" are on screen and /clear/i matches both.
+    await page.getByRole("button", { name: "Clear", exact: true }).click();
 
     await expect(page).not.toHaveURL(/type=/);
     await expect(page).not.toHaveURL(/maxRuntime=/);
