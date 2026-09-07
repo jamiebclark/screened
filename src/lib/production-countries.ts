@@ -60,3 +60,25 @@ export function formatProductionCountries(
 ): string {
   return codes.map((code) => countryDisplayName(code, locale)).join(", ");
 }
+
+export const BACKFILL_DEFAULT_LIMIT = 50;
+export const BACKFILL_MAX_LIMIT = 200;
+
+/**
+ * Clamps a caller-supplied backfill batch size. Backfilling costs one TMDB
+ * call per item, so an unbounded batch would sit on the rate limit and risk
+ * the request timing out mid-run; callers page through instead.
+ */
+export function parseBackfillLimit(raw: unknown): number {
+  const n =
+    typeof raw === "number"
+      ? raw
+      : typeof raw === "string" && raw.trim() !== ""
+        ? Number(raw)
+        : NaN;
+  if (!Number.isFinite(n)) return BACKFILL_DEFAULT_LIMIT;
+  const floored = Math.floor(n);
+  if (floored < 1) return 1;
+  if (floored > BACKFILL_MAX_LIMIT) return BACKFILL_MAX_LIMIT;
+  return floored;
+}

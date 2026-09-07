@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  BACKFILL_DEFAULT_LIMIT,
+  BACKFILL_MAX_LIMIT,
   countryDisplayName,
   extractProductionCountries,
   formatProductionCountries,
+  parseBackfillLimit,
 } from "./production-countries";
 
 describe("extractProductionCountries", () => {
@@ -77,5 +80,34 @@ describe("formatProductionCountries", () => {
 
   it("is empty for no countries", () => {
     expect(formatProductionCountries([])).toBe("");
+  });
+});
+
+describe("parseBackfillLimit", () => {
+  it("defaults when the value is missing or unparseable", () => {
+    expect(parseBackfillLimit(undefined)).toBe(BACKFILL_DEFAULT_LIMIT);
+    expect(parseBackfillLimit(null)).toBe(BACKFILL_DEFAULT_LIMIT);
+    expect(parseBackfillLimit("")).toBe(BACKFILL_DEFAULT_LIMIT);
+    expect(parseBackfillLimit("abc")).toBe(BACKFILL_DEFAULT_LIMIT);
+    expect(parseBackfillLimit(NaN)).toBe(BACKFILL_DEFAULT_LIMIT);
+  });
+
+  it("accepts a numeric or string value", () => {
+    expect(parseBackfillLimit(10)).toBe(10);
+    expect(parseBackfillLimit("10")).toBe(10);
+  });
+
+  it("clamps to at least 1", () => {
+    expect(parseBackfillLimit(0)).toBe(1);
+    expect(parseBackfillLimit(-5)).toBe(1);
+  });
+
+  it("clamps to the maximum", () => {
+    expect(parseBackfillLimit(BACKFILL_MAX_LIMIT + 1)).toBe(BACKFILL_MAX_LIMIT);
+    expect(parseBackfillLimit(100000)).toBe(BACKFILL_MAX_LIMIT);
+  });
+
+  it("floors a fractional value", () => {
+    expect(parseBackfillLimit(10.9)).toBe(10);
   });
 });
