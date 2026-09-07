@@ -6,19 +6,24 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import type { ListStats } from "@/lib/list-stats";
+import { Badge } from "@/components/ui/badge";
+import type { ListStats, WindowStats } from "@/lib/list-stats";
 import { countryDisplayName } from "@/lib/production-countries";
 
 interface ListStatsModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   stats: ListStats;
+  windowStats?: WindowStats | null;
+  windowDescription?: string | null;
 }
 
 export function ListStatsModal({
   open,
   onOpenChange,
   stats,
+  windowStats,
+  windowDescription,
 }: ListStatsModalProps) {
   const isEmpty = stats.totalItems === 0;
 
@@ -30,12 +35,62 @@ export function ListStatsModal({
     { label: "Countries", value: stats.distinctVisibleCountries },
   ];
 
+  const windowTiles = windowStats
+    ? [
+        {
+          label: "Categories covered",
+          value: `${windowStats.coveredTags} / ${windowStats.declaredTags}`,
+        },
+        { label: "Decades", value: windowStats.coveredDecades },
+        { label: "Countries", value: windowStats.coveredCountries },
+        { label: "Films watched", value: windowStats.watchedTitles },
+      ]
+    : [];
+  const uncoveredTags = windowStats
+    ? windowStats.tagCoverage.filter((t) => !t.covered)
+    : [];
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
           <DialogTitle>List stats</DialogTitle>
         </DialogHeader>
+
+        {windowStats && (
+          <div className="space-y-3">
+            <div>
+              <h3 className="text-base font-semibold">During the challenge</h3>
+              {windowDescription && (
+                <p className="text-sm text-muted-foreground">
+                  {windowDescription}
+                </p>
+              )}
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {windowTiles.map((tile) => (
+                <div key={tile.label} className="rounded-lg border p-4">
+                  <p className="text-xs text-muted-foreground">{tile.label}</p>
+                  <p className="text-2xl font-semibold">{tile.value}</p>
+                </div>
+              ))}
+            </div>
+            {uncoveredTags.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">Still to cover</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {uncoveredTags.map((tag) => (
+                    <Badge key={tag.id} variant="outline">
+                      {tag.label}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {windowStats && <h3 className="text-base font-semibold">All time</h3>}
 
         <div className="grid grid-cols-2 gap-3">
           {tiles.map((tile) => (
