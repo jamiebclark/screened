@@ -29,6 +29,18 @@ Owners can open the gear icon on a list's page and use the **Settings** tab to:
 Changes apply immediately for every viewer without a manual reload. Contributors and viewers do
 not see these editing controls, and direct API edits from non-owners are rejected.
 
+### Deleting a list
+
+The **Settings** tab ends with a **Danger zone** holding **Delete list**. Only the list's owner
+sees it, and the API rejects a delete from anyone else. Deleting takes two clicks — the first
+reveals a confirmation naming the list — because it is permanent and applies to everyone: the
+list's items, tags, comments and votes all go with it, for every member, and there is no undo. If
+the list had a Discord webhook, that webhook is removed too. You are returned to `/lists`
+afterwards.
+
+Deleting a list does not touch anyone's watch history or ratings; those live on the titles
+themselves, not on the list.
+
 ### Ranked lists
 
 When a list has ranking enabled, dragging an item to a new position persists that order for every

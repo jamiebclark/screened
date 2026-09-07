@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Settings, Loader2 } from "lucide-react";
+import { Settings, Loader2, Trash2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -55,9 +55,18 @@ export function ListSettingsPanel({
   const [itemCap, setItemCap] = useState<string>(
     initialItemCap !== null ? String(initialItemCap) : "",
   );
+  const [challengeStartsAt, setChallengeStartsAt] = useState(
+    toDateInputValue(initialChallengeStartsAt),
+  );
+  const [challengeEndsAt, setChallengeEndsAt] = useState(
+    toDateInputValue(initialChallengeEndsAt),
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const handleRankingChange = (checked: boolean) => {
     setRankingEnabled(checked);
@@ -128,6 +137,34 @@ export function ListSettingsPanel({
       setError("Something went wrong");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    setDeleteError(null);
+
+    try {
+      const res = await fetch(`/api/lists/${listSlug}`, { method: "DELETE" });
+
+      if (!res.ok) {
+        const data = (await res.json()) as { error?: string };
+        setDeleteError(data.error ?? "Failed to delete list");
+        setDeleting(false);
+        return;
+      }
+
+      // A hard navigation, not router.push(). /lists is a cached router
+      // segment, so a client-side push lands on an index that still lists the
+      // list we just deleted (verified in a browser). router.refresh() does not
+      // fix it either: called after push it refreshes the outgoing route, and
+      // called before push it re-renders this now-deleted list and flashes a
+      // 404. The route this component lives on no longer exists, so leaving the
+      // SPA entirely is both the simplest and the only reliably fresh option.
+      window.location.assign("/lists");
+    } catch {
+      setDeleteError("Something went wrong");
+      setDeleting(false);
     }
   };
 
@@ -319,6 +356,61 @@ export function ListSettingsPanel({
         {saving && <Loader2 className="h-3 w-3 animate-spin mr-1" />}
         Save settings
       </Button>
+
+      <div className="mt-6 border-t pt-4">
+        <h4 className="text-xs font-semibold text-destructive">Danger zone</h4>
+        {!confirmingDelete ? (
+          <>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              Deleting removes this list for every member, along with its items,
+              tags, comments and votes.
+            </p>
+            <Button
+              size="sm"
+              variant="outline"
+              className="mt-2 w-full text-destructive hover:text-destructive"
+              onClick={() => {
+                setDeleteError(null);
+                setConfirmingDelete(true);
+              }}
+            >
+              <Trash2 className="h-3 w-3 mr-1" />
+              Delete list
+            </Button>
+          </>
+        ) : (
+          <>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              Delete <span className="font-medium">{name}</span> permanently?
+              This cannot be undone.
+            </p>
+            {deleteError && (
+              <p className="mt-2 text-xs text-destructive">{deleteError}</p>
+            )}
+            <div className="mt-2 flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                className="flex-1"
+                onClick={() => setConfirmingDelete(false)}
+                disabled={deleting}
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                className="flex-1"
+                onClick={handleDelete}
+                disabled={deleting}
+              >
+                {deleting && <Loader2 className="h-3 w-3 animate-spin mr-1" />}
+                Delete
+              </Button>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }
