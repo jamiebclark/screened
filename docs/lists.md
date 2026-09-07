@@ -16,6 +16,37 @@ Lists are Screened's core social feature — shared collections of movies that a
 
 List owners can review **access requests** for private lists. Contributors receive notifications when someone asks to join.
 
+## Editing a list
+
+Owners can open the gear icon on a list's page and use the **Settings** tab to:
+
+- Rename the list and edit its description (100 / 1000 character limits; a blank name is
+  rejected). The URL slug never changes when you rename a list.
+- Change the **Layout** (Grid or List) — items re-render immediately in the new layout, and a
+  ranked list keeps its rank order and numbers regardless of layout.
+- Toggle ranking, voting, and comments, and set an item cap.
+
+Changes apply immediately for every viewer without a manual reload. Contributors and viewers do
+not see these editing controls, and direct API edits from non-owners are rejected.
+
+### Ranked lists
+
+When a list has ranking enabled, dragging an item to a new position persists that order for every
+member, in both Grid and List layout, regardless of mixing movies and TV shows or each viewer's own
+watched state. If a reorder fails to save, the drag reverts and an error is shown — your list is
+never left silently out of order.
+
+## Finding titles to add
+
+The add-title search on a list supports narrowing results:
+
+- Restrict to **Films**, **TV**, or **All** (the default).
+- Restrict to a specific release year.
+- **Load more** to page beyond the first set of results.
+
+Combine type and year to find titles that are hard to distinguish by name alone — for example,
+searching "House" restricted to Films and year 1985 finds the 1985 film directly.
+
 ## Privacy
 
 | Visibility | Radarr endpoint | Discoverable by others |
