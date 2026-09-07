@@ -1,3 +1,5 @@
+import { extractProductionCountries } from "./production-countries";
+
 const TMDB_BASE = "https://api.themoviedb.org/3";
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p";
 
@@ -65,6 +67,9 @@ export interface TmdbMovie {
   vote_average: number;
   vote_count: number;
   imdb_id: string | null;
+  /** Always an array of ISO 3166-1 alpha-2 codes after getMovie normalises it. */
+  production_country_codes: string[];
+  production_countries?: { iso_3166_1: string; name: string }[];
   external_ids?: { imdb_id?: string | null };
 }
 
@@ -81,6 +86,10 @@ export interface TmdbTvShow {
   number_of_episodes: number;
   vote_average: number;
   seasons: TmdbSeason[];
+  /** Always an array of ISO 3166-1 alpha-2 codes after getTvShow normalises it. */
+  production_country_codes: string[];
+  origin_country?: string[];
+  production_countries?: { iso_3166_1: string; name: string }[];
   created_by?: { id: number; name: string; profile_path: string | null }[];
   external_ids?: {
     imdb_id?: string | null;
@@ -147,7 +156,14 @@ export async function getMovie(tmdbId: number): Promise<TmdbMovie> {
     append_to_response: "external_ids",
   });
   const imdb_id = data.external_ids?.imdb_id ?? data.imdb_id ?? null;
-  return { ...data, imdb_id, genres: data.genres ?? [] };
+  return {
+    ...data,
+    imdb_id,
+    genres: data.genres ?? [],
+    production_country_codes: extractProductionCountries(
+      data.production_countries,
+    ),
+  };
 }
 
 export async function getTvShow(tmdbId: number): Promise<TmdbTvShow> {
@@ -159,6 +175,13 @@ export async function getTvShow(tmdbId: number): Promise<TmdbTvShow> {
     genres: data.genres ?? [],
     episode_run_time: data.episode_run_time ?? [],
     seasons: data.seasons ?? [],
+    // TV reports origin_country; fall back to production_countries when a show
+    // carries those instead.
+    production_country_codes: extractProductionCountries(
+      data.origin_country?.length
+        ? data.origin_country
+        : data.production_countries,
+    ),
   };
 }
 
