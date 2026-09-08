@@ -64,6 +64,35 @@ export function formatProductionCountries(
 export const BACKFILL_DEFAULT_LIMIT = 50;
 export const BACKFILL_MAX_LIMIT = 200;
 
+/** Hard ceiling on batches per click, so one run can never loop unbounded. */
+export const BACKFILL_MAX_BATCHES = 100;
+
+/** The fields of a backfill batch response the paging decision depends on. */
+export type BackfillBatchResult = {
+  processed: number;
+  updated: number;
+  remaining: number;
+};
+
+/**
+ * Whether a caller paging through the backfill should request another batch.
+ *
+ * Stops on `updated === 0` as well as on `remaining === 0`: the route leaves
+ * rows TMDB has no country data for empty on purpose, so those rows stay at the
+ * head of the queue and an unconditional "run until remaining is 0" loop would
+ * re-fetch the same batch forever.
+ */
+export function shouldContinueBackfill(
+  result: BackfillBatchResult,
+  batchesRun: number,
+): boolean {
+  if (batchesRun >= BACKFILL_MAX_BATCHES) return false;
+  if (result.remaining <= 0) return false;
+  if (result.processed === 0) return false;
+  if (result.updated === 0) return false;
+  return true;
+}
+
 /**
  * Clamps a caller-supplied backfill batch size. Backfilling costs one TMDB
  * call per item, so an unbounded batch would sit on the rate limit and risk

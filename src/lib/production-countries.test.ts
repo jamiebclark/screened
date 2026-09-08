@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
   BACKFILL_DEFAULT_LIMIT,
+  BACKFILL_MAX_BATCHES,
   BACKFILL_MAX_LIMIT,
   countryDisplayName,
   extractProductionCountries,
   formatProductionCountries,
   parseBackfillLimit,
+  shouldContinueBackfill,
 } from "./production-countries";
 
 describe("extractProductionCountries", () => {
@@ -109,5 +111,48 @@ describe("parseBackfillLimit", () => {
 
   it("floors a fractional value", () => {
     expect(parseBackfillLimit(10.9)).toBe(10);
+  });
+});
+
+describe("shouldContinueBackfill", () => {
+  it("keeps going while rows are still being filled", () => {
+    expect(
+      shouldContinueBackfill({ processed: 50, updated: 50, remaining: 120 }, 1),
+    ).toBe(true);
+  });
+
+  it("stops once nothing is left blank", () => {
+    expect(
+      shouldContinueBackfill({ processed: 50, updated: 50, remaining: 0 }, 1),
+    ).toBe(false);
+  });
+
+  it("stops when a batch fills nothing, so unfillable rows cannot loop forever", () => {
+    // The route deliberately leaves rows TMDB has no country data for empty,
+    // so `remaining` never reaches 0 and the same batch would come back.
+    expect(
+      shouldContinueBackfill({ processed: 50, updated: 0, remaining: 50 }, 1),
+    ).toBe(false);
+  });
+
+  it("stops when the queue returns an empty batch", () => {
+    expect(
+      shouldContinueBackfill({ processed: 0, updated: 0, remaining: 7 }, 1),
+    ).toBe(false);
+  });
+
+  it("stops at the batch ceiling even with work outstanding", () => {
+    expect(
+      shouldContinueBackfill(
+        { processed: 50, updated: 50, remaining: 5000 },
+        BACKFILL_MAX_BATCHES,
+      ),
+    ).toBe(false);
+    expect(
+      shouldContinueBackfill(
+        { processed: 50, updated: 50, remaining: 5000 },
+        BACKFILL_MAX_BATCHES - 1,
+      ),
+    ).toBe(true);
   });
 });

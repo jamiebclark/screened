@@ -52,110 +52,135 @@ export function ListStatsModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm">
-        <DialogHeader>
+      <DialogContent className="max-w-sm max-h-[85vh] overflow-hidden flex flex-col p-0">
+        <DialogHeader className="px-6 pt-6 pb-0 shrink-0">
           <DialogTitle>List stats</DialogTitle>
         </DialogHeader>
 
-        {windowStats && (
-          <div className="space-y-3">
-            <div>
-              <h3 className="text-base font-semibold">During the challenge</h3>
-              {windowDescription && (
-                <p className="text-sm text-muted-foreground">
-                  {windowDescription}
-                </p>
-              )}
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              {windowTiles.map((tile) => (
-                <div key={tile.label} className="rounded-lg border p-4">
-                  <p className="text-xs text-muted-foreground">{tile.label}</p>
-                  <p className="text-2xl font-semibold">{tile.value}</p>
-                </div>
-              ))}
-            </div>
-            {uncoveredTags.length > 0 && (
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">Still to cover</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {uncoveredTags.map((tag) => (
-                    <Badge key={tag.id} variant="outline">
-                      {tag.label}
-                    </Badge>
-                  ))}
-                </div>
+        <div
+          data-testid="list-stats-body"
+          className="flex-1 space-y-4 overflow-y-auto px-6 pb-6 pt-3"
+        >
+          {windowStats && (
+            <div className="space-y-3">
+              <div>
+                <h3 className="text-base font-semibold">
+                  During the challenge
+                </h3>
+                {windowDescription && (
+                  <p className="text-sm text-muted-foreground">
+                    {windowDescription}
+                  </p>
+                )}
               </div>
-            )}
-          </div>
-        )}
-
-        {windowStats && <h3 className="text-base font-semibold">All time</h3>}
-
-        <div className="grid grid-cols-2 gap-3">
-          {tiles.map((tile) => (
-            <div key={tile.label} className="rounded-lg border p-4">
-              <p className="text-xs text-muted-foreground">{tile.label}</p>
-              <p className="text-2xl font-semibold">{tile.value}</p>
+              <div className="grid grid-cols-2 gap-3">
+                {windowTiles.map((tile) => (
+                  <div key={tile.label} className="rounded-lg border p-4">
+                    <p className="text-xs text-muted-foreground">
+                      {tile.label}
+                    </p>
+                    <p className="text-2xl font-semibold">{tile.value}</p>
+                  </div>
+                ))}
+              </div>
             </div>
-          ))}
+          )}
+
+          {windowStats && <h3 className="text-base font-semibold">All time</h3>}
+
+          <div className="grid grid-cols-2 gap-3">
+            {tiles.map((tile) => (
+              <div key={tile.label} className="rounded-lg border p-4">
+                <p className="text-xs text-muted-foreground">{tile.label}</p>
+                <p className="text-2xl font-semibold">{tile.value}</p>
+              </div>
+            ))}
+          </div>
+
+          {stats.countryCounts.length > 0 && (
+            <div className="space-y-2">
+              <h3 className="text-base font-semibold">
+                Countries{" "}
+                <span className="text-sm font-normal text-muted-foreground">
+                  {stats.countryCounts.length}
+                </span>
+              </h3>
+              <ul className="divide-y rounded-lg border">
+                {stats.countryCounts.map((country) => (
+                  <li
+                    key={country.code}
+                    className="flex items-center justify-between gap-3 px-3 py-2"
+                  >
+                    <span className="truncate text-sm">
+                      {countryDisplayName(country.code)}
+                    </span>
+                    <span className="shrink-0 text-sm text-muted-foreground">
+                      {country.count} {country.count === 1 ? "film" : "films"}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {stats.tagCounts.length > 0 && (
+            <div className="space-y-2">
+              <h3 className="text-base font-semibold">
+                Tags{" "}
+                <span className="text-sm font-normal text-muted-foreground">
+                  {stats.tagCounts.length}
+                </span>
+              </h3>
+              <ul className="divide-y rounded-lg border">
+                {stats.tagCounts.map((tag) => (
+                  <li
+                    key={tag.normalized}
+                    className="flex items-center justify-between gap-3 px-3 py-2"
+                  >
+                    <span className="truncate text-sm">{tag.label}</span>
+                    <span className="shrink-0 text-sm text-muted-foreground">
+                      {tag.count} {tag.count === 1 ? "film" : "films"}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/*
+            Last, because it is the least obvious number here: a category is
+            "covered" only once a member logs a watch inside the window, so
+            assigning a tag to an unwatched title leaves it listed and reads as
+            wrong until the copy explains it.
+          */}
+          {uncoveredTags.length > 0 && (
+            <div className="space-y-2">
+              <h3 className="text-base font-semibold">
+                Still to cover{" "}
+                <span className="text-sm font-normal text-muted-foreground">
+                  {uncoveredTags.length}
+                </span>
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                Assigning a tag is not enough — a category counts once a member
+                logs a watch of a title carrying it, inside the window.
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {uncoveredTags.map((tag) => (
+                  <Badge key={tag.id} variant="outline">
+                    {tag.label}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {isEmpty && (
+            <p className="text-sm text-muted-foreground">
+              Nothing to summarise yet — add some titles.
+            </p>
+          )}
         </div>
-
-        {stats.countryCounts.length > 0 && (
-          <div className="space-y-2">
-            <h3 className="text-base font-semibold">
-              Countries{" "}
-              <span className="text-sm font-normal text-muted-foreground">
-                {stats.countryCounts.length}
-              </span>
-            </h3>
-            <ul className="divide-y rounded-lg border">
-              {stats.countryCounts.map((country) => (
-                <li
-                  key={country.code}
-                  className="flex items-center justify-between gap-3 px-3 py-2"
-                >
-                  <span className="truncate text-sm">
-                    {countryDisplayName(country.code)}
-                  </span>
-                  <span className="shrink-0 text-sm text-muted-foreground">
-                    {country.count} {country.count === 1 ? "film" : "films"}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {stats.tagCounts.length > 0 && (
-          <div className="space-y-2">
-            <h3 className="text-base font-semibold">
-              Tags{" "}
-              <span className="text-sm font-normal text-muted-foreground">
-                {stats.tagCounts.length}
-              </span>
-            </h3>
-            <ul className="divide-y rounded-lg border">
-              {stats.tagCounts.map((tag) => (
-                <li
-                  key={tag.normalized}
-                  className="flex items-center justify-between gap-3 px-3 py-2"
-                >
-                  <span className="truncate text-sm">{tag.label}</span>
-                  <span className="shrink-0 text-sm text-muted-foreground">
-                    {tag.count} {tag.count === 1 ? "film" : "films"}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {isEmpty && (
-          <p className="text-sm text-muted-foreground">
-            Nothing to summarise yet — add some titles.
-          </p>
-        )}
       </DialogContent>
     </Dialog>
   );

@@ -124,7 +124,15 @@ Viewers can read tag chips but cannot add or remove them.
 Click the stats icon in the header to see a read-only breakout of the list's shape: total items,
 items still in play (not hidden), distinct release decades, and distinct tags in use on visible
 items. Stats describe the whole list regardless of the current hidden-item filter, and are visible
-to every viewer, including logged-out visitors on public lists.
+to every viewer, including logged-out visitors on public lists. The modal is capped at 85% of the
+window height and scrolls internally, so a long tag or country breakdown never pushes its own
+heading off screen.
+
+**Countries reading 0 on an established list** means the titles were added before Screened stored
+production countries. Country data is filled in as titles are enriched, so older rows stay blank
+until they're backfilled — a site admin can do that from **Admin → Maintenance**, which walks the
+blank rows in batches and reports how many were filled. Titles TMDB has no country data for are
+left blank on purpose so a later run retries them.
 
 ## Running a challenge
 
@@ -155,8 +163,11 @@ both. Only owners can change it; contributors and viewers cannot. **Clear window
 dates. While a window is set:
 
 - The list's Stats show a **During the challenge** block above the all-time figures: categories
-  covered (against the declared tag count), decades, countries, and films watched, plus a
-  **Still to cover** list of every uncovered category.
+  covered (against the declared tag count), decades, countries, and films watched. Every uncovered
+  category is listed under **Still to cover** at the bottom of the modal.
+- Coverage is earned by watching, not by tagging: a category stays under **Still to cover** until a
+  member logs an in-window watch of a title carrying it, so a tag you have assigned to a film you
+  have not watched yet is still listed there.
 - A watch counts once its date falls on or inside the window's start and end dates (both inclusive)
   — watching a title again inside the window after an earlier out-of-window watch is what flips its
   categories from uncovered to covered.

@@ -101,6 +101,30 @@ docker compose up -d
 
 ---
 
+## Maintenance
+
+Site admins (see `SITE_ADMIN_EMAILS`) get an **Admin → Maintenance** page for one-off data repairs
+on titles saved before a metadata field existed.
+
+### Production countries
+
+New metadata fields are filled in as titles are enriched, which leaves an existing library mostly
+blank — visibly so in list stats, where **Countries** reads 0. The maintenance page shows how many
+`MediaItem` rows still lack country data and runs the backfill, paging through in batches of 50
+because it costs one TMDB call per title. Titles TMDB has no country data for are left blank
+deliberately, so a later run retries them rather than recording a wrong answer.
+
+The same job is reachable directly, with an admin session cookie:
+
+```bash
+# progress check
+curl -b cookies.txt https://screened.example.com/api/admin/backfill-production-countries
+# run one batch (limit: 1–200, default 50)
+curl -b cookies.txt -X POST 'https://screened.example.com/api/admin/backfill-production-countries?limit=50'
+```
+
+---
+
 ## Manual setup (development / bare Node)
 
 ### Prerequisites
