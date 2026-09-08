@@ -1,3 +1,12 @@
+## [1.70.0](https://github.com/jamiebclark/screened/compare/v1.69.0...v1.70.0) (2026-09-08)
+
+### Features
+
+* **admin:** add a maintenance page that runs the country backfill ([0805081](https://github.com/jamiebclark/screened/commit/080508140492ffd63750fa48e37fb0bef46617ab))
+* **admin:** add a stop condition for paging the country backfill ([fbee84b](https://github.com/jamiebclark/screened/commit/fbee84b8151f6c957fb222b58077650ddd289d17))
+* **lists:** cap the stats modal at the viewport height and scroll within ([df3e729](https://github.com/jamiebclark/screened/commit/df3e72975514cc2d43d1f20247c8e160e5bd8371))
+* **lists:** move uncovered categories to the end of the stats modal ([634b0e6](https://github.com/jamiebclark/screened/commit/634b0e654ee5dfa27b951dcd72d15accec3a0635))
+
 ## [1.69.0](https://github.com/jamiebclark/screened/compare/v1.68.1...v1.69.0) (2026-09-08)
 
 ### Features
