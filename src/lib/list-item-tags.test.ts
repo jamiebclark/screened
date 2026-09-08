@@ -176,7 +176,7 @@ describe("validateTagName", () => {
     const tooLong = "a".repeat(TAG_MAX_LENGTH + 1);
     expect(validateTagName(tooLong)).toEqual({
       ok: false,
-      error: "Tags must be 30 characters or fewer",
+      error: `Tags must be ${TAG_MAX_LENGTH} characters or fewer`,
     });
   });
 
@@ -223,7 +223,7 @@ describe("validateTagBatch", () => {
     const tooLong = "a".repeat(TAG_MAX_LENGTH + 1);
     expect(validateTagBatch([tooLong], [], [])).toEqual({
       ok: false,
-      error: "Tags must be 30 characters or fewer",
+      error: `Tags must be ${TAG_MAX_LENGTH} characters or fewer`,
     });
   });
 
