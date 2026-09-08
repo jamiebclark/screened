@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { isSiteAdminEmail } from "@/lib/signup-invites";
 import Link from "next/link";
-import { ArrowRight, RefreshCw, ScrollText, Users } from "lucide-react";
+import { ArrowRight, RefreshCw, ScrollText, Users, Wrench } from "lucide-react";
 import {
   Card,
   CardDescription,
@@ -30,6 +30,12 @@ const adminSections = [
     icon: ScrollText,
     title: "Error logs",
     description: "In-memory ring buffer of server errors and warnings.",
+  },
+  {
+    href: "/admin/maintenance",
+    icon: Wrench,
+    title: "Maintenance",
+    description: "Backfill metadata that older titles were saved without.",
   },
 ];
 
