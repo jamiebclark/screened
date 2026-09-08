@@ -1,3 +1,16 @@
+## [1.69.0](https://github.com/jamiebclark/screened/compare/v1.68.1...v1.69.0) (2026-09-08)
+
+### Features
+
+* **lists:** add a Hooptober 2026 list template ([dfb63e9](https://github.com/jamiebclark/screened/commit/dfb63e91217a643170692a8f23476a3ad8ade9d0))
+* **lists:** allow tag labels up to 60 characters ([a092933](https://github.com/jamiebclark/screened/commit/a0929334d1886b2a6e37050b8d60f51ef2e3fb8a))
+* **lists:** apply a template's categories and window on create ([05fd261](https://github.com/jamiebclark/screened/commit/05fd2613ef3a6f923bd4b2893805c21df7c9ae31))
+* **lists:** offer templates on the new-list form ([26a5da9](https://github.com/jamiebclark/screened/commit/26a5da93869b561e18c9c8107710cc02cce1efe3))
+
+### Bug Fixes
+
+* **lists:** keep preset flags when a create request omits them ([10b8277](https://github.com/jamiebclark/screened/commit/10b8277e8c4df30bc7780169ab510984963e5af7))
+
 ## [1.68.1](https://github.com/jamiebclark/screened/compare/v1.68.0...v1.68.1) (2026-09-07)
 
 ### Bug Fixes
