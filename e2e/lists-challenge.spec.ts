@@ -228,6 +228,65 @@ test.describe("Lists - Challenge tracking", () => {
     await expect(page.getByText("1 / 1")).toBeVisible();
   });
 
+  test("uncovered categories are listed last, explain themselves, and the modal scrolls inside the viewport (US2)", async ({
+    page,
+  }) => {
+    const list = await createList(page, `Challenge Cover ${Date.now()}`);
+    const item = await addMovie(page, list.slug, 27205); // Inception
+
+    // Enough declared tags to push the modal past the viewport height.
+    const labels = Array.from({ length: 18 }, (_, i) => `category ${i + 1}`);
+    for (const label of labels) {
+      await page.request.post(`/api/lists/${list.slug}/tags`, {
+        data: { label },
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    // Assigned to a title, but nobody has logged a watch of it.
+    await page.request.post(`/api/lists/${list.slug}/items/${item.id}/tags`, {
+      data: { labels: ["category 1"] },
+      headers: { "Content-Type": "application/json" },
+    });
+    await page.request.patch(`/api/lists/${list.slug}`, {
+      data: { challengeStartsAt: todayIso(), challengeEndsAt: null },
+      headers: { "Content-Type": "application/json" },
+    });
+
+    await gotoList(page, list.slug);
+    await expect(page.getByText("Inception").first()).toBeVisible({
+      timeout: 10000,
+    });
+    await page.getByLabel("List stats").first().click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog.getByText("During the challenge")).toBeVisible();
+
+    // The assigned-but-unwatched category still counts as uncovered, and the
+    // modal now says why rather than leaving it looking like a bug.
+    await expect(dialog.getByText("Still to cover")).toBeVisible();
+    await expect(
+      dialog.getByText(/Assigning a tag is not enough/),
+    ).toBeVisible();
+
+    // ...and it sits last, below the all-time tiles and the per-tag counts.
+    const headings = await dialog.locator("h3").allInnerTexts();
+    expect(headings.length).toBeGreaterThan(1);
+    expect(headings[headings.length - 1]).toContain("Still to cover");
+
+    // The dialog stays inside the viewport; the overflow scrolls within it.
+    const viewport = page.viewportSize();
+    expect(viewport).not.toBeNull();
+    const box = await dialog.boundingBox();
+    expect(box).not.toBeNull();
+    expect(box!.y).toBeGreaterThanOrEqual(0);
+    expect(box!.height).toBeLessThanOrEqual(viewport!.height);
+
+    const body = dialog.getByTestId("list-stats-body");
+    const overflow = await body.evaluate(
+      (el) => el.scrollHeight - el.clientHeight,
+    );
+    expect(overflow).toBeGreaterThan(0);
+  });
+
   test("clearing the window drops the in-window stats block and the history stays unrestricted (US2)", async ({
     page,
   }) => {
