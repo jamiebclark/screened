@@ -62,6 +62,22 @@ describe("applyPreset", () => {
     expect(result.votingEnabled).toBe(false);
   });
 
+  it("ignores undefined overrides instead of blanking preset values", () => {
+    expect(
+      applyPreset("ranked", {
+        rankingEnabled: undefined,
+        votingEnabled: undefined,
+        commentsEnabled: undefined,
+        displayMode: undefined,
+      }),
+    ).toEqual(LIST_PRESETS.ranked);
+  });
+
+  it("keeps an explicit false override", () => {
+    const result = applyPreset("ranked", { rankingEnabled: false });
+    expect(result.rankingEnabled).toBe(false);
+  });
+
   it("mutex does not fire when only one flag is true", () => {
     const result = applyPreset("watchlist", { votingEnabled: true });
     expect(result.votingEnabled).toBe(true);
