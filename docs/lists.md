@@ -5,8 +5,30 @@ Lists are Screened's core social feature — shared collections of movies that a
 ## Creating a list
 
 1. Go to **Lists → New List**
-2. Give it a name — a URL-friendly slug is generated automatically
-3. Choose public or private visibility
+2. Optionally start from a **template** (see below), or leave it on **Blank list**
+3. Give it a name — a URL-friendly slug is generated automatically
+4. Choose public or private visibility
+
+### Starting from a template
+
+A template fills in everything a challenge needs up front, so you're not
+re-typing two dozen categories every year. Picking one prefills the name and
+description, sets the list type, and — on create — declares the challenge
+categories as list tags and sets the challenge window.
+
+| Template           | Sets up                                                                                                        |
+| ------------------ | -------------------------------------------------------------------------------------------------------------- |
+| **Hooptober 2026** | Ranked list layout, all 23 categories declared as tags, challenge window 1 Sep 2026 – 31 Oct 2026, no item cap |
+
+Everything a template sets is an ordinary list setting afterwards: rename or
+delete any category from the **Tags** modal, move the window or add an item cap
+from **Settings**. Templates only apply at creation time — there's no way to
+apply one to an existing list, and changing the list type on the form before
+creating does not remove the template's categories.
+
+Only the template's id travels to the server; the categories and dates come
+from the server-side definition, so what you get is the same however the list
+was created (including a `POST /api/lists` with just a name and a template id).
 
 ## Inviting members
 
@@ -92,7 +114,7 @@ Any member with edit rights can add free-text tags to an item — for example `h
 - Build a per-list autocomplete vocabulary: typing a few characters on any item suggests tags
   already used elsewhere on that same list. Tags never leak across lists.
 - Canonicalize to the casing first used on the list (`Noir` and `noir` collapse into a single
-  chip), and are capped at 15 tags per item, 30 characters per tag.
+  chip), and are capped at 15 tags per item, 60 characters per tag.
 - Remain visible and editable on hidden items.
 
 Viewers can read tag chips but cannot add or remove them.
@@ -116,6 +138,9 @@ free-text tags on individual items:
 
 - Curators (owners and contributors) can declare, rename, and delete tags here, independently of
   any item. A newly declared tag shows **0 films** until something is tagged with it.
+- A list created from a template arrives with its categories already declared, all at 0 films.
+- Labels can be up to 60 characters, so a whole category — "Lowest rated from 1980s you have not
+  seen" — fits without abbreviating it.
 - Declared tags are offered as suggestions the moment you start tagging an item, and any label you
   type that isn't already declared is added to the list's vocabulary automatically.
 - Renaming merges nothing — it only changes the label everywhere it's used. Trying to rename one
