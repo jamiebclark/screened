@@ -75,18 +75,6 @@ export function ListStatsModal({
                 </div>
               ))}
             </div>
-            {uncoveredTags.length > 0 && (
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">Still to cover</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {uncoveredTags.map((tag) => (
-                    <Badge key={tag.id} variant="outline">
-                      {tag.label}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         )}
 
@@ -148,6 +136,34 @@ export function ListStatsModal({
                 </li>
               ))}
             </ul>
+          </div>
+        )}
+
+        {/*
+          Last, because it is the least obvious number here: a category is
+          "covered" only once a member logs a watch inside the window, so
+          assigning a tag to an unwatched title leaves it listed and reads as
+          wrong until the copy explains it.
+        */}
+        {uncoveredTags.length > 0 && (
+          <div className="space-y-2">
+            <h3 className="text-base font-semibold">
+              Still to cover{" "}
+              <span className="text-sm font-normal text-muted-foreground">
+                {uncoveredTags.length}
+              </span>
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              Assigning a tag is not enough — a category counts once a member
+              logs a watch of a title carrying it, inside the window.
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {uncoveredTags.map((tag) => (
+                <Badge key={tag.id} variant="outline">
+                  {tag.label}
+                </Badge>
+              ))}
+            </div>
           </div>
         )}
 
