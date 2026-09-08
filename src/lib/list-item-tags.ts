@@ -1,4 +1,8 @@
-export const TAG_MAX_LENGTH = 30;
+/**
+ * Long enough for a challenge category read off someone else's list — e.g.
+ * "Lowest rated from 1980s you have not seen" — rather than just a genre word.
+ */
+export const TAG_MAX_LENGTH = 60;
 export const TAG_MAX_PER_ITEM = 15;
 
 /**
@@ -152,7 +156,10 @@ export function validateTagName(raw: unknown): TagNameResult {
     return { ok: false, error: "Tag cannot be empty" };
   }
   if (label.length > TAG_MAX_LENGTH) {
-    return { ok: false, error: "Tags must be 30 characters or fewer" };
+    return {
+      ok: false,
+      error: `Tags must be ${TAG_MAX_LENGTH} characters or fewer`,
+    };
   }
 
   return { ok: true, value: { label, normalized } };

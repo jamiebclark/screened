@@ -36,6 +36,7 @@ Screened was built to close that gap: a shared watchlist that feeds your Picker,
 ## Features
 
 - **Collaborative lists** — shared watchlists with member invites; each list exports a live Radarr endpoint for home media server users
+- **Challenge templates** — start a list from a template (e.g. Hooptober 2026) with its categories and date window already set up
 - **Movie Night Picker** — collaborative "what should we watch?" sessions with reference-title scoring
 - **Watch Parties** — schedule viewings and invite friends; everyone gets notified and can RSVP
 - **Personal tracking** — watchlist, watching, watched, dropped status with star ratings and reviews

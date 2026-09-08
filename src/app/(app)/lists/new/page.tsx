@@ -11,9 +11,15 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import {
   LIST_PRESETS,
+  applyPreset,
   type ListPreset,
   type ListFeatureFlags,
 } from "@/lib/list-presets";
+import {
+  LIST_TEMPLATES,
+  LIST_TEMPLATE_LIST,
+  type ListTemplateId,
+} from "@/lib/list-templates";
 
 const PRESET_OPTIONS: { value: ListPreset; label: string; desc: string }[] = [
   {
@@ -38,10 +44,33 @@ const PRESET_OPTIONS: { value: ListPreset; label: string; desc: string }[] = [
   },
 ];
 
+/** Reads a template's calendar date for display, without shifting it by timezone. */
+function formatTemplateDate(iso: string): string {
+  return new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-US", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+}
+
+function describeTemplateWindow(templateId: ListTemplateId): string | null {
+  const { challengeStartsAt, challengeEndsAt } = LIST_TEMPLATES[templateId];
+  if (challengeStartsAt && challengeEndsAt) {
+    return `${formatTemplateDate(challengeStartsAt)} – ${formatTemplateDate(challengeEndsAt)}`;
+  }
+  if (challengeStartsAt) return `from ${formatTemplateDate(challengeStartsAt)}`;
+  if (challengeEndsAt) return `up to ${formatTemplateDate(challengeEndsAt)}`;
+  return null;
+}
+
 export default function NewListPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [templateId, setTemplateId] = useState<ListTemplateId | null>(null);
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
   const [selectedPreset, setSelectedPreset] = useState<ListPreset>("watchlist");
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [flags, setFlags] = useState<ListFeatureFlags>(
@@ -51,6 +80,32 @@ export default function NewListPage() {
   const handlePresetChange = (preset: ListPreset) => {
     setSelectedPreset(preset);
     setFlags(LIST_PRESETS[preset]);
+  };
+
+  const handleTemplateChange = (next: ListTemplateId | null) => {
+    const previous = templateId ? LIST_TEMPLATES[templateId] : null;
+    const template = next ? LIST_TEMPLATES[next] : null;
+
+    // Only overwrite text the user hasn't made their own.
+    const adopt = (current: string, was: string, becomes: string) =>
+      current.trim() === "" || current === was ? becomes : current;
+    setName((current) =>
+      adopt(current, previous?.defaultName ?? "", template?.defaultName ?? ""),
+    );
+    setDescription((current) =>
+      adopt(
+        current,
+        previous?.defaultDescription ?? "",
+        template?.defaultDescription ?? "",
+      ),
+    );
+
+    // Picking a template sets the list type; clearing one leaves it alone.
+    if (template) {
+      setSelectedPreset(template.preset);
+      setFlags(applyPreset(template.preset));
+    }
+    setTemplateId(next);
   };
 
   const handleFlagChange = (
@@ -75,10 +130,11 @@ export default function NewListPage() {
 
     const form = new FormData(e.currentTarget);
     const body = {
-      name: form.get("name") as string,
-      description: form.get("description") as string,
+      name,
+      description,
       isPublic: form.get("visibility") !== "private",
       preset: selectedPreset,
+      template: templateId ?? undefined,
       ...flags,
     };
 
@@ -127,6 +183,57 @@ export default function NewListPage() {
               </div>
             )}
 
+            {/* Template selector */}
+            <div className="space-y-2">
+              <Label>Start from a template</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <label className="relative cursor-pointer">
+                  <input
+                    type="radio"
+                    name="template"
+                    value=""
+                    checked={templateId === null}
+                    onChange={() => handleTemplateChange(null)}
+                    className="peer sr-only"
+                  />
+                  <div className="rounded-lg border border-border bg-muted p-3 peer-checked:border-primary peer-checked:bg-primary/10 transition-all">
+                    <p className="text-sm font-medium">Blank list</p>
+                    <p className="text-xs text-muted-foreground">
+                      Set everything up yourself
+                    </p>
+                  </div>
+                </label>
+                {LIST_TEMPLATE_LIST.map((template) => (
+                  <label key={template.id} className="relative cursor-pointer">
+                    <input
+                      type="radio"
+                      name="template"
+                      value={template.id}
+                      checked={templateId === template.id}
+                      onChange={() => handleTemplateChange(template.id)}
+                      className="peer sr-only"
+                    />
+                    <div className="rounded-lg border border-border bg-muted p-3 peer-checked:border-primary peer-checked:bg-primary/10 transition-all">
+                      <p className="text-sm font-medium">{template.label}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {template.summary}
+                      </p>
+                    </div>
+                  </label>
+                ))}
+              </div>
+              {templateId && (
+                <p className="text-xs text-muted-foreground">
+                  Creates the list with {LIST_TEMPLATES[templateId].tags.length}{" "}
+                  categories declared as tags
+                  {describeTemplateWindow(templateId)
+                    ? ` and a challenge window of ${describeTemplateWindow(templateId)}`
+                    : ""}
+                  . You can edit both afterwards in list settings.
+                </p>
+              )}
+            </div>
+
             {/* Preset selector */}
             <div className="space-y-2">
               <Label>List type</Label>
@@ -156,6 +263,8 @@ export default function NewListPage() {
                 id="name"
                 name="name"
                 required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 placeholder="e.g. Friday Night Movies"
               />
             </div>
@@ -165,6 +274,8 @@ export default function NewListPage() {
               <Textarea
                 id="description"
                 name="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
                 placeholder="What's this list for?"
                 rows={3}
               />

@@ -3,6 +3,11 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { slugify, generateToken } from "@/lib/utils";
 import { applyPreset, type ListPreset } from "@/lib/list-presets";
+import {
+  getListTemplate,
+  listTemplateChallengeWindow,
+  listTemplateTagRows,
+} from "@/lib/list-templates";
 import { validateListDetails } from "@/lib/list-validation";
 
 export async function GET(req: NextRequest) {
@@ -58,6 +63,7 @@ export async function POST(req: NextRequest) {
     description?: string;
     isPublic?: boolean;
     preset?: ListPreset;
+    template?: unknown;
     rankingEnabled?: boolean;
     votingEnabled?: boolean;
     commentsEnabled?: boolean;
@@ -65,6 +71,10 @@ export async function POST(req: NextRequest) {
     itemCap?: number | null;
   };
   const { isPublic = true, preset } = body;
+
+  // The client sends the template id only; the categories and window come from
+  // the server-side definition so a caller can't inject arbitrary tags here.
+  const template = getListTemplate(body.template);
 
   const validated = validateListDetails({
     name: body.name,
@@ -81,7 +91,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const flags = applyPreset(preset ?? "custom", {
+  const flags = applyPreset(preset ?? template?.preset ?? "custom", {
     rankingEnabled: body.rankingEnabled,
     votingEnabled: body.votingEnabled,
     commentsEnabled: body.commentsEnabled,
@@ -101,6 +111,11 @@ export async function POST(req: NextRequest) {
     slug = `${slug}-${Date.now().toString(36)}`;
   }
 
+  const templateWindow = template
+    ? listTemplateChallengeWindow(template)
+    : { startsAt: null, endsAt: null };
+  const templateTags = template ? listTemplateTagRows(template) : [];
+
   const list = await prisma.list.create({
     data: {
       name,
@@ -114,11 +129,16 @@ export async function POST(req: NextRequest) {
       commentsEnabled: flags.commentsEnabled,
       displayMode: flags.displayMode,
       itemCap: body.itemCap ?? null,
+      challengeStartsAt: templateWindow.startsAt,
+      challengeEndsAt: templateWindow.endsAt,
       members: {
         create: { userId: session.user.id, role: "OWNER" },
       },
+      ...(templateTags.length > 0 ? { tags: { create: templateTags } } : {}),
     },
-    include: { _count: { select: { items: true, members: true } } },
+    include: {
+      _count: { select: { items: true, members: true, tags: true } },
+    },
   });
 
   return NextResponse.json(list, { status: 201 });
