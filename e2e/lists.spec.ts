@@ -171,6 +171,31 @@ test.describe("Lists", () => {
     await expect(page.getByText(/\/api\/lists\//)).toBeVisible();
   });
 
+  test("owner can switch a list between private and public", async ({
+    page,
+  }) => {
+    const res = await page.request.post("/api/lists", {
+      data: { name: `Visibility Test ${Date.now()}`, isPublic: false },
+      headers: { "Content-Type": "application/json" },
+    });
+    const list = (await res.json()) as { slug: string };
+
+    await page.goto(`/lists/${list.slug}`);
+    await expect(page.getByText("Private list")).toBeVisible({
+      timeout: 10000,
+    });
+
+    await page.getByRole("button", { name: "List settings" }).click();
+    await page.getByText("Public", { exact: true }).click();
+    await page.getByRole("button", { name: "Save settings" }).click();
+    await expect(page.getByText("Saved", { exact: true })).toBeVisible();
+    await page.keyboard.press("Escape");
+
+    await expect(page.getByText("Public list")).toBeVisible({
+      timeout: 10000,
+    });
+  });
+
   test("non-existent list shows 404", async ({ page }) => {
     await page.goto("/lists/this-list-does-not-exist-xyz");
     await expect(page.getByText(/not found|404/i)).toBeVisible({

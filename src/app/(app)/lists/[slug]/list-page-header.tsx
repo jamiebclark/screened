@@ -252,6 +252,7 @@ export function ListPageHeader({
           isOwner={isOwner}
           name={name}
           description={description}
+          isPublic={isPublic}
           rankingEnabled={rankingEnabled}
           votingEnabled={votingEnabled}
           commentsEnabled={commentsEnabled}

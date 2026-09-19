@@ -38,6 +38,7 @@ interface ListSettingsModalProps {
   // Feature flags (owner settings)
   name: string;
   description: string | null;
+  isPublic: boolean;
   rankingEnabled: boolean;
   votingEnabled: boolean;
   commentsEnabled: boolean;
@@ -121,6 +122,7 @@ export function ListSettingsModal({
   isOwner,
   name,
   description,
+  isPublic,
   rankingEnabled,
   votingEnabled,
   commentsEnabled,
@@ -163,6 +165,7 @@ export function ListSettingsModal({
                   listSlug={listSlug}
                   name={name}
                   description={description}
+                  isPublic={isPublic}
                   rankingEnabled={rankingEnabled}
                   votingEnabled={votingEnabled}
                   commentsEnabled={commentsEnabled}

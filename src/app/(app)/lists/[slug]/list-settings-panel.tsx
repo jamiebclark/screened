@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Settings, Loader2, Trash2 } from "lucide-react";
+import { Settings, Loader2, Trash2, Globe, Lock } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,7 @@ interface ListSettingsPanelProps {
   listSlug: string;
   name: string;
   description: string | null;
+  isPublic: boolean;
   rankingEnabled: boolean;
   votingEnabled: boolean;
   commentsEnabled: boolean;
@@ -25,6 +26,11 @@ interface ListSettingsPanelProps {
   challengeStartsAt: string | null;
   challengeEndsAt: string | null;
 }
+
+const VISIBILITY_OPTIONS = [
+  { value: true, label: "Public", desc: "Anyone can view", Icon: Globe },
+  { value: false, label: "Private", desc: "Only members", Icon: Lock },
+] as const;
 
 /** Stored UTC-day-start ISO datetime -> `<input type="date">` value, with no timezone arithmetic. */
 function toDateInputValue(iso: string | null): string {
@@ -35,6 +41,7 @@ export function ListSettingsPanel({
   listSlug,
   name: initialName,
   description: initialDescription,
+  isPublic: initialIsPublic,
   rankingEnabled: initialRanking,
   votingEnabled: initialVoting,
   commentsEnabled: initialComments,
@@ -46,6 +53,7 @@ export function ListSettingsPanel({
   const router = useRouter();
   const [name, setName] = useState(initialName);
   const [description, setDescription] = useState(initialDescription ?? "");
+  const [isPublic, setIsPublic] = useState(initialIsPublic);
   const [rankingEnabled, setRankingEnabled] = useState(initialRanking);
   const [votingEnabled, setVotingEnabled] = useState(initialVoting);
   const [commentsEnabled, setCommentsEnabled] = useState(initialComments);
@@ -81,6 +89,7 @@ export function ListSettingsPanel({
   const isDirty =
     name !== initialName ||
     description !== (initialDescription ?? "") ||
+    isPublic !== initialIsPublic ||
     rankingEnabled !== initialRanking ||
     votingEnabled !== initialVoting ||
     commentsEnabled !== initialComments ||
@@ -114,6 +123,7 @@ export function ListSettingsPanel({
         body: JSON.stringify({
           name,
           description,
+          isPublic,
           rankingEnabled,
           votingEnabled,
           commentsEnabled,
@@ -201,6 +211,36 @@ export function ListSettingsPanel({
             className="text-xs"
             rows={2}
           />
+        </div>
+
+        <div className="space-y-1">
+          <Label className="text-xs font-medium">Visibility</Label>
+          <div className="grid grid-cols-2 gap-2">
+            {VISIBILITY_OPTIONS.map(({ value, label, desc, Icon }) => (
+              <label key={label} className="relative cursor-pointer">
+                <input
+                  type="radio"
+                  name="visibility"
+                  value={value ? "public" : "private"}
+                  checked={isPublic === value}
+                  onChange={() => setIsPublic(value)}
+                  className="peer sr-only"
+                />
+                <div className="rounded-md border border-border bg-muted p-2 peer-checked:border-primary peer-checked:bg-primary/10 peer-focus-visible:ring-2 peer-focus-visible:ring-ring transition-all">
+                  <p className="text-xs font-medium flex items-center gap-1">
+                    <Icon className="h-3 w-3" />
+                    {label}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">{desc}</p>
+                </div>
+              </label>
+            ))}
+          </div>
+          {!isPublic && initialIsPublic && (
+            <p className="text-[11px] text-amber-600">
+              Non-members will lose access when you save
+            </p>
+          )}
         </div>
 
         <div className="space-y-1">
