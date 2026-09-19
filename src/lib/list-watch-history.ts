@@ -48,6 +48,7 @@ type FetchListWatchHistoryInput = {
   mediaItemIds: string[];
   memberUserIds: string[];
   window: ChallengeWindow;
+  /** Newest-first cap on the merged rows; omit to return every qualifying watch. */
   take?: number;
 };
 
@@ -55,7 +56,7 @@ export async function fetchListWatchHistory({
   mediaItemIds,
   memberUserIds,
   window,
-  take = 200,
+  take,
 }: FetchListWatchHistoryInput): Promise<ListWatchHistoryRow[]> {
   if (mediaItemIds.length === 0 || memberUserIds.length === 0) return [];
 
@@ -108,7 +109,8 @@ export async function fetchListWatchHistory({
     episodeNumber: e.episodeNumber,
   }));
 
-  return mergeListWatchRows(fromEntries, fromEpisodes).slice(0, take);
+  const merged = mergeListWatchRows(fromEntries, fromEpisodes);
+  return take == null ? merged : merged.slice(0, take);
 }
 
 type FetchListInWindowWatchedMediaItemIdsInput = {
