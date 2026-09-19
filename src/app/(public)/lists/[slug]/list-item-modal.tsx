@@ -345,17 +345,20 @@ export function ListItemModal({
               }
             />
 
-            <div className="border-t border-border" />
-
-            {/* Tags */}
-            <ListItemTagEditor
-              listSlug={listSlug}
-              itemId={item.id}
-              tags={item.tags}
-              vocabulary={tagVocabulary}
-              canCurate={canCurate}
-              onChange={(tags) => onTagsChanged?.(item.id, tags)}
-            />
+            {/* Tags — a read-only viewer with no tags would just see an empty gap */}
+            {(item.tags.length > 0 || canCurate) && (
+              <>
+                <div className="border-t border-border" />
+                <ListItemTagEditor
+                  listSlug={listSlug}
+                  itemId={item.id}
+                  tags={item.tags}
+                  vocabulary={tagVocabulary}
+                  canCurate={canCurate}
+                  onChange={(tags) => onTagsChanged?.(item.id, tags)}
+                />
+              </>
+            )}
 
             <div className="border-t border-border" />
 
