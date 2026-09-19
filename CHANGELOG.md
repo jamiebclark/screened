@@ -1,3 +1,18 @@
+## [1.72.0](https://github.com/jamiebclark/screened/compare/v1.71.5...v1.72.0) (2026-09-19)
+
+### Features
+
+* **db:** add three-tier list visibility enum and migrate isPublic ([dd4ea5a](https://github.com/jamiebclark/screened/commit/dd4ea5a737bd80100da9682481507757b8cd53e1))
+* **lists:** add list-visibility helpers and access resolver ([2a6ec6a](https://github.com/jamiebclark/screened/commit/2a6ec6ad5b0974c9d4bb246e430354a86700586c))
+* **lists:** choose between public, site-members and private visibility ([c71c748](https://github.com/jamiebclark/screened/commit/c71c74802cb1c2e60e692f366b9b2e9f52663524))
+* **lists:** enforce visibility tiers in list API and radarr feed ([4644acd](https://github.com/jamiebclark/screened/commit/4644acdcdabc0ae2f26892cb4f5d273a4fd97315))
+* **lists:** render an anonymous read-only view for public lists ([6cafe50](https://github.com/jamiebclark/screened/commit/6cafe50cde16bccdafd9199f61b94b22a2b7977a))
+* **lists:** serve list pages without a session ([deffa47](https://github.com/jamiebclark/screened/commit/deffa47dea6885f43e18ffb80cc929186c5769e2))
+
+### Bug Fixes
+
+* **lists:** drop the empty tag row from the item modal for read-only viewers ([d135732](https://github.com/jamiebclark/screened/commit/d135732156fb06f8b976fcb82b6012f1b231e6a6))
+
 ## [1.71.5](https://github.com/jamiebclark/screened/compare/v1.71.4...v1.71.5) (2026-09-19)
 
 ### Bug Fixes
