@@ -182,6 +182,21 @@ watched what on the list, attributed by name and avatar, TV episodes labelled `S
 interleaved with films by date. If a window is set, only in-window watches appear; log out or set a
 window with nothing in it yet and you'll see a short explanation instead of an empty page.
 
+### Reading the timeline
+
+The **Timeline** icon opens the list's watches the other way round: one entry per title, oldest
+first, laid out down a vertical axis. Each title sits at its most recent qualifying watch — the
+same in-window rule as the history and stats — and members see every watcher's name, avatar, and
+date on the entry (a binge of episodes collapses to one line per person per day). Month boundaries
+and a **Today** marker are drawn on the axis, and when a window is set the axis starts and ends on
+the window's dates; without one it spans the first to the last watch. Titles nobody has watched yet
+are listed underneath as **Not watched yet**, so the page doubles as a progress view; hidden items
+appear in neither place.
+
+Anyone who can open the list can open its timeline — including logged-out visitors on a Public
+list — but only the owner and members see who watched what. Everyone else sees the same titles at
+the same dates with "Watched once" / "Watched N times" in place of names.
+
 ### Grid and sticky header
 
 In Grid layout, a tagged item shows up to two of its tags beneath the poster plus a `+N` counter for
