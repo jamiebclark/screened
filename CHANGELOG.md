@@ -1,3 +1,9 @@
+## [1.71.5](https://github.com/jamiebclark/screened/compare/v1.71.4...v1.71.5) (2026-09-19)
+
+### Bug Fixes
+
+* **home:** compact the stat cards on phones ([4ec99da](https://github.com/jamiebclark/screened/commit/4ec99da122d1cab179ea97ab3740a2469cbdc84f))
+
 ## [1.71.4](https://github.com/jamiebclark/screened/compare/v1.71.3...v1.71.4) (2026-09-19)
 
 ### Bug Fixes
