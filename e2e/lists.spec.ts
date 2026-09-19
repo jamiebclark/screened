@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 import { ensureLoggedIn, ensureTestUsersExist, TEST_USER_2 } from "./helpers";
 
 const LIST_NAME = `E2E List ${Date.now()}`;
@@ -8,6 +8,16 @@ test.beforeEach(async ({ page }) => {
   await ensureTestUsersExist(page);
   await ensureLoggedIn(page);
 });
+
+/** The invite form lives on the Members tab of the list settings modal. */
+async function openInviteDialog(page: Page) {
+  await page.getByRole("button", { name: "List settings" }).click();
+  await page.getByRole("tab", { name: "Members" }).click();
+  await page.getByRole("button", { name: "Invite", exact: true }).click();
+  await expect(
+    page.getByRole("dialog", { name: "Invite to list" }),
+  ).toBeVisible({ timeout: 5000 });
+}
 
 test.describe("Lists", () => {
   test("create a new public list", async ({ page }) => {
@@ -73,14 +83,16 @@ test.describe("Lists", () => {
     });
 
     await page.goto(`/lists/${list.slug}`);
-    await expect(page.getByText("Inception")).toBeVisible({ timeout: 10000 });
+    const card = page.getByText("Inception").first();
+    await expect(card).toBeVisible({ timeout: 10000 });
 
-    // Corner X (accessible name includes "Remove")
-    await page
-      .getByRole("button", { name: /remove from list/i })
-      .first()
-      .click();
-    await expect(page.getByText("Inception")).not.toBeVisible({
+    // Removal lives in the item modal, opened by tapping the card
+    await card.click();
+    await expect(page.getByRole("dialog")).toBeVisible({ timeout: 5000 });
+    await page.getByRole("button", { name: /remove from list/i }).click();
+
+    await expect(page.getByRole("dialog")).not.toBeVisible({ timeout: 5000 });
+    await expect(page.getByText("Inception")).toHaveCount(0, {
       timeout: 5000,
     });
   });
@@ -95,10 +107,7 @@ test.describe("Lists", () => {
     const list = (await res.json()) as { slug: string };
 
     await page.goto(`/lists/${list.slug}`);
-
-    // Click Invite button
-    await page.getByRole("button", { name: /invite/i }).click();
-    await expect(page.getByRole("dialog")).toBeVisible({ timeout: 5000 });
+    await openInviteDialog(page);
 
     // Search for the second test user
     await page.getByPlaceholder(/search users/i).fill("E2E Friend");
@@ -122,8 +131,7 @@ test.describe("Lists", () => {
     const list = (await res.json()) as { slug: string };
 
     await page.goto(`/lists/${list.slug}`);
-    await page.getByRole("button", { name: /invite/i }).click();
-    await expect(page.getByRole("dialog")).toBeVisible({ timeout: 5000 });
+    await openInviteDialog(page);
 
     await page.getByPlaceholder(/search users/i).fill(TEST_USER_2.email);
     await page.getByRole("button", { name: /add to list/i }).click();
@@ -141,7 +149,7 @@ test.describe("Lists", () => {
     const list = (await res.json()) as { slug: string };
 
     await page.goto(`/lists/${list.slug}`);
-    await page.getByRole("button", { name: /invite/i }).click();
+    await openInviteDialog(page);
     await page
       .getByPlaceholder(/search users/i)
       .fill("nobody@doesnotexist.test");
@@ -165,6 +173,9 @@ test.describe("Lists", () => {
     });
 
     await page.goto(`/lists/${list.slug}`);
+    // The Radarr URL lives on the Integrations tab of the settings modal
+    await page.getByRole("button", { name: "List settings" }).click();
+    await page.getByRole("tab", { name: "Integrations" }).click();
     await expect(page.getByText("Radarr import URL")).toBeVisible({
       timeout: 10000,
     });
@@ -181,7 +192,8 @@ test.describe("Lists", () => {
     const list = (await res.json()) as { slug: string };
 
     await page.goto(`/lists/${list.slug}`);
-    await expect(page.getByText("Private list")).toBeVisible({
+    const main = page.getByRole("main");
+    await expect(main.getByText("Private list")).toBeVisible({
       timeout: 10000,
     });
 
@@ -191,7 +203,7 @@ test.describe("Lists", () => {
     await expect(page.getByText("Saved", { exact: true })).toBeVisible();
     await page.keyboard.press("Escape");
 
-    await expect(page.getByText("Public list")).toBeVisible({
+    await expect(main.getByText("Public list")).toBeVisible({
       timeout: 10000,
     });
   });
