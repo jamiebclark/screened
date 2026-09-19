@@ -124,7 +124,7 @@ export default async function HomePage() {
   };
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-12 space-y-16">
+    <div className="mx-auto max-w-7xl space-y-10 px-4 py-8 sm:space-y-16 sm:py-12">
       {/* Stats */}
       <section>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -135,21 +135,28 @@ export default async function HomePage() {
                 <Link
                   key={status}
                   href={href}
-                  className="rounded-xl border border-border bg-card p-6 flex flex-col gap-3 transition-colors hover:bg-muted/50"
+                  className="rounded-xl border border-border bg-card p-4 transition-colors hover:bg-muted/50 sm:p-6"
                 >
+                  {/* Phones: icon and label on one line, count beneath (the
+                      profile stat-card pattern) so all four fit in one
+                      screen. From sm up the icon gets its own badge row. */}
+                  <div className="flex items-center gap-2 sm:hidden">
+                    <Icon className={`h-4 w-4 ${color}`} />
+                    <span className="text-sm text-muted-foreground">
+                      {label}
+                    </span>
+                  </div>
                   <div
-                    className={`rounded-full bg-muted p-3 self-start ${color}`}
+                    className={`hidden rounded-full bg-muted p-3 sm:inline-flex ${color}`}
                   >
                     <Icon className="h-5 w-5" />
                   </div>
-                  <div>
-                    <p className="text-4xl font-bold leading-none">
-                      {statMap[status] ?? 0}
-                    </p>
-                    <p className="text-sm text-muted-foreground mt-2">
-                      {label}
-                    </p>
-                  </div>
+                  <p className="mt-1 text-3xl font-bold leading-none sm:mt-3 sm:text-4xl">
+                    {statMap[status] ?? 0}
+                  </p>
+                  <p className="mt-2 hidden text-sm text-muted-foreground sm:block">
+                    {label}
+                  </p>
                 </Link>
               );
             },
