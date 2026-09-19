@@ -8,8 +8,9 @@ import {
   type TimelineItem,
 } from "./list-watch-timeline";
 
-const alice = { id: "u1", name: "Alice", avatarUrl: null };
-const bob = { id: "u2", name: "Bob", avatarUrl: "https://x/bob.png" };
+type Watcher = { id: string; name: string; avatarUrl: string | null };
+const alice: Watcher = { id: "u1", name: "Alice", avatarUrl: null };
+const bob: Watcher = { id: "u2", name: "Bob", avatarUrl: "https://x/bob.png" };
 
 function item(
   id: string,
