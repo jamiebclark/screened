@@ -122,6 +122,7 @@ Follow `docs/ui-ux-standards.md` for any visible changes. Key rules:
 - **Loading:** route-level `loading.tsx` or section-level skeletons that mirror final layout.
 - **Empty:** short human copy, one primary action when appropriate. Same typography as section body text.
 - **Error:** user-safe message + optional retry. No stack traces. Reuse existing `Alert` / toast patterns.
+- **Responsive:** every visible change must work at phone width (~390px) as well as desktop; verify both before calling it done. Side-by-side blocks stack below `sm` (`flex-col sm:flex-row`), text columns get `min-w-0 flex-1` (no fixed widths without an `sm:` prefix), dialogs are capped at `max-h-[85vh]` with inner scrolling, overlays anchor to the poster not the card, and the page never scrolls horizontally. Full rules and the screenshot-verification recipe are in `docs/ui-ux-standards.md` → "Responsive layout".
 
 ## Documentation to keep in sync
 

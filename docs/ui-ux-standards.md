@@ -82,6 +82,24 @@ Match visual weight to expected item count. The same data can be right as a comp
 
 **During planning**: When a spec introduces a new list or collection, explicitly name the expected item count range and choose the card/row pattern before writing tasks. A task that says "render each X as a row" has already made a density decision — make it consciously.
 
+## Responsive layout
+
+Screened is used on phones as much as on desktops. Every visible change must work at **phone width (~390px)** as well as desktop — mobile is not a degraded fallback. Tailwind is mobile-first: the unprefixed classes _are_ the phone layout, and `sm:` / `md:` / `lg:` add the wider arrangements on top.
+
+**Layout rules**
+
+- **Side-by-side needs a breakpoint.** Any `flex` row that places two blocks of content beside each other (poster + details, heading + action button, title column + note column) must stack below `sm` — `flex flex-col gap-4 sm:flex-row` — unless both sides are guaranteed to fit at 390px. A heading squeezed into a third of the screen beside a button is the most common regression.
+- **No fixed-width text columns on phones.** `w-36` / `w-44` are only acceptable as `sm:w-44`. Give text columns `min-w-0 flex-1` so they can shrink and wrap.
+- **Thumbnail-beside-title, then full width.** When a small poster sits beside the title block on phones, close that wrapper after the primary actions row so the overview, sections and lists below return to full width. Don't leave the rest of the page indented beside an empty thumbnail column.
+- **Overlays anchor to the image, not the card.** Absolute-positioned badges (`bottom-2 left-2`…) go inside a `relative` wrapper around the poster only, so they never cover captions, tags or names rendered underneath.
+- **Dialogs must fit the viewport.** `DialogContent` gets `max-h-[85vh]` (or similar) with an inner `overflow-y-auto` region; a dialog taller than the screen is centred and clips both ends. Put a phone-only poster thumbnail (`TitlePageMobilePoster`) beside the title and keep the large poster column `hidden sm:block`.
+- **`truncate` needs a block box.** It does nothing on an inline `<a>`/`<span>`; add `block` (or make the parent a flex row) or the text runs through neighbouring columns.
+- **Long navs collapse on phones.** A sidebar of more than ~5 links should not stack above the content on narrow screens (settings uses a horizontal scrollable pill strip below `md`). Keep the content within the first screen.
+- **Never scroll the page horizontally.** Wide content (tables, code, poster strips) scrolls inside its own `overflow-x-auto` container; `document.documentElement.scrollWidth` must equal the viewport width on every route.
+- **Page headers with an action.** Heading + intro copy on top, primary button below on phones (`self-start`), side by side from `sm`.
+
+**Verification** — before calling a visible change done, look at it at 390px and at the breakpoint just above where the layout changes (e.g. 660px for `sm`), not only at desktop. In this repo the quickest way is a Playwright script with `viewport: { width: 390, height: 844 }, isMobile: true` that logs in, navigates to the route and takes a `fullPage` screenshot; also assert `document.documentElement.scrollWidth <= 390`. Check both populated and empty states — most squeeze bugs only show up with real content.
+
 ## Loading, empty, and error states
 
 - **Loading** — Prefer route-level `loading.tsx` or section-level skeletons that mirror the final layout (avoid a generic spinner-only page when the screen has a known structure). Keep skeleton density calm; match **Letterboxd-style** lightness.
