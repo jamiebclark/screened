@@ -1,3 +1,13 @@
+## [1.71.3](https://github.com/jamiebclark/screened/compare/v1.71.2...v1.71.3) (2026-09-19)
+
+### Bug Fixes
+
+* **admin:** stop header and cron rows overflowing on phones ([a52821f](https://github.com/jamiebclark/screened/commit/a52821f268366cca325902ee67c4bb96ee2d4bbd))
+* **components:** cap dialogs at the viewport height ([1a967eb](https://github.com/jamiebclark/screened/commit/1a967eb428a48a7ac8b62bdd071800edfca03ac9))
+* **components:** edit-only markdown editor on phones ([200d622](https://github.com/jamiebclark/screened/commit/200d62218a32b23a72c21ec277efcf1bbc60c313))
+* **pick:** keep search results visible inside the picker dialogs ([aab3857](https://github.com/jamiebclark/screened/commit/aab385749f67f794a48f509be1cb72290ab5752a))
+* **search:** open the search box near the top on phones ([bf49519](https://github.com/jamiebclark/screened/commit/bf49519989f6227def69292fd82a17156df85eec))
+
 ## [1.71.2](https://github.com/jamiebclark/screened/compare/v1.71.1...v1.71.2) (2026-09-19)
 
 ### Bug Fixes
