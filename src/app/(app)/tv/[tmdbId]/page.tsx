@@ -235,35 +235,35 @@ export default async function TvPage({ params, searchParams }: Params) {
                     />
                   )}
                 </div>
-
-                <div className="mb-3 sm:hidden">
-                  <TitleCatalogLinks links={catalogLinks} />
-                </div>
-
-                {show.overview && (
-                  <p className="text-muted-foreground leading-relaxed max-w-2xl">
-                    {show.overview}
-                  </p>
-                )}
-
-                {trailerKey && (
-                  <TrailerEmbed youtubeKey={trailerKey} title={show.name} />
-                )}
-
-                <Suspense
-                  fallback={
-                    <div className="mt-3 flex items-center gap-1.5">
-                      <Skeleton className="h-3 w-12 shrink-0" />
-                      {Array.from({ length: 3 }).map((_, i) => (
-                        <Skeleton key={i} className="h-7 w-7 rounded-md" />
-                      ))}
-                    </div>
-                  }
-                >
-                  <StreamingProviders tmdbId={tmdbId} type="tv" />
-                </Suspense>
               </div>
             </div>
+
+            <div className="mb-3 sm:hidden">
+              <TitleCatalogLinks links={catalogLinks} />
+            </div>
+
+            {show.overview && (
+              <p className="text-muted-foreground leading-relaxed max-w-2xl">
+                {show.overview}
+              </p>
+            )}
+
+            {trailerKey && (
+              <TrailerEmbed youtubeKey={trailerKey} title={show.name} />
+            )}
+
+            <Suspense
+              fallback={
+                <div className="mt-3 flex items-center gap-1.5">
+                  <Skeleton className="h-3 w-12 shrink-0" />
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <Skeleton key={i} className="h-7 w-7 rounded-md" />
+                  ))}
+                </div>
+              }
+            >
+              <StreamingProviders tmdbId={tmdbId} type="tv" />
+            </Suspense>
           </div>
         </div>
 

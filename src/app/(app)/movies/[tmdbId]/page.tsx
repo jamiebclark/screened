@@ -242,33 +242,33 @@ export default async function MoviePage({ params, searchParams }: Params) {
                     />
                   )}
                 </div>
-
-                <div className="mb-3 sm:hidden">
-                  <TitleCatalogLinks links={catalogLinks} />
-                </div>
-
-                {movie.overview && (
-                  <p className="text-muted-foreground leading-relaxed max-w-2xl">
-                    {movie.overview}
-                  </p>
-                )}
-
-                {trailerKey && (
-                  <TrailerEmbed youtubeKey={trailerKey} title={movie.title} />
-                )}
-
-                {session?.user?.id ? (
-                  <TitleSiteContext>
-                    <Suspense fallback={<MovieScreenedContextSkeleton />}>
-                      <MovieScreenedContextAsync
-                        userId={session.user.id}
-                        tmdbId={tmdbId}
-                      />
-                    </Suspense>
-                  </TitleSiteContext>
-                ) : null}
               </div>
             </div>
+
+            <div className="mb-3 sm:hidden">
+              <TitleCatalogLinks links={catalogLinks} />
+            </div>
+
+            {movie.overview && (
+              <p className="text-muted-foreground leading-relaxed max-w-2xl">
+                {movie.overview}
+              </p>
+            )}
+
+            {trailerKey && (
+              <TrailerEmbed youtubeKey={trailerKey} title={movie.title} />
+            )}
+
+            {session?.user?.id ? (
+              <TitleSiteContext>
+                <Suspense fallback={<MovieScreenedContextSkeleton />}>
+                  <MovieScreenedContextAsync
+                    userId={session.user.id}
+                    tmdbId={tmdbId}
+                  />
+                </Suspense>
+              </TitleSiteContext>
+            ) : null}
 
             {session?.user && (
               <WatchHistory
