@@ -108,59 +108,64 @@ function ListRow({
         )}
       </div>
 
-      {/* Title + meta + avatar */}
-      <div className="w-36 sm:w-44 shrink-0 min-w-0">
-        <p className="text-sm font-medium leading-tight line-clamp-2">
-          {item.mediaItem.title}
-        </p>
-        <p className="text-xs text-muted-foreground mt-0.5">
-          {item.mediaItem.year}
-          {item.mediaItem.year && " · "}
-          {item.mediaItem.type === "movie" ? "Movie" : "TV"}
-          {item.mediaItem.productionCountries.length > 0 && (
-            <>
-              {" · "}
-              {formatProductionCountries(item.mediaItem.productionCountries)}
-            </>
-          )}
-        </p>
-        <div className="flex items-center gap-1 mt-1.5">
-          <Avatar className="h-4 w-4 shrink-0">
-            <AvatarImage src={item.addedBy.avatarUrl ?? undefined} />
-            <AvatarFallback className="text-[8px]">
-              {item.addedBy.name?.[0]?.toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
-          <span className="text-[11px] text-muted-foreground truncate">
-            {item.addedBy.name}
-          </span>
+      {/* Title block + note. Side by side from `sm` up; on phones the note and
+          tags stack under the title so they get the full row width instead of
+          a sliver beside a fixed-width title column. */}
+      <div className="flex-1 min-w-0 sm:flex sm:items-start sm:gap-3">
+        <div className="min-w-0 sm:w-44 sm:shrink-0">
+          <p className="text-sm font-medium leading-tight line-clamp-2">
+            {item.mediaItem.title}
+          </p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {item.mediaItem.year}
+            {item.mediaItem.year && " · "}
+            {item.mediaItem.type === "movie" ? "Movie" : "TV"}
+            {item.mediaItem.productionCountries.length > 0 && (
+              <>
+                {" · "}
+                {formatProductionCountries(item.mediaItem.productionCountries)}
+              </>
+            )}
+          </p>
+          <div className="flex items-center gap-1 mt-1.5">
+            <Avatar className="h-4 w-4 shrink-0">
+              <AvatarImage src={item.addedBy.avatarUrl ?? undefined} />
+              <AvatarFallback className="text-[8px]">
+                {item.addedBy.name?.[0]?.toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <span className="text-[11px] text-muted-foreground truncate">
+              {item.addedBy.name}
+            </span>
+          </div>
         </div>
-      </div>
 
-      {/* Note — right-side column */}
-      <div className="flex-1 min-w-0">
-        {item.notes &&
-          (item.noteIsSpoiler ? (
-            <SpoilerNote notes={item.notes} />
-          ) : (
-            <div className="line-clamp-3">
-              <MarkdownContent content={item.notes} />
-            </div>
-          ))}
-        {item.tags.length > 0 && (
-          <div className="flex flex-wrap items-center gap-1 mt-1">
-            {item.tags.slice(0, 3).map((tag) => (
-              <span
-                key={tag.id}
-                className="inline-flex items-center rounded-full bg-secondary px-1.5 py-0.5 text-[11px] text-secondary-foreground"
-              >
-                {tag.label}
-              </span>
-            ))}
-            {item.tags.length > 3 && (
-              <span className="text-[11px] text-muted-foreground">
-                +{item.tags.length - 3}
-              </span>
+        {(item.notes || item.tags.length > 0) && (
+          <div className="min-w-0 mt-2 sm:mt-0 sm:flex-1">
+            {item.notes &&
+              (item.noteIsSpoiler ? (
+                <SpoilerNote notes={item.notes} />
+              ) : (
+                <div className="line-clamp-3">
+                  <MarkdownContent content={item.notes} />
+                </div>
+              ))}
+            {item.tags.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1 mt-1">
+                {item.tags.slice(0, 3).map((tag) => (
+                  <span
+                    key={tag.id}
+                    className="inline-flex items-center rounded-full bg-secondary px-1.5 py-0.5 text-[11px] text-secondary-foreground"
+                  >
+                    {tag.label}
+                  </span>
+                ))}
+                {item.tags.length > 3 && (
+                  <span className="text-[11px] text-muted-foreground">
+                    +{item.tags.length - 3}
+                  </span>
+                )}
+              </div>
             )}
           </div>
         )}
