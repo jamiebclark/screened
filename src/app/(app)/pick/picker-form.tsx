@@ -318,7 +318,7 @@ function MovieModalSearchInput({
       </div>
 
       {open && results.length > 0 && (
-        <div className="absolute z-50 mt-1 w-full rounded-md border border-border bg-popover shadow-lg max-h-72 overflow-y-auto">
+        <div className="mt-1 w-full rounded-md border border-border bg-popover shadow-lg max-h-72 overflow-y-auto">
           {results.map((r) => {
             const alreadyAdded = existingIds.has(String(r.tmdbId));
             const isAdding = adding?.id === r.tmdbId;
@@ -819,7 +819,7 @@ function PersonTagInput({
         </div>
 
         {open && results.length > 0 && (
-          <div className="absolute z-50 mt-1 w-full rounded-md border border-border bg-popover shadow-lg max-h-56 overflow-y-auto">
+          <div className="mt-1 w-full rounded-md border border-border bg-popover shadow-lg max-h-56 overflow-y-auto">
             {results.map((p) => (
               <button
                 key={p.id}
@@ -986,7 +986,7 @@ function GenreTagInput({
               autoComplete="off"
             />
             {open && availableSuggestions.length > 0 && (
-              <div className="absolute z-50 mt-1 w-full max-h-56 overflow-y-auto rounded-md border border-border bg-popover py-0.5 shadow-lg">
+              <div className="mt-1 w-full max-h-56 overflow-y-auto rounded-md border border-border bg-popover py-0.5 shadow-lg">
                 {availableSuggestions.map((g: string) => (
                   <button
                     key={g}
