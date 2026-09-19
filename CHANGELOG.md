@@ -1,3 +1,12 @@
+## [1.71.2](https://github.com/jamiebclark/screened/compare/v1.71.1...v1.71.2) (2026-09-19)
+
+### Bug Fixes
+
+* **lists:** truncate long titles in challenge history rows ([d9eedfb](https://github.com/jamiebclark/screened/commit/d9eedfba94ed87702441a8d1106237982083fb2a))
+* **search:** restore the space in the results count ([27603dd](https://github.com/jamiebclark/screened/commit/27603dd5d4a28e8a17266a74b0b0331bc4cb110b))
+* **settings:** use a horizontal section strip on phones ([f4b3dc9](https://github.com/jamiebclark/screened/commit/f4b3dc9c990fab9e8a7b82333eaa75c2e581045a))
+* stack page headers above their actions on phones ([7d046ca](https://github.com/jamiebclark/screened/commit/7d046ca6c3f30b10be2c0d3b7bf4d22d622aa987))
+
 ## [1.71.1](https://github.com/jamiebclark/screened/compare/v1.71.0...v1.71.1) (2026-09-19)
 
 ### Bug Fixes
