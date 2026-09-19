@@ -305,7 +305,7 @@ export function EpisodeTracker({
                   <span className="text-sm font-medium truncate">
                     {season.name}
                   </span>
-                  <span className="text-xs text-muted-foreground shrink-0">
+                  <span className="shrink-0 whitespace-nowrap text-xs tabular-nums text-muted-foreground">
                     {seasonWatched}/{season.episode_count}
                   </span>
                 </div>
