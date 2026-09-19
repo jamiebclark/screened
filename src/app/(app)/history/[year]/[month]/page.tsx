@@ -107,9 +107,11 @@ export default async function HistoryMonthPage({ params }: Params) {
         ]}
       />
 
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold">{monthTitle}</h1>
-        <SubscribeToCalendarButton feedUrl={feedUrl} />
+        <div className="self-start">
+          <SubscribeToCalendarButton feedUrl={feedUrl} />
+        </div>
       </div>
 
       <div className="mb-10">

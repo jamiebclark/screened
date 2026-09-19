@@ -166,7 +166,7 @@ export default async function HistoryPage() {
             {watched.length} viewing{watched.length !== 1 ? "s" : ""}
           </p>
         </div>
-        <div className="flex flex-col items-end gap-2 shrink-0">
+        <div className="flex flex-col items-start gap-2 shrink-0 sm:items-end">
           <Link
             href={historyMonthPath(cy, cm)}
             className="text-sm font-medium text-primary hover:underline"

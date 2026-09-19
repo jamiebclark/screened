@@ -20,7 +20,7 @@ export default async function WatchPartiesPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8 space-y-10">
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-1.5">
           <h1 className="text-2xl font-bold">Watch Parties</h1>
           <p className="text-sm text-muted-foreground max-w-prose">
@@ -40,7 +40,7 @@ export default async function WatchPartiesPage() {
             )}
           </p>
         </div>
-        <Button asChild className="shrink-0 gap-1.5">
+        <Button asChild className="shrink-0 gap-1.5 self-start">
           <Link href="/search">
             <Search className="h-4 w-4" />
             Find something to watch

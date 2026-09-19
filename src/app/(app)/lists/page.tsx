@@ -60,7 +60,7 @@ export default async function ListsPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-12 space-y-16">
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-1.5">
           <h1 className="text-4xl font-bold">Lists</h1>
           <p className="text-base text-muted-foreground">
@@ -79,7 +79,7 @@ export default async function ListsPage() {
             )}
           </p>
         </div>
-        <Button asChild size="lg" className="shrink-0 gap-1.5">
+        <Button asChild size="lg" className="shrink-0 gap-1.5 self-start">
           <Link href="/lists/new">
             <Plus className="h-4 w-4" />
             New list
