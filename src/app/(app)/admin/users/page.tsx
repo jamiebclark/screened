@@ -57,7 +57,7 @@ export default async function AdminUsersPage() {
         <h1 className="text-2xl font-bold">Users</h1>
         <span className="text-sm text-muted-foreground">{users.length}</span>
       </div>
-      <div className="flex items-center justify-between mb-8">
+      <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-muted-foreground">All registered accounts.</p>
         <AdminInviteUserForm />
       </div>

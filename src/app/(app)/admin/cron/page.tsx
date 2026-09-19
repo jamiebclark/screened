@@ -90,7 +90,7 @@ export default async function CronStatusPage() {
             return (
               <div key={key} className="px-4 py-3 space-y-2">
                 <div className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex shrink-0 items-center gap-3">
                     {status === "success" && (
                       <CheckCircle className="h-4 w-4 shrink-0 text-green-500" />
                     )}
@@ -105,14 +105,17 @@ export default async function CronStatusPage() {
                     )}
                     <span className="font-medium text-sm">{label}</span>
                     {neverRun && (
-                      <Badge variant="outline" className="text-xs">
+                      <Badge
+                        variant="outline"
+                        className="whitespace-nowrap text-xs"
+                      >
                         Never run
                       </Badge>
                     )}
                   </div>
-                  <div className="flex items-center gap-3 shrink-0">
+                  <div className="flex min-w-0 items-center gap-3">
                     {run ? (
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <div className="flex flex-wrap justify-end gap-x-4 gap-y-0.5 text-sm text-muted-foreground">
                         <span>{formatRelative(run.ranAt)}</span>
                         <span>{formatDuration(run.durationMs)}</span>
                         <span>
@@ -175,7 +178,7 @@ export default async function CronStatusPage() {
                         {run.integration}
                       </Badge>
                     </div>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground shrink-0">
+                    <div className="flex flex-wrap justify-end gap-x-4 gap-y-0.5 text-sm text-muted-foreground">
                       <span title={run.ranAt.toISOString()}>
                         {formatRelative(run.ranAt)}
                       </span>
