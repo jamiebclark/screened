@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { useIsSmUp } from "@/hooks/use-media-query";
 
 const MDEditor = dynamic(() => import("@uiw/react-md-editor"), { ssr: false });
 
@@ -13,6 +14,12 @@ interface MarkdownEditorProps {
   maxLength?: number;
   onKeyDown?: React.KeyboardEventHandler<HTMLTextAreaElement>;
   disabled?: boolean;
+  /**
+   * "live" shows the editor and preview side by side. That only applies from
+   * `sm` up; phones always get the editor alone, since a split leaves each
+   * pane a few words wide.
+   */
+  preview?: "edit" | "live";
 }
 
 export function MarkdownEditor({
@@ -24,7 +31,9 @@ export function MarkdownEditor({
   maxLength,
   onKeyDown,
   disabled,
+  preview = "edit",
 }: MarkdownEditorProps) {
+  const isSmUp = useIsSmUp();
   return (
     <div
       data-color-mode="dark"
@@ -34,7 +43,7 @@ export function MarkdownEditor({
         value={value}
         onChange={(val) => onChange(val ?? "")}
         height={height}
-        preview="edit"
+        preview={preview === "live" && isSmUp ? "live" : "edit"}
         textareaProps={{
           placeholder,
           autoFocus,

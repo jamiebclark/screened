@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -15,8 +14,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Plus, Pencil, Loader2 } from "lucide-react";
-
-const MDEditor = dynamic(() => import("@uiw/react-md-editor"), { ssr: false });
+import { MarkdownEditor } from "@/components/markdown-editor";
 
 export interface WatchEntry {
   id: string;
@@ -231,17 +229,12 @@ export function WatchEntryDialog({
                 (optional)
               </span>
             </Label>
-            <div
-              data-color-mode="dark"
-              className="rounded-md overflow-hidden border border-border"
-            >
-              <MDEditor
-                value={reviewValue}
-                onChange={(val) => setReviewValue(val ?? "")}
-                height={280}
-                preview="live"
-              />
-            </div>
+            <MarkdownEditor
+              value={reviewValue}
+              onChange={setReviewValue}
+              height={280}
+              preview="live"
+            />
             <p className="text-xs text-muted-foreground">
               Supports **bold**, *italic*, lists, links, and more.
             </p>
