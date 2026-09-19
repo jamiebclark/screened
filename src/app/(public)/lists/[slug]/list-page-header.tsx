@@ -2,7 +2,15 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Users, Plus, Settings, BarChart3, Tag, History } from "lucide-react";
+import {
+  Users,
+  Plus,
+  Settings,
+  BarChart3,
+  Tag,
+  History,
+  CalendarRange,
+} from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ListSettingsModal } from "./list-settings-modal";
@@ -200,6 +208,12 @@ export function ListPageHeader({
           aria-label="Manage list tags"
         >
           <Tag className="h-5 w-5" />
+        </Button>
+        {/* Timeline follows list visibility, so every viewer gets the link. */}
+        <Button variant="ghost" size="icon" className="h-9 w-9" asChild>
+          <Link href={`/lists/${listSlug}/timeline`} aria-label="Timeline">
+            <CalendarRange className="h-5 w-5" />
+          </Link>
         </Button>
         {hasSidebar && (
           <Button variant="ghost" size="icon" className="h-9 w-9" asChild>
