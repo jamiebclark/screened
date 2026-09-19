@@ -1,3 +1,9 @@
+## [1.71.1](https://github.com/jamiebclark/screened/compare/v1.71.0...v1.71.1) (2026-09-19)
+
+### Bug Fixes
+
+* **titles:** let overview and details use the full width on phones ([d8852fb](https://github.com/jamiebclark/screened/commit/d8852fb3836afda9b15ad055e2e5f1c052b8fc6c))
+
 ## [1.71.0](https://github.com/jamiebclark/screened/compare/v1.70.0...v1.71.0) (2026-09-19)
 
 ### Features
