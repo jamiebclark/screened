@@ -7,7 +7,7 @@ Lists are Screened's core social feature — shared collections of movies that a
 1. Go to **Lists → New List**
 2. Optionally start from a **template** (see below), or leave it on **Blank list**
 3. Give it a name — a URL-friendly slug is generated automatically
-4. Choose public or private visibility
+4. Choose who can see it: **Public**, **Site members** (the default), or **Private**
 
 ### Starting from a template
 
@@ -191,10 +191,25 @@ list short enough to fit on screen.
 
 ## Privacy
 
-| Visibility | Radarr endpoint | Discoverable by others |
-| ---------- | --------------- | ---------------------- |
-| Public     | No token needed | Yes                    |
-| Private    | Token required  | No                     |
+Every list has one of three visibility tiers. Owners choose it when creating
+the list and can change it any time from **List settings**.
+
+| Visibility   | Who can open it                                   | Radarr endpoint | Discoverable by signed-in users |
+| ------------ | ------------------------------------------------- | --------------- | ------------------------------- |
+| Public       | Anyone on the internet, no account needed         | No token needed | Yes                             |
+| Site members | Anyone signed in to Screened                      | Token required  | Yes                             |
+| Private      | The owner and list members only (request to join) | Token required  | No                              |
+
+Logged-out visitors to a **Public** list get a read-only view: the list name,
+description, items, ranks, tags, vote totals and comment counts, plus a single
+prompt to sign in. They never see member names or avatars, who added or watched
+an item, comment threads, or any control that changes the list. Site-member and
+private lists redirect logged-out visitors to sign in without revealing the
+list name.
+
+New lists default to **Site members**, and lists created before the tiers
+existed keep their previous audience — nothing becomes Public unless its owner
+chooses it.
 
 ## Radarr integration
 
