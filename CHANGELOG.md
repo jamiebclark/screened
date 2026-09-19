@@ -1,3 +1,15 @@
+## [1.71.0](https://github.com/jamiebclark/screened/compare/v1.70.0...v1.71.0) (2026-09-19)
+
+### Features
+
+* **lists:** allow changing list visibility from settings ([d69cd2e](https://github.com/jamiebclark/screened/commit/d69cd2e73d7800a1243b4ea274d0d2ec7d565dde))
+
+### Bug Fixes
+
+* **lists:** anchor grid card overlays to the poster ([f64fe64](https://github.com/jamiebclark/screened/commit/f64fe64c67edbc2aaa0f73e505df9226b7f43b44))
+* **lists:** keep the item modal on screen on phones ([049ae21](https://github.com/jamiebclark/screened/commit/049ae21a5795f2ba4e5e5ddf07bbcbbf3a094576))
+* **lists:** stack item note and tags below the title on phones ([6caf2c2](https://github.com/jamiebclark/screened/commit/6caf2c2e423e86bf071912aada8ddda226f4d4e1))
+
 ## [1.70.0](https://github.com/jamiebclark/screened/compare/v1.69.0...v1.70.0) (2026-09-08)
 
 ### Features
