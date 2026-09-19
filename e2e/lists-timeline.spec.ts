@@ -42,6 +42,15 @@ async function logWatch(request: APIRequestContext, tmdbId: number) {
   expect(r.ok()).toBeTruthy();
 }
 
+/** Removes every watch and status the signed-in user has for a title. */
+async function clearWatches(request: APIRequestContext, tmdbId: number) {
+  const r = await request.post("/api/media/status", {
+    data: { tmdbId, type: "movie", status: null },
+    headers: { "Content-Type": "application/json" },
+  });
+  expect(r.ok()).toBeTruthy();
+}
+
 function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
 }
@@ -69,6 +78,8 @@ test.describe("Lists - Watch timeline", () => {
     const list = await createList(page.request, "MEMBERS");
     await addMovie(page.request, list.slug, 27205); // Inception
     await addMovie(page.request, list.slug, 155); // The Dark Knight
+    // Watch state is per user, not per list: make sure only Inception counts.
+    await clearWatches(page.request, 155);
     await logWatch(page.request, 27205);
 
     // Entry point from the list header.
