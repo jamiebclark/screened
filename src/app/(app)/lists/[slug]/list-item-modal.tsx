@@ -25,6 +25,7 @@ import { ListItemTagEditor, type ItemTag } from "./list-item-tag-editor";
 import { tmdbImageUrl } from "@/lib/utils";
 import { formatProductionCountries } from "@/lib/production-countries";
 import { MarkdownContent } from "@/components/markdown-content";
+import { TitlePageMobilePoster } from "@/components/title-page-mobile-poster";
 import type { GridItem } from "./list-items-grid";
 import type { TagVocabularyEntry } from "@/lib/list-item-tags";
 
@@ -247,13 +248,15 @@ export function ListItemModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-2xl p-0 overflow-hidden">
+      <DialogContent className="max-w-2xl p-0 overflow-hidden max-h-[85vh] flex">
         <DialogTitle className="sr-only">{mediaItem.title}</DialogTitle>
-        <div className="flex flex-col sm:flex-row">
-          {/* Poster */}
-          <div className="sm:w-48 shrink-0">
+        <div className="flex min-h-0 flex-1">
+          {/* Large poster column — `sm` and up only. On phones a full-width
+              poster is a screen tall and pushes every detail below the fold,
+              so a thumbnail sits beside the title instead (see below). */}
+          <div className="hidden sm:block sm:w-48 shrink-0">
             {posterUrl ? (
-              <div className="relative aspect-[2/3] sm:h-full w-full">
+              <div className="relative h-full w-full">
                 <Image
                   src={posterUrl}
                   alt={mediaItem.title}
@@ -263,7 +266,7 @@ export function ListItemModal({
                 />
               </div>
             ) : (
-              <div className="aspect-[2/3] sm:h-full bg-muted flex items-center justify-center">
+              <div className="h-full bg-muted flex items-center justify-center">
                 <span className="text-xs text-muted-foreground text-center px-2">
                   {mediaItem.title}
                 </span>
@@ -272,47 +275,59 @@ export function ListItemModal({
           </div>
 
           {/* Details */}
-          <div className="flex-1 p-5 overflow-y-auto max-h-[80vh] space-y-4">
-            {/* Title + meta */}
-            <div>
-              <h2 className="text-lg font-semibold leading-tight">
-                <Link href={href} className="hover:underline" onClick={onClose}>
-                  {mediaItem.title}
-                </Link>
-              </h2>
-              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1 text-xs text-muted-foreground">
-                {mediaItem.year && <span>{mediaItem.year}</span>}
-                <span>·</span>
-                <span>{type === "movie" ? "Movie" : "TV Show"}</span>
-                {runtimeLabel && (
-                  <>
-                    <span>·</span>
-                    <span>{runtimeLabel}</span>
-                  </>
-                )}
-                {mediaItem.productionCountries.length > 0 && (
-                  <>
-                    <span>·</span>
-                    <span>
-                      {formatProductionCountries(mediaItem.productionCountries)}
-                    </span>
-                  </>
+          <div className="flex-1 min-w-0 p-5 overflow-y-auto space-y-4">
+            {/* Title + meta, with the phone-only poster thumbnail alongside */}
+            <div className="flex items-start gap-3">
+              <TitlePageMobilePoster
+                posterUrl={posterUrl}
+                title={mediaItem.title}
+              />
+              <div className="min-w-0 flex-1">
+                <h2 className="text-lg font-semibold leading-tight pr-6 sm:pr-0">
+                  <Link
+                    href={href}
+                    className="hover:underline"
+                    onClick={onClose}
+                  >
+                    {mediaItem.title}
+                  </Link>
+                </h2>
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1 text-xs text-muted-foreground">
+                  {mediaItem.year && <span>{mediaItem.year}</span>}
+                  <span>·</span>
+                  <span>{type === "movie" ? "Movie" : "TV Show"}</span>
+                  {runtimeLabel && (
+                    <>
+                      <span>·</span>
+                      <span>{runtimeLabel}</span>
+                    </>
+                  )}
+                  {mediaItem.productionCountries.length > 0 && (
+                    <>
+                      <span>·</span>
+                      <span>
+                        {formatProductionCountries(
+                          mediaItem.productionCountries,
+                        )}
+                      </span>
+                    </>
+                  )}
+                </div>
+                {mediaItem.genres.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {mediaItem.genres.map((g) => (
+                      <Link
+                        key={g}
+                        href={`/browse?genreName=${encodeURIComponent(g)}&type=${type}`}
+                        onClick={onClose}
+                        className="inline-flex items-center rounded-full border border-transparent bg-secondary px-2 py-0.5 text-xs text-secondary-foreground hover:bg-secondary/80 transition-colors"
+                      >
+                        {g}
+                      </Link>
+                    ))}
+                  </div>
                 )}
               </div>
-              {mediaItem.genres.length > 0 && (
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {mediaItem.genres.map((g) => (
-                    <Link
-                      key={g}
-                      href={`/browse?genreName=${encodeURIComponent(g)}&type=${type}`}
-                      onClick={onClose}
-                      className="inline-flex items-center rounded-full border border-transparent bg-secondary px-2 py-0.5 text-xs text-secondary-foreground hover:bg-secondary/80 transition-colors"
-                    >
-                      {g}
-                    </Link>
-                  ))}
-                </div>
-              )}
             </div>
 
             {/* Note / overview */}
