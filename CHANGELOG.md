@@ -1,3 +1,12 @@
+## [1.73.0](https://github.com/jamiebclark/screened/compare/v1.72.0...v1.73.0) (2026-09-19)
+
+### Features
+
+* **lists:** add list watch timeline builder ([971b073](https://github.com/jamiebclark/screened/commit/971b0737bf74f72f1b2439dc7ad8fc12427d38c3))
+* **lists:** allow anonymous access to the list timeline route ([ceaec2c](https://github.com/jamiebclark/screened/commit/ceaec2c4b48eefe63d37045fd386b72417c7c8a8))
+* **lists:** link to the timeline from the list header ([689b19b](https://github.com/jamiebclark/screened/commit/689b19bdac094bd2051b55d04cff88ddbb28f345))
+* **lists:** render a watch timeline page for each list ([1650aa5](https://github.com/jamiebclark/screened/commit/1650aa51132dc3e67a494ad5dea8c9ad1a5819f1))
+
 ## [1.72.0](https://github.com/jamiebclark/screened/compare/v1.71.5...v1.72.0) (2026-09-19)
 
 ### Features
