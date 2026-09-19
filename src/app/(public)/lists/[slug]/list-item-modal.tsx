@@ -28,6 +28,7 @@ import { MarkdownContent } from "@/components/markdown-content";
 import { TitlePageMobilePoster } from "@/components/title-page-mobile-poster";
 import type { GridItem } from "./list-items-grid";
 import type { TagVocabularyEntry } from "@/lib/list-item-tags";
+import { AnonymousListPrompt } from "./anonymous-list-prompt";
 
 interface ListItemModalProps {
   item: GridItem | null;
@@ -38,6 +39,7 @@ interface ListItemModalProps {
   votingEnabled: boolean;
   commentsEnabled: boolean;
   currentUserId: string | undefined;
+  isAnonymous: boolean;
   canCurate: boolean;
   isListOwner: boolean;
   tagVocabulary: TagVocabularyEntry[];
@@ -217,6 +219,7 @@ export function ListItemModal({
   votingEnabled,
   commentsEnabled,
   currentUserId,
+  isAnonymous,
   canCurate,
   isListOwner,
   tagVocabulary,
@@ -230,11 +233,7 @@ export function ListItemModal({
   const type = mediaItem.type;
   const href = `/${type === "movie" ? "movies" : "tv"}/${mediaItem.tmdbId}`;
   const posterUrl = tmdbImageUrl(mediaItem.poster, "w342");
-  const upvotes = item.votes.filter((v) => v.value === 1).length;
-  const downvotes = item.votes.filter((v) => v.value === -1).length;
-  const userVote = currentUserId
-    ? (item.votes.find((v) => v.userId === currentUserId)?.value ?? null)
-    : null;
+  const { up: upvotes, down: downvotes, userVote } = item.voteSummary;
 
   const runtimeLabel = mediaItem.runtime
     ? `${Math.floor(mediaItem.runtime / 60)}h ${mediaItem.runtime % 60}m`
@@ -338,7 +337,7 @@ export function ListItemModal({
               listSlug={listSlug}
               canEdit={
                 !!currentUserId &&
-                (isListOwner || item.addedBy.id === currentUserId)
+                (isListOwner || item.addedBy?.id === currentUserId)
               }
               overview={mediaItem.overview}
               onSaved={(note, isSpoiler) =>
@@ -384,26 +383,32 @@ export function ListItemModal({
               </div>
             )}
 
-            {/* Added by */}
-            <div className="flex items-center gap-2">
-              <Avatar className="h-5 w-5 shrink-0">
-                <AvatarImage src={item.addedBy.avatarUrl ?? undefined} />
-                <AvatarFallback className="text-[9px]">
-                  {item.addedBy.name?.[0]?.toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
+            {/* Added by (anonymous visitors only see the date) */}
+            {item.addedBy ? (
+              <div className="flex items-center gap-2">
+                <Avatar className="h-5 w-5 shrink-0">
+                  <AvatarImage src={item.addedBy.avatarUrl ?? undefined} />
+                  <AvatarFallback className="text-[9px]">
+                    {item.addedBy.name?.[0]?.toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="text-xs text-muted-foreground">
+                  Added by{" "}
+                  <Link
+                    href={`/profile/${item.addedBy.id}`}
+                    className="hover:underline text-foreground"
+                    onClick={onClose}
+                  >
+                    {item.addedBy.name}
+                  </Link>{" "}
+                  · {addedDate}
+                </span>
+              </div>
+            ) : (
               <span className="text-xs text-muted-foreground">
-                Added by{" "}
-                <Link
-                  href={`/profile/${item.addedBy.id}`}
-                  className="hover:underline text-foreground"
-                  onClick={onClose}
-                >
-                  {item.addedBy.name}
-                </Link>{" "}
-                · {addedDate}
+                Added {addedDate}
               </span>
-            </div>
+            )}
 
             {/* Member watch status */}
             {item.watchedBy.length > 0 && (
@@ -445,7 +450,14 @@ export function ListItemModal({
               </div>
             )}
 
-            {commentsEnabled && (
+            {isAnonymous && (
+              <>
+                <div className="border-t border-border" />
+                <AnonymousListPrompt slug={listSlug} compact />
+              </>
+            )}
+
+            {commentsEnabled && !isAnonymous && (
               <>
                 <div className="border-t border-border" />
 
@@ -460,38 +472,42 @@ export function ListItemModal({
               </>
             )}
 
-            <div className="border-t border-border" />
+            {(item.canDelete || canCurate) && (
+              <>
+                <div className="border-t border-border" />
 
-            {/* Actions */}
-            <div className="flex items-center gap-4">
-              {item.canDelete && (
-                <ListItemDeleteButton
-                  itemId={item.id}
-                  listSlug={listSlug}
-                  onDeleted={onClose}
-                />
-              )}
-              {canCurate && (
-                <div className="flex items-center gap-1.5">
-                  <ListItemHideToggle
-                    listSlug={listSlug}
-                    itemId={item.id}
-                    isHidden={item.isHidden}
-                    onChange={(next) => onHiddenChanged?.(item.id, next)}
-                    className="text-muted-foreground hover:text-foreground h-6 w-6"
-                  />
-                  <span className="text-xs text-muted-foreground flex items-center gap-1">
-                    {item.isHidden ? (
-                      <>
-                        <EyeOff className="h-3 w-3" /> Hidden
-                      </>
-                    ) : (
-                      "Hide from list"
-                    )}
-                  </span>
+                {/* Actions */}
+                <div className="flex items-center gap-4">
+                  {item.canDelete && (
+                    <ListItemDeleteButton
+                      itemId={item.id}
+                      listSlug={listSlug}
+                      onDeleted={onClose}
+                    />
+                  )}
+                  {canCurate && (
+                    <div className="flex items-center gap-1.5">
+                      <ListItemHideToggle
+                        listSlug={listSlug}
+                        itemId={item.id}
+                        isHidden={item.isHidden}
+                        onChange={(next) => onHiddenChanged?.(item.id, next)}
+                        className="text-muted-foreground hover:text-foreground h-6 w-6"
+                      />
+                      <span className="text-xs text-muted-foreground flex items-center gap-1">
+                        {item.isHidden ? (
+                          <>
+                            <EyeOff className="h-3 w-3" /> Hidden
+                          </>
+                        ) : (
+                          "Hide from list"
+                        )}
+                      </span>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              </>
+            )}
           </div>
         </div>
       </DialogContent>

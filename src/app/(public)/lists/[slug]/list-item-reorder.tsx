@@ -33,6 +33,7 @@ interface ListItemReorderProps {
   votingEnabled: boolean;
   commentsEnabled: boolean;
   currentUserId: string | undefined;
+  isAnonymous: boolean;
   rankingEnabled: boolean;
   canReorder: boolean;
   canCurate: boolean;
@@ -89,6 +90,7 @@ export function ListItemReorder({
   votingEnabled,
   commentsEnabled,
   currentUserId,
+  isAnonymous,
   rankingEnabled,
   canReorder,
   canCurate,
@@ -181,6 +183,7 @@ export function ListItemReorder({
       votingEnabled={votingEnabled}
       commentsEnabled={commentsEnabled}
       currentUserId={currentUserId}
+      isAnonymous={isAnonymous}
       canCurate={canCurate}
       isListOwner={isListOwner}
       tagVocabulary={tagVocabulary}
@@ -202,7 +205,6 @@ export function ListItemReorder({
           items={items}
           listSlug={listSlug}
           canVote={canVote}
-          currentUserId={currentUserId}
           rankingEnabled={rankingEnabled}
           canReorder={false}
           canCurate={canCurate}
@@ -233,7 +235,6 @@ export function ListItemReorder({
                   items={[item]}
                   listSlug={listSlug}
                   canVote={canVote}
-                  currentUserId={currentUserId}
                   rankingEnabled={rankingEnabled}
                   canReorder={false}
                   canCurate={canCurate}

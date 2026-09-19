@@ -15,7 +15,6 @@ interface ListItemsListViewProps {
   items: GridItem[];
   listSlug: string;
   canVote: boolean;
-  currentUserId: string | undefined;
   rankingEnabled: boolean;
   canReorder: boolean;
   canCurate: boolean;
@@ -50,7 +49,6 @@ function ListRow({
   item,
   listSlug,
   canVote,
-  currentUserId,
   rankingEnabled,
   canCurate,
   onSelect,
@@ -59,18 +57,13 @@ function ListRow({
   item: GridItem;
   listSlug: string;
   canVote: boolean;
-  currentUserId: string | undefined;
   rankingEnabled: boolean;
   canCurate: boolean;
   onSelect: (id: string) => void;
   onHiddenChange: (id: string, isHidden: boolean) => void;
 }) {
   const posterUrl = tmdbImageUrl(item.mediaItem.poster, "w154");
-  const upvotes = item.votes.filter((v) => v.value === 1).length;
-  const downvotes = item.votes.filter((v) => v.value === -1).length;
-  const userVote = currentUserId
-    ? (item.votes.find((v) => v.userId === currentUserId)?.value ?? null)
-    : null;
+  const { up: upvotes, down: downvotes, userVote } = item.voteSummary;
 
   return (
     <div
@@ -127,17 +120,19 @@ function ListRow({
               </>
             )}
           </p>
-          <div className="flex items-center gap-1 mt-1.5">
-            <Avatar className="h-4 w-4 shrink-0">
-              <AvatarImage src={item.addedBy.avatarUrl ?? undefined} />
-              <AvatarFallback className="text-[8px]">
-                {item.addedBy.name?.[0]?.toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <span className="text-[11px] text-muted-foreground truncate">
-              {item.addedBy.name}
-            </span>
-          </div>
+          {item.addedBy && (
+            <div className="flex items-center gap-1 mt-1.5">
+              <Avatar className="h-4 w-4 shrink-0">
+                <AvatarImage src={item.addedBy.avatarUrl ?? undefined} />
+                <AvatarFallback className="text-[8px]">
+                  {item.addedBy.name?.[0]?.toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <span className="text-[11px] text-muted-foreground truncate">
+                {item.addedBy.name}
+              </span>
+            </div>
+          )}
         </div>
 
         {(item.notes || item.tags.length > 0) && (
@@ -173,7 +168,7 @@ function ListRow({
 
       {/* Badges */}
       <div className="flex items-center gap-2 shrink-0">
-        {canVote && (
+        {(canVote || upvotes > 0 || downvotes > 0) && (
           <div onClick={(e) => e.stopPropagation()}>
             <ListItemVotePill
               listSlug={listSlug}
@@ -220,7 +215,6 @@ export function ListItemsListView({
   items,
   listSlug,
   canVote,
-  currentUserId,
   rankingEnabled,
   canCurate,
   onSelect,
@@ -234,7 +228,6 @@ export function ListItemsListView({
           item={item}
           listSlug={listSlug}
           canVote={canVote}
-          currentUserId={currentUserId}
           rankingEnabled={rankingEnabled}
           canCurate={canCurate}
           onSelect={onSelect}

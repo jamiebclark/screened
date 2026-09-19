@@ -2,16 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import {
-  Globe,
-  Lock,
-  Users,
-  Plus,
-  Settings,
-  BarChart3,
-  Tag,
-  History,
-} from "lucide-react";
+import { Users, Plus, Settings, BarChart3, Tag, History } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ListSettingsModal } from "./list-settings-modal";
@@ -19,6 +10,9 @@ import { ListAddFab } from "./list-add-fab";
 import { ListStatsModal } from "./list-stats-modal";
 import { ListTagsModal } from "./list-tags-modal";
 import { ListStickyHeader } from "./list-sticky-header";
+import { AnonymousListPrompt } from "./anonymous-list-prompt";
+import { ListVisibilityBadge } from "@/components/list-visibility-badge";
+import type { ListVisibility } from "@/lib/list-visibility";
 import type { ListStats, WindowStats } from "@/lib/list-stats";
 import type { TagVocabularyEntry } from "@/lib/list-item-tags";
 
@@ -38,7 +32,9 @@ interface ListPageHeaderProps {
   listSlug: string;
   isOwner: boolean;
   isMember: boolean;
-  isPublic: boolean;
+  /** Logged-out visitor viewing a PUBLIC list: read-only, no people, one sign-in prompt. */
+  isAnonymous: boolean;
+  visibility: ListVisibility;
   name: string;
   description: string | null;
   memberCount: number;
@@ -74,7 +70,8 @@ export function ListPageHeader({
   listSlug,
   isOwner,
   isMember,
-  isPublic,
+  isAnonymous,
+  visibility,
   name,
   description,
   memberCount,
@@ -123,32 +120,30 @@ export function ListPageHeader({
         onStats={() => setStatsOpen(true)}
       />
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-1">
-          {isPublic ? (
-            <Globe className="h-4 w-4 text-muted-foreground" />
-          ) : (
-            <Lock className="h-4 w-4 text-muted-foreground" />
-          )}
-          <span className="text-xs text-muted-foreground">
-            {isPublic ? "Public" : "Private"} list
-          </span>
+        <div className="mb-1">
+          <ListVisibilityBadge visibility={visibility} suffix=" list" />
         </div>
         <h1 className="text-3xl font-bold">{name}</h1>
         {description && (
           <p className="text-muted-foreground mt-1">{description}</p>
         )}
         <div className="flex items-center gap-3 mt-3">
-          <div className="flex -space-x-2">
-            {memberAvatars.map((m) => (
-              <Avatar key={m.id} className="h-7 w-7 border-2 border-background">
-                <AvatarImage src={m.avatarUrl ?? undefined} />
-                <AvatarFallback className="text-[10px]">
-                  {m.name?.[0]?.toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-            ))}
-          </div>
-          {isOwner ? (
+          {!isAnonymous && (
+            <div className="flex -space-x-2">
+              {memberAvatars.map((m) => (
+                <Avatar
+                  key={m.id}
+                  className="h-7 w-7 border-2 border-background"
+                >
+                  <AvatarImage src={m.avatarUrl ?? undefined} />
+                  <AvatarFallback className="text-[10px]">
+                    {m.name?.[0]?.toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+              ))}
+            </div>
+          )}
+          {isAnonymous ? null : isOwner ? (
             <button
               onClick={() => openSettings("members")}
               className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
@@ -173,7 +168,10 @@ export function ListPageHeader({
         </div>
       </div>
 
-      <div className="flex items-center gap-1 shrink-0">
+      <div className="flex flex-wrap items-center gap-1 shrink-0">
+        {isAnonymous && (
+          <AnonymousListPrompt slug={listSlug} className="mr-2" />
+        )}
         {hasSidebar && isMember && (
           <Button
             variant="default"
@@ -252,7 +250,7 @@ export function ListPageHeader({
           isOwner={isOwner}
           name={name}
           description={description}
-          isPublic={isPublic}
+          visibility={visibility}
           rankingEnabled={rankingEnabled}
           votingEnabled={votingEnabled}
           commentsEnabled={commentsEnabled}

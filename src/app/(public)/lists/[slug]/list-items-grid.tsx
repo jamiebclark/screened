@@ -23,7 +23,8 @@ export type GridItem = {
   canDelete: boolean;
   commentCount: number;
   unreadCommentCount: number;
-  addedBy: { id: string; name: string | null; avatarUrl: string | null };
+  /** Null for anonymous visitors, who never see who added an item. */
+  addedBy: { id: string; name: string | null; avatarUrl: string | null } | null;
   tags: ItemTag[];
   mediaItem: {
     tmdbId: number;
@@ -36,7 +37,8 @@ export type GridItem = {
     genres: string[];
     productionCountries: string[];
   };
-  votes: { value: number; userId: string }[];
+  /** Totals plus the viewer's own vote; voter identities never reach the client. */
+  voteSummary: { up: number; down: number; userVote: 1 | -1 | null };
   watchedBy: { id: string; name: string | null; avatarUrl: string | null }[];
   watchingBy: { id: string; name: string | null; avatarUrl: string | null }[];
 };
@@ -53,6 +55,7 @@ interface ListItemsGridProps {
   votingEnabled: boolean;
   commentsEnabled: boolean;
   currentUserId: string | undefined;
+  isAnonymous: boolean;
   canCurate: boolean;
   isListOwner: boolean;
   tagVocabulary: TagVocabularyEntry[];
@@ -63,7 +66,6 @@ function SectionGrid({
   listSlug,
   canVote,
   votingEnabled,
-  currentUserId,
   canCurate,
   onSelect,
   onHiddenChange,
@@ -72,7 +74,6 @@ function SectionGrid({
   listSlug: string;
   canVote: boolean;
   votingEnabled: boolean;
-  currentUserId: string | undefined;
   canCurate: boolean;
   onSelect: (id: string) => void;
   onHiddenChange: (id: string, isHidden: boolean) => void;
@@ -80,11 +81,7 @@ function SectionGrid({
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
       {items.map((item) => {
-        const upvotes = item.votes.filter((v) => v.value === 1).length;
-        const downvotes = item.votes.filter((v) => v.value === -1).length;
-        const userVote = currentUserId
-          ? (item.votes.find((v) => v.userId === currentUserId)?.value ?? null)
-          : null;
+        const { up: upvotes, down: downvotes, userVote } = item.voteSummary;
 
         return (
           <div key={item.id} className={cn(item.isHidden && "opacity-50")}>
@@ -127,7 +124,7 @@ function SectionGrid({
               )}
 
               {/* Added-by avatar — top left */}
-              {item.displayRank === undefined && (
+              {item.displayRank === undefined && item.addedBy && (
                 <div className="absolute top-2 left-2 z-10 pointer-events-none">
                   <Avatar className="h-6 w-6 border-2 border-background shadow-sm">
                     <AvatarImage src={item.addedBy.avatarUrl ?? undefined} />
@@ -207,6 +204,7 @@ export function ListItemsGrid({
   votingEnabled,
   commentsEnabled,
   currentUserId,
+  isAnonymous,
   canCurate,
   isListOwner,
   tagVocabulary,
@@ -257,7 +255,6 @@ export function ListItemsGrid({
     listSlug,
     canVote,
     votingEnabled,
-    currentUserId,
     canCurate,
     onSelect: setSelectedItemId,
     onHiddenChange: handleHiddenChange,
@@ -276,6 +273,7 @@ export function ListItemsGrid({
           votingEnabled={votingEnabled}
           commentsEnabled={commentsEnabled}
           currentUserId={currentUserId}
+          isAnonymous={isAnonymous}
           canCurate={canCurate}
           isListOwner={isListOwner}
           onHiddenChanged={handleHiddenChange}
@@ -347,6 +345,7 @@ export function ListItemsGrid({
         votingEnabled={votingEnabled}
         commentsEnabled={commentsEnabled}
         currentUserId={currentUserId}
+        isAnonymous={isAnonymous}
         canCurate={canCurate}
         isListOwner={isListOwner}
         onHiddenChanged={handleHiddenChange}
