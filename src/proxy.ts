@@ -10,9 +10,11 @@ function nextWithPathname(request: NextRequest) {
   return NextResponse.next({ request: { headers: requestHeaders } });
 }
 
-// Exact list page (not /lists, /lists/new, or /lists/<slug>/history). The
+// Exact list page (not /lists or /lists/new) and its timeline sub-page. Each
 // page decides per visibility tier whether an anonymous visitor may see it.
+// /lists/<slug>/history stays members-only and is not listed here.
 const PUBLIC_LIST_PAGE = /^\/lists\/(?!new$)[^/]+$/;
+const PUBLIC_LIST_TIMELINE_PAGE = /^\/lists\/(?!new$)[^/]+\/timeline$/;
 // Anonymous reads of a single list; the handler enforces the tier.
 const PUBLIC_LIST_API = /^\/api\/lists\/[^/]+$/;
 
@@ -29,6 +31,7 @@ export default auth((req) => {
   const isPublicRoute =
     pathname.startsWith("/releases") ||
     PUBLIC_LIST_PAGE.test(pathname) ||
+    PUBLIC_LIST_TIMELINE_PAGE.test(pathname) ||
     (req.method === "GET" && PUBLIC_LIST_API.test(pathname));
 
   if (
