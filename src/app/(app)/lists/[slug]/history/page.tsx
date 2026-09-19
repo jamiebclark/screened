@@ -103,7 +103,7 @@ function HistoryRow({ row }: { row: ListWatchHistoryRow }) {
       <div className="min-w-0 flex-1">
         <Link
           href={href}
-          className="truncate text-sm font-medium hover:underline"
+          className="block truncate text-sm font-medium hover:underline"
         >
           {row.mediaItem.title}
           {row.mediaItem.year != null && (
