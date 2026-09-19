@@ -87,88 +87,89 @@ function SectionGrid({
           : null;
 
         return (
-          <div
-            key={item.id}
-            className={cn("relative", item.isHidden && "opacity-50")}
-          >
-            <MediaCard
-              tmdbId={item.mediaItem.tmdbId}
-              type={item.mediaItem.type}
-              title={item.mediaItem.title}
-              poster={item.mediaItem.poster}
-              year={item.mediaItem.year}
-              onClick={() => onSelect(item.id)}
-            />
+          <div key={item.id} className={cn(item.isHidden && "opacity-50")}>
+            {/* Overlays are positioned against the poster, not the whole
+                card, so they never sit on top of the tag row below it. */}
+            <div className="relative">
+              <MediaCard
+                tmdbId={item.mediaItem.tmdbId}
+                type={item.mediaItem.type}
+                title={item.mediaItem.title}
+                poster={item.mediaItem.poster}
+                year={item.mediaItem.year}
+                onClick={() => onSelect(item.id)}
+              />
 
-            {item.isHidden && (
-              <div className="absolute inset-x-0 top-1/2 z-10 flex justify-center pointer-events-none">
-                <div className="rounded-full bg-black/70 text-white p-1.5 shadow-sm">
-                  <EyeOff className="h-4 w-4" />
+              {item.isHidden && (
+                <div className="absolute inset-x-0 top-1/2 z-10 flex justify-center pointer-events-none">
+                  <div className="rounded-full bg-black/70 text-white p-1.5 shadow-sm">
+                    <EyeOff className="h-4 w-4" />
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {canCurate && (
-              <div className="absolute bottom-2 left-2 z-10 rounded-full bg-black/60 text-white p-1.5 shadow-sm">
-                <ListItemHideToggle
-                  listSlug={listSlug}
-                  itemId={item.id}
-                  isHidden={item.isHidden}
-                  onChange={(next) => onHiddenChange(item.id, next)}
-                />
-              </div>
-            )}
-
-            {/* Rank badge — top-left pill, ranked lists only */}
-            {item.displayRank !== undefined && (
-              <div className="absolute top-2 left-2 z-10 pointer-events-none rounded-full bg-black/70 text-white text-[11px] font-bold px-2 py-0.5 shadow-sm">
-                {item.displayRank}
-              </div>
-            )}
-
-            {/* Added-by avatar — top left */}
-            {item.displayRank === undefined && (
-              <div className="absolute top-2 left-2 z-10 pointer-events-none">
-                <Avatar className="h-6 w-6 border-2 border-background shadow-sm">
-                  <AvatarImage src={item.addedBy.avatarUrl ?? undefined} />
-                  <AvatarFallback className="text-[9px]">
-                    {item.addedBy.name?.[0]?.toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-              </div>
-            )}
-
-            {/* Vote pill — top right, only shown when voting is enabled */}
-            {votingEnabled && (
-              <div className="absolute top-2 right-2 z-10">
-                <ListItemVotePill
-                  listSlug={listSlug}
-                  itemId={item.id}
-                  upvotes={upvotes}
-                  downvotes={downvotes}
-                  userVote={userVote}
-                  canVote={canVote}
-                />
-              </div>
-            )}
-
-            {/* Comment badge — bottom right */}
-            {item.commentCount > 0 && (
-              <div className="absolute bottom-2 right-2 z-10 pointer-events-none">
-                <div
-                  className={`flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium shadow-sm ${
-                    item.unreadCommentCount > 0
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-black/60 text-white"
-                  }`}
-                >
-                  <MessageSquare className="h-2.5 w-2.5" />
-                  {item.unreadCommentCount > 0
-                    ? item.unreadCommentCount
-                    : item.commentCount}
+              {canCurate && (
+                <div className="absolute bottom-2 left-2 z-10 rounded-full bg-black/60 text-white p-1.5 shadow-sm">
+                  <ListItemHideToggle
+                    listSlug={listSlug}
+                    itemId={item.id}
+                    isHidden={item.isHidden}
+                    onChange={(next) => onHiddenChange(item.id, next)}
+                  />
                 </div>
-              </div>
-            )}
+              )}
+
+              {/* Rank badge — top-left pill, ranked lists only */}
+              {item.displayRank !== undefined && (
+                <div className="absolute top-2 left-2 z-10 pointer-events-none rounded-full bg-black/70 text-white text-[11px] font-bold px-2 py-0.5 shadow-sm">
+                  {item.displayRank}
+                </div>
+              )}
+
+              {/* Added-by avatar — top left */}
+              {item.displayRank === undefined && (
+                <div className="absolute top-2 left-2 z-10 pointer-events-none">
+                  <Avatar className="h-6 w-6 border-2 border-background shadow-sm">
+                    <AvatarImage src={item.addedBy.avatarUrl ?? undefined} />
+                    <AvatarFallback className="text-[9px]">
+                      {item.addedBy.name?.[0]?.toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                </div>
+              )}
+
+              {/* Vote pill — top right, only shown when voting is enabled */}
+              {votingEnabled && (
+                <div className="absolute top-2 right-2 z-10">
+                  <ListItemVotePill
+                    listSlug={listSlug}
+                    itemId={item.id}
+                    upvotes={upvotes}
+                    downvotes={downvotes}
+                    userVote={userVote}
+                    canVote={canVote}
+                  />
+                </div>
+              )}
+
+              {/* Comment badge — bottom right */}
+              {item.commentCount > 0 && (
+                <div className="absolute bottom-2 right-2 z-10 pointer-events-none">
+                  <div
+                    className={`flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium shadow-sm ${
+                      item.unreadCommentCount > 0
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-black/60 text-white"
+                    }`}
+                  >
+                    <MessageSquare className="h-2.5 w-2.5" />
+                    {item.unreadCommentCount > 0
+                      ? item.unreadCommentCount
+                      : item.commentCount}
+                  </div>
+                </div>
+              )}
+            </div>
 
             {item.tags.length > 0 && (
               <div className="mt-1.5 flex flex-wrap items-center gap-1 pointer-events-none">
