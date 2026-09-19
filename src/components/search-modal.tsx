@@ -48,7 +48,7 @@ export function SearchModal() {
       </Button>
 
       <Dialog open={open} onOpenChange={handleOpenChange}>
-        <DialogContent className="p-0 overflow-hidden max-w-lg">
+        <DialogContent className="top-[12%] max-w-lg translate-y-0 overflow-hidden p-0 sm:top-[50%] sm:translate-y-[-50%]">
           <form onSubmit={handleSubmit}>
             <div className="flex items-center gap-3 px-4 py-3 pr-12">
               <Search className="h-4 w-4 text-muted-foreground shrink-0" />
