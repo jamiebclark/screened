@@ -3,6 +3,11 @@
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, ListVideo, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  DEFAULT_LIST_VISIBILITY,
+  LIST_VISIBILITY_OPTIONS,
+} from "@/lib/list-visibility";
+import { ListVisibilityIconFor } from "@/components/list-visibility-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -132,7 +137,7 @@ export default function NewListPage() {
     const body = {
       name,
       description,
-      isPublic: form.get("visibility") !== "private",
+      visibility: form.get("visibility") ?? DEFAULT_LIST_VISIBILITY,
       preset: selectedPreset,
       template: templateId ?? undefined,
       ...flags,
@@ -283,25 +288,30 @@ export default function NewListPage() {
 
             <div className="space-y-2">
               <Label>Visibility</Label>
-              <div className="grid grid-cols-2 gap-2">
-                {[
-                  { value: "public", label: "Public", desc: "Anyone can view" },
-                  { value: "private", label: "Private", desc: "Only members" },
-                ].map(({ value, label, desc }) => (
-                  <label key={value} className="relative cursor-pointer">
-                    <input
-                      type="radio"
-                      name="visibility"
-                      value={value}
-                      defaultChecked={value === "public"}
-                      className="peer sr-only"
-                    />
-                    <div className="rounded-lg border border-border bg-muted p-3 peer-checked:border-primary peer-checked:bg-primary/10 transition-all">
-                      <p className="text-sm font-medium">{label}</p>
-                      <p className="text-xs text-muted-foreground">{desc}</p>
-                    </div>
-                  </label>
-                ))}
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                {LIST_VISIBILITY_OPTIONS.map(
+                  ({ value, label, description: desc }) => (
+                    <label key={value} className="relative cursor-pointer">
+                      <input
+                        type="radio"
+                        name="visibility"
+                        value={value}
+                        defaultChecked={value === DEFAULT_LIST_VISIBILITY}
+                        className="peer sr-only"
+                      />
+                      <div className="h-full rounded-lg border border-border bg-muted p-3 peer-checked:border-primary peer-checked:bg-primary/10 peer-focus-visible:ring-2 peer-focus-visible:ring-ring transition-all">
+                        <p className="text-sm font-medium flex items-center gap-1.5">
+                          <ListVisibilityIconFor
+                            visibility={value}
+                            className="h-3.5 w-3.5"
+                          />
+                          {label}
+                        </p>
+                        <p className="text-xs text-muted-foreground">{desc}</p>
+                      </div>
+                    </label>
+                  ),
+                )}
               </div>
             </div>
 

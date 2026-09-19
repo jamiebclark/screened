@@ -15,6 +15,7 @@ import { LetterboxdImportDialog } from "@/components/letterboxd-import-dialog";
 import { ListSettingsPanel } from "./list-settings-panel";
 import { InviteMemberForm } from "./invite-member-form";
 import { DiscordWebhookForm } from "./discord-webhook-form";
+import type { ListVisibility } from "@/lib/list-visibility";
 
 type MemberRecord = {
   id: string;
@@ -38,7 +39,7 @@ interface ListSettingsModalProps {
   // Feature flags (owner settings)
   name: string;
   description: string | null;
-  isPublic: boolean;
+  visibility: ListVisibility;
   rankingEnabled: boolean;
   votingEnabled: boolean;
   commentsEnabled: boolean;
@@ -122,7 +123,7 @@ export function ListSettingsModal({
   isOwner,
   name,
   description,
-  isPublic,
+  visibility,
   rankingEnabled,
   votingEnabled,
   commentsEnabled,
@@ -165,7 +166,7 @@ export function ListSettingsModal({
                   listSlug={listSlug}
                   name={name}
                   description={description}
-                  isPublic={isPublic}
+                  visibility={visibility}
                   rankingEnabled={rankingEnabled}
                   votingEnabled={votingEnabled}
                   commentsEnabled={commentsEnabled}

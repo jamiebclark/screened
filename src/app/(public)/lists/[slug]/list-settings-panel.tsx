@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Settings, Loader2, Trash2, Globe, Lock } from "lucide-react";
+import { Settings, Loader2, Trash2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -12,12 +12,14 @@ import {
   LIST_NAME_MAX_LENGTH,
   LIST_DESCRIPTION_MAX_LENGTH,
 } from "@/lib/list-validation";
+import { LIST_VISIBILITY_OPTIONS, ListVisibility } from "@/lib/list-visibility";
+import { ListVisibilityIconFor } from "@/components/list-visibility-badge";
 
 interface ListSettingsPanelProps {
   listSlug: string;
   name: string;
   description: string | null;
-  isPublic: boolean;
+  visibility: ListVisibility;
   rankingEnabled: boolean;
   votingEnabled: boolean;
   commentsEnabled: boolean;
@@ -26,11 +28,6 @@ interface ListSettingsPanelProps {
   challengeStartsAt: string | null;
   challengeEndsAt: string | null;
 }
-
-const VISIBILITY_OPTIONS = [
-  { value: true, label: "Public", desc: "Anyone can view", Icon: Globe },
-  { value: false, label: "Private", desc: "Only members", Icon: Lock },
-] as const;
 
 /** Stored UTC-day-start ISO datetime -> `<input type="date">` value, with no timezone arithmetic. */
 function toDateInputValue(iso: string | null): string {
@@ -41,7 +38,7 @@ export function ListSettingsPanel({
   listSlug,
   name: initialName,
   description: initialDescription,
-  isPublic: initialIsPublic,
+  visibility: initialVisibility,
   rankingEnabled: initialRanking,
   votingEnabled: initialVoting,
   commentsEnabled: initialComments,
@@ -53,7 +50,8 @@ export function ListSettingsPanel({
   const router = useRouter();
   const [name, setName] = useState(initialName);
   const [description, setDescription] = useState(initialDescription ?? "");
-  const [isPublic, setIsPublic] = useState(initialIsPublic);
+  const [visibility, setVisibility] =
+    useState<ListVisibility>(initialVisibility);
   const [rankingEnabled, setRankingEnabled] = useState(initialRanking);
   const [votingEnabled, setVotingEnabled] = useState(initialVoting);
   const [commentsEnabled, setCommentsEnabled] = useState(initialComments);
@@ -89,7 +87,7 @@ export function ListSettingsPanel({
   const isDirty =
     name !== initialName ||
     description !== (initialDescription ?? "") ||
-    isPublic !== initialIsPublic ||
+    visibility !== initialVisibility ||
     rankingEnabled !== initialRanking ||
     votingEnabled !== initialVoting ||
     commentsEnabled !== initialComments ||
@@ -123,7 +121,7 @@ export function ListSettingsPanel({
         body: JSON.stringify({
           name,
           description,
-          isPublic,
+          visibility,
           rankingEnabled,
           votingEnabled,
           commentsEnabled,
@@ -215,32 +213,44 @@ export function ListSettingsPanel({
 
         <div className="space-y-1">
           <Label className="text-xs font-medium">Visibility</Label>
-          <div className="grid grid-cols-2 gap-2">
-            {VISIBILITY_OPTIONS.map(({ value, label, desc, Icon }) => (
-              <label key={label} className="relative cursor-pointer">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+            {LIST_VISIBILITY_OPTIONS.map(({ value, label, description }) => (
+              <label key={value} className="relative cursor-pointer">
                 <input
                   type="radio"
                   name="visibility"
-                  value={value ? "public" : "private"}
-                  checked={isPublic === value}
-                  onChange={() => setIsPublic(value)}
+                  value={value}
+                  checked={visibility === value}
+                  onChange={() => setVisibility(value)}
                   className="peer sr-only"
                 />
-                <div className="rounded-md border border-border bg-muted p-2 peer-checked:border-primary peer-checked:bg-primary/10 peer-focus-visible:ring-2 peer-focus-visible:ring-ring transition-all">
+                <div className="h-full rounded-md border border-border bg-muted p-2 peer-checked:border-primary peer-checked:bg-primary/10 peer-focus-visible:ring-2 peer-focus-visible:ring-ring transition-all">
                   <p className="text-xs font-medium flex items-center gap-1">
-                    <Icon className="h-3 w-3" />
+                    <ListVisibilityIconFor
+                      visibility={value}
+                      className="h-3 w-3"
+                    />
                     {label}
                   </p>
-                  <p className="text-[11px] text-muted-foreground">{desc}</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    {description}
+                  </p>
                 </div>
               </label>
             ))}
           </div>
-          {!isPublic && initialIsPublic && (
-            <p className="text-[11px] text-amber-600">
-              Non-members will lose access when you save
-            </p>
-          )}
+          {visibility === ListVisibility.PRIVATE &&
+            initialVisibility !== ListVisibility.PRIVATE && (
+              <p className="text-[11px] text-amber-600">
+                Non-members will lose access when you save
+              </p>
+            )}
+          {visibility === ListVisibility.PUBLIC &&
+            initialVisibility !== ListVisibility.PUBLIC && (
+              <p className="text-[11px] text-amber-600">
+                Anyone with the link can view this list without signing in
+              </p>
+            )}
         </div>
 
         <div className="space-y-1">

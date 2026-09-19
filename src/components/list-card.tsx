@@ -1,13 +1,18 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Globe, Lock, ListVideo, Users } from "lucide-react";
+import { ListVideo, Users } from "lucide-react";
 import { tmdbImageUrl } from "@/lib/utils";
+import {
+  getListVisibilityOption,
+  type ListVisibility,
+} from "@/lib/list-visibility";
+import { ListVisibilityIconFor } from "@/components/list-visibility-badge";
 
 export type ListCardData = {
   id: string;
   name: string;
   slug: string;
-  isPublic: boolean;
+  visibility: ListVisibility;
   description: string | null;
   items: Array<{ mediaItem: { poster: string | null; title: string } }>;
   _count: { items: number; members: number };
@@ -49,11 +54,15 @@ export function ListCard({ list }: { list: ListCardData }) {
           <h3 className="font-medium text-sm line-clamp-1 group-hover:text-primary transition-colors">
             {list.name}
           </h3>
-          {list.isPublic ? (
-            <Globe className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
-          ) : (
-            <Lock className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
-          )}
+          <span
+            title={getListVisibilityOption(list.visibility).label}
+            className="shrink-0 mt-0.5"
+          >
+            <ListVisibilityIconFor
+              visibility={list.visibility}
+              className="h-3.5 w-3.5 text-muted-foreground"
+            />
+          </span>
         </div>
         {list.description && (
           <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
