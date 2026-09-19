@@ -2,7 +2,7 @@
 
 **Feature Branch**: `013-list-watch-timeline`
 **Created**: 2026-09-19
-**Status**: Draft
+**Status**: Implemented
 **Input**: User description: "List watch timeline page. Add a new sub-page to each list (alongside the existing "Challenge history" feed) that shows a timeline of when each film on the list was watched. Each list item is plotted against a time axis by its watch date(s); when the list has a challenge date range (challengeStartsAt / challengeEndsAt), the timeline is bounded to that range and only watches inside it count. Lists without a date range use the span of actual watches. The view should read chronologically (oldest first) as a visual timeline rather than a reverse-chronological feed, and it should respect the list's visibility tiers and the "hide watched"/hidden-item rules already in place. Works at phone width and desktop."
 
 ## Clarifications
