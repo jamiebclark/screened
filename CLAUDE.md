@@ -141,6 +141,6 @@ These `.cursor/rules/` files contain full detail behind the summaries above — 
 
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan
-at specs/012-public-list-visibility/plan.md
+at specs/013-list-watch-timeline/plan.md
 
 <!-- SPECKIT END -->
