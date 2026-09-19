@@ -92,59 +92,66 @@ enum DisplayMode {
   LIST
 }
 
+/// Who can open a list. PUBLIC needs no account; MEMBERS is any signed-in user; PRIVATE is owner + list members.
+enum ListVisibility {
+  PUBLIC
+  MEMBERS
+  PRIVATE
+}
+
 model User {
-  id            String     @id @default(cuid())
-  email         String     @unique
-  passwordHash  String
-  name          String
-  status        UserStatus @default(ACTIVE)
+  id                     String                   @id @default(cuid())
+  email                  String                   @unique
+  passwordHash           String
+  name                   String
+  status                 UserStatus               @default(ACTIVE)
   /// Plex username used to match this invited stub to a real Plex sign-in. Cleared on activation.
-  pendingPlexUsername String? @unique
-  avatarUrl     String?
-  bio           String?
+  pendingPlexUsername    String?                  @unique
+  avatarUrl              String?
+  bio                    String?
   /// Secret query token for the per-user Radarr watchlist export (movies only). Unique when set.
-  watchlistRadarrToken String? @unique
+  watchlistRadarrToken   String?                  @unique
   /// Secret query token for the per-user iCal calendar feed. Unique when set.
-  calendarToken        String? @unique
+  calendarToken          String?                  @unique
   /// Watchlist tab and item grid on your profile.
-  watchlistVisibility ProfileContentVisibility @default(PUBLIC)
+  watchlistVisibility    ProfileContentVisibility @default(PUBLIC)
   /// Watched and watching activity on your profile (and related stat counts / average rating from visible titles).
   watchHistoryVisibility ProfileContentVisibility @default(PUBLIC)
   /// Set when the user finishes or skips first-login onboarding (connect Letterboxd / Plex). Null = show onboarding.
-  onboardingCompletedAt DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  onboardingCompletedAt  DateTime?
+  createdAt              DateTime                 @default(now())
+  updatedAt              DateTime                 @updatedAt
 
-  plexConnection        PlexConnection?
-  letterboxdConnection  LetterboxdConnection?
-  tautulliConnection    TautulliConnection?
-  jellyfinConnection    JellyfinConnection?
-  traktConnection       TraktConnection?
-  overseerrConnection   OverseerrConnection?
-  discordConnection     DiscordConnection?
-  mediaStatuses         UserMediaStatus[]
-  watchEntries          WatchEntry[]
-  episodeStatuses       EpisodeStatus[]
-  ownedLists      List[]
-  listMemberships ListMember[]
-  listItems            ListItem[]
-  listItemComments     ListItemComment[]
-  listItemCommentReads ListItemCommentRead[]
-  sessions        Session[]
-  preferences     UserPreference[]
-  pickerRooms     PickerRoom[]        @relation("PickerRoomOwner")
-  pickerSessions  PickerSession[]     @relation("PickerSessionOwner")
-  pickerPresets   PickerRoomPreset[]  @relation("PickerRoomPresetOwner")
-  accessRequestsMade     ListAccessRequest[] @relation("AccessRequestRequester")
-  accessRequestsResolved ListAccessRequest[] @relation("AccessRequestResolver")
+  plexConnection         PlexConnection?
+  letterboxdConnection   LetterboxdConnection?
+  tautulliConnection     TautulliConnection?
+  jellyfinConnection     JellyfinConnection?
+  traktConnection        TraktConnection?
+  overseerrConnection    OverseerrConnection?
+  discordConnection      DiscordConnection?
+  mediaStatuses          UserMediaStatus[]
+  watchEntries           WatchEntry[]
+  episodeStatuses        EpisodeStatus[]
+  ownedLists             List[]
+  listMemberships        ListMember[]
+  listItems              ListItem[]
+  listItemComments       ListItemComment[]
+  listItemCommentReads   ListItemCommentRead[]
+  sessions               Session[]
+  preferences            UserPreference[]
+  pickerRooms            PickerRoom[]          @relation("PickerRoomOwner")
+  pickerSessions         PickerSession[]       @relation("PickerSessionOwner")
+  pickerPresets          PickerRoomPreset[]    @relation("PickerRoomPresetOwner")
+  accessRequestsMade     ListAccessRequest[]   @relation("AccessRequestRequester")
+  accessRequestsResolved ListAccessRequest[]   @relation("AccessRequestResolver")
   notifications          Notification[]
 
-  friendRequestsSent     FriendRequest[]  @relation("FriendRequestFrom")
-  friendRequestsReceived FriendRequest[]  @relation("FriendRequestTo")
-  friendshipsLower       Friendship[]     @relation("FriendUserLow")
-  friendshipsUpper       Friendship[]     @relation("FriendUserHigh")
-  signupInvitesCreated   SignupInvite[]  @relation("SignupInviteCreatedBy")
-  hostedWatchParties     WatchParty[]     @relation("WatchPartyHost")
+  friendRequestsSent     FriendRequest[]    @relation("FriendRequestFrom")
+  friendRequestsReceived FriendRequest[]    @relation("FriendRequestTo")
+  friendshipsLower       Friendship[]       @relation("FriendUserLow")
+  friendshipsUpper       Friendship[]       @relation("FriendUserHigh")
+  signupInvitesCreated   SignupInvite[]     @relation("SignupInviteCreatedBy")
+  hostedWatchParties     WatchParty[]       @relation("WatchPartyHost")
   watchPartyInvites      WatchPartyInvite[]
   listItemVotes          ListItemVote[]
 }
@@ -174,18 +181,18 @@ model Session {
 }
 
 model PlexConnection {
-  id           String    @id @default(cuid())
-  userId       String    @unique
-  plexToken    String
-  plexClientId String
-  plexUsername String?
-  plexServerId String?
-  lastSyncedAt DateTime?
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  plexToken       String
+  plexClientId    String
+  plexUsername    String?
+  plexServerId    String?
+  lastSyncedAt    DateTime?
   /// Serialized Map<tmdbId, ratingKey> as [number, string][] for fast page loads.
   libraryCache    Json?
   libraryCachedAt DateTime?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
@@ -230,15 +237,15 @@ model JellyfinConnection {
 }
 
 model TraktConnection {
-  id           String    @id @default(cuid())
-  userId       String    @unique
+  id            String    @id @default(cuid())
+  userId        String    @unique
   traktUsername String
-  accessToken  String
-  refreshToken String
-  expiresAt    DateTime
-  lastSyncedAt DateTime?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  accessToken   String
+  refreshToken  String
+  expiresAt     DateTime
+  lastSyncedAt  DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
@@ -270,31 +277,31 @@ model DiscordConnection {
 }
 
 model MediaItem {
-  id        String    @id @default(cuid())
-  tmdbId    Int
-  type      MediaType
-  title     String
-  poster    String?
-  backdrop  String?
-  year      Int?
-  overview  String?
-  genres    String[]
-  productionCountries String[] @default([])
-  runtime     Int?
-  releaseDate DateTime?
-  cast             String[] @default([])
-  castTmdbIds      Int[]    @default([])
-  director         String?
-  directorTmdbId   Int?
-  directors        String[] @default([])
-  directorsTmdbIds Int[]    @default([])
-  creatorName      String?
-  creatorTmdbId    Int?
-  keywords            String[] @default([])
-  embedding           Float[]  @default([])
-  enrichmentVersion   Int      @default(0)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id                  String    @id @default(cuid())
+  tmdbId              Int
+  type                MediaType
+  title               String
+  poster              String?
+  backdrop            String?
+  year                Int?
+  overview            String?
+  genres              String[]
+  productionCountries String[]  @default([])
+  runtime             Int?
+  releaseDate         DateTime?
+  cast                String[]  @default([])
+  castTmdbIds         Int[]     @default([])
+  director            String?
+  directorTmdbId      Int?
+  directors           String[]  @default([])
+  directorsTmdbIds    Int[]     @default([])
+  creatorName         String?
+  creatorTmdbId       Int?
+  keywords            String[]  @default([])
+  embedding           Float[]   @default([])
+  enrichmentVersion   Int       @default(0)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
   userStatuses    UserMediaStatus[]
   watchEntries    WatchEntry[]
@@ -308,11 +315,11 @@ model MediaItem {
 
 /// Cached OMDb "Ratings" (RT, Metacritic, IMDb, etc.) keyed by IMDb title id. Optional feature when OMDB_API_KEY is set.
 model OmdbRatingCache {
-  imdbId              String   @id
-  ratings             Json
+  imdbId            String   @id
+  ratings           Json
   /// From OMDb with tomatoes=true; used for the RT score link.
-  rottenTomatoesUrl   String?
-  fetchedAt           DateTime
+  rottenTomatoesUrl String?
+  fetchedAt         DateTime
 }
 
 model UserMediaStatus {
@@ -332,18 +339,18 @@ model UserMediaStatus {
 }
 
 model WatchEntry {
-  id                String             @id @default(cuid())
-  userId            String
-  mediaItemId       String
-  userMediaStatusId String?
-  source            WatchEntrySource   @default(UNKNOWN)
-  watchedAt         DateTime           @default(now())
-  review            String?
-  rating            Float?
+  id                    String           @id @default(cuid())
+  userId                String
+  mediaItemId           String
+  userMediaStatusId     String?
+  source                WatchEntrySource @default(UNKNOWN)
+  watchedAt             DateTime         @default(now())
+  review                String?
+  rating                Float?
   /// Letterboxd diary URL from RSS (item link) when synced from Letterboxd.
   letterboxdActivityUrl String?
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
 
   user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   mediaItem       MediaItem        @relation(fields: [mediaItemId], references: [id], onDelete: Cascade)
@@ -352,14 +359,14 @@ model WatchEntry {
 }
 
 model EpisodeStatus {
-  id            String    @id @default(cuid())
+  id            String   @id @default(cuid())
   userId        String
   mediaItemId   String
   seasonNumber  Int
   episodeNumber Int
-  watchedAt     DateTime  @default(now())
+  watchedAt     DateTime @default(now())
   /// False = unchecked in the UI; watchedAt is kept so re-checking restores the prior watch time.
-  isWatched     Boolean   @default(true)
+  isWatched     Boolean  @default(true)
   /// Optional markdown review for this episode (TV title page “Log” on the episode row).
   review        String?
 
@@ -370,26 +377,26 @@ model EpisodeStatus {
 }
 
 model List {
-  id                 String      @id @default(cuid())
+  id                 String         @id @default(cuid())
   name               String
   description        String?
-  slug               String      @unique
-  isPublic           Boolean     @default(true)
+  slug               String         @unique
+  visibility         ListVisibility @default(MEMBERS)
   ownerId            String
-  radarrToken        String?     @unique
+  radarrToken        String?        @unique
   discordWebhookUrl  String?
   discordWebhookId   String?
   discordChannelName String?
   discordGuildName   String?
-  rankingEnabled     Boolean     @default(false)
-  votingEnabled      Boolean     @default(true)
-  commentsEnabled    Boolean     @default(true)
-  displayMode        DisplayMode @default(GRID)
+  rankingEnabled     Boolean        @default(false)
+  votingEnabled      Boolean        @default(true)
+  commentsEnabled    Boolean        @default(true)
+  displayMode        DisplayMode    @default(GRID)
   itemCap            Int?
   challengeStartsAt  DateTime?
   challengeEndsAt    DateTime?
-  createdAt          DateTime    @default(now())
-  updatedAt          DateTime    @updatedAt
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
 
   owner          User                @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   members        ListMember[]
@@ -520,7 +527,7 @@ model PickerRoom {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  createdBy User           @relation("PickerRoomOwner", fields: [createdById], references: [id], onDelete: Cascade)
+  createdBy User            @relation("PickerRoomOwner", fields: [createdById], references: [id], onDelete: Cascade)
   sessions  PickerSession[]
 }
 
@@ -539,22 +546,22 @@ model PickerSession {
   pickedTmdbId Int?
   createdAt    DateTime @default(now())
 
-  createdBy    User        @relation("PickerSessionOwner", fields: [createdById], references: [id], onDelete: Cascade)
-  room         PickerRoom? @relation(fields: [roomId], references: [id], onDelete: SetNull)
+  createdBy    User         @relation("PickerSessionOwner", fields: [createdById], references: [id], onDelete: Cascade)
+  room         PickerRoom?  @relation(fields: [roomId], references: [id], onDelete: SetNull)
   watchParties WatchParty[]
 }
 
 /// Named preset: saved participants + attractor seeds for quick room creation.
 model PickerRoomPreset {
-  id           String   @id @default(cuid())
-  createdById  String
-  name         String
+  id             String   @id @default(cuid())
+  createdById    String
+  name           String
   /// User IDs of participants to pre-populate: string[]
   participantIds Json
   /// Seed attractors: ReferenceMovieJson[]
-  attractors   Json
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  attractors     Json
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   createdBy User @relation("PickerRoomPresetOwner", fields: [createdById], references: [id], onDelete: Cascade)
 }
@@ -611,8 +618,8 @@ model FriendRequest {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  fromUser      User            @relation("FriendRequestFrom", fields: [fromUserId], references: [id], onDelete: Cascade)
-  toUser        User            @relation("FriendRequestTo", fields: [toUserId], references: [id], onDelete: Cascade)
+  fromUser      User           @relation("FriendRequestFrom", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUser        User           @relation("FriendRequestTo", fields: [toUserId], references: [id], onDelete: Cascade)
   notifications Notification[]
 
   @@unique([fromUserId, toUserId])
@@ -647,9 +654,9 @@ model WatchParty {
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
 
-  host          User              @relation("WatchPartyHost", fields: [hostId], references: [id], onDelete: Cascade)
-  mediaItem     MediaItem         @relation(fields: [mediaItemId], references: [id], onDelete: Cascade)
-  pickerSession PickerSession?    @relation(fields: [pickerSessionId], references: [id], onDelete: SetNull)
+  host          User               @relation("WatchPartyHost", fields: [hostId], references: [id], onDelete: Cascade)
+  mediaItem     MediaItem          @relation(fields: [mediaItemId], references: [id], onDelete: Cascade)
+  pickerSession PickerSession?     @relation(fields: [pickerSessionId], references: [id], onDelete: SetNull)
   invites       WatchPartyInvite[]
 
   @@index([hostId])
