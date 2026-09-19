@@ -9,6 +9,11 @@ import {
   listTemplateTagRows,
 } from "@/lib/list-templates";
 import { validateListDetails } from "@/lib/list-validation";
+import {
+  DEFAULT_LIST_VISIBILITY,
+  DISCOVERABLE_VISIBILITIES,
+  parseListVisibility,
+} from "@/lib/list-visibility";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -36,7 +41,7 @@ export async function GET(req: NextRequest) {
   const lists = await prisma.list.findMany({
     where: {
       OR: [
-        { isPublic: true },
+        { visibility: { in: DISCOVERABLE_VISIBILITIES } },
         { ownerId: session.user.id },
         { members: { some: { userId: session.user.id } } },
       ],
@@ -61,7 +66,7 @@ export async function POST(req: NextRequest) {
   const body = (await req.json()) as {
     name?: string;
     description?: string;
-    isPublic?: boolean;
+    visibility?: unknown;
     preset?: ListPreset;
     template?: unknown;
     rankingEnabled?: boolean;
@@ -70,7 +75,17 @@ export async function POST(req: NextRequest) {
     displayMode?: "GRID" | "LIST";
     itemCap?: number | null;
   };
-  const { isPublic = true, preset } = body;
+  const { preset } = body;
+  const visibility =
+    body.visibility === undefined
+      ? DEFAULT_LIST_VISIBILITY
+      : parseListVisibility(body.visibility);
+  if (!visibility) {
+    return NextResponse.json(
+      { error: "Visibility must be PUBLIC, MEMBERS or PRIVATE" },
+      { status: 400 },
+    );
+  }
 
   // The client sends the template id only; the categories and window come from
   // the server-side definition so a caller can't inject arbitrary tags here.
@@ -121,7 +136,7 @@ export async function POST(req: NextRequest) {
       name,
       description,
       slug,
-      isPublic,
+      visibility,
       ownerId: session.user.id,
       radarrToken: generateToken(24),
       rankingEnabled: flags.rankingEnabled,

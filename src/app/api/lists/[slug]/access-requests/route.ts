@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ListAccessRequestStatus } from "@/generated/prisma";
 import { notifyAdminsOfPendingAccessRequest } from "@/lib/list-access-requests";
+import { ListVisibility } from "@/lib/list-visibility";
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -28,9 +29,9 @@ export async function POST(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  if (list.isPublic) {
+  if (list.visibility !== ListVisibility.PRIVATE) {
     return NextResponse.json(
-      { error: "Public lists do not require access requests" },
+      { error: "Only private lists require access requests" },
       { status: 400 },
     );
   }

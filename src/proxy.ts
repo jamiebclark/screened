@@ -10,17 +10,26 @@ function nextWithPathname(request: NextRequest) {
   return NextResponse.next({ request: { headers: requestHeaders } });
 }
 
+// Exact list page (not /lists, /lists/new, or /lists/<slug>/history). The
+// page decides per visibility tier whether an anonymous visitor may see it.
+const PUBLIC_LIST_PAGE = /^\/lists\/(?!new$)[^/]+$/;
+// Anonymous reads of a single list; the handler enforces the tier.
+const PUBLIC_LIST_API = /^\/api\/lists\/[^/]+$/;
+
 export default auth((req) => {
   const isLoggedIn = !!req.auth;
+  const pathname = req.nextUrl.pathname;
   const isAuthPage =
-    req.nextUrl.pathname.startsWith("/login") ||
-    req.nextUrl.pathname.startsWith("/register");
-  const isApiAuth = req.nextUrl.pathname.startsWith("/api/auth");
-  const isPlexAuthEndpoint = req.nextUrl.pathname === "/api/plex/auth";
+    pathname.startsWith("/login") || pathname.startsWith("/register");
+  const isApiAuth = pathname.startsWith("/api/auth");
+  const isPlexAuthEndpoint = pathname === "/api/plex/auth";
   const isDiscordInteractionsEndpoint =
-    req.nextUrl.pathname === "/api/discord/interactions";
-  const isRadarrEndpoint = req.nextUrl.pathname.includes("/radarr");
-  const isPublicRoute = req.nextUrl.pathname.startsWith("/releases");
+    pathname === "/api/discord/interactions";
+  const isRadarrEndpoint = pathname.includes("/radarr");
+  const isPublicRoute =
+    pathname.startsWith("/releases") ||
+    PUBLIC_LIST_PAGE.test(pathname) ||
+    (req.method === "GET" && PUBLIC_LIST_API.test(pathname));
 
   if (
     isApiAuth ||
@@ -33,9 +42,7 @@ export default auth((req) => {
   }
 
   if (!isLoggedIn && !isAuthPage) {
-    const callbackUrl = encodeURIComponent(
-      req.nextUrl.pathname + req.nextUrl.search,
-    );
+    const callbackUrl = encodeURIComponent(pathname + req.nextUrl.search);
     return NextResponse.redirect(
       new URL(`/login?callbackUrl=${callbackUrl}`, req.url),
     );
@@ -51,5 +58,5 @@ export default auth((req) => {
 });
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.png$).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\.png$).*)"],
 };

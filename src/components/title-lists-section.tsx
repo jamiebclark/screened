@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { MediaType } from "@/generated/prisma";
 import { ListCard } from "./list-card";
+import { DISCOVERABLE_VISIBILITIES } from "@/lib/list-visibility";
 import { PublicListsGrid } from "./public-lists-grid";
 
 type Props = {
@@ -38,7 +39,7 @@ export async function TitleListsSection({ tmdbId, mediaType, userId }: Props) {
       : [],
     prisma.list.findMany({
       where: {
-        isPublic: true,
+        visibility: { in: DISCOVERABLE_VISIBILITIES },
         ...(userId
           ? {
               NOT: {

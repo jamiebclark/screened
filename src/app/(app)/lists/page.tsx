@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Plus, ListVideo, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ListCard } from "@/components/list-card";
+import { DISCOVERABLE_VISIBILITIES } from "@/lib/list-visibility";
 import { getRepoDocumentationLinks } from "@/lib/app-release";
 
 export const metadata: Metadata = { title: "Lists" };
@@ -35,7 +36,7 @@ export default async function ListsPage() {
       }),
       prisma.list.findMany({
         where: {
-          isPublic: true,
+          visibility: { in: DISCOVERABLE_VISIBILITIES },
           NOT: {
             OR: [
               { ownerId: session!.user.id },

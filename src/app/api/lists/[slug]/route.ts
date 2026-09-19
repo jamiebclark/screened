@@ -3,6 +3,11 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { validateListDetails } from "@/lib/list-validation";
 import { parseChallengeWindowInput } from "@/lib/list-challenge-window";
+import {
+  parseListVisibility,
+  resolveListAccess,
+  type ListVisibility,
+} from "@/lib/list-visibility";
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -35,15 +40,48 @@ export async function GET(req: NextRequest, { params }: Params) {
   }
 
   const userId = session?.user?.id;
-  const isMember = userId && list.members.some((m) => m.userId === userId);
+  const isMember =
+    !!userId &&
+    (list.ownerId === userId || list.members.some((m) => m.userId === userId));
 
-  if (!list.isPublic && !isMember) {
+  const access = resolveListAccess({
+    visibility: list.visibility,
+    hasSession: !!userId,
+    isMember,
+  });
+  if (access === "login") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (access === "forbidden") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   // Never expose the Discord webhook URL in API responses (it's a server secret)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { discordWebhookUrl: _webhook, ...safeList } = list;
+
+  if (!userId) {
+    // Anonymous readers of a PUBLIC list get the list and its items only —
+    // no people, no integration secrets.
+    const {
+      radarrToken: _radarrToken,
+      discordWebhookId: _discordWebhookId,
+      discordChannelName: _discordChannelName,
+      discordGuildName: _discordGuildName,
+      ...anonymousList
+    } = safeList;
+    void _radarrToken;
+    void _discordWebhookId;
+    void _discordChannelName;
+    void _discordGuildName;
+    return NextResponse.json({
+      ...anonymousList,
+      owner: null,
+      members: [],
+      items: anonymousList.items.map((item) => ({ ...item, addedBy: null })),
+    });
+  }
+
   return NextResponse.json(safeList);
 }
 
@@ -57,7 +95,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   let body: {
     name?: string;
     description?: string | null;
-    isPublic?: boolean;
+    visibility?: ListVisibility;
     rankingEnabled?: boolean;
     votingEnabled?: boolean;
     commentsEnabled?: boolean;
@@ -102,6 +140,18 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       { error: "Display mode must be GRID or LIST" },
       { status: 400 },
     );
+  }
+
+  let validatedVisibility: ListVisibility | undefined = undefined;
+  if (body.visibility !== undefined) {
+    const parsed = parseListVisibility(body.visibility);
+    if (!parsed) {
+      return NextResponse.json(
+        { error: "Visibility must be PUBLIC, MEMBERS or PRIVATE" },
+        { status: 400 },
+      );
+    }
+    validatedVisibility = parsed;
   }
 
   let validatedItemCap: number | null | undefined = undefined;
@@ -162,7 +212,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
             validatedDescription !== undefined
               ? validatedDescription
               : list.description,
-          isPublic: body.isPublic ?? list.isPublic,
+          visibility: validatedVisibility ?? list.visibility,
           rankingEnabled,
           votingEnabled,
           commentsEnabled: body.commentsEnabled ?? list.commentsEnabled,
@@ -189,7 +239,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
             validatedDescription !== undefined
               ? validatedDescription
               : list.description,
-          isPublic: body.isPublic ?? list.isPublic,
+          visibility: validatedVisibility ?? list.visibility,
           rankingEnabled,
           votingEnabled,
           commentsEnabled: body.commentsEnabled ?? list.commentsEnabled,
@@ -210,7 +260,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
           validatedDescription !== undefined
             ? validatedDescription
             : list.description,
-        isPublic: body.isPublic ?? list.isPublic,
+        visibility: validatedVisibility ?? list.visibility,
         rankingEnabled,
         votingEnabled,
         commentsEnabled: body.commentsEnabled ?? list.commentsEnabled,
