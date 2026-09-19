@@ -1,3 +1,10 @@
+## [1.71.4](https://github.com/jamiebclark/screened/compare/v1.71.3...v1.71.4) (2026-09-19)
+
+### Bug Fixes
+
+* **episodes:** keep the season progress counter on one line ([9c59308](https://github.com/jamiebclark/screened/commit/9c59308e06b8e725b06e71d6cde0da80923fdecc))
+* **nav:** label the mobile navigation toggle for assistive tech ([aa959f8](https://github.com/jamiebclark/screened/commit/aa959f826e8f7f4d2899e4d13c22d7aecb76ed19))
+
 ## [1.71.3](https://github.com/jamiebclark/screened/compare/v1.71.2...v1.71.3) (2026-09-19)
 
 ### Bug Fixes
