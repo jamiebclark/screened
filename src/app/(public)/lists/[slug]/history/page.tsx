@@ -18,12 +18,26 @@ type Params = { params: Promise<{ slug: string }> };
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { slug } = await params;
-  const list = await prisma.list.findUnique({
-    where: { slug },
-    select: { name: true },
-  });
+  const [session, list] = await Promise.all([
+    auth(),
+    prisma.list.findUnique({
+      where: { slug },
+      select: {
+        name: true,
+        ownerId: true,
+        members: { select: { userId: true } },
+      },
+    }),
+  ]);
+  // The page itself is members-only; keep the list name out of the title for
+  // everyone else (this route now lives outside the auth-guarded layout).
+  const userId = session?.user?.id;
+  const isMember =
+    !!list &&
+    !!userId &&
+    (list.ownerId === userId || list.members.some((m) => m.userId === userId));
   return {
-    title: list ? `${list.name} · Challenge history` : "Challenge history",
+    title: isMember ? `${list.name} · Challenge history` : "Challenge history",
   };
 }
 

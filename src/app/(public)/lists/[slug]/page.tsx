@@ -25,6 +25,7 @@ import {
   describeChallengeWindow,
 } from "@/lib/list-challenge-window";
 import { fetchListInWindowWatchedMediaItemIds } from "@/lib/list-watch-history";
+import { resolveListAccess } from "@/lib/list-visibility";
 
 type Params = {
   params: Promise<{ slug: string }>;
@@ -33,11 +34,32 @@ type Params = {
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { slug } = await params;
-  const list = await prisma.list.findUnique({
-    where: { slug },
-    select: { name: true },
+  const [session, list] = await Promise.all([
+    auth(),
+    prisma.list.findUnique({
+      where: { slug },
+      select: {
+        name: true,
+        visibility: true,
+        ownerId: true,
+        members: { select: { userId: true } },
+      },
+    }),
+  ]);
+  if (!list) return { title: "List" };
+
+  // Don't leak the name of a members-only or private list to anonymous
+  // fetches (link unfurlers, crawlers).
+  const userId = session?.user?.id;
+  const access = resolveListAccess({
+    visibility: list.visibility,
+    hasSession: !!userId,
+    isMember:
+      !!userId &&
+      (list.ownerId === userId ||
+        list.members.some((m) => m.userId === userId)),
   });
-  return { title: list ? `${list.name}` : "List" };
+  return { title: access === "granted" ? list.name : "List" };
 }
 
 type RawItem = {
@@ -71,6 +93,7 @@ type RawItem = {
 
 function toGridItem(
   item: RawItem,
+  viewer: { userId: string | undefined; isAnonymous: boolean },
   canDelete: boolean,
   watchedBy: { id: string; name: string | null; avatarUrl: string | null }[],
   watchingBy: { id: string; name: string | null; avatarUrl: string | null }[],
@@ -78,10 +101,19 @@ function toGridItem(
   displayRank?: number,
 ): GridItem {
   const commentCount = item.comments.length;
-  const unreadCommentCount = computeUnreadCommentCount(
-    item.comments,
-    lastReadAt,
-  );
+  const unreadCommentCount = viewer.isAnonymous
+    ? 0
+    : computeUnreadCommentCount(item.comments, lastReadAt);
+
+  // Only totals reach the client; voter identities stay server-side.
+  const ownVote = viewer.userId
+    ? item.votes.find((v) => v.userId === viewer.userId)?.value
+    : undefined;
+  const voteSummary: GridItem["voteSummary"] = {
+    up: item.votes.filter((v) => v.value === 1).length,
+    down: item.votes.filter((v) => v.value === -1).length,
+    userVote: ownVote === 1 ? 1 : ownVote === -1 ? -1 : null,
+  };
 
   return {
     id: item.id,
@@ -94,7 +126,8 @@ function toGridItem(
     canDelete,
     commentCount,
     unreadCommentCount,
-    addedBy: item.addedBy,
+    // Anonymous visitors never see who added an item or who has watched it.
+    addedBy: viewer.isAnonymous ? null : item.addedBy,
     tags: item.tags.map((tag) => ({
       id: tag.id,
       label: tag.listTag.label,
@@ -111,9 +144,9 @@ function toGridItem(
       genres: item.mediaItem.genres,
       productionCountries: item.mediaItem.productionCountries,
     },
-    votes: item.votes,
-    watchedBy,
-    watchingBy,
+    voteSummary,
+    watchedBy: viewer.isAnonymous ? [] : watchedBy,
+    watchingBy: viewer.isAnonymous ? [] : watchingBy,
   };
 }
 
@@ -171,10 +204,15 @@ export default async function ListPage({ params, searchParams }: Params) {
     memberRole: memberRecord?.role ?? null,
   });
 
-  if (!list.isPublic && !isMember) {
-    if (!userId) {
-      redirect(`/login?callbackUrl=${encodeURIComponent(`/lists/${slug}`)}`);
-    }
+  const access = resolveListAccess({
+    visibility: list.visibility,
+    hasSession: !!userId,
+    isMember: isMember || isOwner,
+  });
+  if (access === "login") {
+    redirect(`/login?callbackUrl=${encodeURIComponent(`/lists/${slug}`)}`);
+  }
+  if (access === "forbidden" && userId) {
     const accessRow = await prisma.listAccessRequest.findUnique({
       where: { listId_requesterId: { listId: list.id, requesterId: userId } },
       select: { status: true },
@@ -188,15 +226,23 @@ export default async function ListPage({ params, searchParams }: Params) {
     );
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-  const radarrUrl = list.isPublic
-    ? `${appUrl}/api/lists/${slug}/radarr`
-    : `${appUrl}/api/lists/${slug}/radarr?token=${list.radarrToken}`;
+  // Granted from here on. No session means a read-only view of a PUBLIC list.
+  const isAnonymous = !userId;
+  const viewer = { userId, isAnonymous };
 
-  const { sort, hiddenFilter } = parseListViewParams(
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const radarrUrl =
+    list.visibility === "PUBLIC"
+      ? `${appUrl}/api/lists/${slug}/radarr`
+      : `${appUrl}/api/lists/${slug}/radarr?token=${list.radarrToken}`;
+
+  const parsedView = parseListViewParams(
     { sort: rawSort, hidden: rawHidden },
     { votingEnabled: list.votingEnabled },
   );
+  const sort = parsedView.sort;
+  // Hidden items are never exposed to anonymous visitors.
+  const hiddenFilter = isAnonymous ? "exclude" : parsedView.hiddenFilter;
   const mediaIds = list.items.map((i) => i.mediaItemId);
 
   const watchedIdSet =
@@ -230,7 +276,7 @@ export default async function ListPage({ params, searchParams }: Params) {
 
   const memberUserIds = list.members.map((m) => m.userId);
   const memberStatuses =
-    mediaIds.length > 0 && memberUserIds.length > 0
+    !isAnonymous && mediaIds.length > 0 && memberUserIds.length > 0
       ? await prisma.userMediaStatus.findMany({
           where: {
             userId: { in: memberUserIds },
@@ -246,17 +292,18 @@ export default async function ListPage({ params, searchParams }: Params) {
     endsAt: list.challengeEndsAt,
   };
   const windowMemberUserIds = [...new Set([list.ownerId, ...memberUserIds])];
-  const windowStats = hasChallengeWindow(challengeWindow)
-    ? computeWindowStats(
-        list.items,
-        list.tags,
-        await fetchListInWindowWatchedMediaItemIds({
-          mediaItemIds: mediaIds,
-          memberUserIds: windowMemberUserIds,
-          window: challengeWindow,
-        }),
-      )
-    : null;
+  const windowStats =
+    !isAnonymous && hasChallengeWindow(challengeWindow)
+      ? computeWindowStats(
+          list.items,
+          list.tags,
+          await fetchListInWindowWatchedMediaItemIds({
+            mediaItemIds: mediaIds,
+            memberUserIds: windowMemberUserIds,
+            window: challengeWindow,
+          }),
+        )
+      : null;
   const windowDescription = describeChallengeWindow(challengeWindow);
 
   const memberById = new Map<
@@ -311,6 +358,7 @@ export default async function ListPage({ params, searchParams }: Params) {
   function makeGridItem(item: RawItem & { displayRank?: number }): GridItem {
     return toGridItem(
       item,
+      viewer,
       canDelete && (isOwner || item.addedBy.id === userId),
       watchedByMap.get(item.mediaItemId) ?? [],
       watchingByMap.get(item.mediaItemId) ?? [],
@@ -353,7 +401,8 @@ export default async function ListPage({ params, searchParams }: Params) {
         listSlug={slug}
         isOwner={isOwner}
         isMember={isMember}
-        isPublic={list.isPublic}
+        isAnonymous={isAnonymous}
+        visibility={list.visibility}
         name={list.name}
         description={list.description ?? null}
         memberCount={list.members.length}
@@ -362,11 +411,15 @@ export default async function ListPage({ params, searchParams }: Params) {
         stats={stats}
         windowStats={windowStats}
         windowDescription={windowDescription}
-        memberAvatars={list.members.slice(0, 5).map((m) => ({
-          id: m.id,
-          name: m.user.name,
-          avatarUrl: m.user.avatarUrl,
-        }))}
+        memberAvatars={
+          isAnonymous
+            ? []
+            : list.members.slice(0, 5).map((m) => ({
+                id: m.id,
+                name: m.user.name,
+                avatarUrl: m.user.avatarUrl,
+              }))
+        }
         existingKeys={existingListKeys}
         tagVocabulary={tagVocabulary}
         canCurate={canCurate}
@@ -377,21 +430,25 @@ export default async function ListPage({ params, searchParams }: Params) {
         itemCap={list.itemCap}
         challengeStartsAt={list.challengeStartsAt?.toISOString() ?? null}
         challengeEndsAt={list.challengeEndsAt?.toISOString() ?? null}
-        members={list.members.map((m) => ({
-          id: m.id,
-          userId: m.userId,
-          role: m.role,
-          user: {
-            id: m.user.id,
-            name: m.user.name,
-            avatarUrl: m.user.avatarUrl,
-            status: m.user.status,
-          },
-        }))}
-        radarrUrl={radarrUrl}
+        members={
+          isAnonymous
+            ? []
+            : list.members.map((m) => ({
+                id: m.id,
+                userId: m.userId,
+                role: m.role,
+                user: {
+                  id: m.user.id,
+                  name: m.user.name,
+                  avatarUrl: m.user.avatarUrl,
+                  status: m.user.status,
+                },
+              }))
+        }
+        radarrUrl={isAnonymous ? "" : radarrUrl}
         discordEnabled={discordFeatures().bot}
-        connectedChannelName={list.discordChannelName}
-        connectedGuildName={list.discordGuildName}
+        connectedChannelName={isAnonymous ? null : list.discordChannelName}
+        connectedGuildName={isAnonymous ? null : list.discordGuildName}
       />
 
       {/* Main content */}
@@ -403,7 +460,7 @@ export default async function ListPage({ params, searchParams }: Params) {
               showVoteSort={list.votingEnabled}
             />
           )}
-          <ListHiddenFilter hiddenFilter={hiddenFilter} />
+          {!isAnonymous && <ListHiddenFilter hiddenFilter={hiddenFilter} />}
         </div>
       )}
 
@@ -418,7 +475,7 @@ export default async function ListPage({ params, searchParams }: Params) {
           <p className="text-muted-foreground">
             Every item on this list is hidden.
           </p>
-          <ListHiddenFilter hiddenFilter={hiddenFilter} />
+          {!isAnonymous && <ListHiddenFilter hiddenFilter={hiddenFilter} />}
         </div>
       ) : list.displayMode === "LIST" ? (
         <ListItemReorder
@@ -432,6 +489,7 @@ export default async function ListPage({ params, searchParams }: Params) {
           votingEnabled={list.votingEnabled}
           commentsEnabled={list.commentsEnabled}
           currentUserId={userId}
+          isAnonymous={isAnonymous}
           rankingEnabled={list.rankingEnabled}
           canReorder={canReorder}
           canCurate={canCurate}
@@ -452,6 +510,7 @@ export default async function ListPage({ params, searchParams }: Params) {
           votingEnabled={list.votingEnabled}
           commentsEnabled={list.commentsEnabled}
           currentUserId={userId}
+          isAnonymous={isAnonymous}
           canCurate={canCurate}
           isListOwner={isOwner}
           tagVocabulary={tagVocabulary}
