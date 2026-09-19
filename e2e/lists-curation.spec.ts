@@ -17,11 +17,16 @@ async function createRankedList(
   name: string,
 ) {
   const res = await page.request.post("/api/lists", {
-    data: { name, isPublic: true, rankingEnabled: true, displayMode: "LIST" },
+    data: {
+      name,
+      visibility: "MEMBERS",
+      rankingEnabled: true,
+      displayMode: "LIST",
+    },
     headers: { "Content-Type": "application/json" },
   });
   expect(res.ok()).toBeTruthy();
-  return (await res.json()) as { slug: string };
+  return (await res.json()) as { slug: string; radarrToken: string };
 }
 
 async function addMovie(
@@ -371,7 +376,10 @@ test.describe("Lists - Curation (hide, tags, stats)", () => {
       },
     );
 
-    const res = await page.request.get(`/api/lists/${list.slug}/radarr`);
+    // A site-members list needs its token on the Radarr feed.
+    const res = await page.request.get(
+      `/api/lists/${list.slug}/radarr?token=${list.radarrToken}`,
+    );
     expect(res.ok()).toBeTruthy();
     const body = (await res.json()) as { id: number }[];
     expect(body.some((m) => m.id === 27205)).toBe(true);

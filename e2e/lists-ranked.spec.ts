@@ -20,7 +20,7 @@ test.describe("Lists - Ranked", () => {
     const res = await page.request.post("/api/lists", {
       data: {
         name: `Ranked ${Date.now()}`,
-        isPublic: true,
+        visibility: "MEMBERS",
         rankingEnabled: true,
         displayMode: "LIST",
       },
@@ -94,7 +94,7 @@ test.describe("Lists - Ranked", () => {
     const res = await page.request.post("/api/lists", {
       data: {
         name: `Ranked Positions ${Date.now()}`,
-        isPublic: true,
+        visibility: "MEMBERS",
         rankingEnabled: true,
         displayMode: "LIST",
       },
@@ -126,7 +126,7 @@ test.describe("Lists - Ranked", () => {
     const res = await page.request.post("/api/lists", {
       data: {
         name: `Ranked Drag ${Date.now()}`,
-        isPublic: true,
+        visibility: "MEMBERS",
         rankingEnabled: true,
         displayMode: "LIST",
       },
@@ -192,7 +192,7 @@ test.describe("Lists - Ranked", () => {
     const res = await page.request.post("/api/lists", {
       data: {
         name: `Ranked Mixed ${Date.now()}`,
-        isPublic: true,
+        visibility: "MEMBERS",
         rankingEnabled: true,
         displayMode: "LIST",
       },
@@ -247,7 +247,7 @@ test.describe("Lists - Ranked", () => {
     const res = await page.request.post("/api/lists", {
       data: {
         name: `Ranked Partial ${Date.now()}`,
-        isPublic: true,
+        visibility: "MEMBERS",
         rankingEnabled: true,
         displayMode: "LIST",
       },
@@ -285,7 +285,7 @@ test.describe("Lists - Ranked", () => {
     const res = await page.request.post("/api/lists", {
       data: {
         name: `Ranked Viewer ${Date.now()}`,
-        isPublic: true,
+        visibility: "MEMBERS",
         rankingEnabled: true,
         displayMode: "LIST",
       },

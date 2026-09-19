@@ -144,7 +144,7 @@ test.describe("List add-title dialog search refinement", () => {
   }) => {
     test.skip(!LIVE_TMDB, LIVE_TMDB_REASON);
     const res = await page.request.post("/api/lists", {
-      data: { name: `Search test ${Date.now()}`, isPublic: true },
+      data: { name: `Search test ${Date.now()}`, visibility: "MEMBERS" },
       headers: { "Content-Type": "application/json" },
     });
     expect(res.ok()).toBeTruthy();

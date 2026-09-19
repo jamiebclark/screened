@@ -18,7 +18,7 @@ test.describe("Lists - Advanced", () => {
   }) => {
     // Create a private list as main user
     const res = await page.request.post("/api/lists", {
-      data: { name: `Private ${Date.now()}`, isPublic: false },
+      data: { name: `Private ${Date.now()}`, visibility: "PRIVATE" },
       headers: { "Content-Type": "application/json" },
     });
     const list = (await res.json()) as { slug: string };
@@ -45,7 +45,7 @@ test.describe("Lists - Advanced", () => {
   test("delete a list", async ({ page }) => {
     const name = `Delete Me ${Date.now()}`;
     const res = await page.request.post("/api/lists", {
-      data: { name, isPublic: true },
+      data: { name, visibility: "MEMBERS" },
       headers: { "Content-Type": "application/json" },
     });
     const list = (await res.json()) as { slug: string };
@@ -63,7 +63,7 @@ test.describe("Lists - Advanced", () => {
 
   test("edit list name via PATCH", async ({ page }) => {
     const res = await page.request.post("/api/lists", {
-      data: { name: `Edit Me ${Date.now()}`, isPublic: true },
+      data: { name: `Edit Me ${Date.now()}`, visibility: "MEMBERS" },
       headers: { "Content-Type": "application/json" },
     });
     const list = (await res.json()) as { slug: string; name: string };
@@ -80,7 +80,7 @@ test.describe("Lists - Advanced", () => {
 
   test("radarr endpoint returns movie list JSON", async ({ page }) => {
     const res = await page.request.post("/api/lists", {
-      data: { name: `Radarr ${Date.now()}`, isPublic: true },
+      data: { name: `Radarr ${Date.now()}`, visibility: "PUBLIC" },
       headers: { "Content-Type": "application/json" },
     });
     const list = (await res.json()) as { slug: string };
@@ -104,11 +104,29 @@ test.describe("Lists - Advanced", () => {
     expect(data[0].title).toBe("Inception");
   });
 
+  test("radarr endpoint rejects site-members list without token", async ({
+    page,
+  }) => {
+    const res = await page.request.post("/api/lists", {
+      data: { name: `Members Radarr ${Date.now()}`, visibility: "MEMBERS" },
+      headers: { "Content-Type": "application/json" },
+    });
+    const list = (await res.json()) as { slug: string; radarrToken: string };
+
+    // Radarr cannot sign in, so anything short of PUBLIC needs the token.
+    const noToken = await page.request.get(`/api/lists/${list.slug}/radarr`);
+    expect(noToken.status()).toBe(401);
+    const withToken = await page.request.get(
+      `/api/lists/${list.slug}/radarr?token=${list.radarrToken}`,
+    );
+    expect(withToken.ok()).toBeTruthy();
+  });
+
   test("radarr endpoint rejects private list without token", async ({
     page,
   }) => {
     const res = await page.request.post("/api/lists", {
-      data: { name: `Private Radarr ${Date.now()}`, isPublic: false },
+      data: { name: `Private Radarr ${Date.now()}`, visibility: "PRIVATE" },
       headers: { "Content-Type": "application/json" },
     });
     const list = (await res.json()) as { slug: string };
@@ -121,7 +139,10 @@ test.describe("Lists - Advanced", () => {
     page,
   }) => {
     const res = await page.request.post("/api/lists", {
-      data: { name: `Private Radarr Token ${Date.now()}`, isPublic: false },
+      data: {
+        name: `Private Radarr Token ${Date.now()}`,
+        visibility: "PRIVATE",
+      },
       headers: { "Content-Type": "application/json" },
     });
     const list = (await res.json()) as { slug: string; radarrToken: string };
@@ -172,7 +193,7 @@ test.describe("Lists - Advanced", () => {
   test("non-owner cannot delete list", async ({ page, browser }) => {
     // Create list as user 1
     const res = await page.request.post("/api/lists", {
-      data: { name: `No Delete ${Date.now()}`, isPublic: true },
+      data: { name: `No Delete ${Date.now()}`, visibility: "MEMBERS" },
       headers: { "Content-Type": "application/json" },
     });
     const list = (await res.json()) as { slug: string };
@@ -192,7 +213,7 @@ test.describe("Lists - Advanced", () => {
 
   test("add TV show to list", async ({ page }) => {
     const res = await page.request.post("/api/lists", {
-      data: { name: `TV List ${Date.now()}`, isPublic: true },
+      data: { name: `TV List ${Date.now()}`, visibility: "MEMBERS" },
       headers: { "Content-Type": "application/json" },
     });
     const list = (await res.json()) as { slug: string };

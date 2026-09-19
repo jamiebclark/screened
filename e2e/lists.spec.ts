@@ -45,7 +45,7 @@ test.describe("Lists", () => {
     // First create a list
     const listName = `Movie List ${Date.now()}`;
     const res = await page.request.post("/api/lists", {
-      data: { name: listName, isPublic: true },
+      data: { name: listName, visibility: "MEMBERS" },
       headers: { "Content-Type": "application/json" },
     });
     expect(res.ok()).toBeTruthy();
@@ -72,7 +72,7 @@ test.describe("Lists", () => {
     // Create list and add movie via API
     const listName = `Remove Test ${Date.now()}`;
     const res = await page.request.post("/api/lists", {
-      data: { name: listName, isPublic: true },
+      data: { name: listName, visibility: "MEMBERS" },
       headers: { "Content-Type": "application/json" },
     });
     const list = (await res.json()) as { slug: string };
@@ -101,7 +101,7 @@ test.describe("Lists", () => {
     // Create a list
     const listName = `Invite Test ${Date.now()}`;
     const res = await page.request.post("/api/lists", {
-      data: { name: listName, isPublic: true },
+      data: { name: listName, visibility: "MEMBERS" },
       headers: { "Content-Type": "application/json" },
     });
     const list = (await res.json()) as { slug: string };
@@ -125,7 +125,7 @@ test.describe("Lists", () => {
   test("invite member by email directly", async ({ page }) => {
     const listName = `Email Invite ${Date.now()}`;
     const res = await page.request.post("/api/lists", {
-      data: { name: listName, isPublic: true },
+      data: { name: listName, visibility: "MEMBERS" },
       headers: { "Content-Type": "application/json" },
     });
     const list = (await res.json()) as { slug: string };
@@ -143,7 +143,7 @@ test.describe("Lists", () => {
   test("invite fails for non-existent user", async ({ page }) => {
     const listName = `Not Found ${Date.now()}`;
     const res = await page.request.post("/api/lists", {
-      data: { name: listName, isPublic: true },
+      data: { name: listName, visibility: "MEMBERS" },
       headers: { "Content-Type": "application/json" },
     });
     const list = (await res.json()) as { slug: string };
@@ -162,7 +162,7 @@ test.describe("Lists", () => {
   test("list shows radarr URL when movies are present", async ({ page }) => {
     const listName = `Radarr Test ${Date.now()}`;
     const res = await page.request.post("/api/lists", {
-      data: { name: listName, isPublic: true },
+      data: { name: listName, visibility: "MEMBERS" },
       headers: { "Content-Type": "application/json" },
     });
     const list = (await res.json()) as { slug: string };
@@ -182,11 +182,11 @@ test.describe("Lists", () => {
     await expect(page.getByText(/\/api\/lists\//)).toBeVisible();
   });
 
-  test("owner can switch a list between private and public", async ({
+  test("owner can switch a list between private, site members and public", async ({
     page,
   }) => {
     const res = await page.request.post("/api/lists", {
-      data: { name: `Visibility Test ${Date.now()}`, isPublic: false },
+      data: { name: `Visibility Test ${Date.now()}`, visibility: "PRIVATE" },
       headers: { "Content-Type": "application/json" },
     });
     const list = (await res.json()) as { slug: string };
@@ -198,7 +198,20 @@ test.describe("Lists", () => {
     });
 
     await page.getByRole("button", { name: "List settings" }).click();
+    await page.getByText("Site members", { exact: true }).click();
+    await page.getByRole("button", { name: "Save settings" }).click();
+    await expect(page.getByText("Saved", { exact: true })).toBeVisible();
+    await page.keyboard.press("Escape");
+
+    await expect(main.getByText("Site members list")).toBeVisible({
+      timeout: 10000,
+    });
+
+    await page.getByRole("button", { name: "List settings" }).click();
     await page.getByText("Public", { exact: true }).click();
+    await expect(
+      page.getByText(/anyone with the link can view this list/i),
+    ).toBeVisible();
     await page.getByRole("button", { name: "Save settings" }).click();
     await expect(page.getByText("Saved", { exact: true })).toBeVisible();
     await page.keyboard.press("Escape");

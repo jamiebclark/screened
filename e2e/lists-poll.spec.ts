@@ -14,7 +14,7 @@ test.describe("Lists - Poll", () => {
     const res = await page.request.post("/api/lists", {
       data: {
         name: `Poll ${Date.now()}`,
-        isPublic: true,
+        visibility: "MEMBERS",
         votingEnabled: true,
         displayMode: "LIST",
       },
@@ -61,7 +61,7 @@ test.describe("Lists - Poll", () => {
     const res = await page.request.post("/api/lists", {
       data: {
         name: `Invalid ${Date.now()}`,
-        isPublic: true,
+        visibility: "MEMBERS",
         rankingEnabled: true,
         votingEnabled: true,
       },
@@ -79,7 +79,7 @@ test.describe("Lists - Poll", () => {
     const res = await page.request.post("/api/lists", {
       data: {
         name: `Swap ${Date.now()}`,
-        isPublic: true,
+        visibility: "MEMBERS",
         rankingEnabled: true,
       },
       headers: { "Content-Type": "application/json" },

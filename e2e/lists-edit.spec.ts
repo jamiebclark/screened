@@ -17,7 +17,7 @@ test.describe("Lists - Edit settings", () => {
     page,
   }) => {
     const res = await page.request.post("/api/lists", {
-      data: { name: `Rename Me ${Date.now()}`, isPublic: true },
+      data: { name: `Rename Me ${Date.now()}`, visibility: "MEMBERS" },
       headers: { "Content-Type": "application/json" },
     });
     const list = (await res.json()) as { slug: string };
@@ -43,7 +43,11 @@ test.describe("Lists - Edit settings", () => {
   }) => {
     const name = `Desc Clear ${Date.now()}`;
     const res = await page.request.post("/api/lists", {
-      data: { name, description: "Original description", isPublic: true },
+      data: {
+        name,
+        description: "Original description",
+        visibility: "MEMBERS",
+      },
       headers: { "Content-Type": "application/json" },
     });
     const list = (await res.json()) as { slug: string };
@@ -65,7 +69,7 @@ test.describe("Lists - Edit settings", () => {
   }) => {
     const name = `Validate Me ${Date.now()}`;
     const res = await page.request.post("/api/lists", {
-      data: { name, isPublic: true },
+      data: { name, visibility: "MEMBERS" },
       headers: { "Content-Type": "application/json" },
     });
     const list = (await res.json()) as { slug: string };
@@ -95,7 +99,7 @@ test.describe("Lists - Edit settings", () => {
     page,
   }) => {
     const res = await page.request.post("/api/lists", {
-      data: { name: `Member Perms ${Date.now()}`, isPublic: true },
+      data: { name: `Member Perms ${Date.now()}`, visibility: "MEMBERS" },
       headers: { "Content-Type": "application/json" },
     });
     const list = (await res.json()) as { slug: string };
@@ -155,7 +159,7 @@ test.describe("Lists - Edit settings", () => {
     const res = await page.request.post("/api/lists", {
       data: {
         name: `Layout Switch ${Date.now()}`,
-        isPublic: true,
+        visibility: "MEMBERS",
         rankingEnabled: true,
         displayMode: "LIST",
       },
@@ -203,7 +207,7 @@ test.describe("Lists - Edit settings", () => {
     page,
   }) => {
     const res = await page.request.post("/api/lists", {
-      data: { name: `Layout Perms ${Date.now()}`, isPublic: true },
+      data: { name: `Layout Perms ${Date.now()}`, visibility: "MEMBERS" },
       headers: { "Content-Type": "application/json" },
     });
     const list = (await res.json()) as { slug: string };
@@ -239,7 +243,7 @@ test.describe("Lists - Edit settings", () => {
   }) => {
     const name = `Delete Me ${Date.now()}`;
     const res = await page.request.post("/api/lists", {
-      data: { name, isPublic: true },
+      data: { name, visibility: "MEMBERS" },
       headers: { "Content-Type": "application/json" },
     });
     const list = (await res.json()) as { slug: string };
@@ -263,7 +267,7 @@ test.describe("Lists - Edit settings", () => {
 
   test("a CONTRIBUTOR cannot delete the list", async ({ page }) => {
     const res = await page.request.post("/api/lists", {
-      data: { name: `Undeletable ${Date.now()}`, isPublic: true },
+      data: { name: `Undeletable ${Date.now()}`, visibility: "MEMBERS" },
       headers: { "Content-Type": "application/json" },
     });
     const list = (await res.json()) as { slug: string };

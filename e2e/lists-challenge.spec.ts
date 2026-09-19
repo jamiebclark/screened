@@ -13,7 +13,7 @@ async function createList(
   displayMode: "GRID" | "LIST" = "LIST",
 ) {
   const res = await page.request.post("/api/lists", {
-    data: { name, isPublic: true, displayMode },
+    data: { name, visibility: "MEMBERS", displayMode },
     headers: { "Content-Type": "application/json" },
   });
   expect(res.ok()).toBeTruthy();
@@ -323,7 +323,8 @@ test.describe("Lists - Challenge tracking", () => {
     await addMovie(page, list.slug, 27205);
 
     await logout(page);
-    await gotoList(page, list.slug, "/history");
+    // Plain goto: the login page we land on has no h1 for gotoList to wait on.
+    await page.goto(`/lists/${list.slug}/history`);
     await expect(page).toHaveURL(/\/login\?callbackUrl=/);
   });
 
