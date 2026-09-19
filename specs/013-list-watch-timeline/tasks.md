@@ -114,7 +114,7 @@ Single Next.js project. `src/app/(public)/` = routes that render without a sessi
 - [x] T024 Responsive verification per `docs/ui-ux-standards.md` → "Responsive layout": screenshot `/lists/<slug>/timeline` at ~390px and desktop for a member (with a multi-watcher entry) and logged-out on a PUBLIC list; confirm no horizontal scroll, wrapping watcher cluster, and the rail staying fixed width; fix any overflow before proceeding
 - [x] T025 Run `yarn ci:check` (lint + format + migrate + test + build) on `013-list-watch-timeline` and fix anything it reports
 - [x] T026 Mark all tasks complete in `specs/013-list-watch-timeline/tasks.md`; commit as `docs(specs): mark list watch timeline tasks complete`
-- [ ] T027 Deploy per quickstart: `git checkout main && git merge --ff-only 013-list-watch-timeline && git push origin main`; watch the Release workflow with `gh run watch` until semantic-release cuts the minor version and the Docker image is pushed
+- [x] T027 Deploy per quickstart: `git checkout main && git merge --ff-only 013-list-watch-timeline && git push origin main`; watch the Release workflow with `gh run watch` until semantic-release cuts the minor version and the Docker image is pushed
 
 ---
 
