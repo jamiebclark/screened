@@ -73,15 +73,6 @@ function ListRow({
       )}
       onClick={() => onSelect(item.id)}
     >
-      {/* Rank number */}
-      {rankingEnabled && item.displayRank !== undefined && (
-        <div className="w-7 shrink-0 flex items-center justify-center pt-1">
-          <span className="text-sm font-bold text-muted-foreground tabular-nums">
-            {item.displayRank}
-          </span>
-        </div>
-      )}
-
       {/* Poster thumbnail */}
       <div className="shrink-0 w-16 h-24 rounded overflow-hidden bg-muted">
         {posterUrl ? (
@@ -166,45 +157,52 @@ function ListRow({
         )}
       </div>
 
-      {/* Badges */}
-      <div className="flex items-center gap-2 shrink-0">
-        {(canVote || upvotes > 0 || downvotes > 0) && (
-          <div onClick={(e) => e.stopPropagation()}>
-            <ListItemVotePill
+      {/* Badges + rank */}
+      <div className="flex flex-col items-end justify-between self-stretch shrink-0 gap-1.5">
+        <div className="flex items-center gap-2">
+          {(canVote || upvotes > 0 || downvotes > 0) && (
+            <div onClick={(e) => e.stopPropagation()}>
+              <ListItemVotePill
+                listSlug={listSlug}
+                itemId={item.id}
+                upvotes={upvotes}
+                downvotes={downvotes}
+                userVote={userVote}
+                canVote={canVote}
+              />
+            </div>
+          )}
+          {item.commentCount > 0 && (
+            <div
+              className={`flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
+                item.unreadCommentCount > 0
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground"
+              }`}
+            >
+              <MessageSquare className="h-2.5 w-2.5" />
+              {item.unreadCommentCount > 0
+                ? item.unreadCommentCount
+                : item.commentCount}
+            </div>
+          )}
+          {item.isHidden && (
+            <EyeOff className="h-3.5 w-3.5 text-muted-foreground" />
+          )}
+          {canCurate && (
+            <ListItemHideToggle
               listSlug={listSlug}
               itemId={item.id}
-              upvotes={upvotes}
-              downvotes={downvotes}
-              userVote={userVote}
-              canVote={canVote}
+              isHidden={item.isHidden}
+              onChange={(next) => onHiddenChange(item.id, next)}
+              className="text-muted-foreground hover:text-foreground h-6 w-6"
             />
-          </div>
-        )}
-        {item.commentCount > 0 && (
-          <div
-            className={`flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
-              item.unreadCommentCount > 0
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground"
-            }`}
-          >
-            <MessageSquare className="h-2.5 w-2.5" />
-            {item.unreadCommentCount > 0
-              ? item.unreadCommentCount
-              : item.commentCount}
-          </div>
-        )}
-        {item.isHidden && (
-          <EyeOff className="h-3.5 w-3.5 text-muted-foreground" />
-        )}
-        {canCurate && (
-          <ListItemHideToggle
-            listSlug={listSlug}
-            itemId={item.id}
-            isHidden={item.isHidden}
-            onChange={(next) => onHiddenChange(item.id, next)}
-            className="text-muted-foreground hover:text-foreground h-6 w-6"
-          />
+          )}
+        </div>
+        {rankingEnabled && item.displayRank !== undefined && (
+          <span className="text-sm font-bold text-muted-foreground tabular-nums leading-none">
+            {item.displayRank}
+          </span>
         )}
       </div>
     </div>
