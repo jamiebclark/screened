@@ -64,6 +64,11 @@ function ListRow({
 }) {
   const posterUrl = tmdbImageUrl(item.mediaItem.poster, "w154");
   const { up: upvotes, down: downvotes, userVote } = item.voteSummary;
+  const note = item.notes?.trim() ? item.notes : null;
+  const overview =
+    !note && item.mediaItem.overview?.trim()
+      ? item.mediaItem.overview.trim()
+      : null;
 
   return (
     <div
@@ -126,16 +131,26 @@ function ListRow({
           )}
         </div>
 
-        {(item.notes || item.tags.length > 0) && (
-          <div className="min-w-0 mt-2 sm:mt-0 sm:flex-1">
-            {item.notes &&
+        {(note || overview || item.tags.length > 0) && (
+          <div
+            className={cn(
+              "min-w-0 sm:flex-1",
+              note || item.tags.length > 0 ? "mt-2 sm:mt-0" : "hidden sm:block",
+            )}
+          >
+            {note &&
               (item.noteIsSpoiler ? (
-                <SpoilerNote notes={item.notes} />
+                <SpoilerNote notes={item.notes!} />
               ) : (
                 <div className="line-clamp-3">
-                  <MarkdownContent content={item.notes} />
+                  <MarkdownContent content={item.notes!} />
                 </div>
               ))}
+            {!note && overview && (
+              <p className="hidden sm:block text-xs text-muted-foreground max-h-12 overflow-hidden mask-b-from-8 mask-b-to-12">
+                {overview}
+              </p>
+            )}
             {item.tags.length > 0 && (
               <div className="flex flex-wrap items-center gap-1 mt-1">
                 {item.tags.slice(0, 3).map((tag) => (
