@@ -9,6 +9,7 @@ user-invocable: true
 disable-model-invocation: false
 ---
 
+
 ## User Input
 
 ```text
@@ -130,7 +131,6 @@ against, so it is also the honest denominator for "I checked N of M".
 Work through four passes. They are ordered by what costs most to find late.
 
 **a. Coherence across passes.** The one nothing else looks at.
-
 - Duplicated abstractions: two implementations of the same job, introduced by
   different passes.
 - Interface drift: a signature, schema, event name or column changed in one
@@ -188,26 +188,26 @@ you do about it. Lead with the answer.>
 ## Findings
 
 - [ ] 🛑 BLOCKER F1 — <one-line claim>
-      where: src/orders/repo.py:412, src/orders/api.py:88
-      why: <what is actually wrong, and the input or state that makes it wrong>
-      owed: <what would fix it>
+      where:  src/orders/repo.py:412, src/orders/api.py:88
+      why:    <what is actually wrong, and the input or state that makes it wrong>
+      owed:   <what would fix it>
       traces: FR-008
 
 - [ ] MAJOR F2 — <one-line claim>
-      where: src/queue/worker.ts:145
+      where:  src/queue/worker.ts:145
       ...
 
 - [ ] MINOR F3 — ...
 
-- NOTE F4 — <observation> (no checkbox: notes are not work)
+- NOTE F4 — <observation>  (no checkbox: notes are not work)
 
 ## Coverage
 
-| Checked                 | Count | Satisfied | Partial | Absent | Contradicted |
-| ----------------------- | ----- | --------- | ------- | ------ | ------------ |
-| Functional requirements | 14    | 12        | 1       | 1      | 0            |
-| Success criteria        | 6     | 6         | 0       | 0      | 0            |
-| Constitution principles | 5     | 5         | 0       | 0      | 0            |
+| Checked | Count | Satisfied | Partial | Absent | Contradicted |
+|---|---|---|---|---|---|
+| Functional requirements | 14 | 12 | 1 | 1 | 0 |
+| Success criteria | 6 | 6 | 0 | 0 | 0 |
+| Constitution principles | 5 | 5 | 0 | 0 | 0 |
 
 ## What I could not check
 

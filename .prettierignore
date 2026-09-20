@@ -13,3 +13,7 @@ package-lock.json
 pnpm-lock.yaml
 CHANGELOG.md
 prisma/migrations/**/*.sql
+
+# spec-kit scaffold is vendored by speckit-pipeline; keep bytes pristine so spec-upgrade --check sees no drift
+.specify
+.claude/skills/speckit-*
