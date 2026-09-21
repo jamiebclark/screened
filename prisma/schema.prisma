@@ -35,7 +35,6 @@ enum WatchEntrySource {
   TAUTULLI
   LETTERBOXD
   JELLYFIN
-  TRAKT
   MANUAL
   UNKNOWN
 }
@@ -79,7 +78,6 @@ enum CronIntegration {
   LETTERBOXD
   JELLYFIN
   TAUTULLI
-  TRAKT
 }
 
 enum UserStatus {
@@ -126,7 +124,6 @@ model User {
   letterboxdConnection   LetterboxdConnection?
   tautulliConnection     TautulliConnection?
   jellyfinConnection     JellyfinConnection?
-  traktConnection        TraktConnection?
   overseerrConnection    OverseerrConnection?
   discordConnection      DiscordConnection?
   mediaStatuses          UserMediaStatus[]
@@ -232,20 +229,6 @@ model JellyfinConnection {
   lastSyncedAt     DateTime?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model TraktConnection {
-  id            String    @id @default(cuid())
-  userId        String    @unique
-  traktUsername String
-  accessToken   String
-  refreshToken  String
-  expiresAt     DateTime
-  lastSyncedAt  DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
