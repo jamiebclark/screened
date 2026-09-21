@@ -5,12 +5,11 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 
-const baseIntegrations = [
+const integrationItems = [
   { href: "/settings/plex", label: "Plex" },
   { href: "/settings/jellyfin", label: "Jellyfin" },
   { href: "/settings/letterboxd", label: "Letterboxd" },
   { href: "/settings/tautulli", label: "Tautulli" },
-  { href: "/settings/trakt", label: "Trakt", requiresTrakt: true },
   { href: "/settings/overseerr", label: "Overseerr" },
   { href: "/settings/discord", label: "Discord" },
 ];
@@ -23,15 +22,10 @@ const generalItems = [
   { href: "/settings/calendar", label: "Calendar feed" },
 ];
 
-export function SettingsNav({ traktConfigured }: { traktConfigured: boolean }) {
+export function SettingsNav() {
   const groups = [
     { title: "General", items: generalItems },
-    {
-      title: "Integrations",
-      items: baseIntegrations.filter(
-        (i) => !("requiresTrakt" in i) || traktConfigured,
-      ),
-    },
+    { title: "Integrations", items: integrationItems },
   ];
   const pathname = usePathname();
   const allItems = [

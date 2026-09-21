@@ -9,7 +9,6 @@ const ALL_INTEGRATIONS = [
   CronIntegration.LETTERBOXD,
   CronIntegration.JELLYFIN,
   CronIntegration.TAUTULLI,
-  CronIntegration.TRAKT,
 ];
 
 async function runAllSyncs() {

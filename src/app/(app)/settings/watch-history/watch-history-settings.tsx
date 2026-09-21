@@ -84,22 +84,6 @@ function buildRows(counts: WatchImportCounts): Row[] {
         "Removes show-level Jellyfin diary lines. Episode progress is shared and cleared separately.",
     },
     {
-      scope: "trakt_movie",
-      integration: "Trakt",
-      library: "Movies",
-      count: counts.traktMovie,
-      resetHint:
-        "Removes movie watch entries imported from Trakt. Re-sync Trakt to import them again.",
-    },
-    {
-      scope: "trakt_tv",
-      integration: "Trakt",
-      library: "TV shows",
-      count: counts.traktTv,
-      resetHint:
-        "Removes show-level Trakt diary lines. Episode progress is shared and cleared separately.",
-    },
-    {
       scope: "letterboxd",
       integration: "Letterboxd",
       library: "Diary (movies)",

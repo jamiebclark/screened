@@ -76,18 +76,6 @@ function watchEntryWhere(userId: string, scope: WatchEntryScope) {
         source: WatchEntrySource.JELLYFIN,
         mediaItem: { type: MediaType.TV },
       };
-    case "trakt_movie":
-      return {
-        userId,
-        source: WatchEntrySource.TRAKT,
-        mediaItem: { type: MediaType.MOVIE },
-      };
-    case "trakt_tv":
-      return {
-        userId,
-        source: WatchEntrySource.TRAKT,
-        mediaItem: { type: MediaType.TV },
-      };
     case "unknown_tv":
       return {
         userId,
@@ -107,8 +95,6 @@ export async function getWatchImportCounts(
     tautulliTv,
     jellyfinMovie,
     jellyfinTv,
-    traktMovie,
-    traktTv,
     letterboxd,
     manualMovie,
     manualTv,
@@ -127,8 +113,6 @@ export async function getWatchImportCounts(
       where: watchEntryWhere(userId, "jellyfin_movie"),
     }),
     prisma.watchEntry.count({ where: watchEntryWhere(userId, "jellyfin_tv") }),
-    prisma.watchEntry.count({ where: watchEntryWhere(userId, "trakt_movie") }),
-    prisma.watchEntry.count({ where: watchEntryWhere(userId, "trakt_tv") }),
     prisma.watchEntry.count({ where: watchEntryWhere(userId, "letterboxd") }),
     prisma.watchEntry.count({ where: watchEntryWhere(userId, "manual_movie") }),
     prisma.watchEntry.count({ where: watchEntryWhere(userId, "manual_tv") }),
@@ -150,8 +134,6 @@ export async function getWatchImportCounts(
     tautulliTv,
     jellyfinMovie,
     jellyfinTv,
-    traktMovie,
-    traktTv,
     letterboxd,
     manualMovie,
     manualTv,

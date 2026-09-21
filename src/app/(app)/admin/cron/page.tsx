@@ -15,7 +15,6 @@ const INTEGRATIONS: { key: CronIntegration; label: string }[] = [
   { key: CronIntegration.LETTERBOXD, label: "Letterboxd" },
   { key: CronIntegration.JELLYFIN, label: "Jellyfin" },
   { key: CronIntegration.TAUTULLI, label: "Tautulli" },
-  { key: CronIntegration.TRAKT, label: "Trakt" },
 ];
 
 const SYNC_CRON_SCHEDULE = process.env.SYNC_CRON_SCHEDULE ?? "0 */6 * * *";

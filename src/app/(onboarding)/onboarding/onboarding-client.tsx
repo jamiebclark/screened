@@ -9,7 +9,6 @@ import { LetterboxdSettings } from "@/app/(app)/settings/letterboxd/letterboxd-s
 import { PlexSettings } from "@/app/(app)/settings/plex/plex-settings";
 import { JellyfinSettings } from "@/app/(app)/settings/jellyfin/jellyfin-settings";
 import { TautulliSettings } from "@/app/(app)/settings/tautulli/tautulli-settings";
-import { TraktSettings } from "@/app/(app)/settings/trakt/trakt-settings";
 import { DiscordSettings } from "@/app/(app)/settings/discord/discord-settings";
 
 type PlexConnection = {
@@ -35,11 +34,6 @@ type TautulliConnection = {
   lastSyncedAt: Date | null;
 } | null;
 
-type TraktConnection = {
-  traktUsername: string;
-  lastSyncedAt: Date | null;
-} | null;
-
 type DiscordConnection = {
   discordUsername: string;
   dmEnabled: boolean;
@@ -51,8 +45,6 @@ interface OnboardingClientProps {
   letterboxdConnection: LetterboxdConnection;
   jellyfinConnection: JellyfinConnection;
   tautulliConnection: TautulliConnection;
-  traktConnection: TraktConnection;
-  traktConfigured: boolean;
   discordConnection: DiscordConnection;
   discordFeatures: { bot: boolean; oauth: boolean };
   callbackUrl?: string;
@@ -63,8 +55,6 @@ export function OnboardingClient({
   letterboxdConnection,
   jellyfinConnection,
   tautulliConnection,
-  traktConnection,
-  traktConfigured,
   discordConnection,
   discordFeatures,
   callbackUrl = "/",
@@ -142,13 +132,6 @@ export function OnboardingClient({
               <h2 className="text-lg font-semibold mb-3">Tautulli</h2>
               <TautulliSettings connection={tautulliConnection} />
             </section>
-
-            {traktConfigured && (
-              <section>
-                <h2 className="text-lg font-semibold mb-3">Trakt</h2>
-                <TraktSettings connection={traktConnection} />
-              </section>
-            )}
 
             <section>
               <h2 className="text-lg font-semibold mb-3">Discord</h2>

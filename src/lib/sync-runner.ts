@@ -4,7 +4,6 @@ import { syncPlexUser } from "@/lib/plex-sync";
 import { syncLetterboxdUser } from "@/lib/letterboxd-sync";
 import { syncJellyfinUser } from "@/lib/jellyfin-sync";
 import { syncTautulliUser } from "@/lib/tautulli-sync";
-import { syncTraktUser } from "@/lib/trakt-sync";
 
 export async function runSync(integration: CronIntegration) {
   const startedAt = Date.now();
@@ -43,14 +42,6 @@ export async function runSync(integration: CronIntegration) {
       });
       userIds = conns.map((c) => c.userId);
       syncFn = syncTautulliUser;
-      break;
-    }
-    case CronIntegration.TRAKT: {
-      const conns = await prisma.traktConnection.findMany({
-        select: { userId: true },
-      });
-      userIds = conns.map((c) => c.userId);
-      syncFn = syncTraktUser;
       break;
     }
   }

@@ -5,8 +5,6 @@ export const WATCH_ENTRY_SCOPES = [
   "tautulli_tv",
   "jellyfin_movie",
   "jellyfin_tv",
-  "trakt_movie",
-  "trakt_tv",
   "letterboxd",
   "manual_movie",
   "manual_tv",
@@ -29,8 +27,6 @@ export interface WatchImportCounts {
   tautulliTv: number;
   jellyfinMovie: number;
   jellyfinTv: number;
-  traktMovie: number;
-  traktTv: number;
   letterboxd: number;
   manualMovie: number;
   manualTv: number;

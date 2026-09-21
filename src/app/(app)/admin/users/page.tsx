@@ -16,7 +16,6 @@ const INTEGRATION_LABELS = [
   { key: "letterboxdConnection", label: "Letterboxd" },
   { key: "jellyfinConnection", label: "Jellyfin" },
   { key: "tautulliConnection", label: "Tautulli" },
-  { key: "traktConnection", label: "Trakt" },
 ] as const;
 
 function formatDate(date: Date) {
@@ -45,7 +44,6 @@ export default async function AdminUsersPage() {
       letterboxdConnection: { select: { lastSyncedAt: true } },
       jellyfinConnection: { select: { lastSyncedAt: true } },
       tautulliConnection: { select: { lastSyncedAt: true } },
-      traktConnection: { select: { lastSyncedAt: true } },
       _count: { select: { watchEntries: true } },
     },
   });

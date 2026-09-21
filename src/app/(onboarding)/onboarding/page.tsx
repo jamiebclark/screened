@@ -3,7 +3,6 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
-import { isTraktConfigured } from "@/lib/trakt";
 import { discordFeatures } from "@/lib/discord";
 import { OnboardingClient } from "./onboarding-client";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -22,44 +21,36 @@ export default async function OnboardingPage({
   }
   const callbackUrl = safeCallbackPath(params.callbackUrl ?? null);
 
-  const traktConfigured = isTraktConfigured();
   const features = discordFeatures();
 
-  const [plex, letterboxd, jellyfin, tautulli, trakt, discord] =
-    await Promise.all([
-      prisma.plexConnection.findUnique({
-        where: { userId: session.user.id },
-        select: { plexUsername: true, lastSyncedAt: true, plexServerId: true },
-      }),
-      prisma.letterboxdConnection.findUnique({
-        where: { userId: session.user.id },
-        select: { letterboxdUsername: true, lastSyncedAt: true },
-      }),
-      prisma.jellyfinConnection.findUnique({
-        where: { userId: session.user.id },
-        select: { serverUrl: true, jellyfinUsername: true, lastSyncedAt: true },
-      }),
-      prisma.tautulliConnection.findUnique({
-        where: { userId: session.user.id },
-        select: {
-          tautulliUrl: true,
-          tautulliUsername: true,
-          lastSyncedAt: true,
-        },
-      }),
-      traktConfigured
-        ? prisma.traktConnection.findUnique({
-            where: { userId: session.user.id },
-            select: { traktUsername: true, lastSyncedAt: true },
-          })
-        : null,
-      features.oauth
-        ? prisma.discordConnection.findUnique({
-            where: { userId: session.user.id },
-            select: { discordUsername: true, dmEnabled: true, createdAt: true },
-          })
-        : null,
-    ]);
+  const [plex, letterboxd, jellyfin, tautulli, discord] = await Promise.all([
+    prisma.plexConnection.findUnique({
+      where: { userId: session.user.id },
+      select: { plexUsername: true, lastSyncedAt: true, plexServerId: true },
+    }),
+    prisma.letterboxdConnection.findUnique({
+      where: { userId: session.user.id },
+      select: { letterboxdUsername: true, lastSyncedAt: true },
+    }),
+    prisma.jellyfinConnection.findUnique({
+      where: { userId: session.user.id },
+      select: { serverUrl: true, jellyfinUsername: true, lastSyncedAt: true },
+    }),
+    prisma.tautulliConnection.findUnique({
+      where: { userId: session.user.id },
+      select: {
+        tautulliUrl: true,
+        tautulliUsername: true,
+        lastSyncedAt: true,
+      },
+    }),
+    features.oauth
+      ? prisma.discordConnection.findUnique({
+          where: { userId: session.user.id },
+          select: { discordUsername: true, dmEnabled: true, createdAt: true },
+        })
+      : null,
+  ]);
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-6">
@@ -85,8 +76,6 @@ export default async function OnboardingPage({
           letterboxdConnection={letterboxd}
           jellyfinConnection={jellyfin}
           tautulliConnection={tautulli}
-          traktConnection={trakt}
-          traktConfigured={traktConfigured}
           discordConnection={discord}
           discordFeatures={features}
           callbackUrl={callbackUrl}
