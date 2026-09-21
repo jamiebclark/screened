@@ -1,3 +1,10 @@
+## [1.73.1](https://github.com/jamiebclark/screened/compare/v1.73.0...v1.73.1) (2026-09-21)
+
+### Bug Fixes
+
+* **lists:** move list-row rank under the trailing badge cluster ([6d6ded3](https://github.com/jamiebclark/screened/commit/6d6ded3ef03a2f5c402e2d6111a439480b1256cb))
+* **lists:** show plot summary in empty list-row note slot on desktop ([f257769](https://github.com/jamiebclark/screened/commit/f257769dcb350417ef728e85517ababf195720ca))
+
 ## [1.73.0](https://github.com/jamiebclark/screened/compare/v1.72.0...v1.73.0) (2026-09-19)
 
 ### Features
