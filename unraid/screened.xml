@@ -157,28 +157,6 @@
     Mask="true"></Config>
 
   <Config
-    Name="Trakt Client ID"
-    Target="TRAKT_CLIENT_ID"
-    Default=""
-    Mode=""
-    Description="Optional. Trakt.tv integration. Register an app at https://trakt.tv/oauth/applications to obtain credentials."
-    Type="Variable"
-    Display="advanced"
-    Required="false"
-    Mask="false"></Config>
-
-  <Config
-    Name="Trakt Client Secret"
-    Target="TRAKT_CLIENT_SECRET"
-    Default=""
-    Mode=""
-    Description="Optional. Trakt.tv integration client secret."
-    Type="Variable"
-    Display="advanced"
-    Required="false"
-    Mask="true"></Config>
-
-  <Config
     Name="Discord Application ID"
     Target="DISCORD_APPLICATION_ID"
     Default=""

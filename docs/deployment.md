@@ -172,4 +172,3 @@ Syncs run automatically inside the app process on the `SYNC_CRON_SCHEDULE`. The 
 | `POST /api/cron/letterboxd-sync` | Syncs diary and ratings for all linked Letterboxd accounts |
 | `POST /api/cron/jellyfin-sync`   | Syncs watch history for all linked Jellyfin accounts       |
 | `POST /api/cron/tautulli-sync`   | Syncs watch history for all linked Tautulli accounts       |
-| `POST /api/cron/trakt-sync`      | Syncs watch history for all linked Trakt accounts          |
