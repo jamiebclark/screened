@@ -45,19 +45,34 @@ interface NavProps {
   isAdmin?: boolean;
 }
 
+/**
+ * `public` marks routes that render without a session (the `(public)` route
+ * group). Everything else redirects anonymous visitors to /login, so the nav
+ * hides those links when there is no user.
+ */
 const navLinks = [
-  { href: "/lists", label: "Lists", icon: ListVideo },
-  { href: "/pick", label: "Picker", icon: Sparkles },
-  { href: "/watch-parties", label: "Watch Parties", icon: PartyPopper },
-  { href: "/history", label: "History", icon: History },
-  { href: "/friends", label: "Friends", icon: Users },
-  { href: "/upcoming", label: "Upcoming", icon: CalendarDays },
-  { href: "/releases", label: "Releases", icon: Clapperboard },
+  { href: "/lists", label: "Lists", icon: ListVideo, public: false },
+  { href: "/pick", label: "Picker", icon: Sparkles, public: false },
+  {
+    href: "/watch-parties",
+    label: "Watch Parties",
+    icon: PartyPopper,
+    public: false,
+  },
+  { href: "/history", label: "History", icon: History, public: false },
+  { href: "/friends", label: "Friends", icon: Users, public: false },
+  { href: "/upcoming", label: "Upcoming", icon: CalendarDays, public: false },
+  { href: "/releases", label: "Releases", icon: Clapperboard, public: true },
 ];
+
+export function visibleNavLinks(signedIn: boolean) {
+  return signedIn ? navLinks : navLinks.filter((link) => link.public);
+}
 
 export function Nav({ user, initialUnreadNotifications, isAdmin }: NavProps) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const links = visibleNavLinks(Boolean(user));
 
   const initials = user?.name
     ? user.name
@@ -81,7 +96,7 @@ export function Nav({ user, initialUnreadNotifications, isAdmin }: NavProps) {
           </Link>
 
           <nav className="hidden md:flex items-center gap-1">
-            {navLinks.map(({ href, label, icon: Icon }) => {
+            {links.map(({ href, label, icon: Icon }) => {
               const active =
                 pathname === href ||
                 (href !== "/" && pathname.startsWith(href));
@@ -105,9 +120,9 @@ export function Nav({ user, initialUnreadNotifications, isAdmin }: NavProps) {
         </div>
 
         <div className="flex items-center gap-2">
-          <SearchModal />
           {user ? (
             <>
+              <SearchModal />
               <NotificationMenu
                 initialUnreadCount={initialUnreadNotifications ?? 0}
               />
@@ -200,7 +215,7 @@ export function Nav({ user, initialUnreadNotifications, isAdmin }: NavProps) {
 
       {mobileOpen && (
         <nav className="border-t border-border md:hidden">
-          {navLinks.map(({ href, label, icon: Icon }) => {
+          {links.map(({ href, label, icon: Icon }) => {
             const active =
               pathname === href ||
               (href === "/history" && pathname.startsWith("/history")) ||
