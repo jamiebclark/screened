@@ -1,3 +1,9 @@
+## [2.0.1](https://github.com/jamiebclark/screened/compare/v2.0.0...v2.0.1) (2026-09-22)
+
+### Bug Fixes
+
+* **nav:** hide protected links and search from signed-out visitors ([691b6a9](https://github.com/jamiebclark/screened/commit/691b6a9c4a59a538c8bf644e9d94b32c7be8cff6))
+
 ## [2.0.0](https://github.com/jamiebclark/screened/compare/v1.73.1...v2.0.0) (2026-09-22)
 
 ### ⚠ BREAKING CHANGES
