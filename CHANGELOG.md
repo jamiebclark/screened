@@ -1,3 +1,17 @@
+## [2.0.0](https://github.com/jamiebclark/screened/compare/v1.73.1...v2.0.0) (2026-09-22)
+
+### ⚠ BREAKING CHANGES
+
+* **schema:** TRAKT_CLIENT_ID / TRAKT_CLIENT_SECRET are no longer
+read. Linked Trakt accounts are removed and their imported watch entries
+lose Trakt provenance.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+### Code Refactoring
+
+* **schema:** remove TraktConnection model and Trakt enum values ([85aa76c](https://github.com/jamiebclark/screened/commit/85aa76c688a52e05ef7cb0d8a4aba9c875fb6742))
+
 ## [1.73.1](https://github.com/jamiebclark/screened/compare/v1.73.0...v1.73.1) (2026-09-21)
 
 ### Bug Fixes
